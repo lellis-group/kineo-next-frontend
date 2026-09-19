@@ -5,20 +5,28 @@
 
 import { ApiError, apiFetch, type FieldError, notFoundAs } from "./api-client";
 import type { ProfileFormData } from "./profile";
-import type { ApiProfile, ProfileType } from "./types/api";
+import type { ApiProfile } from "./types/api";
 
-/** Event fired after create/update so the header can refresh its role nav. */
-export const PROFILE_UPDATED_EVENT = "kineo:profile-updated";
+const PROFILE_UPDATED_KEY = "kineo:profile-updated";
 
-/** Notify listeners (AppHeader) of a role change, with instant value. */
-export function notifyProfileUpdated(profileType?: ProfileType | null): void {
-  if (typeof window === "undefined") return;
-  window.dispatchEvent(
-    new CustomEvent<{ profileType?: ProfileType | null }>(
-      PROFILE_UPDATED_EVENT,
-      { detail: { profileType: profileType ?? null } },
-    ),
-  );
+/** Flag a save so /profile revalidates the server layout once on arrival. */
+export function markProfileUpdated(): void {
+  try {
+    sessionStorage.setItem(PROFILE_UPDATED_KEY, "1");
+  } catch {
+    // Private mode: nav updates on next full load instead.
+  }
+}
+
+/** Consume the save flag. True when the layout should be revalidated. */
+export function consumeProfileUpdated(): boolean {
+  try {
+    if (sessionStorage.getItem(PROFILE_UPDATED_KEY) !== "1") return false;
+    sessionStorage.removeItem(PROFILE_UPDATED_KEY);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /**
