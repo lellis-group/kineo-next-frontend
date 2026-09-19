@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Suspense } from "react";
-import { AppHeader } from "@/components/organisms/app-header";
+import { AppHeaderLoader } from "@/components/organisms/app-header-loader";
 import { SiteFooter } from "@/components/organisms/site-footer";
 import { SiteHeader } from "@/components/organisms/site-header";
 import { publicNav } from "@/lib/navigation";
@@ -9,11 +9,9 @@ import { publicNav } from "@/lib/navigation";
 export default function SiteLayout({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-dvh flex-col bg-background text-foreground">
-      {/* AppHeader uses navigation hooks (useRouter/usePathname): wrapping it
-          in Suspense lets Next stream it in after prerendering the static shell,
-          instead of failing the build on client hooks during prerender. */}
+      {/* Server header streams in after the static shell (client hooks inside). */}
       <Suspense fallback={<SiteHeader links={publicNav} />}>
-        <AppHeader />
+        <AppHeaderLoader />
       </Suspense>
       <main className="flex-1">{children}</main>
       <SiteFooter />

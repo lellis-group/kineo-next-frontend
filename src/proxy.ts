@@ -21,5 +21,9 @@ export const config = {
     "/profile/:path*",
     "/applications",
     "/applications/:path*",
+    "/listings",
+    "/listings/:path*",
+    "/practices",
+    "/practices/:path*",
   ],
 };

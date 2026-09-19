@@ -128,24 +128,16 @@ export function MobileMenu({
         <div className="my-2 border-t border-border" />
 
         {user ? (
-          <>
-            <Link
-              href="/profile"
-              className="block w-full rounded-lg px-4 py-2.5 text-[15px] font-medium text-muted transition-colors hover:bg-surface-hover hover:text-foreground"
+          onSignOut && (
+            <button
+              type="button"
+              onClick={onSignOut}
+              className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-muted transition-colors hover:bg-surface-hover hover:text-foreground"
             >
-              Mon profil
-            </Link>
-            {onSignOut && (
-              <button
-                type="button"
-                onClick={onSignOut}
-                className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-muted transition-colors hover:bg-surface-hover hover:text-foreground"
-              >
-                <LogOutIcon />
-                Se déconnecter
-              </button>
-            )}
-          </>
+              <LogOutIcon />
+              Se déconnecter
+            </button>
+          )
         ) : (
           <div className="flex flex-col gap-2 p-1">
             <Link
