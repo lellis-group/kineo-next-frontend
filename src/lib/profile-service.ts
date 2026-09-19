@@ -5,7 +5,21 @@
 
 import { ApiError, apiFetch, type FieldError, notFoundAs } from "./api-client";
 import type { ProfileFormData } from "./profile";
-import type { ApiProfile } from "./types/api";
+import type { ApiProfile, ProfileType } from "./types/api";
+
+/** Event fired after create/update so the header can refresh its role nav. */
+export const PROFILE_UPDATED_EVENT = "kineo:profile-updated";
+
+/** Notify listeners (AppHeader) of a role change, with instant value. */
+export function notifyProfileUpdated(profileType?: ProfileType | null): void {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(
+    new CustomEvent<{ profileType?: ProfileType | null }>(
+      PROFILE_UPDATED_EVENT,
+      { detail: { profileType: profileType ?? null } },
+    ),
+  );
+}
 
 /**
  * GET /profile/me — soft 404 when the profile does not exist yet (documented

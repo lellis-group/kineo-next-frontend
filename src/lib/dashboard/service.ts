@@ -42,7 +42,7 @@ export async function fetchDashboardData(
 
   return {
     greeting: adaptGreeting(profile, userName, listings, applications),
-    actions: adaptActions(),
+    actions: adaptActions(profile?.profileType ?? null),
     stats: adaptStats(listings, applications),
     activity: adaptActivity(applications, listings),
     needsProfile: profile === null,
