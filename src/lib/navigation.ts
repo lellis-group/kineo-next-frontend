@@ -40,9 +40,6 @@ const bothNav: HeaderLink[] = [
   { label: "Mon Profil", href: "/profile" },
 ];
 
-/** Legacy fallback: discovery nav. */
-export const memberNav: HeaderLink[] = replacementNav;
-
 export function getMemberNav(profileType?: ProfileType | null): HeaderLink[] {
   switch (profileType) {
     case "INSTALLED":

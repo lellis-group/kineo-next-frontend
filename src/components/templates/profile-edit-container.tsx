@@ -10,7 +10,6 @@ import { type ProfileFormData, profileToFormValues } from "@/lib/profile";
 import {
   fetchMyProfile,
   mapProfileError,
-  markProfileUpdated,
   updateProfile,
 } from "@/lib/profile-service";
 import type { ApiProfile } from "@/lib/types/api";
@@ -65,8 +64,6 @@ export function ProfileEditContainer() {
     setError("");
     try {
       await updateProfile(profile.id, payload);
-      // Destination revalidates the server layout (see ProfileContainer).
-      markProfileUpdated();
       router.replace("/profile");
       return undefined;
     } catch (err) {

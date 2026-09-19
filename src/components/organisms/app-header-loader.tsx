@@ -9,5 +9,10 @@ export async function AppHeaderLoader() {
     fetchServerProfileType(),
   ]);
 
-  return <AppHeader initialProfileType={session ? profileType : null} />;
+  return (
+    <AppHeader
+      initialProfileType={session ? profileType : null}
+      initialUserName={session?.name ?? null}
+    />
+  );
 }

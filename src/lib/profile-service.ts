@@ -7,28 +7,6 @@ import { ApiError, apiFetch, type FieldError, notFoundAs } from "./api-client";
 import type { ProfileFormData } from "./profile";
 import type { ApiProfile } from "./types/api";
 
-const PROFILE_UPDATED_KEY = "kineo:profile-updated";
-
-/** Flag a save so /profile revalidates the server layout once on arrival. */
-export function markProfileUpdated(): void {
-  try {
-    sessionStorage.setItem(PROFILE_UPDATED_KEY, "1");
-  } catch {
-    // Private mode: nav updates on next full load instead.
-  }
-}
-
-/** Consume the save flag. True when the layout should be revalidated. */
-export function consumeProfileUpdated(): boolean {
-  try {
-    if (sessionStorage.getItem(PROFILE_UPDATED_KEY) !== "1") return false;
-    sessionStorage.removeItem(PROFILE_UPDATED_KEY);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 /**
  * GET /profile/me — soft 404 when the profile does not exist yet (documented
  * by the API); returns null so callers can show the create form instead.

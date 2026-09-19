@@ -11,7 +11,6 @@ import {
   createProfile,
   fetchMyProfile,
   mapProfileError,
-  markProfileUpdated,
 } from "@/lib/profile-service";
 import { ProfileFormPage } from "./profile-form-page";
 
@@ -53,8 +52,6 @@ export function ProfileCreateContainer() {
     setError("");
     try {
       await createProfile(payload);
-      // Destination revalidates the server layout (see ProfileContainer).
-      markProfileUpdated();
       router.replace("/profile");
       return undefined;
     } catch (err) {

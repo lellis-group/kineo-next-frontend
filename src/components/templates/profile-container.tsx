@@ -1,13 +1,13 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { LoadingState } from "@/components/molecules/loading-state";
 import { ErrorState } from "@/components/organisms/error-state";
 import { ProfileView } from "@/components/templates/profile-view";
 import { ApiError } from "@/lib/api-client";
 import { useSession } from "@/lib/auth-client";
-import { consumeProfileUpdated, fetchMyProfile } from "@/lib/profile-service";
+import { fetchMyProfile } from "@/lib/profile-service";
 import type { ApiProfile, ApiUser } from "@/lib/types/api";
 import { deleteAccount } from "@/lib/user-service";
 
@@ -22,7 +22,6 @@ export function ProfileContainer() {
   const [error, setError] = useState("");
   const [profile, setProfile] = useState<ApiProfile | null>(null);
   const [feedback, setFeedback] = useState<Feedback>(null);
-  const refreshedRef = useRef(false);
 
   const load = useCallback(() => {
     setStatus("loading");
@@ -57,13 +56,6 @@ export function ProfileContainer() {
   useEffect(() => {
     load();
   }, [load]);
-
-  // After a save, revalidate the server layout once so the role nav updates.
-  useEffect(() => {
-    if (refreshedRef.current) return;
-    refreshedRef.current = true;
-    if (consumeProfileUpdated()) router.refresh();
-  }, [router]);
 
   /**
    * Requests account deletion: better-auth emails a confirmation link and the
