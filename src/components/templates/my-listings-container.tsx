@@ -49,6 +49,10 @@ export function MyListingsContainer() {
       .then((loaded) => {
         setData(loaded);
         setStatus("success");
+        // The refetched rows are the truth; anything cached for them may
+        // describe an application that has since been withdrawn elsewhere.
+        setApplicationsByListing({});
+        setExpandedListingId(undefined);
       })
       .catch((err) => {
         if (err instanceof ApiError && err.status === 401) {
@@ -146,6 +150,25 @@ export function MyListingsContainer() {
     [page],
   );
 
+  /**
+   * Switching bucket drops every per-listing state.
+   *
+   * The messages are scoped by listing id, so a stale one is invisible while its
+   * listing is filtered out — and then reappears on a freshly refetched card
+   * when the user comes back to « Toutes », several minutes after the action it
+   * describes. The candidate cache has the same problem: a panel that was
+   * expanded once is never refetched for the rest of the mount, so a
+   * withdrawal made elsewhere stays invisible.
+   */
+  const handleFilterChange = useCallback((next: ListingsFilter) => {
+    setFilter(next);
+    setPage(1);
+    setActionError(null);
+    setActionFeedback(null);
+    setExpandedListingId(undefined);
+    setApplicationsByListing({});
+  }, []);
+
   const handleClose = useCallback(
     (listingId: string) =>
       runAction(
@@ -184,10 +207,7 @@ export function MyListingsContainer() {
       listings={data.listings}
       counts={data.counts}
       currentFilter={filter}
-      onFilterChange={(next) => {
-        setFilter(next);
-        setPage(1);
-      }}
+      onFilterChange={handleFilterChange}
       applicationsByListing={applicationsByListing}
       expandedListingId={expandedListingId}
       loadingListingId={loadingListingId}
