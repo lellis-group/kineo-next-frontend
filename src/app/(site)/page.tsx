@@ -1,13 +1,13 @@
 import { DashboardContainer } from "@/components/templates/dashboard-container";
 import { PublicHome } from "@/components/templates/public-home";
-import { fetchServerSession } from "@/lib/server-session";
+import { fetchServerAuth } from "@/lib/server-auth";
 
 /** Server-side branch: dashboard for members, marketing for anonymous. */
 export default async function HomePage() {
-  const session = await fetchServerSession();
+  const auth = await fetchServerAuth();
 
-  if (session) {
-    return <DashboardContainer userName={session.name} />;
+  if (auth.status === "member") {
+    return <DashboardContainer userName={auth.name} />;
   }
 
   return <PublicHome />;

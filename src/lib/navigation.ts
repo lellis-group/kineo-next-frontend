@@ -40,6 +40,14 @@ const bothNav: HeaderLink[] = [
   { label: "Mon Profil", href: "/profile" },
 ];
 
+/**
+ * Member nav by role.
+ *
+ * A signed-in member with no profile yet (onboarding) has no role to pick
+ * from, so they get the replacement links: those are the ones they can act on
+ * before the role is known. Once `/profile` assigns a role, this returns the
+ * practice links instead.
+ */
 export function getMemberNav(profileType?: ProfileType | null): HeaderLink[] {
   switch (profileType) {
     case "INSTALLED":

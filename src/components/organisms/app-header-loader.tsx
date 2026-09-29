@@ -1,18 +1,12 @@
-import { fetchServerProfileType } from "@/lib/server-profile";
-import { fetchServerSession } from "@/lib/server-session";
+import { fetchServerAuth } from "@/lib/server-auth";
 import { AppHeader } from "./app-header";
 
-/** Server loader: role for nav, streamed inside Suspense. */
+/**
+ * Server loader: resolves the whole auth state in one call and streams the
+ * header inside the layout's Suspense boundary.
+ */
 export async function AppHeaderLoader() {
-  const [session, profileType] = await Promise.all([
-    fetchServerSession(),
-    fetchServerProfileType(),
-  ]);
+  const auth = await fetchServerAuth();
 
-  return (
-    <AppHeader
-      initialProfileType={session ? profileType : null}
-      initialUserName={session?.name ?? null}
-    />
-  );
+  return <AppHeader initialAuth={auth} />;
 }
