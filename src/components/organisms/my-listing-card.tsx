@@ -1,10 +1,10 @@
 import { Badge } from "@/components/atoms/badge";
-import { Button } from "@/components/atoms/button";
 import { Card } from "@/components/atoms/card";
 import { CalendarIcon, ChevronDownIcon } from "@/components/atoms/icons";
 import { Spinner } from "@/components/atoms/spinner";
 import { InlineAlert } from "@/components/molecules/inline-alert";
 import { ReceivedApplicationCard } from "@/components/molecules/received-application-card";
+import { ListingActions } from "@/components/organisms/listing-actions";
 import { cn } from "@/lib/cn";
 import {
   formatActiveApplications,
@@ -144,16 +144,13 @@ export function MyListingCard({
       )}
 
       {recruiting && (
-        <div className="mt-5 flex flex-col gap-3 border-t border-border pt-4 sm:flex-row sm:items-center">
-          <Button variant="outline" onClick={onClose} disabled={acting}>
-            {acting && (
-              <Spinner className="h-4 w-4 border-foreground/30 border-t-foreground" />
-            )}
-            Clôturer l&apos;annonce
-          </Button>
-          <Button variant="ghost" onClick={onCancel} disabled={acting}>
-            Annuler l&apos;annonce
-          </Button>
+        <div className="mt-5 border-t border-border pt-4">
+          <ListingActions
+            activeCount={listing.applicationsCount}
+            acting={acting}
+            onClose={onClose}
+            onCancel={onCancel}
+          />
         </div>
       )}
     </Card>

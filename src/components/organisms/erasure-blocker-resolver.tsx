@@ -1,11 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Button } from "@/components/atoms/button";
 import { Card } from "@/components/atoms/card";
 import { ChevronDownIcon, LayersIcon } from "@/components/atoms/icons";
 import { Spinner } from "@/components/atoms/spinner";
 import { InlineAlert } from "@/components/molecules/inline-alert";
+import { ListingActions } from "@/components/organisms/listing-actions";
 import { cn } from "@/lib/cn";
 import {
   cancelListing,
@@ -254,28 +254,17 @@ export function ErasureBlockerResolver({
                 </ul>
               )}
 
-              <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-border pt-4">
-                <Button
-                  variant="outline"
-                  disabled={actingListingId === listing.id}
-                  onClick={() =>
+              <div className="mt-4 border-t border-border pt-4">
+                <ListingActions
+                  activeCount={listing.applicationsCount}
+                  acting={actingListingId === listing.id}
+                  onClose={() =>
                     runAction(listing.id, closeListing, "Annonce clôturée.")
                   }
-                >
-                  {actingListingId === listing.id && (
-                    <Spinner className="h-4 w-4 border-foreground/30 border-t-foreground" />
-                  )}
-                  Clôturer
-                </Button>
-                <Button
-                  variant="ghost"
-                  disabled={actingListingId === listing.id}
-                  onClick={() =>
+                  onCancel={() =>
                     runAction(listing.id, cancelListing, "Annonce annulée.")
                   }
-                >
-                  Annuler
-                </Button>
+                />
               </div>
             </Card>
           </li>
