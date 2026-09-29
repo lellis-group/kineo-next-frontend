@@ -2,25 +2,44 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/atoms/button";
 import { Spinner } from "@/components/atoms/spinner";
 import { InlineAlert } from "@/components/molecules/inline-alert";
 import { LoadingState } from "@/components/molecules/loading-state";
 import { AuthCard } from "@/components/organisms/auth-card";
-import { confirmAccountDeletion } from "@/lib/account-deletion-service";
+import { ErasureBlockerResolver } from "@/components/organisms/erasure-blocker-resolver";
+import {
+  AccountDeletionError,
+  confirmAccountDeletion,
+  type DeletionFailure,
+} from "@/lib/account-deletion-service";
 import { signOut, useSession } from "@/lib/auth-client";
 
-type DeletionStatus = "deleting" | "success" | "error" | "invalid";
+type DeletionStatus =
+  | "deleting"
+  | "success"
+  | "blocked"
+  | "expired"
+  | "invalid"
+  | "error";
 
-type DeletionOutcome = { status: "success" | "error"; error?: string };
+type DeletionOutcome = {
+  status: DeletionStatus;
+  error?: string;
+};
 
 /**
- * One in-flight or completed deletion job per token, shared across component
- * remounts (React StrictMode double-mounts effects in dev). The confirmation
- * POST consumes a single-use server-side token, so it must be sent exactly
- * once: a double request would delete the account on the first call and fail
- * with an invalid-token error on the second.
+ * One in-flight deletion job per token, shared across component remounts
+ * (React StrictMode double-mounts effects in dev). The confirmation POST
+ * consumes a single-use server-side token, so it must be sent exactly once: a
+ * double request would anonymize the account on the first call and fail with an
+ * invalid-token error on the second.
+ *
+ * Only successful and in-flight jobs are kept. A failure is dropped from the
+ * map on purpose: nothing was consumed server-side, and the `blocked` case in
+ * particular asks the user to fix their listings and come back to the very same
+ * link — a cached rejection would make that impossible without a full reload.
  */
 const deletionJobs = new Map<string, Promise<DeletionOutcome>>();
 
@@ -34,17 +53,36 @@ function requestDeletion(token: string): Promise<DeletionOutcome> {
   // cookie is needed (see @/lib/account-deletion-service).
   const job = confirmAccountDeletion(token).then(
     (): DeletionOutcome => ({ status: "success" }),
-    (error: unknown): DeletionOutcome => ({
-      status: "error",
-      error:
-        error instanceof Error
-          ? error.message
-          : "Suppression impossible pour le moment. Vérifiez votre connexion, puis réessayez.",
-    }),
+    (error: unknown): DeletionOutcome => {
+      deletionJobs.delete(token);
+      return {
+        status:
+          error instanceof AccountDeletionError
+            ? toStatus(error.failure)
+            : "error",
+        error:
+          error instanceof Error
+            ? error.message
+            : "Suppression impossible pour le moment. Vérifiez votre connexion, puis réessayez.",
+      };
+    },
   );
 
   deletionJobs.set(token, job);
   return job;
+}
+
+function toStatus(failure: DeletionFailure): DeletionStatus {
+  switch (failure) {
+    case "blocked":
+      return "blocked";
+    case "expired":
+      return "expired";
+    case "invalid":
+      return "invalid";
+    default:
+      return "error";
+  }
 }
 
 function GoodbyeContent() {
@@ -58,6 +96,11 @@ function GoodbyeContent() {
   const [error, setError] = useState("");
   const [signedOut, setSignedOut] = useState(false);
 
+  const applyOutcome = useCallback((outcome: DeletionOutcome) => {
+    setStatus(outcome.status);
+    setError(outcome.error ?? "");
+  }, []);
+
   useEffect(() => {
     if (!token) {
       return;
@@ -69,20 +112,39 @@ function GoodbyeContent() {
       if (cancelled) {
         return;
       }
-      setStatus(outcome.status);
-      setError(outcome.error ?? "");
+      applyOutcome(outcome);
     });
 
     return () => {
       cancelled = true;
     };
-  }, [token]);
+  }, [token, applyOutcome]);
+
+  /**
+   * Replays the confirmation after the user cleared the blocker. The failed job
+   * was already evicted from `deletionJobs`, so this sends a fresh POST — which
+   * is safe because the earlier attempt rolled back without consuming the
+   * token, and the token stays in the URL either way.
+   */
+  const handleBlockerResolved = useCallback(() => {
+    if (!token) {
+      return;
+    }
+
+    setStatus("deleting");
+    setError("");
+
+    requestDeletion(token).then(applyOutcome);
+  }, [token, applyOutcome]);
 
   // The sessionless confirm-deletion endpoint wipes sessions server-side but
   // can't clear browser cookies (no Set-Cookie on its response). Sign out to
   // drop the ghost cookie + the cookie-cache JWT; it always clears cookies
   // even when the session row is already gone. Never blocks the screen:
   // failure just leaves the button to /signup, which is public anyway.
+  //
+  // Only on success: a `blocked` outcome left the account fully intact, so
+  // signing the user out would lock them out of the listings they must fix.
   useEffect(() => {
     if (status !== "success") {
       return;
@@ -92,7 +154,7 @@ function GoodbyeContent() {
 
     signOut()
       .catch(() => {
-        // Cookie cleanup best-effort — the account is already deleted.
+        // Cookie cleanup best-effort — the account is already anonymized.
       })
       .finally(() => {
         if (!cancelled) {
@@ -105,14 +167,58 @@ function GoodbyeContent() {
     };
   }, [status]);
 
-  if (status === "invalid" || status === "error") {
+  // Refused, but the account is untouched and the token still valid: the only
+  // way out is to clear the applications held by other candidates, so this is
+  // the one failure that gets its own screen instead of a generic error.
+  if (status === "blocked") {
     return (
       <AuthCard
-        title={status === "error" ? "Suppression impossible" : "Lien invalide"}
+        title="Suppression refusée"
+        subtitle="D'autres candidats occupent encore vos annonces"
+      >
+        <div className="space-y-6">
+          <InlineAlert tone="warning">{error}</InlineAlert>
+
+          <p className="text-center text-sm leading-relaxed text-muted">
+            Fermer ou annuler une annonce termine automatiquement les
+            candidatures qu&apos;elle recevait. Vos données et votre compte
+            restent inchangés tant que ce n&apos;est pas fait.
+          </p>
+
+          <ErasureBlockerResolver onResolved={handleBlockerResolved} />
+
+          <div className="space-y-3">
+            <Button href="/listings/mine" variant="outline" className="w-full">
+              Voir toutes mes annonces
+            </Button>
+            <Button
+              href={user ? "/profile" : "/signin"}
+              variant="ghost"
+              className="w-full"
+            >
+              {user ? "Retour à mon profil" : "Se connecter"}
+            </Button>
+          </div>
+        </div>
+      </AuthCard>
+    );
+  }
+
+  if (status === "expired" || status === "invalid" || status === "error") {
+    const title =
+      status === "expired"
+        ? "Lien expiré"
+        : status === "invalid"
+          ? "Lien invalide"
+          : "Suppression impossible";
+
+    return (
+      <AuthCard
+        title={title}
         subtitle={
           status === "error"
             ? "Nous n'avons pas pu supprimer votre compte"
-            : "Ce lien de suppression est incomplet"
+            : "Ce lien de suppression n'est plus valable"
         }
       >
         <div className="space-y-6 text-center">
@@ -133,14 +239,22 @@ function GoodbyeContent() {
   if (status === "success") {
     return (
       <AuthCard
-        title="Votre compte a été supprimé"
-        subtitle="Toutes vos données ont été définitivement effacées"
+        title="Votre compte a été anonymisé"
+        subtitle="Vos données personnelles ne sont plus identifiables"
       >
         <div className="space-y-6">
           <InlineAlert tone="info">
-            Votre profil, vos annonces et votre historique ont été supprimés de
-            la plateforme. Merci d&apos;avoir utilisé Kineo.
+            Votre nom, votre adresse e-mail, votre numéro RPPS, votre
+            localisation, vos annonces et vos messages ont été remplacés
+            immédiatement. Votre compte est déconnecté partout. Merci
+            d&apos;avoir utilisé Kineo.
           </InlineAlert>
+
+          <p className="text-sm leading-relaxed text-muted">
+            Les enregistrements restants sont définitivement effacés au terme
+            d&apos;un délai de grâce. Vous pouvez recréer un compte avec cette
+            adresse e-mail dès maintenant.
+          </p>
 
           <p className="mt-3 text-center text-xs leading-relaxed text-muted">
             Conformément à notre{" "}
@@ -150,8 +264,9 @@ function GoodbyeContent() {
             >
               politique de confidentialité
             </Link>
-            , seule la trace de votre demande (adresse e-mail et date) est
-            conservée pendant une durée limitée à des fins de preuve.
+            , la trace de votre demande est conservée pendant une durée limitée
+            à des fins de preuve. Elle ne contient ni votre nom ni votre adresse
+            e-mail, seulement des empreintes non réversibles et les dates.
           </p>
 
           {!signedOut ? (
@@ -173,7 +288,7 @@ function GoodbyeContent() {
   return (
     <AuthCard
       title="Suppression en cours"
-      subtitle="Nous supprimons définitivement votre compte"
+      subtitle="Nous anonymisons les données de votre compte"
     >
       <div className="flex justify-center">
         <output aria-label="Suppression en cours">
