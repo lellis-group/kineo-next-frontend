@@ -185,14 +185,16 @@ export default function PrivacyPage() {
           </div>
         </header>
 
-        <div className="space-y-4 text-sm leading-relaxed text-foreground/85">
-          <p className={PROSE}>
+        {/* Intro sits above the two-column grid: centred like the header above
+            it, so the document opens as one block before the body starts. */}
+        <div className="mx-auto max-w-[52ch] space-y-4 text-center text-sm leading-relaxed text-foreground/85">
+          <p>
             Cette page décrit la manière dont Kineo traite les données
             personnelles de ses utilisateurs. Les sections 1 à 5 décrivent le
             fonctionnement réel de la plateforme et s&apos;appliquent dès
             aujourd&apos;hui.
           </p>
-          <p className={PROSE}>
+          <p>
             Les sections 6 à 9 restent à valider par notre service juridique.
             Elles ne sont pas rédigées ici plutôt que de l&apos;être à moitié.
           </p>
