@@ -19,10 +19,16 @@ function Svg({ children, ...props }: SVGProps<SVGSVGElement>) {
   );
 }
 
+/**
+ * Disclosure chevron. Same geometry as the `Select` atom's private one
+ * (6 9 → 12 15 → 18 9) so both dropdown affordances are identical, and
+ * vertically centered in the 24 box so it does not hang low in a line of
+ * text.
+ */
 export function ChevronDownIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <Svg {...props}>
-      <path d="M6 13.5l6 6.5M18 13.5l-6 6.5" />
+      <path d="M6 9l6 6 6-6" />
     </Svg>
   );
 }
