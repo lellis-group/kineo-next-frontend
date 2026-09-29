@@ -25,12 +25,14 @@ export const ERASURE_ERROR_CODES = {
 /**
  * Why a confirmation did not go through.
  *
- * `blocked` is the only one the user can act on: the account is untouched, the
- * token survives the rollback, and closing the listings holding other
- * candidates' applications clears it. `no-pending-request` looks like a
- * conflict but is not — nothing is in the way and retrying cannot help.
- * `already-erased` means the work is done, which is not a failure at all.
- * `rate-limited` and `unavailable` are transient and worth retrying.
+ * `blocked` is legacy: the backend no longer refuses an erasure over other
+ * candidates' applications, it detaches them so the request can go through. It
+ * survives only so a link confirmed against a backend one deploy behind still
+ * produces a real French sentence rather than an empty error.
+ * `no-pending-request` looks like a conflict but is not — nothing is in the way
+ * and retrying cannot help. `already-erased` means the work is done, which is
+ * not a failure at all. `rate-limited` and `unavailable` are transient and
+ * worth retrying.
  */
 export type DeletionFailure =
   | "blocked"
@@ -79,10 +81,14 @@ function mapConfirmDeletionError(error: unknown): {
     // The backend discriminates the two conflicts, so the status no longer has
     // to. The French copy stays here because these bodies are still English.
     if (error.code === ERASURE_ERROR_CODES.THIRD_PARTY_APPLICATIONS) {
+      // Only reachable against a backend one deploy behind, which still
+      // refuses instead of detaching. It maps to `blocked`, which the goodbye
+      // screen now treats as a generic retryable error: the honest answer when
+      // the server is the thing that changed is to try again.
       return {
         failure: "blocked",
         message:
-          "Vos annonces reçoivent encore des candidatures actives d'autres candidats. Fermez ou annulez ces annonces, puis rouvrez ce lien : votre compte n'a pas été modifié.",
+          "La suppression n'a pas abouti : votre compte et vos données sont inchangés. Réessayez dans un instant.",
       };
     }
     if (error.code === ERASURE_ERROR_CODES.NO_PENDING_REQUEST) {

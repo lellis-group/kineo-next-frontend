@@ -8,7 +8,6 @@ import { Spinner } from "@/components/atoms/spinner";
 import { InlineAlert } from "@/components/molecules/inline-alert";
 import { LoadingState } from "@/components/molecules/loading-state";
 import { AuthCard } from "@/components/organisms/auth-card";
-import { ErasureBlockerResolver } from "@/components/organisms/erasure-blocker-resolver";
 import {
   AccountDeletionError,
   confirmAccountDeletion,
@@ -25,7 +24,6 @@ import { signOut, useSession } from "@/lib/auth-client";
 type DeletionStatus =
   | "deleting"
   | "success"
-  | "blocked"
   | "already-erased"
   | "no-pending-request"
   | "invalid"
@@ -45,9 +43,8 @@ type DeletionOutcome = {
  * invalid-token error on the second.
  *
  * Only successful and in-flight jobs are kept. A failure is dropped from the
- * map on purpose: nothing was consumed server-side, and the `blocked` case in
- * particular asks the user to fix their listings and come back to the very same
- * link — a cached rejection would make that impossible without a full reload.
+ * map on purpose: nothing was consumed server-side, so re-confirming the same
+ * link has to be able to succeed on a second attempt.
  */
 const deletionJobs = new Map<string, Promise<DeletionOutcome>>();
 
@@ -83,8 +80,12 @@ function requestDeletion(token: string): Promise<DeletionOutcome> {
 /** Exhaustively maps a failure onto a screen; no silent fallthrough. */
 function toStatus(failure: DeletionFailure): DeletionStatus {
   switch (failure) {
+    // The backend no longer refuses an erasure over third-party applications:
+    // it detaches them onto ghost listings first, so the request always goes
+    // through. This case only survives for a backend one deploy behind, and
+    // deliberately lands on the generic error rather than on a screen telling
+    // the user to close their listings — advice that would not help.
     case "blocked":
-      return "blocked";
     case "no-pending-request":
       return "no-pending-request";
     case "already-erased":
@@ -171,8 +172,9 @@ function GoodbyeContent() {
   // even when the session row is already gone. Never blocks the screen:
   // failure just leaves the button to /signup, which is public anyway.
   //
-  // Only on success: a `blocked` outcome left the account fully intact, so
-  // signing the user out would lock them out of the listings they must fix.
+  // Only on success: every failure rolls the transaction back and leaves the
+  // account fully intact, so signing the user out early would lock them out of
+  // a working account.
   useEffect(() => {
     if (status !== "success") {
       return;
@@ -221,47 +223,6 @@ function GoodbyeContent() {
   );
 
   function renderStatus() {
-    // Refused, but the account is untouched and the token still valid: the only
-    // way out is to clear the applications held by other candidates, so this is
-    // the one failure that gets its own screen instead of a generic error.
-    if (status === "blocked") {
-      return (
-        <AuthCard
-          title="Suppression refusée"
-          subtitle="D'autres candidats occupent encore vos annonces"
-        >
-          <div className="space-y-6">
-            <InlineAlert tone="warning">{error}</InlineAlert>
-
-            <p className="text-center text-sm leading-relaxed text-muted">
-              Fermer ou annuler une annonce termine automatiquement les
-              candidatures qu&apos;elle recevait. Vos données et votre compte
-              restent inchangés tant que ce n&apos;est pas fait.
-            </p>
-
-            <ErasureBlockerResolver onResolved={retryConfirmation} />
-
-            <div className="space-y-3">
-              <Button
-                href="/listings/mine"
-                variant="outline"
-                className="w-full"
-              >
-                Voir toutes mes annonces
-              </Button>
-              <Button
-                href={user ? "/profile" : "/signin"}
-                variant="ghost"
-                className="w-full"
-              >
-                {user ? "Retour à mon profil" : "Se connecter"}
-              </Button>
-            </div>
-          </div>
-        </AuthCard>
-      );
-    }
-
     // The erasure already ran. Not a failure, and no link back to a profile: the
     // account was revoked, so the session this page would send them to is gone.
     if (status === "already-erased") {
