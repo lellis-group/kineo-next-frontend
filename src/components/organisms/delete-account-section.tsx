@@ -105,7 +105,9 @@ export function DeleteAccountSection({
               personnelles (nom, e-mail, numéro RPPS, localisation, annonces,
               messages) sont anonymisées et votre compte est déconnecté partout.
               Les enregistrements restants sont définitivement effacés au terme
-              d&apos;un délai de grâce.
+              d&apos;un délai de grâce. Ce délai est celui de la suppression,
+              pas une fenêtre pour annuler : il n&apos;existe aucun moyen de
+              revenir en arrière une fois la confirmation envoyée.
             </p>
           </div>
         </div>

@@ -409,8 +409,11 @@ export default function PrivacyPage() {
               />
               <Paragraph>
                 Les enregistrements restants sont définitivement supprimés au
-                terme d&apos;un délai de grâce de 30 jours. Vous pouvez dès à
-                présent recréer un compte avec la même adresse e-mail.
+                terme d&apos;un délai de grâce de 30 jours. Ce délai est celui
+                de la suppression : aucune annulation n&apos;est possible une
+                fois la confirmation envoyée, vos identifiants étant révoqués à
+                ce moment. Vous pouvez dès à présent recréer un compte avec la
+                même adresse e-mail.
               </Paragraph>
 
               <Subheading>Ce qui est conservé, et pourquoi</Subheading>

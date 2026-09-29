@@ -28,13 +28,13 @@ const ACTION_COPY: Record<
     title: "Clôturer l'annonce",
     confirm: "Clôturer",
     intro:
-      "L'annonce ne recevra plus de candidature. Les candidats qui n'ont pas encore répondu seront informés que la recherche est terminée.",
+      "L'annonce ne recevra plus de candidature. Les candidats qui n'ont pas encore répondu verront leur candidature passer en refus.",
   },
   cancel: {
     title: "Annuler l'annonce",
     confirm: "Annuler l'annonce",
     intro:
-      "L'annonce disparaît de la plateforme sans qu'un remplacement ait été trouvé. Les candidats en attente seront informés que l'annonce est abandonnée.",
+      "L'annonce disparaît de la plateforme sans qu'un remplacement ait été trouvé. Les candidats en attente verront leur candidature passer en refus.",
   },
 };
 
@@ -46,6 +46,11 @@ const ACTION_COPY: Record<
  * as a REJECTION with a machine-written reason. A candidate who was still
  * waiting is therefore told they were refused — not "the listing closed" — and
  * that cannot be undone from this screen.
+ *
+ * No notification is sent: the only thing the candidate receives is the status
+ * change on their own screen. The copy says « verront leur candidature passer en
+ * refus » because that is exactly what happens, rather than promising an email
+ * that does not exist.
  *
  * The confirmation states that consequence with the live count, so the
  * decision is taken with the actual number in front of them rather than a

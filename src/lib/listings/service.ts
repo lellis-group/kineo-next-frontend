@@ -169,7 +169,9 @@ export async function fetchListingApplications(
 
 /** PATCH /replacement-listings/:id/close — the replacement is done. */
 export async function closeListing(id: string): Promise<void> {
-  await mutateListing(id, "close", "close");
+  // French verb: it is interpolated straight into the user-facing sentence,
+  // and the English one leaked through on every 403 and generic failure.
+  await mutateListing(id, "close", "clôturer");
 }
 
 /** PATCH /replacement-listings/:id/cancel — called off before it is filled. */
@@ -224,19 +226,20 @@ function mapListingActionError(error: unknown, verb: string): string {
  * The backend states transition refusals in English ("Only open or filled
  * listings can be closed"). Rather than surface that to a French-speaking
  * practice, map the known ones and keep a generic fallback.
+ *
+ * The "pending applications" case is absent on purpose: it is answered from the
+ * 409 above, which returns before ever reaching here, so the branch could only
+ * ever be dead code reading as if it were the guard.
  */
 function translateStatusMessage(message: string, verb: string): string {
   if (/filled listing cannot be deleted/i.test(message)) {
     return "Impossible de supprimer l'annonce : elle est pourvue. Clôturez-la à la place.";
   }
   if (/only open or filled/i.test(message)) {
-    return `Impossible de clôturer l'annonce : elle n'est ni ouverte ni pourvue.`;
+    return "Impossible de clôturer l'annonce : elle n'est ni ouverte ni pourvue.";
   }
   if (/already closed or cancelled/i.test(message)) {
     return "Cette annonce est déjà clôturée ou annulée.";
-  }
-  if (/pending applications from other candidates/i.test(message)) {
-    return `Impossible de ${verb} l'annonce : des candidatures d'autres candidats sont encore actives.`;
   }
   return `Impossible de ${verb} l'annonce pour le moment. Veuillez réessayer.`;
 }
