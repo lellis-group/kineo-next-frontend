@@ -58,8 +58,8 @@ export function ProfileContainer() {
   }, [load]);
 
   /**
-   * Requests account deletion: better-auth emails a confirmation link and the
-   * account is hard-deleted only once that link is opened (see /goodbye).
+   * Requests account erasure: better-auth emails a confirmation link and the
+   * account is anonymized only once that link is opened (see /goodbye).
    * No sign-out here: the account stays active until confirmation.
    */
   async function handleDeleteAccount() {

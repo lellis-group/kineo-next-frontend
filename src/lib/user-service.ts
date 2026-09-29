@@ -71,9 +71,11 @@ export function mapUserError(error: unknown): string {
 }
 
 /**
- * POST /delete-user — requests account deletion. Better Auth emails a
- * confirmation link (valid 24h) to the account address; the account and all
- * its data are hard-deleted only once that link is opened (see /goodbye).
+ * POST /delete-user — requests account erasure. Better Auth emails a
+ * confirmation link (valid 24h) to the account address; the account is only
+ * anonymized once that link is opened (see /goodbye), and the request is
+ * refused while other candidates still hold active applications on the
+ * account's listings. The email warns about that case upfront.
  */
 export async function deleteAccount(): Promise<void> {
   const { error } = await authClient.deleteUser();

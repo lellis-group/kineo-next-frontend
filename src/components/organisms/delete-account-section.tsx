@@ -17,6 +17,11 @@ export interface DeleteAccountSectionProps {
  * Destructive "Supprimer mon compte" panel.
  * Requires an explicit confirmation checkbox before the delete button is
  * enabled; surfaces errors inline. Placed at the bottom of the profile view.
+ *
+ * The backend anonymizes rather than deletes: personal fields are overwritten
+ * and sessions revoked on confirmation, and the rows are dropped later by the
+ * purge sweep. The copy below says exactly that, because "supprimé
+ * définitivement" would be a promise the platform does not keep on the spot.
  */
 export function DeleteAccountSection({
   onDeleteAccount,
@@ -32,7 +37,7 @@ export function DeleteAccountSection({
     setSubmitting(true);
     try {
       // Success = the deletion request is registered and a confirmation
-      // email is on its way; the account is deleted only once the email
+      // email is on its way; the account is anonymized only once the email
       // link is opened (see /goodbye).
       await onDeleteAccount();
       setRequested(true);
@@ -53,10 +58,16 @@ export function DeleteAccountSection({
         <Card className="border-danger/30 bg-danger/5 p-6">
           <InlineAlert tone="info">
             Votre demande est enregistrée. Un email de confirmation vient de
-            partir : ouvrez le lien qu'il contient pour supprimer définitivement
-            votre compte. Ce lien est valable 24&nbsp;heures. Jusqu'à
-            confirmation, votre compte reste actif.
+            partir : ouvrez le lien qu'il contient pour anonymiser
+            définitivement votre compte. Ce lien est valable 24&nbsp;heures.
+            Jusqu'à confirmation, votre compte reste actif.
           </InlineAlert>
+
+          <p className="mt-3 text-sm leading-relaxed text-muted">
+            Si des candidats ont encore des candidatures actives sur vos
+            annonces, l'email vous le signale et la confirmation sera refusée :
+            fermez ou annulez ces annonces d&apos;abord.
+          </p>
 
           <p className="mt-3 text-xs text-muted">
             Conformément à notre{" "}
@@ -66,7 +77,9 @@ export function DeleteAccountSection({
             >
               politique de confidentialité
             </Link>
-            , la trace de cette demande est conservée pendant une durée limitée.
+            , seule une empreinte non réversible de votre identité et les dates
+            de la demande sont conservées, à des fins de preuve, pendant une
+            durée limitée.
           </p>
         </Card>
       </section>
@@ -88,8 +101,11 @@ export function DeleteAccountSection({
               Supprimer mon compte
             </h2>
             <p className="mt-0.5 text-sm text-muted">
-              Cette action est irréversible : votre profil, vos annonces et
-              votre historique seront définitivement supprimés de la plateforme.
+              Cette action est irréversible : à la confirmation, vos données
+              personnelles (nom, e-mail, numéro RPPS, localisation, annonces,
+              messages) sont anonymisées et votre compte est déconnecté partout.
+              Les enregistrements restants sont définitivement effacés au terme
+              d&apos;un délai de grâce.
             </p>
           </div>
         </div>
@@ -103,8 +119,8 @@ export function DeleteAccountSection({
               className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-danger"
             />
             <span className="text-foreground/85">
-              Je comprends que cette action est irréversible et que toutes mes
-              données seront définitivement supprimées.
+              Je comprends que cette action est irréversible et que mes données
+              personnelles seront anonymisées puis effacées.
             </span>
           </label>
         </div>

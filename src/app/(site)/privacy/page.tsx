@@ -11,9 +11,12 @@ export const metadata: Metadata = {
 /**
  * Privacy policy — definitive text is being drafted by the legal team.
  *
- * Already binding today: the account-deletion trail (email + date) is retained
- * for a bounded period (backend `DATA_DELETION_REQUEST_RETENTION_DAYS`,
- * default 365 days) then erased by the hourly retention sweep.
+ * Already binding today: the account-erasure trail (two non-reversible
+ * fingerprints + timestamps, never the email) is retained for a bounded period
+ * (backend `DATA_DELETION_REQUEST_RETENTION_DAYS`, default 365 days) then
+ * erased by the hourly retention sweep. A request that was never confirmed only
+ * recorded an intention and is dropped after
+ * `PENDING_DELETION_REQUEST_RETENTION_DAYS` (default 30 days).
  */
 
 export default function PrivacyPage() {
