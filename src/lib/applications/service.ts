@@ -8,8 +8,8 @@
 import { apiFetch, notFoundAs } from "../api-client";
 import type {
   ApiApplication,
+  ApiApplicationPage,
   ApiApplicationStatusCounts,
-  ApiPaginated,
 } from "../types/api";
 import { adaptApplicationEntry } from "./adapters";
 import type { ApplicationEntry, ApplicationsData } from "./contracts";
@@ -34,7 +34,7 @@ function statusCounts(total: number): ApiApplicationStatusCounts {
 
 async function fetchMyApplications(params: PaginationParams): Promise<{
   applications: ApiApplication[];
-  meta: ApiPaginated<ApiApplication>["meta"];
+  meta: ApiApplicationPage<ApiApplication>["meta"];
 }> {
   const searchParams = new URLSearchParams({
     page: String(params.page),
@@ -45,9 +45,9 @@ async function fetchMyApplications(params: PaginationParams): Promise<{
     searchParams.set("status", params.status);
   }
 
-  const raw = await apiFetch<ApiPaginated<ApiApplication> | ApiApplication[]>(
-    `/applications/mine?${searchParams}`,
-  ).catch(notFoundAs([]));
+  const raw = await apiFetch<
+    ApiApplicationPage<ApiApplication> | ApiApplication[]
+  >(`/applications/mine?${searchParams}`).catch(notFoundAs([]));
 
   // Legacy shape: a bare array is the whole collection — counts stay stable.
   if (Array.isArray(raw)) {
@@ -120,8 +120,9 @@ export async function fetchApplicationsData(
       limit: meta.limit,
       totalPages: meta.totalPages,
     },
-    // Server-computed totals — never derived from the loaded page
-    counts: meta.counts ?? statusCounts(meta.total),
+    // Server-computed totals — never derived from the loaded page. Completed
+    // from a partial breakdown so a missing status reads 0, not undefined.
+    counts: { ...statusCounts(meta.total), ...meta.counts },
   };
 }
 

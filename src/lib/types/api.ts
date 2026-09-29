@@ -68,7 +68,12 @@ export interface ApiReplacementListing {
   startDate: string;
   endDate: string;
   status: ReplacementListingStatus;
-  remuneration?: string;
+  specialty: Specialty;
+  urgent: boolean;
+  /** Cap on simultaneous candidates — null when the listing is uncapped. */
+  maxApplications?: number | null;
+  /** Active candidates (PENDING / SHORTLISTED) held by the listing. */
+  applicationsCount: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -103,6 +108,25 @@ export interface ApiApplicationListing {
   practice: ApiApplicationPractice;
 }
 
+/** Applicant data embedded in the applications a practice received. */
+export interface ApiApplicationApplicant {
+  id: string;
+  specialty: Specialty;
+  profileType: ProfileType;
+  city: string | null;
+  verified: boolean;
+  user: {
+    name: string | null;
+    image: string | null;
+  };
+  /**
+   * The candidate erased their account (art. 17 GDPR). Every field above is
+   * then blank by construction, so this is what tells the practice why the
+   * card has no name on it.
+   */
+  anonymized: boolean;
+}
+
 export interface ApiApplication {
   id: string;
   listingId: string;
@@ -117,6 +141,8 @@ export interface ApiApplication {
   updatedAt: string;
   /** Listing (with its practice) resolved server-side by the backend. */
   listing?: ApiApplicationListing;
+  /** Candidate — only embedded on the applications received by a listing. */
+  applicant?: ApiApplicationApplicant;
 }
 
 /** Server-computed totals for a collection of applications. */
@@ -130,6 +156,16 @@ export interface ApiApplicationStatusCounts {
   WITHDRAWN: number;
 }
 
+/**
+ * A paginated response.
+ *
+ * `counts` is deliberately left to each caller rather than typed here: the
+ * applications endpoints break their totals down by `ApplicationStatus`, the
+ * listings one by `ListingStatus`. A single shared field would have to be the
+ * union of both, so picking the wrong one would type-check and then read
+ * `undefined` off a status that never existed. Each service names its own
+ * shape instead (see `ListingStatusCounts` / `ReceivedApplicationCounts`).
+ */
 export interface ApiPaginated<T> {
   data: T[];
   meta: {
@@ -137,6 +173,13 @@ export interface ApiPaginated<T> {
     page: number;
     limit: number;
     totalPages: number;
-    counts?: ApiApplicationStatusCounts;
+  };
+}
+
+/** The applications page: the slice plus the totals behind its status chips. */
+export interface ApiApplicationPage<T> extends ApiPaginated<T> {
+  meta: ApiPaginated<T>["meta"] & {
+    /** Only the applications endpoints return a breakdown. */
+    counts?: Partial<ApiApplicationStatusCounts>;
   };
 }
