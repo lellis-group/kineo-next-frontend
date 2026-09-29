@@ -11,7 +11,7 @@
  */
 export const API_BASE = "/api";
 
-/** Typed API error — exposes HTTP status and optional NestJS business message. */
+/** Typed API error — status, optional business message, optional machine code. */
 export class ApiError extends Error {
   constructor(
     public readonly status: number,
@@ -20,6 +20,13 @@ export class ApiError extends Error {
     public readonly apiMessage?: string,
     /** Per-field Zod validation issues when the backend replies with { errors }. */
     public readonly fieldErrors?: ReadonlyArray<FieldError>,
+    /**
+     * Discriminator sent by routes where one status means several unrelated
+     * things. The account erasure returns 409 both for "another candidate
+     * blocks this" and "no pending request matches", and those need opposite
+     * screens, so the status alone is not enough to act on.
+     */
+    public readonly code?: string,
   ) {
     super(
       apiMessage
@@ -62,10 +69,12 @@ export async function apiFetch<T>(
     // both the business message and the per-field issues.
     let apiMessage: string | undefined;
     let fieldErrors: FieldError[] | undefined;
+    let code: string | undefined;
     try {
       const body = (await res.json()) as {
         message?: unknown;
         errors?: unknown;
+        code?: unknown;
       };
       if (typeof body.message === "string") {
         apiMessage = body.message;
@@ -73,10 +82,13 @@ export async function apiFetch<T>(
       if (Array.isArray(body.errors)) {
         fieldErrors = body.errors as FieldError[];
       }
+      if (typeof body.code === "string") {
+        code = body.code;
+      }
     } catch {
       // Non-JSON body (proxy, network cut) — nothing to extract.
     }
-    throw new ApiError(res.status, path, apiMessage, fieldErrors);
+    throw new ApiError(res.status, path, apiMessage, fieldErrors, code);
   }
 
   // 204 No Content / empty body (e.g. DELETE) → no JSON to parse.

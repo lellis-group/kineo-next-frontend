@@ -87,7 +87,12 @@ function emptyCounts(): ListingStatusCounts {
  * correctly paginated.
  */
 export async function fetchMyListings(
-  params: { statuses?: ReplacementListingStatus[]; page?: number } = {},
+  params: {
+    statuses?: ReplacementListingStatus[];
+    page?: number;
+    /** Page size, capped at 100 by the endpoint. */
+    limit?: number;
+  } = {},
 ): Promise<MyListingsData> {
   const searchParams = new URLSearchParams();
 
@@ -96,6 +101,9 @@ export async function fetchMyListings(
   }
   if (params.page) {
     searchParams.set("page", String(params.page));
+  }
+  if (params.limit) {
+    searchParams.set("limit", String(params.limit));
   }
 
   const query = searchParams.toString();

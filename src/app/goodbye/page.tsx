@@ -16,12 +16,20 @@ import {
 } from "@/lib/account-deletion-service";
 import { signOut, useSession } from "@/lib/auth-client";
 
+/**
+ * One member per `DeletionFailure`, plus the two in-flight states. The screen
+ * is chosen from this, so every failure the service can report needs a case
+ * here: a value silently falling through to a generic "impossible" screen is
+ * how a retryable 429 ended up with no button to retry on it.
+ */
 type DeletionStatus =
   | "deleting"
   | "success"
   | "blocked"
-  | "expired"
+  | "already-erased"
+  | "no-pending-request"
   | "invalid"
+  | "rate-limited"
   | "error";
 
 type DeletionOutcome = {
@@ -72,15 +80,20 @@ function requestDeletion(token: string): Promise<DeletionOutcome> {
   return job;
 }
 
+/** Exhaustively maps a failure onto a screen; no silent fallthrough. */
 function toStatus(failure: DeletionFailure): DeletionStatus {
   switch (failure) {
     case "blocked":
       return "blocked";
-    case "expired":
-      return "expired";
+    case "no-pending-request":
+      return "no-pending-request";
+    case "already-erased":
+      return "already-erased";
     case "invalid":
       return "invalid";
-    default:
+    case "rate-limited":
+      return "rate-limited";
+    case "unavailable":
       return "error";
   }
 }
@@ -121,12 +134,14 @@ function GoodbyeContent() {
   }, [token, applyOutcome]);
 
   /**
-   * Replays the confirmation after the user cleared the blocker. The failed job
-   * was already evicted from `deletionJobs`, so this sends a fresh POST — which
-   * is safe because the earlier attempt rolled back without consuming the
-   * token, and the token stays in the URL either way.
+   * Replays the confirmation. Called after the user cleared the blocker, and
+   * from the retry button on the transient failures.
+   *
+   * Safe to call repeatedly: the failed job was evicted from `deletionJobs`, and
+   * a refused confirmation rolls back without consuming the token, so the
+   * single-use credential is still there.
    */
-  const handleBlockerResolved = useCallback(() => {
+  const retryConfirmation = useCallback(() => {
     if (!token) {
       return;
     }
@@ -185,7 +200,7 @@ function GoodbyeContent() {
             restent inchangés tant que ce n&apos;est pas fait.
           </p>
 
-          <ErasureBlockerResolver onResolved={handleBlockerResolved} />
+          <ErasureBlockerResolver onResolved={retryConfirmation} />
 
           <div className="space-y-3">
             <Button href="/listings/mine" variant="outline" className="w-full">
@@ -204,25 +219,93 @@ function GoodbyeContent() {
     );
   }
 
-  if (status === "expired" || status === "invalid" || status === "error") {
-    const title =
-      status === "expired"
-        ? "Lien expiré"
-        : status === "invalid"
-          ? "Lien invalide"
-          : "Suppression impossible";
-
+  // The erasure already ran. Not a failure, and no link back to a profile: the
+  // account was revoked, so the session this page would send them to is gone.
+  if (status === "already-erased") {
     return (
       <AuthCard
-        title={title}
-        subtitle={
-          status === "error"
-            ? "Nous n'avons pas pu supprimer votre compte"
-            : "Ce lien de suppression n'est plus valable"
-        }
+        title="Votre compte a été anonymisé"
+        subtitle="La suppression a déjà été effectuée"
       >
         <div className="space-y-6 text-center">
-          <p className="text-sm leading-relaxed text-muted">{error}</p>
+          <InlineAlert tone="success">{error}</InlineAlert>
+
+          <p className="text-sm leading-relaxed text-muted">
+            Ce lien ne peut être utilisé qu&apos;une fois. Vous pouvez recréer
+            un compte avec la même adresse e-mail.
+          </p>
+
+          <Button href="/signup" size="lg" className="w-full">
+            Créer un nouveau compte
+          </Button>
+        </div>
+      </AuthCard>
+    );
+  }
+
+  // Conflict with nothing in the way: no listing to close, and retrying this
+  // link cannot help. The only way forward is a fresh request.
+  if (status === "no-pending-request") {
+    return (
+      <AuthCard
+        title="Suppression impossible"
+        subtitle="Aucune demande à traiter pour ce lien"
+      >
+        <div className="space-y-6 text-center">
+          <InlineAlert tone="warning">{error}</InlineAlert>
+
+          <Button href="/profile" size="lg" className="w-full">
+            Relancer une demande
+          </Button>
+        </div>
+      </AuthCard>
+    );
+  }
+
+  if (status === "rate-limited" || status === "error") {
+    return (
+      <AuthCard
+        title="Suppression impossible"
+        subtitle="Vos données n'ont pas été modifiées"
+      >
+        <div className="space-y-6 text-center">
+          <InlineAlert as="p" tone="danger" className="text-center">
+            {error}
+          </InlineAlert>
+
+          {/* Retrying is the only useful action: nothing was consumed
+              server-side, so the token is still valid and unspent. */}
+          <Button
+            size="lg"
+            className="w-full"
+            onClick={retryConfirmation}
+            disabled={status === "rate-limited"}
+          >
+            Réessayer
+          </Button>
+
+          <Button
+            href={user ? "/profile" : "/signin"}
+            variant="ghost"
+            className="w-full"
+          >
+            {user ? "Retour à mon profil" : "Se connecter"}
+          </Button>
+        </div>
+      </AuthCard>
+    );
+  }
+
+  if (status === "invalid") {
+    return (
+      <AuthCard
+        title="Lien invalide"
+        subtitle="Ce lien de suppression n'est plus valable"
+      >
+        <div className="space-y-6 text-center">
+          <InlineAlert as="p" tone="warning" className="text-center">
+            {error}
+          </InlineAlert>
 
           <Button
             href={user ? "/profile" : "/signin"}

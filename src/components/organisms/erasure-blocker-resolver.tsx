@@ -7,6 +7,7 @@ import { Spinner } from "@/components/atoms/spinner";
 import { InlineAlert } from "@/components/molecules/inline-alert";
 import { ListingActions } from "@/components/organisms/listing-actions";
 import {
+  BLOCKING_LISTING_STATUSES,
   cancelListing,
   closeListing,
   fetchListingApplications,
@@ -14,6 +15,14 @@ import {
   type MyListing,
   type ReceivedApplication,
 } from "@/lib/listings";
+
+/**
+ * Upper bound on the listings read in one call. The endpoint caps `limit` at
+ * 100, and a practice with more listings than that can no longer clear the
+ * blocker from this screen; it says so rather than silently reporting success
+ * on a partial list.
+ */
+const LISTINGS_PAGE_SIZE = 100;
 
 /**
  * Inline resolution of the account-erasure blocker, shown on `/goodbye` when
@@ -43,18 +52,33 @@ export function ErasureBlockerResolver({
   const [actingListingId, setActingListingId] = useState<string>();
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [attemptedResolve, setAttemptedResolve] = useState(false);
 
-  // Only a listing still holding somebody else's active application can block
-  // the erasure, so the others are never shown.
+  /**
+   * Listings that can actually block the erasure, on the backend's terms.
+   *
+   * `applicationsCount > 0` alone is wrong in two ways: it counts the owner's
+   * own applications, which the cascade is entitled to remove, and it ignores
+   * the listing status, so a leftover row on a listing that no longer
+   * circulates would keep the user here for no reason. Matching the status set
+   * means an empty list really does mean the server will accept the
+   * confirmation.
+   */
   const blocking = (listings ?? []).filter(
-    (listing) => listing.applicationsCount > 0,
+    (listing) =>
+      listing.applicationsCount > 0 &&
+      BLOCKING_LISTING_STATUSES.has(listing.status),
   );
   const blockingCount = blocking.length;
 
   useEffect(() => {
     let cancelled = false;
 
-    fetchMyListings()
+    // Explicit page size: the endpoint defaults to 20, and a practice with more
+    // listings than that would have its blocker on a page never fetched. The
+    // client would then see "nothing blocks you", replay the confirmation, and
+    // be refused again.
+    fetchMyListings({ limit: LISTINGS_PAGE_SIZE })
       .then((loaded) => {
         if (!cancelled) {
           setListings(loaded.listings);
@@ -75,17 +99,27 @@ export function ErasureBlockerResolver({
     };
   }, []);
 
-  // The blocker is gone: say so and replay the confirmation. Keyed on the
-  // count rather than the array so a refetch that returns the same blocking
-  // state does not re-fire the retry.
+  /**
+   * The blocker is gone: replay the confirmation once.
+   *
+   * `attemptedResolve` is the safety net for the whole screen. This component
+   * remounts on every refusal, and without a latch the "nothing blocks you
+   * anymore" branch would fire again on each one, POSTing the confirmation in
+   * a loop until the `deletion` throttle tier (5 attempts / 15 min) cut it off
+   * and left the user on a dead screen. If the client and the server ever
+   * disagree about what is blocking, the retry must not become a loop.
+   */
   useEffect(() => {
-    if (listings && blockingCount === 0) {
-      setSuccess(
-        "Plus aucune candidature active d'un autre candidat. Suppression en cours…",
-      );
-      onResolved();
+    if (!listings || blockingCount > 0 || attemptedResolve) {
+      return;
     }
-  }, [listings, blockingCount, onResolved]);
+
+    setAttemptedResolve(true);
+    setSuccess(
+      "Plus aucune candidature active d'un autre candidat. Suppression en cours…",
+    );
+    onResolved();
+  }, [listings, blockingCount, attemptedResolve, onResolved]);
 
   const handleToggle = useCallback(
     (listingId: string) => {
@@ -104,7 +138,10 @@ export function ErasureBlockerResolver({
 
       setLoadingListingId(listingId);
 
-      fetchListingApplications(listingId, { status: "PENDING" })
+      // SHORTLISTED included: a shortlisted candidate still blocks the erasure
+      // on the server, so omitting them here would list fewer candidates than
+      // the ones actually standing in the way.
+      fetchListingApplications(listingId)
         .then((data) => {
           setApplicationsByListing((current) => ({
             ...current,
@@ -141,9 +178,18 @@ export function ErasureBlockerResolver({
         // Re-read rather than patch: `close` and `cancel` both terminate the
         // applications server-side, and the recalculated count is the
         // authoritative one.
-        const refreshed = await fetchMyListings();
+        const refreshed = await fetchMyListings({ limit: LISTINGS_PAGE_SIZE });
         setListings(refreshed.listings);
-        setApplicationsByListing({});
+        // Only this listing's cache: clearing all of it would refetch every
+        // other panel the user had opened.
+        setApplicationsByListing((current) => {
+          const { [listingId]: _removed, ...rest } = current;
+          return rest;
+        });
+        // Collapse it. The candidates are gone, so the panel would otherwise
+        // render as an empty region under a « Masquer » button, with no empty
+        // state of its own to say why.
+        setExpandedListingId(undefined);
         setSuccess(
           `${label} Les candidatures qu'elle recevait sont terminées.`,
         );
@@ -159,6 +205,17 @@ export function ErasureBlockerResolver({
     },
     [],
   );
+
+  // Rendered above the `!listings` branch below: a failed load must show the
+  // failure, not an indefinite spinner. This page is sessionless by design, so
+  // an expired or missing cookie is the likeliest error of all.
+  if (error && !listings) {
+    return (
+      <InlineAlert as="p" tone="danger" className={className}>
+        {error}
+      </InlineAlert>
+    );
+  }
 
   if (success) {
     return (

@@ -14,16 +14,28 @@
 
 import { ApiError, apiFetch } from "./api-client";
 
+/** Mirrors the backend's `ERASURE_ERROR_CODES`. */
+export const ERASURE_ERROR_CODES = {
+  THIRD_PARTY_APPLICATIONS: "THIRD_PARTY_APPLICATIONS",
+  NO_PENDING_REQUEST: "NO_PENDING_REQUEST",
+  TOKEN_EXPIRED: "TOKEN_EXPIRED",
+  ALREADY_ERASED: "ALREADY_ERASED",
+} as const;
+
 /**
  * Why a confirmation did not go through.
  *
- * `blocked` is the only recoverable one: the account is untouched, the token
- * survives the rollback, and the user can act (close or cancel the listings
- * holding other candidates' applications) then replay the same link.
+ * `blocked` is the only one the user can act on: the account is untouched, the
+ * token survives the rollback, and closing the listings holding other
+ * candidates' applications clears it. `no-pending-request` looks like a
+ * conflict but is not — nothing is in the way and retrying cannot help.
+ * `already-erased` means the work is done, which is not a failure at all.
+ * `rate-limited` and `unavailable` are transient and worth retrying.
  */
 export type DeletionFailure =
   | "blocked"
-  | "expired"
+  | "no-pending-request"
+  | "already-erased"
   | "invalid"
   | "rate-limited"
   | "unavailable";
@@ -64,23 +76,46 @@ function mapConfirmDeletionError(error: unknown): {
   message: string;
 } {
   if (error instanceof ApiError) {
-    // 409: other candidates still hold active applications on this account's
-    // listings, and the cascade would destroy their data. The backend answers
-    // in English here, so the French copy is owned by the frontend instead of
-    // being taken from `apiMessage`.
-    if (error.status === 409) {
+    // The backend discriminates the two conflicts, so the status no longer has
+    // to. The French copy stays here because these bodies are still English.
+    if (error.code === ERASURE_ERROR_CODES.THIRD_PARTY_APPLICATIONS) {
       return {
         failure: "blocked",
         message:
           "Vos annonces reçoivent encore des candidatures actives d'autres candidats. Fermez ou annulez ces annonces, puis rouvrez ce lien : votre compte n'a pas été modifié.",
       };
     }
+    if (error.code === ERASURE_ERROR_CODES.NO_PENDING_REQUEST) {
+      return {
+        failure: "no-pending-request",
+        message:
+          "Nous ne retrouvons plus de demande de suppression en attente pour ce lien. Relancez la demande depuis votre profil : elle prendra effet immédiatement.",
+      };
+    }
+    if (error.code === ERASURE_ERROR_CODES.TOKEN_EXPIRED) {
+      return { failure: "invalid", message: LEGACY_EXPIRED_MESSAGE };
+    }
+    if (error.code === ERASURE_ERROR_CODES.ALREADY_ERASED) {
+      return {
+        failure: "already-erased",
+        message:
+          "Ce compte a déjà été anonymisé. Il n'y a plus rien à supprimer.",
+      };
+    }
+
+    // Fallbacks for a backend that sends no discriminator: fall back on the
+    // status rather than guessing from the message text.
+    if (error.status === 409) {
+      return {
+        failure: "no-pending-request",
+        message:
+          "Impossible de supprimer votre compte pour le moment. Relancez la demande depuis votre profil.",
+      };
+    }
     if (error.status === 410) {
       return {
-        failure: "expired",
-        message:
-          error.apiMessage ??
-          "Ce lien de confirmation a expiré (valable 24 heures). Relancez la demande depuis votre profil.",
+        failure: "invalid",
+        message: error.apiMessage ?? LEGACY_EXPIRED_MESSAGE,
       };
     }
     if (error.status === 404) {
@@ -95,14 +130,14 @@ function mapConfirmDeletionError(error: unknown): {
       return {
         failure: "rate-limited",
         message:
-          "Trop de tentatives. Patientez quelques instants, puis réessayez.",
+          "Trop de tentatives depuis ce lien. Patientez une quinzaine de minutes avant de réessayer : la limite est de 5 essais par quart d'heure.",
       };
     }
     if (error.status >= 500) {
       return {
         failure: "unavailable",
         message:
-          "Service indisponible. Veuillez réessayer dans quelques instants.",
+          "Le service est momentanément indisponible. Vos données n'ont pas été modifiées, vous pouvez réessayer.",
       };
     }
   }
@@ -112,3 +147,7 @@ function mapConfirmDeletionError(error: unknown): {
       "Suppression impossible pour le moment. Vérifiez votre connexion, puis réessayez.",
   };
 }
+
+/** Backend wording for an expired 24h link, reused when no code is sent. */
+const LEGACY_EXPIRED_MESSAGE =
+  "Ce lien de confirmation a expiré (valable 24 heures). Relancez la demande depuis votre profil.";

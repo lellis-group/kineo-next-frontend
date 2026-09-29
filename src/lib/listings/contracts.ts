@@ -78,7 +78,21 @@ export const ACTIONABLE_STATUSES: ReadonlySet<ApplicationStatus> = new Set([
   "SHORTLISTED",
 ]);
 
-/** Statuses where the listing is no longer recruiting. */
+/**
+ * Statuses a listing can no longer receive an application on.
+ *
+ * Mirrors `RECRUITING_LISTING_STATUSES` in the backend's `application-guard`.
+ * Kept in sync deliberately: the blocker resolver filters on it to decide
+ * whether the erasure is clearable, and a narrower set here would let the
+ * client declare "nothing blocks you" while the server still refuses.
+ * `DRAFT` and `FILLED` are included even though the UI offers no action on
+ * them, because both can still carry a `PENDING` or `ACCEPTED` row that the
+ * cascade would destroy.
+ */
+export const BLOCKING_LISTING_STATUSES: ReadonlySet<ReplacementListingStatus> =
+  new Set(["DRAFT", "OPEN", "IN_DISCUSSION", "FULL", "FILLED"]);
+
+/** Statuses the owner can still act on. A subset of the above by design. */
 export const RECRUITING_STATUSES: ReadonlySet<ReplacementListingStatus> =
   new Set(["OPEN", "IN_DISCUSSION", "FULL"]);
 
