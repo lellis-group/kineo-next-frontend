@@ -3,6 +3,7 @@ import { FileTextIcon, ShieldIcon } from "@/components/atoms/icons";
 import { InlineAlert } from "@/components/molecules/inline-alert";
 import { ProfileSection } from "@/components/molecules/profile-section";
 import { StatRow } from "@/components/molecules/stat-row";
+import { VerifiedBadge } from "@/components/molecules/verified-badge";
 import { DeleteAccountSection } from "@/components/organisms/delete-account-section";
 import { ProfileHeaderCard } from "@/components/organisms/profile-header-card";
 import type { ApiProfile, ApiUser } from "@/lib/types/api";
@@ -61,6 +62,19 @@ export function ProfileView({
             value={profile.city ?? "Non renseignée"}
             muted={!profile.city}
           />
+
+          {/* Same marker a practice sees beside a candidate's name — the two
+              must not disagree about what "verified" means. */}
+          <div className="flex items-center justify-between gap-4 border-b border-border py-3.5">
+            <span className="text-sm text-muted">Identité professionnelle</span>
+            {profile.verified ? (
+              <VerifiedBadge label="Vérifiée" size="md" />
+            ) : (
+              <span className="text-sm font-medium text-foreground">
+                Non vérifiée
+              </span>
+            )}
+          </div>
         </ProfileSection>
 
         <ProfileSection

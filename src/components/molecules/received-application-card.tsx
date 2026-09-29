@@ -1,7 +1,8 @@
 import { Avatar } from "@/components/atoms/avatar";
 import { Badge } from "@/components/atoms/badge";
-import { MapPinIcon, ShieldIcon } from "@/components/atoms/icons";
+import { MapPinIcon } from "@/components/atoms/icons";
 import { InlineAlert } from "@/components/molecules/inline-alert";
+import { VerifiedBadge } from "@/components/molecules/verified-badge";
 import { cn } from "@/lib/cn";
 import {
   RECEIVED_STATUS_LABELS,
@@ -47,12 +48,7 @@ export function ReceivedApplicationCard({
           <div className="min-w-0">
             <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-bold break-words text-foreground">
               {applicant.displayName}
-              {applicant.verified && (
-                <span className="inline-flex items-center gap-1 text-xs font-medium text-success">
-                  <ShieldIcon className="h-3.5 w-3.5" />
-                  Vérifié
-                </span>
-              )}
+              {applicant.verified && <VerifiedBadge />}
             </p>
 
             <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted">

@@ -33,6 +33,12 @@ export interface ApiProfile {
   latitude?: number;
   longitude?: number;
   isPublic?: boolean;
+  /**
+   * Professional identity checked by the platform (mirrors the backend
+   * `Profile.verified`). Distinct from `user.emailVerified`, which only means
+   * the address was confirmed.
+   */
+  verified?: boolean;
   createdAt: string;
   updatedAt: string;
 }
