@@ -153,7 +153,16 @@ export function AppHeader({ initialAuth }: { initialAuth: ServerAuthState }) {
             await signOut();
           } finally {
             // Always leave the member area, even if sign-out fails.
-            router.push("/signup");
+            //
+            // `/signin`, not `/signup`: the account the user just left exists
+            // and they hold its credentials, so the next thing they want is to
+            // log back in. Landing on « Créer un compte » reads as being asked
+            // to register again, and the way back would be to submit the
+            // signup form and discover the « Se connecter avec cet e-mail »
+            // escape hatch. `/signin` links to `/signup` in one click, so
+            // registration stays reachable with the funnel pointing the right
+            // way.
+            router.push("/signin");
             router.refresh();
           }
         }}
