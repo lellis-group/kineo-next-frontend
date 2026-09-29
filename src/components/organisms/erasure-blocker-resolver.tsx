@@ -281,6 +281,7 @@ export function ErasureBlockerResolver({
                   type="button"
                   onClick={() => handleToggle(listing.id)}
                   aria-expanded={expandedListingId === listing.id}
+                  aria-controls={`blocker-candidates-${listing.id}`}
                   className="inline-flex shrink-0 items-center rounded-md px-2 py-1 text-xs font-medium text-muted transition-colors hover:bg-surface-hover hover:text-foreground"
                 >
                   {expandedListingId === listing.id
@@ -290,7 +291,10 @@ export function ErasureBlockerResolver({
               </div>
 
               {expandedListingId === listing.id && (
-                <ul className="mt-4 space-y-1.5 border-t border-border pt-4">
+                <ul
+                  id={`blocker-candidates-${listing.id}`}
+                  className="mt-4 space-y-1.5 border-t border-border pt-4"
+                >
                   {loadingListingId === listing.id && (
                     <li className="text-xs text-muted">Chargement…</li>
                   )}

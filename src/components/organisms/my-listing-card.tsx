@@ -59,6 +59,9 @@ export function MyListingCard({
   );
   const candidateCount = applications?.length ?? 0;
   const hasError = Boolean(error);
+  // Stable per listing: React.useId would change it when the panel unmounts,
+  // which is exactly when `aria-controls` has to keep pointing somewhere.
+  const panelId = `listing-candidates-${listing.id}`;
 
   return (
     <Card className="p-5 sm:p-7">
@@ -96,6 +99,7 @@ export function MyListingCard({
           type="button"
           onClick={onToggle}
           aria-expanded={expanded}
+          aria-controls={panelId}
           className="inline-flex shrink-0 items-center rounded-md px-2 py-1 text-sm font-medium text-muted transition-colors hover:bg-surface-hover hover:text-foreground self-start sm:self-auto"
         >
           {expanded ? "Masquer les candidatures" : "Voir les candidatures"}
@@ -115,7 +119,7 @@ export function MyListingCard({
       )}
 
       {expanded && !hasError && (
-        <div className="mt-4 space-y-3">
+        <div id={panelId} className="mt-4 space-y-3">
           {loading && (
             <div className="flex justify-center py-6">
               <output aria-label="Chargement des candidatures">

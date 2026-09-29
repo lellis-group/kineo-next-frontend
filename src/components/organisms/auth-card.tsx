@@ -19,7 +19,14 @@ export function AuthCard({
           <KineoLogo />
 
           <div className="space-y-2">
-            <h1 className="text-[1.7rem] leading-tight font-bold tracking-tight">
+            {/* `tabIndex` + the shared outline is what lets a screen reader
+                or a keyboard user be moved here when the card content is
+                swapped underneath them. The erasure flow replaces the whole
+                card several times over. */}
+            <h1
+              tabIndex={-1}
+              className="text-[1.7rem] leading-tight font-bold tracking-tight focus:outline-none"
+            >
               {title}
             </h1>
             <p className="text-sm text-muted">{subtitle}</p>

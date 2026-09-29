@@ -206,7 +206,10 @@ export default function PrivacyPage() {
             <span>
               En attente de validation juridique ({PENDING.length} points)
             </span>
-            <ChevronDownIcon className="h-4 w-4 shrink-0 transition-transform group-open:rotate-180" />
+            <ChevronDownIcon
+              aria-hidden="true"
+              className="h-4 w-4 shrink-0 transition-transform group-open:rotate-180"
+            />
           </summary>
           <ul className="space-y-2 border-t border-warning/20 px-5 py-4">
             {PENDING.map((item) => (
@@ -355,14 +358,17 @@ export default function PrivacyPage() {
                   <tbody>
                     {RETENTION.map((row) => (
                       <tr key={row.data}>
-                        <td>
+                        {/* `scope="row"`: the first column carries what each
+                            row is about, and a screen reader reading cell by
+                            cell needs it to name the duration next to it. */}
+                        <th scope="row" className="font-normal">
                           <span className="block font-medium text-foreground">
                             {row.data}
                           </span>
                           <span className="mt-1 block text-xs leading-relaxed text-muted">
                             {row.note}
                           </span>
-                        </td>
+                        </th>
                         <td className="whitespace-nowrap align-top text-muted">
                           {row.duration}
                         </td>
