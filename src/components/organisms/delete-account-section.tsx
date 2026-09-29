@@ -14,6 +14,18 @@ export interface DeleteAccountSectionProps {
 }
 
 /**
+ * What the erasure overwrites, one item per line. Listed rather than run
+ * together in a parenthetical: this is the part a person decides on, and it has
+ * to be scannable before they tick the box.
+ */
+const ERASED_FIELDS = [
+  "votre nom, votre photo et votre adresse e-mail",
+  "votre numéro RPPS et votre localisation",
+  "le contenu de vos annonces et de vos cabinets",
+  "les messages que vous avez écrits aux cabinets",
+] as const;
+
+/**
  * Destructive "Supprimer mon compte" panel.
  * Requires an explicit confirmation checkbox before the delete button is
  * enabled; surfaces errors inline. Placed at the bottom of the profile view.
@@ -100,14 +112,36 @@ export function DeleteAccountSection({
             <h2 className="text-base font-bold text-danger">
               Supprimer mon compte
             </h2>
-            <p className="mt-0.5 text-sm text-muted">
-              Cette action est irréversible : à la confirmation, vos données
-              personnelles (nom, e-mail, numéro RPPS, localisation, annonces,
-              messages) sont anonymisées et votre compte est déconnecté partout.
+            <p className="mt-0.5 text-sm leading-relaxed text-muted">
+              Cette action est irréversible. À la confirmation, nous
+              remplaçons&nbsp;:
+            </p>
+
+            <ul className="mt-2.5 space-y-1.5">
+              {ERASED_FIELDS.map((item) => (
+                <li
+                  key={item}
+                  className="flex items-start gap-2.5 text-sm leading-relaxed text-foreground/85"
+                >
+                  <span
+                    aria-hidden="true"
+                    className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-danger/60"
+                  />
+                  {item}
+                </li>
+              ))}
+            </ul>
+
+            <p className="mt-3 text-sm leading-relaxed text-muted">
+              Votre compte est déconnecté de tous vos appareils, et vous ne
+              pouvez plus être contacté sur la plateforme. Vous pouvez recréer
+              un compte avec la même adresse e-mail.
+            </p>
+            <p className="mt-2 text-sm leading-relaxed text-muted">
               Les enregistrements restants sont définitivement effacés au terme
               d&apos;un délai de grâce. Ce délai est celui de la suppression,
-              pas une fenêtre pour annuler : il n&apos;existe aucun moyen de
-              revenir en arrière une fois la confirmation envoyée.
+              pas une fenêtre pour annuler&nbsp;: aucun retour en arrière
+              n&apos;est possible une fois la confirmation envoyée.
             </p>
           </div>
         </div>
@@ -121,8 +155,8 @@ export function DeleteAccountSection({
               className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-danger"
             />
             <span className="text-foreground/85">
-              Je comprends que cette action est irréversible et que mes données
-              personnelles seront anonymisées puis effacées.
+              Je comprends que cette action est irréversible et que les données
+              ci-dessus seront remplacées, puis effacées.
             </span>
           </label>
         </div>
