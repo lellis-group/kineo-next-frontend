@@ -122,7 +122,7 @@ export const testimonialsSection = {
 export const howItWorks = {
   title: "Comment ça marche",
   subtitle:
-    "Un parcours en trois étapes, pensé pour les deux côtés de la table — du besoin au remplacement finalisé.",
+    "Un parcours en trois étapes, pensé pour les deux côtés de la table : du besoin au remplacement finalisé.",
   steps: [
     {
       icon: "pencil",

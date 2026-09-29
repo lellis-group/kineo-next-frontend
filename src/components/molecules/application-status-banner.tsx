@@ -26,10 +26,10 @@ const TONE_CLASSES: Record<BadgeTone, string> = {
 function buildSummary(application: ApplicationEntry): string {
   const summaries: Record<ApplicationStatus, string> = {
     PENDING: application.viewedAt
-      ? `Consultée par le cabinet le ${formatDateTime(application.viewedAt)} — réponse en attente.`
-      : `Envoyée le ${formatDateTime(application.createdAt)} — pas encore consultée par le cabinet.`,
+      ? `Consultée par le cabinet le ${formatDateTime(application.viewedAt)}, réponse en attente.`
+      : `Envoyée le ${formatDateTime(application.createdAt)}, pas encore consultée par le cabinet.`,
     SHORTLISTED: application.viewedAt
-      ? `Consultée le ${formatDateTime(application.viewedAt)} — votre profil a été retenu par le cabinet.`
+      ? `Consultée le ${formatDateTime(application.viewedAt)}, votre profil a été retenu par le cabinet.`
       : "Votre profil a été retenu par le cabinet.",
     ACCEPTED: application.respondedAt
       ? `Réponse du cabinet reçue le ${formatDateTime(application.respondedAt)}.`
