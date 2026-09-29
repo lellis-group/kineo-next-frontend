@@ -32,6 +32,20 @@ export const WITHDRAWABLE_STATUSES: ReadonlySet<ApplicationStatus> = new Set([
 export const LISTING_FALLBACK_TITLE = "Titre d'annonce indisponible";
 
 /**
+ * Placeholder the backend writes over erased practice fields. It is a redaction
+ * marker, not a name, so it must never reach the screen: joined with the city
+ * it rendered as « — · — », and on a ghost listing as
+ * « Annonce retirée par son auteur · — ».
+ */
+const ANONYMIZED_FIELD = "—";
+
+/** A redacted value is displayed as no value at all. */
+function visibleField(value: string | undefined | null): string | undefined {
+  const trimmed = value?.trim();
+  return !trimmed || trimmed === ANONYMIZED_FIELD ? undefined : trimmed;
+}
+
+/**
  * Resolves an application's listing from the data embedded server-side — no
  * extra fetches, works for listings hidden to the user.
  */
@@ -45,13 +59,24 @@ export function adaptListingInfo(
     return { id: application.listingId, title: LISTING_FALLBACK_TITLE };
   }
 
+  // A period of a single day is not a period. `create` rejects
+  // `startDate >= endDate`, so equal dates cannot come from a real listing: the
+  // only rows carrying them are the ghost listings the backend creates when an
+  // account is erased, which deliberately have no window. Rendering those gave
+  // « Du 6 au 6 oct. » — a fabricated schedule for a posting that no longer
+  // exists. Omitting the range lets the card drop the line and the detail fall
+  // back to « Dates non communiquées ».
+  const isSingleDay = embedded.startDate === embedded.endDate;
+
   return {
     id: embedded.id,
     title: embedded.title,
-    dateRange: formatDateRange(embedded.startDate, embedded.endDate),
+    dateRange: isSingleDay
+      ? undefined
+      : formatDateRange(embedded.startDate, embedded.endDate),
     description: embedded.description?.trim() || undefined,
-    practiceName: embedded.practice.name,
-    practiceCity: embedded.practice.city,
+    practiceName: visibleField(embedded.practice.name),
+    practiceCity: visibleField(embedded.practice.city),
   };
 }
 
