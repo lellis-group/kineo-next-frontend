@@ -1,11 +1,10 @@
 import { Badge } from "@/components/atoms/badge";
 import { Card } from "@/components/atoms/card";
-import { CalendarIcon, ChevronDownIcon } from "@/components/atoms/icons";
+import { CalendarIcon } from "@/components/atoms/icons";
 import { Spinner } from "@/components/atoms/spinner";
 import { InlineAlert } from "@/components/molecules/inline-alert";
 import { ReceivedApplicationCard } from "@/components/molecules/received-application-card";
 import { ListingActions } from "@/components/organisms/listing-actions";
-import { cn } from "@/lib/cn";
 import {
   formatActiveApplications,
   formatCapacity,
@@ -89,19 +88,17 @@ export function MyListingCard({
           {formatActiveApplications(listing.applicationsCount)}
         </p>
 
+        {/* Plain text toggle, the treatment the site uses for a secondary
+            card action (`ActivityFeed`'s « Tout voir`). No chevron: the
+            codebase has no disclosure-by-chevron anywhere, and the label plus
+            `aria-expanded` already carry the state. */}
         <button
           type="button"
           onClick={onToggle}
           aria-expanded={expanded}
-          className="inline-flex shrink-0 items-center gap-1.5 self-start text-sm text-muted transition-colors hover:text-primary sm:self-auto"
+          className="inline-flex shrink-0 items-center rounded-md px-2 py-1 text-sm font-medium text-muted transition-colors hover:bg-surface-hover hover:text-foreground self-start sm:self-auto"
         >
-          {expanded ? "Masquer" : "Voir les candidatures"}
-          <ChevronDownIcon
-            className={cn(
-              "h-4 w-4 transition-transform duration-200",
-              expanded && "rotate-180",
-            )}
-          />
+          {expanded ? "Masquer les candidatures" : "Voir les candidatures"}
         </button>
       </div>
 

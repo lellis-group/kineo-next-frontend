@@ -2,11 +2,10 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Card } from "@/components/atoms/card";
-import { ChevronDownIcon, LayersIcon } from "@/components/atoms/icons";
+import { LayersIcon } from "@/components/atoms/icons";
 import { Spinner } from "@/components/atoms/spinner";
 import { InlineAlert } from "@/components/molecules/inline-alert";
 import { ListingActions } from "@/components/organisms/listing-actions";
-import { cn } from "@/lib/cn";
 import {
   cancelListing,
   closeListing,
@@ -225,17 +224,11 @@ export function ErasureBlockerResolver({
                   type="button"
                   onClick={() => handleToggle(listing.id)}
                   aria-expanded={expandedListingId === listing.id}
-                  className="inline-flex shrink-0 items-center gap-1.5 text-xs text-muted transition-colors hover:text-primary"
+                  className="inline-flex shrink-0 items-center rounded-md px-2 py-1 text-xs font-medium text-muted transition-colors hover:bg-surface-hover hover:text-foreground"
                 >
                   {expandedListingId === listing.id
                     ? "Masquer"
                     : "Voir les candidats"}
-                  <ChevronDownIcon
-                    className={cn(
-                      "h-3.5 w-3.5 transition-transform duration-200",
-                      expandedListingId === listing.id && "rotate-180",
-                    )}
-                  />
                 </button>
               </div>
 
