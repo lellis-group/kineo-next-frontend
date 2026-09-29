@@ -432,20 +432,30 @@ export default function PrivacyPage() {
                 permettant de vous retrouver.
               </Paragraph>
 
-              <Subheading>Pourquoi une demande peut être refusée</Subheading>
+              <Subheading>
+                Ce que nous conservons malgré votre demande
+              </Subheading>
               <Paragraph>
-                La suppression est refusée tant qu&apos;un autre candidat
-                conserve une candidature active sur l&apos;une de vos annonces :
-                supprimer votre compte emporterait ces candidatures et les
-                données de ces autres professionnels, qui ne nous appartiennent
-                pas.
+                Les candidatures que d&apos;autres professionnels vous ont
+                adressées. Elles ne vous appartiennent pas : elles portent leur
+                message, votre décision à leur sujet et les dates de
+                l&apos;échange. Les effacer à votre demande reviendrait à
+                supprimer des données qui ne sont ni les vôtres ni les nôtres,
+                et ces professionnels n&apos;en ont pas consenti.
               </Paragraph>
               <Paragraph>
-                Vous en êtes averti par e-mail au moment de la demande. Fermer
-                ou annuler une annonce termine automatiquement les candidatures
-                qu&apos;elle recevait : la voie de sortie reste toujours
-                ouverte. Tant que ce point n&apos;est pas réglé, votre compte et
-                vos données ne sont pas modifiés.
+                Votre demande n&apos;est donc jamais refusée pour ce motif. Elle
+                aboutit normalement, et nous séparons ces candidatures des
+                annonces avant que celles-ci ne soient effacées : vos annonces,
+                leur contenu, vos messages et vos coordonnées disparaissent
+                comme le reste, tandis que chaque candidat conserve ses données
+                et reste seul à y accéder. Ils voient l&apos;annonce comme
+                retirée, sans votre nom ni ceux de votre cabinet.
+              </Paragraph>
+              <Paragraph>
+                L&apos;email de confirmation vous indique combien de
+                candidatures sont concernées avant que vous ne validiez, et il
+                vous reste possible de relire vos annonces jusque-là.
               </Paragraph>
             </Section>
 

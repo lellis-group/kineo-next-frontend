@@ -76,9 +76,10 @@ export function DeleteAccountSection({
           </InlineAlert>
 
           <p className="mt-3 text-sm leading-relaxed text-muted">
-            Si des candidats ont encore des candidatures actives sur vos
-            annonces, l'email vous le signale et la confirmation sera refusée :
-            fermez ou annulez ces annonces d&apos;abord.
+            Si d&apos;autres candidats vous ont adressé des candidatures,
+            l&apos;email vous en indique le nombre. Elles leur appartiennent :
+            nous les conservons pour eux, qui en gardent l&apos;accès, et vous
+            n&apos;y avez plus accès.
           </p>
 
           <p className="mt-3 text-xs text-muted">
