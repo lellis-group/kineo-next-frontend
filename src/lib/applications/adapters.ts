@@ -4,7 +4,11 @@
  */
 
 import { formatDateRange, formatRelativeTime } from "../format";
-import type { ApiApplication, ApplicationStatus } from "../types/api";
+import type {
+  ApiApplication,
+  ApplicationDecisionSource,
+  ApplicationStatus,
+} from "../types/api";
 import type { BadgeTone } from "../ui-tokens";
 import type { ApplicationEntry, ApplicationListingInfo } from "./contracts";
 
@@ -21,6 +25,74 @@ export const STATUS_META: Record<ApplicationStatus, ApplicationStatusMeta> = {
   REJECTED: { label: "Rejetée", badgeTone: "danger" },
   WITHDRAWN: { label: "Retirée", badgeTone: "neutral" },
 };
+
+/**
+ * What the applicant is told, per decision.
+ *
+ * The status is too coarse to carry this. `REJECTED` covers four situations
+ * that read nothing alike to the person who applied, and only one of them is
+ * about them: being passed over for someone else is not a refusal, and an
+ * applicant reading « Candidature rejetée » over a posting that closed with
+ * nobody chosen concludes the practice judged them.
+ *
+ * The practice's own words stay attached on top of this, when it wrote any —
+ * `PRACTICE_REJECTED` is the only one that can carry free text, and a missing
+ * reason there falls back to saying so rather than inventing a motive.
+ */
+export const DECISION_SUMMARIES: Record<
+  ApplicationDecisionSource,
+  { headline: string; summary: string }
+> = {
+  CANDIDATE_WITHDREW: {
+    headline: "Candidature retirée",
+    summary: "Vous avez retiré votre candidature.",
+  },
+  PRACTICE_ACCEPTED: {
+    headline: "Candidature acceptée",
+    summary: "Le cabinet a accepté votre candidature.",
+  },
+  PRACTICE_REJECTED: {
+    headline: "Candidature refusée",
+    summary: "Le cabinet a refusé votre candidature.",
+  },
+  ANOTHER_CANDIDATE_SELECTED: {
+    headline: "Un autre candidat a été retenu",
+    summary:
+      "Le cabinet a retenu un autre candidat pour cette annonce. Votre profil n'a pas été jugé insuffisant : la place était pourvue.",
+  },
+  LISTING_CLOSED: {
+    headline: "Annonce clôturée",
+    summary:
+      "Le cabinet a clôturé son annonce. Aucun remplacement n'a été retenu sur celle-ci.",
+  },
+  LISTING_CLOSED_NO_CANDIDATE: {
+    headline: "Annonce clôturée sans remplaçant",
+    summary:
+      "Le cabinet a clôturé son annonce sans retenir de remplaçant. Cela ne dit rien de votre candidature.",
+  },
+  LISTING_CANCELLED: {
+    headline: "Annonce annulée",
+    summary:
+      "Le cabinet a abandonné le remplacement qu'il avait publié. Cela ne dit rien de votre candidature.",
+  },
+  LISTING_ERASED: {
+    headline: "Cabinet fermé son compte",
+    summary:
+      "Le cabinet a fermé son compte et l'annonce n'existe plus. Votre candidature reste enregistrée ici.",
+  },
+  CANDIDATE_UNAVAILABLE: {
+    headline: "Candidat indisponible",
+    summary: "Le cabinet a annoncé que ce candidat n'était plus disponible.",
+  },
+};
+
+/** The three owner actions that end a posting, all reading the same way. */
+export const POSTING_ENDED_SOURCES: readonly ApplicationDecisionSource[] = [
+  "LISTING_CLOSED",
+  "LISTING_CLOSED_NO_CANDIDATE",
+  "LISTING_CANCELLED",
+  "LISTING_ERASED",
+];
 
 /**
  * Headline for the outcome banner. A second, more explicit register than
@@ -128,6 +200,10 @@ export function adaptApplicationEntry(
   return {
     id: application.id,
     status: application.status,
+    // Rows written before the column existed arrive without it. Falling back to
+    // null keeps the banner on its status-only wording rather than claiming a
+    // decision nobody recorded.
+    decisionSource: application.decisionSource ?? null,
     createdAt: application.createdAt,
     submittedLabel: `Postulé ${formatRelativeTime(application.createdAt)}`,
     viewed: Boolean(application.viewedAt),

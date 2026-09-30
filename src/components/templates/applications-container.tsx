@@ -6,6 +6,7 @@ import { Button } from "@/components/atoms/button";
 import { ApplicationsView } from "@/components/templates/applications-view";
 import { ApiError } from "@/lib/api-client";
 import {
+  APPLICATION_FILTERS,
   APPLICATIONS_PAGE_SIZE,
   type ApplicationsData,
   type ApplicationsFilter,
@@ -35,10 +36,19 @@ export function ApplicationsContainer({
     (targetPage: number, targetFilter: ApplicationsFilter) => {
       setError(null);
 
+      // The bucket is translated through APPLICATION_FILTERS rather than sent
+      // as-is: the ids are presentation values, and the backend only knows
+      // statuses and decision sources. One definition, so the chip, the request
+      // and the counter cannot drift apart.
+      const bucket = APPLICATION_FILTERS.find(
+        (option) => option.id === targetFilter,
+      );
+
       fetchApplicationsData({
         page: targetPage,
         limit: APPLICATIONS_PAGE_SIZE,
-        status: targetFilter !== "ALL" ? targetFilter : undefined,
+        status: bucket?.status,
+        decisionSource: bucket?.decisionSource,
       })
         .then((applicationsData) => {
           setData(applicationsData);

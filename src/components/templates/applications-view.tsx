@@ -19,7 +19,38 @@ interface ApplicationsViewProps {
   currentFilter: ApplicationsFilter;
 }
 
-/** Applications tracking page — status filters, list and pagination. Tab counters come from `data.counts` only. */
+/**
+ * Counter for one bucket.
+ *
+ * Sums `decisionCounts` over the keys the bucket names, because the buckets cut
+ * across statuses: « Un autre candidat retenu » and « Refusées par le cabinet »
+ * are both `REJECTED`, and a status-based counter would show the same number on
+ * both chips. The totals come from the server over the whole collection, so
+ * they hold still while paging.
+ */
+function countForBucket(
+  option: (typeof APPLICATION_FILTERS)[number],
+  data: ApplicationsData,
+): number {
+  if (option.id === "ALL") {
+    return data.counts.total;
+  }
+
+  if (!option.countKeys) {
+    // No keys declared: the bucket is exactly one status.
+    return data.counts[option.id as keyof typeof data.counts] ?? 0;
+  }
+
+  // `countKeys` are decision-source names, but typed loosely so a bucket can
+  // name any of them. A key the server does not send reads 0 rather than NaN —
+  // the difference between « nobody in this case » and a broken counter.
+  return option.countKeys.reduce<number>(
+    (sum, key) => sum + (data.decisionCounts[key] ?? 0),
+    0,
+  );
+}
+
+/** Applications tracking page — situation filters, list and pagination. */
 export function ApplicationsView({
   data,
   onPageChange,
@@ -50,8 +81,7 @@ export function ApplicationsView({
         className="mt-6"
         options={APPLICATION_FILTERS.map((option) => ({
           ...option,
-          count:
-            option.id === "ALL" ? data.counts.total : data.counts[option.id],
+          count: countForBucket(option, data),
         }))}
         value={currentFilter}
         onChange={onFilterChange}

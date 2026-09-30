@@ -87,6 +87,29 @@ export type ApplicationStatus =
   | "REJECTED"
   | "WITHDRAWN";
 
+/**
+ * Which outcome ended the application, when one has.
+ *
+ * The status alone cannot answer the question the applicant actually has. Four
+ * different things all land on `REJECTED` — another candidate was retained, the
+ * posting ended with nobody chosen, the practice gave up on the replacement, or
+ * the practice refused this person — and they read nothing alike. `WITHDRAWN`
+ * used to mix a self-service withdrawal with one written by the account
+ * erasure.
+ *
+ * Null while the application is still open: nobody has decided yet.
+ */
+export type ApplicationDecisionSource =
+  | "CANDIDATE_WITHDREW"
+  | "PRACTICE_ACCEPTED"
+  | "PRACTICE_REJECTED"
+  | "ANOTHER_CANDIDATE_SELECTED"
+  | "LISTING_CLOSED"
+  | "LISTING_CLOSED_NO_CANDIDATE"
+  | "LISTING_CANCELLED"
+  | "LISTING_ERASED"
+  | "CANDIDATE_UNAVAILABLE";
+
 /** Practice data embedded in an application response. */
 export interface ApiApplicationPractice {
   id: string;
@@ -134,6 +157,8 @@ export interface ApiApplication {
   listingId: string;
   applicantId: string;
   status: ApplicationStatus;
+  /** Who decided. Null while the application is still open. */
+  decisionSource?: ApplicationDecisionSource | null;
   message?: string;
   rejectionReason?: string;
   withdrawnReason?: string;
@@ -156,6 +181,22 @@ export interface ApiApplicationStatusCounts {
   ACCEPTED: number;
   REJECTED: number;
   WITHDRAWN: number;
+}
+
+/** Same totals, split by who decided rather than by status. */
+export interface ApiApplicationDecisionCounts {
+  total: number;
+  CANDIDATE_WITHDREW: number;
+  PRACTICE_ACCEPTED: number;
+  PRACTICE_REJECTED: number;
+  ANOTHER_CANDIDATE_SELECTED: number;
+  LISTING_CLOSED: number;
+  LISTING_CLOSED_NO_CANDIDATE: number;
+  LISTING_CANCELLED: number;
+  LISTING_ERASED: number;
+  CANDIDATE_UNAVAILABLE: number;
+  /** Applications nobody has ruled on — `decisionSource` is null there. */
+  undecided: number;
 }
 
 /**
@@ -183,5 +224,6 @@ export interface ApiApplicationPage<T> extends ApiPaginated<T> {
   meta: ApiPaginated<T>["meta"] & {
     /** Only the applications endpoints return a breakdown. */
     counts?: Partial<ApiApplicationStatusCounts>;
+    decisionCounts?: Partial<ApiApplicationDecisionCounts>;
   };
 }

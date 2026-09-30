@@ -1,12 +1,12 @@
 import type { BadgeTone } from "@/components/atoms/badge";
 import {
   type ApplicationEntry,
+  DECISION_SUMMARIES,
   STATUS_HEADLINES,
   STATUS_META,
 } from "@/lib/applications";
 import { cn } from "@/lib/cn";
 import { formatDateTime } from "@/lib/format";
-import type { ApplicationStatus } from "@/lib/types/api";
 
 /** Band classes per badge tone. */
 const TONE_CLASSES: Record<BadgeTone, string> = {
@@ -17,26 +17,53 @@ const TONE_CLASSES: Record<BadgeTone, string> = {
   info: "border-info/20 bg-info/10 text-info",
 };
 
-/** Summary line: key dates, or the decision reason once decided. */
-function buildSummary(application: ApplicationEntry): string {
-  const summaries: Record<ApplicationStatus, string> = {
-    PENDING: application.viewedAt
-      ? `Consultée par le cabinet le ${formatDateTime(application.viewedAt)}, réponse en attente.`
-      : `Envoyée le ${formatDateTime(application.createdAt)}, pas encore consultée par le cabinet.`,
-    SHORTLISTED: application.viewedAt
+/** Key dates while the application is still open. */
+function buildOpenSummary(application: ApplicationEntry): string {
+  if (application.status === "SHORTLISTED") {
+    return application.viewedAt
       ? `Consultée le ${formatDateTime(application.viewedAt)}, votre profil a été retenu par le cabinet.`
-      : "Votre profil a été retenu par le cabinet.",
-    ACCEPTED: application.respondedAt
-      ? `Réponse du cabinet reçue le ${formatDateTime(application.respondedAt)}.`
-      : "Le cabinet a accepté votre candidature.",
-    REJECTED:
-      application.rejectionReason ??
-      "Aucun motif n'a été communiqué par le cabinet.",
-    WITHDRAWN:
-      application.withdrawnReason ?? "Aucun motif de retrait n'a été précisé.",
-  };
+      : "Votre profil a été retenu par le cabinet.";
+  }
 
-  return summaries[application.status];
+  return application.viewedAt
+    ? `Consultée par le cabinet le ${formatDateTime(application.viewedAt)}, réponse en attente.`
+    : `Envoyée le ${formatDateTime(application.createdAt)}, pas encore consultée par le cabinet.`;
+}
+
+/**
+ * What happened, once something did.
+ *
+ * The decision source comes first because it is the only thing separating "the
+ * practice refused you" from "the practice closed the posting with nobody
+ * chosen" — both a `REJECTED`, and the second says nothing about the applicant.
+ *
+ * A practice's own words are appended only when it decided itself: the other
+ * outcomes are the platform's, so there is no free text to show, and inventing
+ * one is what this whole column exists to stop.
+ */
+function buildDecidedSummary(application: ApplicationEntry): string {
+  const source = application.decisionSource;
+
+  if (!source) {
+    // Rows written before the column existed, or a status that never sets one.
+    if (application.status === "ACCEPTED") {
+      return "Le cabinet a accepté votre candidature.";
+    }
+    return (
+      application.rejectionReason ??
+      "Aucun motif n'a été communiqué par le cabinet."
+    );
+  }
+
+  const base = DECISION_SUMMARIES[source].summary;
+  const decidedByPractice =
+    source === "PRACTICE_REJECTED" || source === "PRACTICE_ACCEPTED";
+
+  if (decidedByPractice && application.rejectionReason) {
+    return `${base} Son motif : « ${application.rejectionReason} »`;
+  }
+
+  return base;
 }
 
 /** Tinted outcome banner: status headline + summary (key dates or reason). */
@@ -47,6 +74,19 @@ export function ApplicationStatusBanner({
   application: ApplicationEntry;
   className?: string;
 }) {
+  const stillOpen =
+    application.status === "PENDING" || application.status === "SHORTLISTED";
+
+  // The decision names the situation better than the status can; the status is
+  // what covers rows written before `decisionSource` existed.
+  const headline = application.decisionSource
+    ? DECISION_SUMMARIES[application.decisionSource].headline
+    : STATUS_HEADLINES[application.status];
+
+  const summary = stillOpen
+    ? buildOpenSummary(application)
+    : buildDecidedSummary(application);
+
   const meta = STATUS_META[application.status];
 
   return (
@@ -57,12 +97,8 @@ export function ApplicationStatusBanner({
         className,
       )}
     >
-      <p className="text-sm font-bold">
-        {STATUS_HEADLINES[application.status]}
-      </p>
-      <p className="mt-1.5 text-sm leading-relaxed text-muted">
-        {buildSummary(application)}
-      </p>
+      <p className="text-sm font-bold">{headline}</p>
+      <p className="mt-1.5 text-sm leading-relaxed text-muted">{summary}</p>
     </div>
   );
 }

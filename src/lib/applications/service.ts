@@ -8,9 +8,9 @@
 import { type ApiTransport, apiFetch, notFoundAs } from "../api-client";
 import type {
   ApiApplication,
+  ApiApplicationDecisionCounts,
   ApiApplicationPage,
   ApiApplicationStatusCounts,
-  ApplicationStatus,
 } from "../types/api";
 import { adaptApplicationEntry } from "./adapters";
 import type { ApplicationEntry, ApplicationsData } from "./contracts";
@@ -30,11 +30,21 @@ export interface PaginationParams {
   page: number;
   limit: number;
   /**
-   * A backend application status, or the literal "ALL" the filter chips use for
-   * "no status filter". Typed as a union rather than `string` so a typo is a
-   * compile error instead of a request the backend silently ignores.
+   * Backend status filter, comma-separated when a bucket spans several.
+   *
+   * The buckets are not the backend statuses — « Un autre candidat retenu » is
+   * a `REJECTED` narrowed to one decision source — so this stays a string
+   * rather than the enum. What protects it is the backend, which 400s on a
+   * value outside the enum instead of ignoring it.
    */
-  status?: ApplicationStatus | "ALL";
+  status?: string;
+  /**
+   * Comma-separated decision sources, sent only alongside a status. Buckets
+   * like « Un autre candidat retenu » are a REJECTED narrowed to one source;
+   * passing this without a status would select rows across statuses, which no
+   * chip asks for.
+   */
+  decisionSource?: string;
 }
 
 function statusCounts(total: number): ApiApplicationStatusCounts {
@@ -45,6 +55,22 @@ function statusCounts(total: number): ApiApplicationStatusCounts {
     ACCEPTED: 0,
     REJECTED: 0,
     WITHDRAWN: 0,
+  };
+}
+
+function decisionCounts(total: number): ApiApplicationDecisionCounts {
+  return {
+    total,
+    CANDIDATE_WITHDREW: 0,
+    PRACTICE_ACCEPTED: 0,
+    PRACTICE_REJECTED: 0,
+    ANOTHER_CANDIDATE_SELECTED: 0,
+    LISTING_CLOSED: 0,
+    LISTING_CLOSED_NO_CANDIDATE: 0,
+    LISTING_CANCELLED: 0,
+    LISTING_ERASED: 0,
+    CANDIDATE_UNAVAILABLE: 0,
+    undecided: 0,
   };
 }
 
@@ -60,8 +86,15 @@ async function fetchMyApplications(
     limit: String(params.limit),
   });
 
+  // A bucket names a status, a decision source, or both. Sent as the
+  // comma-separated lists the backend accepts, so the filtering stays
+  // server-side and the counters keep describing the whole collection rather
+  // than the page that came back.
   if (params.status && params.status !== "ALL") {
     searchParams.set("status", params.status);
+  }
+  if (params.decisionSource && params.status !== "ALL") {
+    searchParams.set("decisionSource", params.decisionSource);
   }
 
   const raw = await apiFetch<
@@ -150,6 +183,7 @@ export async function fetchApplicationsData(
     // Server-computed totals — never derived from the loaded page. Completed
     // from a partial breakdown so a missing status reads 0, not undefined.
     counts: { ...statusCounts(meta.total), ...meta.counts },
+    decisionCounts: { ...decisionCounts(meta.total), ...meta.decisionCounts },
   };
 }
 
