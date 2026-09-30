@@ -1,4 +1,5 @@
 import { plural } from "../format";
+import { countRecruitingListings } from "../listings";
 import { SPECIALTY_LABELS } from "../profile";
 import type {
   ApiApplication,
@@ -34,9 +35,9 @@ export function adaptGreeting(
         .join(" · ")
     : "";
 
-  const activeListings = listings.filter(
-    (l) => l.status === "OPEN" || l.status === "IN_DISCUSSION",
-  ).length;
+  // Same derivation as the "Mes annonces" stat card below, from the same named
+  // set — the two used to disagree, because this copy left FULL out.
+  const activeListings = countRecruitingListings(listings);
   const pendingApps = applications.filter((a) => a.status === "PENDING").length;
 
   let subtitle: string;

@@ -1,4 +1,5 @@
 import { formatDateRange, plural } from "../format";
+import { countRecruitingListings } from "../listings";
 import type { ApiApplication, ApiReplacementListing } from "../types/api";
 import type { DashboardStat } from "./contracts";
 
@@ -6,16 +7,30 @@ export function adaptStats(
   listings: ApiReplacementListing[],
   applications: ApiApplication[],
 ): DashboardStat[] {
+  // OPEN / IN_DISCUSSION / FULL — the same set the listings screen calls
+  // « En cours » and the listing card uses to offer close/cancel.
+  const activeListings = countRecruitingListings(listings);
+
   const open = listings.filter((l) => l.status === "OPEN").length;
   const discussion = listings.filter(
     (l) => l.status === "IN_DISCUSSION",
   ).length;
+  const full = listings.filter((l) => l.status === "FULL").length;
   // Applications SENT by the user (source: /applications/mine).
   const pendingApps = applications.filter((a) => a.status === "PENDING").length;
   // viewedAt is set when the practice views the application.
   const unseenApps = applications.filter(
     (a) => !a.viewedAt && a.status === "PENDING",
   ).length;
+
+  // Every recruiting status, so the breakdown sums to the headline. Omitting a
+  // status the headline counts would show a number that does not add up, which
+  // is the same class of bug as the headline itself being wrong.
+  const breakdown = [
+    `${open} ouverte${plural(open)}`,
+    `${discussion} en discussion`,
+    `${full} complet${plural(full)}`,
+  ].filter((part) => !part.startsWith("0 "));
 
   const now = new Date();
   const upcoming = listings
@@ -25,7 +40,6 @@ export function adaptStats(
         new Date(a.startDate).getTime() - new Date(b.startDate).getTime(),
     )[0];
 
-  const activeListings = open + discussion;
   const nextReplacement: DashboardStat = upcoming
     ? {
         id: "next-replacement",
@@ -50,10 +64,7 @@ export function adaptStats(
       title: "Mes annonces",
       value: `${activeListings}`,
       label: `annonce${plural(activeListings)} active${plural(activeListings)} · en recherche de remplaçant`,
-      detail:
-        open > 0 || discussion > 0
-          ? `${open} ouverte${plural(open)} · ${discussion} en discussion`
-          : undefined,
+      detail: breakdown.length > 0 ? breakdown.join(" · ") : undefined,
       icon: "layers",
     },
     {

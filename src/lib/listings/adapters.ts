@@ -18,6 +18,7 @@ import type {
   MyListing,
   ReceivedApplication,
 } from "./contracts";
+import { RECRUITING_STATUSES } from "./contracts";
 
 /** Shown in place of a name once the account is erased. */
 export const ANONYMIZED_APPLICANT_NAME = "Candidat anonymisé";
@@ -141,6 +142,27 @@ export function countForFilter(
     (sum, status) => sum + (counts[status] ?? 0),
     0,
   );
+}
+
+/**
+ * How many listings are still recruiting.
+ *
+ * Sourced from `RECRUITING_STATUSES` rather than spelled out, because the
+ * concept already has a name and two other surfaces use it: the « En cours »
+ * filter bucket on /listings/mine, and the gate that decides whether a listing
+ * card offers close/cancel. The dashboard used to re-derive the count with
+ * `OPEN` + `IN_DISCUSSION` written out by hand, in two places, which left a
+ * FULL listing counted as "En cours" on one screen and absent from the homepage
+ * headline on the next.
+ *
+ * Takes raw payloads because the dashboard counts before adapting; a caller that
+ * already holds `MyListing` can filter with the same set directly.
+ */
+export function countRecruitingListings(
+  listings: ReadonlyArray<{ status: ReplacementListingStatus }>,
+): number {
+  return listings.filter((listing) => RECRUITING_STATUSES.has(listing.status))
+    .length;
 }
 
 /** « 3 candidatures actives » — the count that decides whether to act. */

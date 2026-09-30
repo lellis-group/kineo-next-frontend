@@ -7,6 +7,7 @@
 export {
   ANONYMIZED_APPLICANT_NAME,
   countForFilter,
+  countRecruitingListings,
   formatActiveApplications,
   formatCapacity,
   LISTING_STATUS_META,
