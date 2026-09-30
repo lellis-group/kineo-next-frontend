@@ -3,9 +3,9 @@
  * `./contracts`, including French status labels and badge tones.
  */
 
-import type { BadgeTone } from "@/components/atoms/badge";
 import { formatDateRange, formatRelativeTime } from "../format";
 import type { ApiApplication, ApplicationStatus } from "../types/api";
+import type { BadgeTone } from "../ui-tokens";
 import type { ApplicationEntry, ApplicationListingInfo } from "./contracts";
 
 export interface ApplicationStatusMeta {
@@ -20,6 +20,20 @@ export const STATUS_META: Record<ApplicationStatus, ApplicationStatusMeta> = {
   ACCEPTED: { label: "Acceptée", badgeTone: "success" },
   REJECTED: { label: "Rejetée", badgeTone: "danger" },
   WITHDRAWN: { label: "Retirée", badgeTone: "neutral" },
+};
+
+/**
+ * Headline for the outcome banner. A second, more explicit register than
+ * `STATUS_META.label`: that one is the chip's short form (« En attente »), this
+ * one names the situation (« En attente de réponse »). Both belong here so the
+ * two vocabularies for a status are edited side by side.
+ */
+export const STATUS_HEADLINES: Record<ApplicationStatus, string> = {
+  PENDING: "En attente de réponse",
+  SHORTLISTED: "Présélectionnée",
+  ACCEPTED: "Candidature acceptée",
+  REJECTED: "Candidature rejetée",
+  WITHDRAWN: "Candidature retirée",
 };
 
 /** Statuses open to withdrawal — the backend 400s on decided/withdrawn ones. */

@@ -1,45 +1,21 @@
-import { type NextRequest, NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { proxyToBackend } from "@/lib/backend-proxy";
 
-const BACKEND_URL =
-  process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3000";
+/**
+ * Auth proxy. Same forwarding as the data proxy in `[...path]/route.ts`, but the
+ * path is rewritten differently: /api/auth/* is a mount point on the backend,
+ * not a prefix to strip, so the whole segment is kept.
+ */
 
-async function handleAuthRequest(request: NextRequest) {
-  const path = request.nextUrl.pathname.replace("/api/auth", "");
-  const url = `${BACKEND_URL}/api/auth${path}${request.nextUrl.search}`;
+/**
+ * `/api/auth/*` is a mount point on the backend rather than a prefix to strip,
+ * so the path crosses unchanged — which is also what makes this route the same
+ * forwarding as the data proxy with no rewriting at all.
+ */
+const toBackendPath = (pathname: string) => pathname;
 
-  const headers = new Headers(request.headers);
-  headers.set("x-forwarded-host", request.nextUrl.host);
-  headers.set("x-forwarded-proto", request.nextUrl.protocol.replace(":", ""));
-
-  let body: BodyInit | undefined;
-  if (request.method !== "GET" && request.method !== "HEAD") {
-    body = await request.arrayBuffer();
-  }
-
-  try {
-    const response = await fetch(url, {
-      method: request.method,
-      headers,
-      body,
-      redirect: "manual",
-    });
-
-    const responseHeaders = new Headers(response.headers);
-    responseHeaders.delete("content-encoding");
-    responseHeaders.delete("transfer-encoding");
-
-    return new NextResponse(response.body, {
-      status: response.status,
-      statusText: response.statusText,
-      headers: responseHeaders,
-    });
-  } catch (error) {
-    console.error("Auth proxy error:", error);
-    return NextResponse.json(
-      { error: "Auth service unavailable" },
-      { status: 502 },
-    );
-  }
+function handleAuthRequest(request: NextRequest) {
+  return proxyToBackend(request, toBackendPath, "Auth");
 }
 
 export const GET = handleAuthRequest;

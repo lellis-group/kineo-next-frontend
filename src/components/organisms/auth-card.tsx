@@ -1,15 +1,33 @@
-import type { ReactNode } from "react";
+"use client";
+
+import type { ReactNode, Ref } from "react";
 import { KineoLogo } from "@/components/atoms/kineo-logo";
 
+export interface AuthCardProps {
+  title: string;
+  subtitle: string;
+  children: ReactNode;
+  /** Focused when the card's content is swapped — see the note below. */
+  headingRef?: Ref<HTMLHeadingElement>;
+}
+
+/**
+ * The shell every auth and erasure screen is built on.
+ *
+ * The heading is exposed as a ref so a caller can move focus onto it when the
+ * card's content is swapped underneath the reader — the erasure flow replaces
+ * the whole card several times over, and without that a keyboard user is left
+ * tabbing back through whatever was on the page before. The heading is the right
+ * target: it names what the screen now is, and focusing the surrounding wrapper
+ * instead would put a focus stop on a non-interactive box. `tabIndex` therefore
+ * lives here rather than on the wrapper.
+ */
 export function AuthCard({
   title,
   subtitle,
   children,
-}: {
-  title: string;
-  subtitle: string;
-  children: ReactNode;
-}) {
+  headingRef,
+}: AuthCardProps) {
   return (
     <main className="flex min-h-dvh flex-col items-center justify-center bg-background px-4 py-8 text-foreground sm:px-6 sm:py-10">
       {/* my-auto: vertical centering that stays scrollable when the card
@@ -19,11 +37,8 @@ export function AuthCard({
           <KineoLogo />
 
           <div className="space-y-2">
-            {/* `tabIndex` + the shared outline is what lets a screen reader
-                or a keyboard user be moved here when the card content is
-                swapped underneath them. The erasure flow replaces the whole
-                card several times over. */}
             <h1
+              ref={headingRef}
               tabIndex={-1}
               className="text-[1.7rem] leading-tight font-bold tracking-tight focus:outline-none"
             >

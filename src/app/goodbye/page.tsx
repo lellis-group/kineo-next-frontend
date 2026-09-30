@@ -1,13 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
-import { Button } from "@/components/atoms/button";
-import { Spinner } from "@/components/atoms/spinner";
-import { InlineAlert } from "@/components/molecules/inline-alert";
+import {
+  DeletionScreen,
+  type DeletionScreenStatus,
+} from "@/components/molecules/deletion-screen";
 import { LoadingState } from "@/components/molecules/loading-state";
-import { AuthCard } from "@/components/organisms/auth-card";
 import {
   AccountDeletionError,
   confirmAccountDeletion,
@@ -15,23 +14,8 @@ import {
 } from "@/lib/account-deletion-service";
 import { signOut, useSession } from "@/lib/auth-client";
 
-/**
- * One member per `DeletionFailure`, plus the two in-flight states. The screen
- * is chosen from this, so every failure the service can report needs a case
- * here: a value silently falling through to a generic "impossible" screen is
- * how a retryable 429 ended up with no button to retry on it.
- */
-type DeletionStatus =
-  | "deleting"
-  | "success"
-  | "already-erased"
-  | "no-pending-request"
-  | "invalid"
-  | "rate-limited"
-  | "error";
-
 type DeletionOutcome = {
-  status: DeletionStatus;
+  status: DeletionScreenStatus;
   error?: string;
 };
 
@@ -44,7 +28,9 @@ type DeletionOutcome = {
  *
  * Only successful and in-flight jobs are kept. A failure is dropped from the
  * map on purpose: nothing was consumed server-side, so re-confirming the same
- * link has to be able to succeed on a second attempt.
+ * link has to be able to succeed on a second attempt. That also means the map
+ * only ever holds entries for tokens currently on screen, and is reset when the
+ * module is.
  */
 const deletionJobs = new Map<string, Promise<DeletionOutcome>>();
 
@@ -78,7 +64,7 @@ function requestDeletion(token: string): Promise<DeletionOutcome> {
 }
 
 /** Exhaustively maps a failure onto a screen; no silent fallthrough. */
-function toStatus(failure: DeletionFailure): DeletionStatus {
+function toStatus(failure: DeletionFailure): DeletionScreenStatus {
   switch (failure) {
     // The backend no longer refuses an erasure over third-party applications:
     // it detaches them onto ghost listings first, so the request always goes
@@ -104,24 +90,17 @@ function GoodbyeContent() {
   const token = searchParams.get("token");
   const { data: session } = useSession();
   const user = session?.user;
-  const [status, setStatus] = useState<DeletionStatus>(
+  const [status, setStatus] = useState<DeletionScreenStatus>(
     token ? "deleting" : "invalid",
   );
   const [error, setError] = useState("");
   const [signedOut, setSignedOut] = useState(false);
   /**
-   * Announced when the screen changes, and focused so a keyboard user is not
-   * left tabbing back through the header. The live region covers the wait; the
-   * focus move covers the arrival, which a live region alone does not do.
+   * Focus target: the card's heading. The whole card is replaced as the flow
+   * settles, so without this a keyboard user is left tabbing back through
+   * whatever was on the page before.
    */
-  const headingRef = useRef<HTMLDivElement>(null);
-  const [announcement, setAnnouncement] = useState("");
-
-  useEffect(() => {
-    if (status === "deleting") {
-      setAnnouncement("Suppression en cours");
-    }
-  }, [status]);
+  const headingRef = useRef<HTMLHeadingElement>(null);
 
   const applyOutcome = useCallback((outcome: DeletionOutcome) => {
     setStatus(outcome.status);
@@ -148,8 +127,8 @@ function GoodbyeContent() {
   }, [token, applyOutcome]);
 
   /**
-   * Replays the confirmation. Called after the user cleared the blocker, and
-   * from the retry button on the transient failures.
+   * Replays the confirmation. Used from the retry button on the transient
+   * failures.
    *
    * Safe to call repeatedly: the failed job was evicted from `deletionJobs`, and
    * a refused confirmation rolls back without consuming the token, so the
@@ -197,195 +176,27 @@ function GoodbyeContent() {
     };
   }, [status]);
 
-  // One live region for the whole flow, announced once a screen is settled.
-  // The error alerts carry `role="alert"` for the failures that used to sit in a
-  // bare `<p>` and be read by nobody.
+  // Move focus onto the new heading once a screen has settled. Skipped while
+  // the request is in flight and on the way to success: both keep the same
+  // heading on screen, and moving focus mid-flight would interrupt whatever the
+  // reader was doing.
   useEffect(() => {
     if (status === "deleting" || status === "success") {
       return;
     }
-
-    setAnnouncement(error);
-
-    // Move focus with the content, so a keyboard user is not left tabbing back
-    // through the header after the card underneath them was replaced.
     headingRef.current?.focus();
-  }, [status, error]);
+  }, [status]);
 
   return (
-    <div ref={headingRef} tabIndex={-1} className="focus:outline-none">
-      <output className="sr-only" aria-live="polite">
-        {announcement}
-      </output>
-
-      {renderStatus()}
-    </div>
+    <DeletionScreen
+      status={status}
+      error={error}
+      signedOut={signedOut}
+      hasSession={Boolean(user)}
+      onRetry={retryConfirmation}
+      headingRef={headingRef}
+    />
   );
-
-  function renderStatus() {
-    // The erasure already ran. Not a failure, and no link back to a profile: the
-    // account was revoked, so the session this page would send them to is gone.
-    if (status === "already-erased") {
-      return (
-        <AuthCard
-          title="Votre compte a été anonymisé"
-          subtitle="La suppression a déjà été effectuée"
-        >
-          <div className="space-y-6 text-center">
-            <InlineAlert tone="success">{error}</InlineAlert>
-
-            <p className="text-sm leading-relaxed text-muted">
-              Ce lien ne peut être utilisé qu&apos;une fois. Vous pouvez recréer
-              un compte avec la même adresse e-mail.
-            </p>
-
-            <Button href="/signup" size="lg" className="w-full">
-              Créer un nouveau compte
-            </Button>
-          </div>
-        </AuthCard>
-      );
-    }
-
-    // Conflict with nothing in the way: no listing to close, and retrying this
-    // link cannot help. The only way forward is a fresh request.
-    if (status === "no-pending-request") {
-      return (
-        <AuthCard
-          title="Suppression impossible"
-          subtitle="Aucune demande à traiter pour ce lien"
-        >
-          <div className="space-y-6 text-center">
-            <InlineAlert tone="warning">{error}</InlineAlert>
-
-            <Button href="/profile" size="lg" className="w-full">
-              Relancer une demande
-            </Button>
-          </div>
-        </AuthCard>
-      );
-    }
-
-    if (status === "rate-limited" || status === "error") {
-      return (
-        <AuthCard
-          title="Suppression impossible"
-          subtitle="Vos données n'ont pas été modifiées"
-        >
-          <div className="space-y-6 text-center">
-            <InlineAlert as="p" tone="danger" className="text-center">
-              {error}
-            </InlineAlert>
-
-            {/* Retrying is the only useful action: nothing was consumed
-              server-side, so the token is still valid and unspent. */}
-            <Button
-              size="lg"
-              className="w-full"
-              onClick={retryConfirmation}
-              disabled={status === "rate-limited"}
-            >
-              Réessayer
-            </Button>
-
-            <Button
-              href={user ? "/profile" : "/signin"}
-              variant="ghost"
-              className="w-full"
-            >
-              {user ? "Retour à mon profil" : "Se connecter"}
-            </Button>
-          </div>
-        </AuthCard>
-      );
-    }
-
-    if (status === "invalid") {
-      return (
-        <AuthCard
-          title="Lien invalide"
-          subtitle="Ce lien de suppression n'est plus valable"
-        >
-          <div className="space-y-6 text-center">
-            <InlineAlert as="p" tone="warning" className="text-center">
-              {error}
-            </InlineAlert>
-
-            <Button
-              href={user ? "/profile" : "/signin"}
-              size="lg"
-              className="w-full"
-            >
-              {user ? "Retour à mon profil" : "Se connecter"}
-            </Button>
-          </div>
-        </AuthCard>
-      );
-    }
-
-    if (status === "success") {
-      return (
-        <AuthCard
-          title="Votre compte a été anonymisé"
-          subtitle="Vos données personnelles ne sont plus identifiables"
-        >
-          <div className="space-y-6">
-            <InlineAlert tone="info">
-              Votre nom, votre adresse e-mail, votre numéro RPPS, votre
-              localisation, vos annonces et vos messages ont été remplacés
-              immédiatement. Votre compte est déconnecté partout. Merci
-              d&apos;avoir utilisé Kineo.
-            </InlineAlert>
-
-            <p className="text-sm leading-relaxed text-muted">
-              Les enregistrements restants sont définitivement effacés au terme
-              d&apos;un délai de grâce. Vous pouvez recréer un compte avec cette
-              adresse e-mail dès maintenant.
-            </p>
-
-            <p className="mt-3 text-center text-xs leading-relaxed text-muted">
-              Conformément à notre{" "}
-              <Link
-                href="/privacy"
-                className="underline transition-colors hover:text-primary"
-              >
-                politique de confidentialité
-              </Link>
-              , la trace de votre demande est conservée pendant une durée
-              limitée à des fins de preuve. Elle ne contient ni votre nom ni
-              votre adresse e-mail, seulement des empreintes non réversibles et
-              les dates.
-            </p>
-
-            {!signedOut ? (
-              <div className="flex justify-center">
-                <output aria-label="Déconnexion en cours">
-                  <Spinner className="h-8 w-8 border-primary/20 border-t-primary" />
-                </output>
-              </div>
-            ) : (
-              <Button href="/signup" size="lg" className="w-full">
-                Créer un nouveau compte
-              </Button>
-            )}
-          </div>
-        </AuthCard>
-      );
-    }
-
-    return (
-      <AuthCard
-        title="Suppression en cours"
-        subtitle="Nous anonymisons les données de votre compte"
-      >
-        <div className="flex justify-center">
-          <output aria-label="Suppression en cours">
-            <Spinner className="h-8 w-8 border-danger/20 border-t-danger" />
-          </output>
-        </div>
-      </AuthCard>
-    );
-  }
 }
 
 export default function GoodbyePage() {

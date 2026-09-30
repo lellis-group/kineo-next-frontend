@@ -15,7 +15,6 @@
 
   --primary: #d7d1b0;
   --primary-hover: #e3ddc4;
-  --primary-active: #c9c3a0;
   --primary-foreground: #11100f;
 
   --border: rgb(255 255 255 / 7%);
@@ -32,14 +31,7 @@
   --shadow-card: inset 0 1px 0 rgb(255 255 255 / 3%);
   --shadow-pop: 0 16px 40px rgb(0 0 0 / 45%);
 
-  --radius-card: 1.25rem;
-  --radius-panel: 1rem;
   --radius-control: 0.75rem;
-
-  --map-surface: #ffffff;
-  --map-foreground: #11100f;
-  --map-muted: #6b6862;
-  --map-border: rgb(0 0 0 / 8%);
 }
 
 @theme inline {
@@ -51,7 +43,6 @@
   --color-surface-hover: var(--surface-hover);
   --color-primary: var(--primary);
   --color-primary-hover: var(--primary-hover);
-  --color-primary-active: var(--primary-active);
   --color-primary-foreground: var(--primary-foreground);
   --color-muted: var(--muted);
   --color-faint: var(--faint);
@@ -65,12 +56,7 @@
   --color-success: var(--success);
   --color-info: var(--info);
 
-  --radius-card: var(--radius-card);
-  --radius-panel: var(--radius-panel);
   --radius-control: var(--radius-control);
-
-  --shadow-card: var(--shadow-card);
-  --shadow-pop: var(--shadow-pop);
 
   --font-sans:
     var(--font-space-grotesk), "Space Grotesk", ui-sans-serif, system-ui,
@@ -213,46 +199,6 @@
     color: var(--muted);
   }
 
-  .status-text-success {
-    color: var(--success);
-  }
-
-  .status-text-warning {
-    color: var(--warning);
-  }
-
-  .status-text-danger {
-    color: var(--danger);
-  }
-
-  .status-text-info {
-    color: var(--info);
-  }
-
-  .nav-link {
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: var(--muted);
-    padding: 0.375rem 0.75rem;
-    border-radius: 9999px;
-    transition:
-      color 150ms ease,
-      background-color 150ms ease;
-  }
-
-  .nav-link:hover {
-    color: var(--foreground);
-  }
-
-  .nav-link:hover:not([aria-current="page"]):not(.is-active) {
-    background: rgb(255 255 255 / 4%);
-  }
-
-  .nav-link[aria-current="page"],
-  .nav-link.is-active {
-    color: var(--foreground);
-  }
-
   .table {
     width: 100%;
     border-collapse: collapse;
@@ -285,39 +231,6 @@
 
   .table tbody tr:last-child td {
     border-bottom: none;
-  }
-
-  .meter {
-    --meter-value: 0%;
-    position: relative;
-    height: 0.875rem;
-    width: 100%;
-    overflow: hidden;
-  }
-
-  .meter::before,
-  .meter::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background-image: repeating-linear-gradient(
-      to right,
-      currentColor 0 2px,
-      transparent 2px 4px
-    );
-  }
-
-  .meter::before {
-    color: rgb(255 255 255 / 14%);
-  }
-
-  .meter::after {
-    color: rgb(255 255 255 / 85%);
-    clip-path: inset(0 calc(100% - var(--meter-value)) 0 0);
-  }
-
-  .meter-primary::after {
-    color: var(--primary);
   }
 
   .field-label {
@@ -376,63 +289,6 @@
     -webkit-box-shadow: 0 0 0 1000px #191817 inset;
     caret-color: var(--foreground);
     transition: background-color 9999s ease-in-out 0s;
-  }
-
-  .map-panel {
-    border-radius: var(--radius-card);
-    overflow: hidden;
-    border: 1px solid var(--border);
-    background: var(--map-surface);
-  }
-
-  .map-control {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    border-radius: 9999px;
-    padding: 0.5rem 0.875rem;
-    font-size: 0.8125rem;
-    font-weight: 500;
-    color: var(--map-foreground);
-    background: var(--map-surface);
-    border: 1px solid var(--map-border);
-    box-shadow: var(--shadow-pop);
-  }
-
-  .map-control-muted {
-    color: var(--map-muted);
-  }
-
-  .map-pin {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    border-radius: 9999px;
-    padding: 0.5rem 0.75rem;
-    background: var(--map-surface);
-    color: var(--map-foreground);
-    border: 1px solid var(--map-border);
-    box-shadow: var(--shadow-pop);
-    font-size: 0.75rem;
-  }
-
-  .map-pin-title {
-    font-weight: 600;
-  }
-
-  .map-pin-subtitle {
-    color: var(--map-muted);
-  }
-
-  .map-pin-dot {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 1.75rem;
-    height: 1.75rem;
-    border-radius: 9999px;
-    background: var(--surface);
-    color: var(--foreground);
   }
 
   @property --glow-angle {

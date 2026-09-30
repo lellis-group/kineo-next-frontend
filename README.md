@@ -85,10 +85,16 @@ bun run format     # auto-format code (Biome)
 | `/verify-email`       | Email verification                        |
 | `/profile` (`/create`, `/edit`) | Member profile management          |
 | `/applications` (+ `/{id}`) | Application tracking (locum side)    |
-| `/terms`              | Legal / terms of use                      |
+| `/listings/mine`     | Published listings + received candidates |
+| `/goodbye`           | Account-erasure confirmation (from the email link) |
+| `/terms` · `/privacy` | Legal documents                       |
 
-Protected routes (`/profile`, `/dashboard`, `/settings`) are guarded by an optimistic
-session-cookie check that redirects guests to `/signin`.
+Protected routes are guarded by an optimistic session-cookie check in `src/proxy.ts`
+that redirects guests to `/signin`. The guard covers `/profile`, `/applications`,
+`/listings` and `/practices`; the first three exist, `/practices` does not yet. Every
+guarded page also resolves the session for real on the server and redirects an
+`anonymous` state itself, so the cookie check is a fast path rather than the only
+barrier.
 
 ---
 
@@ -100,19 +106,35 @@ src/
 │   ├── (site)/       # Routes behind the shared site layout
 │   │   ├── page.tsx  # Home: member dashboard or marketing content
 │   │   ├── applications/  # Application tracking (locum side)
+│   │   ├── listings/mine/ # Published listings (practice side)
 │   │   ├── profile/  # Profile management
-│   │   └── terms/
-│   ├── signin/ signup/
+│   │   ├── privacy/ terms/
+│   │   └── loading.tsx   # Streaming fallback for the site shell
+│   ├── signin/ signup/ goodbye/
 │   ├── forgot-password/ reset-password/
-│   └── verify-email/
+│   ├── verify-email/
+│   └── api/          # Same-origin proxy to the backend
+│       ├── [...path]/route.ts      # Data routes
+│       └── auth/[...all]/route.ts  # Auth routes
+│       └── → both delegate to lib/backend-proxy.ts
 ├── components/       # Reusable presentational blocks
+│   ├── atoms/ molecules/ organisms/ templates/
 └── lib/              # Services & shared logic
-│   ├── dashboard/    # Dashboard service + presentation contracts
-│   ├── applications/ # Applications service + presentation contracts
-│   ├── types/        # Raw API types
-│   └── …             # Auth client, marketing content, navigation, formatting
+    ├── dashboard/    # Dashboard service + presentation contracts
+    ├── listings/     # Listings service + presentation contracts
+    ├── applications/ # Applications service + presentation contracts
+    ├── api-client.ts # Typed fetch + errors; transport is injected
+    ├── api-errors.ts # The one place a failure becomes a French sentence
+    ├── types/        # Raw API types (hand-written; see the note below)
+    └── …             # Auth client, marketing content, navigation, formatting
 └── proxy.ts          # Next 16 proxy: optimistic auth guard
 ```
+
+A page never fetches for itself: it resolves the session and the data on the server
+and hands a client container the result. The domain services are isomorphic — the
+caller passes an `ApiTransport`, which is `browserTransport` in the browser and
+`serverTransport` on the server (`lib/api-transport.server.ts`). That is what lets the
+same service functions serve both, with no `typeof window` check anywhere.
 
 ---
 
@@ -162,16 +184,33 @@ flowchart TB
 
 ### Server-rendered by default
 
-Almost the whole app renders on the server. The home page resolves the session
-server-side and serves either the member dashboard or the marketing content — no
-public-content hydration, no flash after load. Only genuinely interactive pieces
-(auth forms, the header, data-loading containers) are client components.
+Every data screen resolves its data on the server. The home page decides between the
+member dashboard and the marketing content from the session, and the dashboard itself
+streams behind a Suspense boundary, so the shell paints immediately and no screen
+opens with a loading skeleton that a server render would have replaced.
+
+What is left as client components: the header (session-aware links), the auth and
+erasure forms, the containers that own post-mutation state, and `Reveal` — the
+scroll-reveal wrapper on the marketing sections, which needs an IntersectionObserver.
+Everything else in the anonymous landing page ships as server-rendered HTML.
 
 ### Service layer
 
 Components never talk to the backend directly. A service layer (`src/lib`) fetches
 data through a shared API client, adapts raw responses into presentation contracts,
-and keeps editorial content and French labels separate from components.
+and owns the French wording for anything domain-shaped (status labels, retention
+copy, editorial content). Copy that belongs to a single screen rather than to a domain
+— button labels, form hints — still lives in the component that renders it.
+
+`lib/api-errors.ts` is the one place a failure becomes a sentence. Screens branch on
+an `ErrorKind` derived from the typed status the API client already extracted, and a
+domain that has better wording passes an override. Nothing classifies a failure by
+matching on the text of an error message.
+
+`lib/types/api.ts` is hand-written, not generated: `templates/api.json` documents the
+request DTOs only, so every response shape there was transcribed from real backend
+output. A field the backend adds will not appear until someone reads it off a
+response — treat a missing field as unknown rather than absent.
 
 ---
 
@@ -180,6 +219,11 @@ and keeps editorial content and French labels separate from components.
 Authentication relies on **Better-Auth** sessions. The Next proxy performs an
 optimistic session-cookie check on protected routes and redirects guests to the
 sign-in page; real validation happens in the backend on every API call.
+
+Each protected page resolves the session itself as well (`lib/server-auth.ts`,
+cached per request, so the layout and the page share one read). That is the
+authoritative check: the cookie test only skips a round trip for a guest who has no
+cookie at all.
 
 ```mermaid
 sequenceDiagram
@@ -204,10 +248,11 @@ sequenceDiagram
 
 ## Performance
 
-- Server-rendered pages with no public-content hydration.
-- Self-hosted fonts (`next/font`) — zero external requests.
-- Inline SVG icons — no bitmap assets.
+- Data resolved on the server: no client fetch waterfall and no skeleton on a cold load.
 - Streaming shell on the dynamic home route for instant perceived load.
+- Fonts via `next/font` — downloaded at build time and served from this origin, so
+  no request leaves the site at runtime.
+- Inline SVG icons — no bitmap assets.
 
 ---
 
@@ -216,22 +261,27 @@ sequenceDiagram
 The platform is evolving beyond the core user journey. Priorities below, in rough order:
 
 ### Phase 1 — Core product experience
-- **Live listings** — one app to publish & browse openings
-  (`/listings`, `/practices`), with filters by speciality, dates and location.
-- **Application workflow** — apply with a personalized message, manage and
-  track every status from a dedicated page (`/applications`).
-- **Pricing & "how it works" pages** — fill the product navigation with real
-  content instead of placeholder links.
+- **Live listings** — publish & browse openings (`/listings`, `/practices`), with
+  filters by speciality, dates and location. Only `/listings/mine` (the practice's
+  own listings) exists today, so the member nav links to `/listings` and
+  `/practices` currently 404.
+- **Apply to a listing** — `/applications` tracks the applications already sent,
+  but there is no browse-and-apply flow yet.
+- **Pricing page** — fill the last placeholder link in the product navigation.
 
 ### Phase 2 — Trust & network effects
-- **Public testimonials** — social proof from beta users on the marketing site.
 - **Verified profile depth** — richer RPPS-backed credentials, speciality and
   experience badges shown to both sides.
 - **Reactivity & response-time signals** — surface average response times to
   encourage faster, more reliable matching.
 
 ### Phase 3 — Reliability & scale
-- **Partial prerendering** — one static shell, streamed dynamic content.
+- **Tests and CI** — there is none today. The adapters, the API client's error
+  parsing and the GDPR erasure flow are all string- and status-coupled and
+  unverified; this is the prerequisite for changing them safely.
+- **A generated API contract** — derive the response types from the OpenAPI
+  document rather than transcribing them, so a backend field change surfaces as a
+  type error.
 - **Web Vitals monitoring** — instrument and report core performance metrics.
 - **Design-system consolidation** — unify component naming and surface styles
   across pages.

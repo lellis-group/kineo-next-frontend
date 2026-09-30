@@ -4,11 +4,12 @@ import { DashboardStats } from "@/components/organisms/dashboard-stats";
 import { ProfileOnboardingCard } from "@/components/organisms/profile-onboarding-card";
 import { ReactivityPanel } from "@/components/organisms/reactivity-panel";
 import type { DashboardData } from "@/lib/dashboard";
+import { PAGE_CONTAINER } from "@/lib/layout";
 
 /** Logged-in page content — receives data via props. Shell provided by the (site) layout. */
 export function MemberHome({ data }: { data: DashboardData }) {
   return (
-    <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 sm:py-10">
+    <div className={PAGE_CONTAINER}>
       <DashboardGreeting greeting={data.greeting} actions={data.actions} />
 
       {data.needsProfile && (

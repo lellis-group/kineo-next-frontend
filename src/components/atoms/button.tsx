@@ -1,13 +1,9 @@
 import Link from "next/link";
 import type { ComponentProps, ReactNode } from "react";
 import { cn } from "@/lib/cn";
+import type { ButtonSize, ButtonVariant } from "@/lib/ui-tokens";
 
-export type ButtonVariant =
-  | "primary"
-  | "secondary"
-  | "outline"
-  | "ghost"
-  | "danger";
+export type { ButtonSize, ButtonVariant };
 
 const VARIANT_CLASSES: Record<ButtonVariant, string> = {
   primary: "bg-primary text-primary-foreground hover:bg-primary-hover",
@@ -20,14 +16,12 @@ const VARIANT_CLASSES: Record<ButtonVariant, string> = {
     "bg-danger text-danger-foreground hover:bg-danger-hover focus:ring-2 focus:ring-danger/50 focus:ring-offset-2 focus:ring-offset-background",
 };
 
-export type ButtonSize = "md" | "lg";
-
 const SIZE_CLASSES: Record<ButtonSize, string> = {
   md: "px-5 py-3 text-sm",
   lg: "px-5 py-3.5 text-[0.9375rem]",
 };
 
-export interface ButtonProps {
+export interface ButtonProps extends ComponentProps<"button"> {
   /** Visual variant. */
   variant?: ButtonVariant;
   /** md: section actions · lg: primary actions (auth forms). */
@@ -36,9 +30,6 @@ export interface ButtonProps {
   children: ReactNode;
   /** Renders as a Next.js Link styled as a button. */
   href?: string;
-  type?: ComponentProps<"button">["type"];
-  disabled?: boolean;
-  onClick?: ComponentProps<"button">["onClick"];
 }
 
 export function Button({

@@ -6,52 +6,65 @@ import { ErrorState } from "@/components/organisms/error-state";
 import { ApplicationsView } from "@/components/templates/applications-view";
 import { ApiError } from "@/lib/api-client";
 import {
+  APPLICATIONS_PAGE_SIZE,
   type ApplicationsData,
   type ApplicationsFilter,
   fetchApplicationsData,
 } from "@/lib/applications";
 
-type Status = "loading" | "error" | "success";
-
-const DEFAULT_PAGE_SIZE = 5;
-
-/** Orchestrator for /applications — fetches data (loading/error/success) and renders ApplicationsView. */
-export function ApplicationsContainer() {
+/**
+ * Orchestrator for /applications — renders ApplicationsView.
+ *
+ * The first, unfiltered page arrives from the server page, so a cold load shows
+ * the list instead of a skeleton and no request is repeated for data already in
+ * the payload. Paging and filtering are client state and do fetch — the effect
+ * below is what does that, and it deliberately skips the case the server
+ * already covered.
+ */
+export function ApplicationsContainer({
+  initialData,
+}: {
+  initialData: ApplicationsData;
+}) {
   const router = useRouter();
-  const [status, setStatus] = useState<Status>("loading");
-  const [data, setData] = useState<ApplicationsData | null>(null);
-  const [error, setError] = useState<string>("");
+  const [data, setData] = useState<ApplicationsData>(initialData);
+  const [error, setError] = useState<unknown>(null);
   const [page, setPage] = useState(1);
   const [filter, setFilter] = useState<ApplicationsFilter>("ALL");
 
-  const load = useCallback(() => {
-    setStatus("loading");
-    setError("");
+  const load = useCallback(
+    (targetPage: number, targetFilter: ApplicationsFilter) => {
+      setError(null);
 
-    fetchApplicationsData({
-      page,
-      limit: DEFAULT_PAGE_SIZE,
-      status: filter !== "ALL" ? filter : undefined,
-    })
-      .then((applicationsData) => {
-        setData(applicationsData);
-        setStatus("success");
+      fetchApplicationsData({
+        page: targetPage,
+        limit: APPLICATIONS_PAGE_SIZE,
+        status: targetFilter !== "ALL" ? targetFilter : undefined,
       })
-      .catch((err) => {
-        // Deleted account or expired session: don't linger on an error card,
-        // bounce to signup like the other protected areas.
-        if (err instanceof ApiError && err.status === 401) {
-          router.replace("/signup");
-          return;
-        }
-        setError(err instanceof Error ? err.message : "Erreur inconnue");
-        setStatus("error");
-      });
-  }, [router, page, filter]);
+        .then((applicationsData) => {
+          setData(applicationsData);
+        })
+        .catch((err) => {
+          // Deleted account or expired session: don't linger on an error card.
+          // `/signin`, not `/signup` — the reader holds this account's
+          // credentials, so logging back in is what they want next. See the same
+          // reasoning on sign-out in `app-header.tsx`.
+          if (err instanceof ApiError && err.status === 401) {
+            router.replace("/signin");
+            return;
+          }
+          setError(err);
+        });
+    },
+    [router],
+  );
+
+  const isServerProvided = page === 1 && filter === "ALL";
 
   useEffect(() => {
-    load();
-  }, [load]);
+    if (isServerProvided) return;
+    load(page, filter);
+  }, [isServerProvided, load, page, filter]);
 
   const handlePageChange = useCallback((newPage: number) => {
     setPage(newPage);
@@ -62,61 +75,27 @@ export function ApplicationsContainer() {
     setPage(1); // Reset to first page when filter changes
   }, []);
 
-  // Keep previous data on refetch so the tab counters don't flash.
-  if (status === "loading" && !data) {
-    return <ApplicationsSkeleton />;
-  }
-
-  if (status === "error" && !data) {
-    return <ErrorState message={error} onRetry={load} />;
-  }
-
-  if (!data) {
-    return null;
+  // A failure is only fatal while there is nothing to show. Once a page has
+  // rendered, a failed refetch leaves that page in place rather than replacing
+  // a working list with an error card.
+  if (error && isServerProvided) {
+    return <ErrorState error={error} onRetry={() => load(page, filter)} />;
   }
 
   return (
-    <ApplicationsView
-      data={data}
-      onPageChange={handlePageChange}
-      onFilterChange={handleFilterChange}
-      currentFilter={filter}
-    />
-  );
-}
-
-/** Static skeleton keys — no index keys. */
-const SKELETON_CHIPS = [
-  "chip-1",
-  "chip-2",
-  "chip-3",
-  "chip-4",
-  "chip-5",
-  "chip-6",
-];
-const SKELETON_CARDS = ["card-1", "card-2", "card-3"];
-
-function ApplicationsSkeleton() {
-  return (
-    <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 sm:py-10">
-      <div className="h-9 w-64 animate-pulse rounded-control bg-surface" />
-      <div className="mt-3 h-5 w-96 max-w-full animate-pulse rounded-control bg-surface" />
-      <div className="mt-6 flex flex-wrap gap-2">
-        {SKELETON_CHIPS.map((key) => (
-          <div
-            key={key}
-            className="h-8 w-24 animate-pulse rounded-full bg-surface"
-          />
-        ))}
-      </div>
-      <div className="mt-8 space-y-5">
-        {SKELETON_CARDS.map((key) => (
-          <div
-            key={key}
-            className="h-36 animate-pulse rounded-2xl bg-surface"
-          />
-        ))}
-      </div>
+    <div>
+      {error !== null && (
+        <p className="mx-auto w-full max-w-7xl px-4 pt-4 text-sm text-danger sm:px-6">
+          Actualisation impossible. Les candidatures affichées peuvent être
+          obsolètes.
+        </p>
+      )}
+      <ApplicationsView
+        data={data}
+        onPageChange={handlePageChange}
+        onFilterChange={handleFilterChange}
+        currentFilter={filter}
+      />
     </div>
   );
 }

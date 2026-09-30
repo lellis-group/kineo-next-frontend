@@ -47,7 +47,9 @@ export function Reveal({ children, className, delay = 0 }: RevealProps) {
   return (
     <div
       ref={ref}
-      className={cn("reveal", className)}
+      // No base `.reveal` rule exists: the hidden state is `.reveal-init`, and
+      // the observer swaps in `.reveal-visible`.
+      className={cn(className)}
       style={{ "--reveal-delay": `${delay}ms` } as CSSProperties}
     >
       {children}

@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { LoadingState } from "@/components/molecules/loading-state";
 import { ApplicationDetailContainer } from "@/components/templates/application-detail-container";
+import { serverTransport } from "@/lib/api-transport.server";
+import { fetchApplicationDetail } from "@/lib/applications";
 
 export const metadata: Metadata = {
   title: "Candidature — Kineo",
@@ -32,5 +34,9 @@ async function ApplicationDetailPageInner({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  return <ApplicationDetailContainer id={id} />;
+  const application = await fetchApplicationDetail(id, serverTransport);
+
+  return (
+    <ApplicationDetailContainer id={id} initialApplication={application} />
+  );
 }

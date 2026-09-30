@@ -14,16 +14,34 @@ import {
   type ListingsFilter,
   type MyListingsData,
   type ReceivedApplication,
+  type ReplacementListingStatus,
 } from "@/lib/listings";
 
-type Status = "loading" | "error" | "success";
+/**
+ * The backend statuses behind a chip; an empty list means « no filter ».
+ *
+ * Every read on this screen goes through here, so a refetch cannot end up
+ * asking for a different slice than the one the chips are describing.
+ */
+function statusesForFilter(filter: ListingsFilter): ReplacementListingStatus[] {
+  return LISTING_FILTERS.find((option) => option.id === filter)?.statuses ?? [];
+}
 
-/** Orchestrator for /listings/mine — buckets, listings and, on demand, candidates. */
-export function MyListingsContainer() {
+/**
+ * Orchestrator for /listings/mine — buckets, listings and, on demand, candidates.
+ *
+ * The unfiltered first page arrives from the server page, so a cold load shows
+ * the listings rather than a skeleton. Switching bucket still fetches, and so
+ * does re-reading after an action: both change which rows the chips describe.
+ */
+export function MyListingsContainer({
+  initialData,
+}: {
+  initialData: MyListingsData;
+}) {
   const router = useRouter();
-  const [status, setStatus] = useState<Status>("loading");
-  const [data, setData] = useState<MyListingsData | null>(null);
-  const [error, setError] = useState("");
+  const [data, setData] = useState<MyListingsData>(initialData);
+  const [error, setError] = useState<unknown>(null);
   const [actionError, setActionError] = useState<ListingActionError | null>(
     null,
   );
@@ -38,35 +56,41 @@ export function MyListingsContainer() {
     Record<string, ReceivedApplication[]>
   >({});
 
-  const load = useCallback(() => {
-    setStatus("loading");
-    setError("");
+  const load = useCallback(
+    (targetFilter: ListingsFilter, targetPage: number) => {
+      setError(null);
 
-    const statuses =
-      LISTING_FILTERS.find((option) => option.id === filter)?.statuses ?? [];
-
-    fetchMyListings({ statuses, page })
-      .then((loaded) => {
-        setData(loaded);
-        setStatus("success");
-        // The refetched rows are the truth; anything cached for them may
-        // describe an application that has since been withdrawn elsewhere.
-        setApplicationsByListing({});
-        setExpandedListingId(undefined);
+      fetchMyListings({
+        statuses: statusesForFilter(targetFilter),
+        page: targetPage,
       })
-      .catch((err) => {
-        if (err instanceof ApiError && err.status === 401) {
-          router.replace("/signin");
-          return;
-        }
-        setError(err instanceof Error ? err.message : "Erreur inconnue");
-        setStatus("error");
-      });
-  }, [router, filter, page]);
+        .then((loaded) => {
+          setData(loaded);
+          // The refetched rows are the truth; anything cached for them may
+          // describe an application that has since been withdrawn elsewhere.
+          setApplicationsByListing({});
+          setExpandedListingId(undefined);
+        })
+        .catch((err) => {
+          if (err instanceof ApiError && err.status === 401) {
+            router.replace("/signin");
+            return;
+          }
+          setError(err);
+        });
+    },
+    [router],
+  );
+
+  // The unfiltered first page came from the server; only a bucket change has to
+  // re-read. `page` never moves off 1 here — the screen has no pagination
+  // control — so it is deliberately not a trigger.
+  const isServerProvided = filter === "ALL" && page === 1;
 
   useEffect(() => {
-    load();
-  }, [load]);
+    if (isServerProvided) return;
+    load(filter, page);
+  }, [isServerProvided, load, filter, page]);
 
   // Candidates are fetched on demand: a practice with ten listings should not
   // pay for ten requests to read one of them.
@@ -126,7 +150,12 @@ export function MyListingsContainer() {
         // Re-read rather than patch the count locally: `close` and `cancel`
         // both terminate the applications server-side and recalculate the
         // listing status, so the authoritative counts come back from the API.
-        setData(await fetchMyListings({ page }));
+        //
+        // The active bucket is carried over: refetching without it would swap
+        // the rows under a chip row still showing the old bucket selected.
+        setData(
+          await fetchMyListings({ statuses: statusesForFilter(filter), page }),
+        );
 
         // The candidates just left the pipeline, so the cached panel is stale.
         setApplicationsByListing((current) => {
@@ -147,7 +176,7 @@ export function MyListingsContainer() {
         setActingListingId(undefined);
       }
     },
-    [page],
+    [filter, page],
   );
 
   /**
@@ -189,17 +218,8 @@ export function MyListingsContainer() {
     [runAction],
   );
 
-  // Keep the previous page on refetch so the chip counters don't flash empty.
-  if (status === "loading" && !data) {
-    return <MyListingsSkeleton />;
-  }
-
-  if (status === "error" && !data) {
-    return <ErrorState message={error} onRetry={load} />;
-  }
-
-  if (!data) {
-    return null;
+  if (error && isServerProvided) {
+    return <ErrorState error={error} onRetry={() => load(filter, page)} />;
   }
 
   return (
@@ -232,38 +252,3 @@ interface ListingActionError {
   listingId: string;
   message: string;
 }
-
-/**
- * Loading placeholder — same rhythm as the real page (header, chips, cards at
- * the `space-y-5` rhythm) so the swap does not shift the layout under the
- * reader. Card height matches the collapsed card: padding, title, meta row,
- * divider and the action row.
- */
-function MyListingsSkeleton() {
-  return (
-    <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 sm:py-10">
-      <div className="h-9 w-64 animate-pulse rounded-control bg-surface" />
-      <div className="mt-3 h-5 w-96 max-w-full animate-pulse rounded-control bg-surface" />
-      <div className="mt-6 flex flex-wrap gap-2">
-        {SKELETON_CHIPS.map((key) => (
-          <div
-            key={key}
-            className="h-8 w-24 animate-pulse rounded-full bg-surface"
-          />
-        ))}
-      </div>
-      <div className="mt-8 space-y-5">
-        {SKELETON_CARDS.map((key) => (
-          <div
-            key={key}
-            className="h-52 animate-pulse rounded-2xl bg-surface"
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/** Static skeleton keys — no index keys. */
-const SKELETON_CHIPS = ["chip-1", "chip-2", "chip-3", "chip-4", "chip-5"];
-const SKELETON_CARDS = ["card-1", "card-2", "card-3"];

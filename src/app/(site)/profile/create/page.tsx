@@ -1,5 +1,9 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { ProfileCreateContainer } from "@/components/templates/profile-create-container";
+import { serverTransport } from "@/lib/api-transport.server";
+import { fetchMyProfile } from "@/lib/profile-service";
+import { fetchServerAuth } from "@/lib/server-auth";
 
 export const metadata: Metadata = {
   title: "Créer le profil — Kineo",
@@ -8,6 +12,26 @@ export const metadata: Metadata = {
   robots: { index: false },
 };
 
-export default function ProfileCreatePage() {
+/**
+ * An expired session goes to sign-in; a member who already has a profile is sent
+ * to the edit form. Both decided before the form renders.
+ *
+ * A read that fails for any other reason still renders the form: this page's job
+ * is to create the profile, and the failure that actually matters is reported by
+ * the submit itself.
+ */
+export default async function ProfileCreatePage() {
+  const [auth, profile] = await Promise.all([
+    fetchServerAuth(),
+    fetchMyProfile(serverTransport).catch(() => null),
+  ]);
+
+  if (auth.status === "anonymous") {
+    redirect("/signin");
+  }
+  if (profile) {
+    redirect("/profile/edit");
+  }
+
   return <ProfileCreateContainer />;
 }

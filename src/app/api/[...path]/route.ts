@@ -1,4 +1,5 @@
-import { type NextRequest, NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { proxyToBackend } from "@/lib/backend-proxy";
 
 /**
  * Generic data proxy — mirrors the auth proxy so all backend calls stay
@@ -8,47 +9,13 @@ import { type NextRequest, NextResponse } from "next/server";
  *
  * /api/auth/* is handled by the more specific src/app/api/auth/[...all]/route.ts.
  */
-const BACKEND_URL =
-  process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3000";
 
-async function handleApiProxy(request: NextRequest) {
-  // Strip the "/api" prefix: /api/profile/me -> /profile/me
-  const path = request.nextUrl.pathname.replace(/^\/api/, "") || "/";
-  const url = `${BACKEND_URL}${path}${request.nextUrl.search}`;
+/** Strip the "/api" prefix: /api/profile/me -> /profile/me */
+const toBackendPath = (pathname: string) =>
+  pathname.replace(/^\/api/, "") || "/";
 
-  const headers = new Headers(request.headers);
-  headers.set("x-forwarded-host", request.nextUrl.host);
-  headers.set("x-forwarded-proto", request.nextUrl.protocol.replace(":", ""));
-
-  let body: BodyInit | undefined;
-  if (request.method !== "GET" && request.method !== "HEAD") {
-    body = await request.arrayBuffer();
-  }
-
-  try {
-    const response = await fetch(url, {
-      method: request.method,
-      headers,
-      body,
-      redirect: "manual",
-    });
-
-    const responseHeaders = new Headers(response.headers);
-    responseHeaders.delete("content-encoding");
-    responseHeaders.delete("transfer-encoding");
-
-    return new NextResponse(response.body, {
-      status: response.status,
-      statusText: response.statusText,
-      headers: responseHeaders,
-    });
-  } catch (error) {
-    console.error("API proxy error:", error);
-    return NextResponse.json(
-      { error: "API service unavailable" },
-      { status: 502 },
-    );
-  }
+function handleApiProxy(request: NextRequest) {
+  return proxyToBackend(request, toBackendPath, "API");
 }
 
 export const GET = handleApiProxy;

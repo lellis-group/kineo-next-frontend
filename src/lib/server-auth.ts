@@ -13,7 +13,7 @@
 import { headers } from "next/headers";
 import { cache } from "react";
 import { getSessionCookie } from "./auth";
-import type { ApiProfile, ProfileType } from "./types/api";
+import type { ApiProfile, ApiUser, ProfileType } from "./types/api";
 
 /**
  * - `anonymous` — no session cookie, or the backend refused the session.
@@ -23,7 +23,7 @@ import type { ApiProfile, ProfileType } from "./types/api";
  */
 export type ServerAuthState =
   | { status: "anonymous" }
-  | { status: "member"; name: string; role: ProfileType | null };
+  | { status: "member"; name: string; role: ProfileType | null; user: ApiUser };
 
 const ANONYMOUS: ServerAuthState = { status: "anonymous" };
 
@@ -53,14 +53,15 @@ export const fetchServerAuth = cache(async (): Promise<ServerAuthState> => {
     }
   };
 
-  const session = await call<{ user?: { name?: string | null } } | null>(
+  const session = await call<{ user?: ApiUser } | null>(
     "/api/auth/get-session",
   );
 
   // A cookie without a valid session is not a session: treating it as
   // anonymous here is what stops the header from showing account controls for
   // a user who is not signed in.
-  if (!session?.user) {
+  const user = session?.user;
+  if (!user) {
     return ANONYMOUS;
   }
 
@@ -70,7 +71,11 @@ export const fetchServerAuth = cache(async (): Promise<ServerAuthState> => {
 
   return {
     status: "member",
-    name: session.user.name?.trim() || "Professionnel",
+    name: user.name?.trim() || "Professionnel",
     role: profile?.profileType ?? null,
+    // Carried, not re-fetched: the profile page used to read the session a
+    // second time through the client auth client and cast the result, which
+    // meant two session reads per render that could disagree.
+    user,
   };
 });

@@ -6,6 +6,7 @@ import { StatRow } from "@/components/molecules/stat-row";
 import { VerifiedBadge } from "@/components/molecules/verified-badge";
 import { DeleteAccountSection } from "@/components/organisms/delete-account-section";
 import { ProfileHeaderCard } from "@/components/organisms/profile-header-card";
+import { PROSE_CONTAINER } from "@/lib/layout";
 import type { ApiProfile, ApiUser } from "@/lib/types/api";
 
 type Feedback = "created" | "saved" | null;
@@ -24,7 +25,7 @@ export function ProfileView({
   onDeleteAccount: () => Promise<void>;
 }) {
   return (
-    <div className="mx-auto w-full max-w-3xl px-4 py-10 sm:px-6 sm:py-14">
+    <div className={PROSE_CONTAINER}>
       {feedback === "created" && (
         <div className="mb-6 space-y-4">
           <InlineAlert tone="success">

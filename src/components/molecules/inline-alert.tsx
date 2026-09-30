@@ -11,7 +11,7 @@ const TONE_CLASSES: Record<InlineAlertTone, string> = {
 };
 
 /**
- * Layout per element type: `p` (compact error) vs `output`/`div` (spacious confirmation).
+ * Layout per variant: `p` (compact, blocking) vs `output` (spacious, result).
  * Avoids utility class conflicts — `cn` resolves them predictably.
  */
 const ELEMENT_CLASSES: Record<InlineAlertProps["as"] & string, string> = {
@@ -22,7 +22,11 @@ const ELEMENT_CLASSES: Record<InlineAlertProps["as"] & string, string> = {
 
 export interface InlineAlertProps {
   tone?: InlineAlertTone;
-  /** `p`: blocking error (announced via role="alert") · `output`: action result (confirmation). */
+  /**
+   * `p` for a blocking error, announced immediately via `role="alert"` ·
+   * `output` for a result worth reporting — the semantic element the project's
+   * a11y lint expects for a polite status message.
+   */
   as?: "p" | "output" | "div";
   className?: string;
   children: ReactNode;

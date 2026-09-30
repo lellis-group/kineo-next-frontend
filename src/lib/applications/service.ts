@@ -5,20 +5,36 @@
  * error.
  */
 
-import { apiFetch, notFoundAs } from "../api-client";
+import { type ApiTransport, apiFetch, notFoundAs } from "../api-client";
 import type {
   ApiApplication,
   ApiApplicationPage,
   ApiApplicationStatusCounts,
+  ApplicationStatus,
 } from "../types/api";
 import { adaptApplicationEntry } from "./adapters";
 import type { ApplicationEntry, ApplicationsData } from "./contracts";
+
+/**
+ * Rows per page on the applications screen.
+ *
+ * Lives here rather than in the container because the server page needs it to
+ * fetch the first slice: if the two disagreed, the page would send a limit the
+ * container did not expect and the first client-driven page change would skip a
+ * row.
+ */
+export const APPLICATIONS_PAGE_SIZE = 5;
 
 /** Pagination parameters for fetching applications. */
 export interface PaginationParams {
   page: number;
   limit: number;
-  status?: string;
+  /**
+   * A backend application status, or the literal "ALL" the filter chips use for
+   * "no status filter". Typed as a union rather than `string` so a typo is a
+   * compile error instead of a request the backend silently ignores.
+   */
+  status?: ApplicationStatus | "ALL";
 }
 
 function statusCounts(total: number): ApiApplicationStatusCounts {
@@ -32,7 +48,10 @@ function statusCounts(total: number): ApiApplicationStatusCounts {
   };
 }
 
-async function fetchMyApplications(params: PaginationParams): Promise<{
+async function fetchMyApplications(
+  params: PaginationParams,
+  transport?: ApiTransport,
+): Promise<{
   applications: ApiApplication[];
   meta: ApiApplicationPage<ApiApplication>["meta"];
 }> {
@@ -47,7 +66,9 @@ async function fetchMyApplications(params: PaginationParams): Promise<{
 
   const raw = await apiFetch<
     ApiApplicationPage<ApiApplication> | ApiApplication[]
-  >(`/applications/mine?${searchParams}`).catch(notFoundAs([]));
+  >(`/applications/mine?${searchParams}`, undefined, transport).catch(
+    notFoundAs([]),
+  );
 
   // Legacy shape: a bare array is the whole collection — counts stay stable.
   if (Array.isArray(raw)) {
@@ -93,15 +114,21 @@ async function fetchMyApplications(params: PaginationParams): Promise<{
  */
 export async function fetchApplicationDetail(
   id: string,
+  transport?: ApiTransport,
 ): Promise<ApplicationEntry> {
-  const application = await apiFetch<ApiApplication>(`/applications/${id}`);
+  const application = await apiFetch<ApiApplication>(
+    `/applications/${id}`,
+    undefined,
+    transport,
+  );
   return adaptApplicationEntry(application);
 }
 
 export async function fetchApplicationsData(
-  params: PaginationParams = { page: 1, limit: 2 },
+  params: PaginationParams = { page: 1, limit: APPLICATIONS_PAGE_SIZE },
+  transport?: ApiTransport,
 ): Promise<ApplicationsData> {
-  const { applications, meta } = await fetchMyApplications(params);
+  const { applications, meta } = await fetchMyApplications(params, transport);
 
   // Newest submissions first — matches the backend orderBy, kept as a guard
   const entries: ApplicationEntry[] = applications

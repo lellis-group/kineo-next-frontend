@@ -1,6 +1,15 @@
 /**
- * Raw API types (mirrors templates/api.json).
- * Separate from presentation types in lib/dashboard.ts.
+ * Raw API types — the shapes the Kineo backend answers with.
+ *
+ * Hand-written, not generated: `templates/api.json` documents the request DTOs
+ * only, so every response shape here is transcribed from observed backend
+ * output (and, for `ApiUser`, from the backend's Prisma model) rather than from
+ * the OpenAPI document. A field added server-side will not appear here until
+ * someone reads it off a real response — so treat a missing field as "unknown",
+ * not "absent", and prefer a runtime fallback over `!`.
+ *
+ * Presentation types live beside the adapters that produce them, in
+ * `lib/<domain>/contracts.ts`.
  */
 
 /** Better-Auth user (mirrors kineo-nest-backend Prisma User model). */
@@ -39,20 +48,6 @@ export interface ApiProfile {
    * the address was confirmed.
    */
   verified?: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface ApiPractice {
-  id: string;
-  profileId: string;
-  name: string;
-  address: string;
-  city: string;
-  postalCode: string;
-  phone?: string;
-  email?: string;
-  website?: string;
   createdAt: string;
   updatedAt: string;
 }

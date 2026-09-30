@@ -6,6 +6,7 @@ import { Button } from "@/components/atoms/button";
 import { Spinner } from "@/components/atoms/spinner";
 import { InlineAlert } from "@/components/molecules/inline-alert";
 import { LoadingState } from "@/components/molecules/loading-state";
+import { ResendVerification } from "@/components/molecules/resend-verification";
 import { AuthCard } from "@/components/organisms/auth-card";
 import { checkAlreadyVerified, verifyEmail } from "@/lib/auth-client";
 import { mapVerificationError } from "@/lib/auth-errors";
@@ -95,37 +96,11 @@ function VerifyEmailContent() {
               : "Connectez-vous pour recevoir un nouveau lien de vérification si votre adresse n'est pas encore validée."}
           </p>
 
-          {resend === "sent" ? (
-            <InlineAlert tone="info">
-              Si un compte existe avec cette adresse, un nouvel email de
-              vérification vient de partir. Pensez à vérifier vos spams.
-            </InlineAlert>
-          ) : null}
-
-          {email && resend !== "sent" ? (
-            <>
-              <Button
-                onClick={resendEmail}
-                disabled={resend === "sending"}
-                size="lg"
-                className="w-full"
-              >
-                {resend === "sending" && (
-                  <Spinner className="h-4 w-4 border-primary-foreground/30 border-t-primary-foreground" />
-                )}
-                {resend === "sending"
-                  ? "Envoi en cours..."
-                  : "Renvoyer l'email de vérification"}
-              </Button>
-
-              {resend === "error" ? (
-                <InlineAlert as="p" tone="danger">
-                  L&apos;envoi a échoué. Vérifiez votre connexion, puis
-                  réessayez.
-                </InlineAlert>
-              ) : null}
-            </>
-          ) : null}
+          <ResendVerification
+            status={resend}
+            onResend={resendEmail}
+            sentMessage="Si un compte existe avec cette adresse, un nouvel email de vérification vient de partir. Pensez à vérifier vos spams."
+          />
 
           <Button href="/signin" size="lg" className="w-full">
             Se connecter

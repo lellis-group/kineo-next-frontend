@@ -9,7 +9,13 @@
  * an empty list rather than an error.
  */
 
-import { ApiError, apiFetch, notFoundAs } from "../api-client";
+import {
+  ApiError,
+  type ApiTransport,
+  apiFetch,
+  notFoundAs,
+} from "../api-client";
+import { errorMessage } from "../api-errors";
 import type {
   ApiApplication,
   ApiPaginated,
@@ -19,6 +25,7 @@ import type {
 } from "../types/api";
 import { adaptMyListings, adaptReceivedApplication } from "./adapters";
 import type {
+  ListingApplicationsData,
   ListingStatusCounts,
   MyListing,
   ReceivedApplication,
@@ -54,16 +61,6 @@ export interface MyListingsData {
   counts: ListingStatusCounts;
 }
 
-/** Candidates received on one listing, plus the totals behind their filter. */
-export interface ListingApplicationsData {
-  applications: ReceivedApplication[];
-  page: number;
-  totalPages: number;
-  total: number;
-  /** Totals over the whole listing, independent of the active filter. */
-  counts: ReceivedApplicationCounts;
-}
-
 /** Zeroed counts — for a response without the breakdown, or a brand-new user. */
 function emptyCounts(): ListingStatusCounts {
   return {
@@ -93,6 +90,7 @@ export async function fetchMyListings(
     /** Page size, capped at 100 by the endpoint. */
     limit?: number;
   } = {},
+  transport?: ApiTransport,
 ): Promise<MyListingsData> {
   const searchParams = new URLSearchParams();
 
@@ -111,9 +109,11 @@ export async function fetchMyListings(
     ApiPaginated<ApiReplacementListing> & {
       meta: { counts?: Partial<ListingStatusCounts> };
     }
-  >(`/replacement-listings/mine${query ? `?${query}` : ""}`).catch(
-    notFoundAs(null),
-  );
+  >(
+    `/replacement-listings/mine${query ? `?${query}` : ""}`,
+    undefined,
+    transport,
+  ).catch(notFoundAs(null));
 
   if (!raw) {
     return {
@@ -140,6 +140,7 @@ export async function fetchMyListings(
 export async function fetchListingApplications(
   listingId: string,
   params: { page?: number; limit?: number; status?: ApplicationStatus } = {},
+  transport?: ApiTransport,
 ): Promise<ListingApplicationsData> {
   const searchParams = new URLSearchParams({
     page: String(params.page ?? 1),
@@ -154,7 +155,7 @@ export async function fetchListingApplications(
     ApiPaginated<ApiApplication> & {
       meta: { counts?: Partial<ReceivedApplicationCounts> };
     }
-  >(`/applications/listing/${listingId}?${searchParams}`);
+  >(`/applications/listing/${listingId}?${searchParams}`, undefined, transport);
 
   return {
     applications: raw.data
@@ -193,15 +194,6 @@ async function mutateListing(
   }
 }
 
-/** DELETE /replacement-listings/:id — only possible while nobody applied. */
-export async function removeListing(id: string): Promise<void> {
-  try {
-    await apiFetch(`/replacement-listings/${id}`, { method: "DELETE" });
-  } catch (error) {
-    throw new Error(mapListingActionError(error, "supprimer"));
-  }
-}
-
 function mapListingActionError(error: unknown, verb: string): string {
   if (error instanceof ApiError) {
     if (error.status === 404) {
@@ -219,7 +211,12 @@ function mapListingActionError(error: unknown, verb: string): string {
       return translateStatusMessage(error.apiMessage, verb);
     }
   }
-  return `Impossible de ${verb} l'annonce pour le moment. Veuillez réessayer.`;
+  // Everything else — including the 401 the branches above do not cover, which
+  // previously fell through to "please try again" and asked a signed-out reader
+  // to retry a request that could never succeed.
+  return errorMessage(error, {
+    unavailable: `Impossible de ${verb} l'annonce pour le moment. Veuillez réessayer.`,
+  });
 }
 
 /**

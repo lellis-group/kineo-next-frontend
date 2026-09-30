@@ -14,11 +14,12 @@ import type {
   ReplacementListingStatus,
   Specialty,
 } from "@/lib/types/api";
+import type { BadgeTone } from "@/lib/ui-tokens";
 
 /** Label + tone for a listing status, as shown on its card. */
 export interface ListingStatusMeta {
   label: string;
-  tone: "neutral" | "info" | "warning" | "success" | "danger";
+  tone: BadgeTone;
 }
 
 /** A listing published by the user, with the counts needed to act on it. */
@@ -72,27 +73,7 @@ export interface ReceivedApplication {
   raw: ApiApplication;
 }
 
-/** Statuses where a candidate can still be acted upon. */
-export const ACTIONABLE_STATUSES: ReadonlySet<ApplicationStatus> = new Set([
-  "PENDING",
-  "SHORTLISTED",
-]);
-
-/**
- * Statuses a listing can no longer receive an application on.
- *
- * Mirrors `RECRUITING_LISTING_STATUSES` in the backend's `application-guard`.
- * Kept in sync deliberately: the blocker resolver filters on it to decide
- * whether the erasure is clearable, and a narrower set here would let the
- * client declare "nothing blocks you" while the server still refuses.
- * `DRAFT` and `FILLED` are included even though the UI offers no action on
- * them, because both can still carry a `PENDING` or `ACCEPTED` row that the
- * cascade would destroy.
- */
-export const BLOCKING_LISTING_STATUSES: ReadonlySet<ReplacementListingStatus> =
-  new Set(["DRAFT", "OPEN", "IN_DISCUSSION", "FULL", "FILLED"]);
-
-/** Statuses the owner can still act on. A subset of the above by design. */
+/** Statuses a listing can still receive an application on. */
 export const RECRUITING_STATUSES: ReadonlySet<ReplacementListingStatus> =
   new Set(["OPEN", "IN_DISCUSSION", "FULL"]);
 
@@ -155,4 +136,4 @@ export interface ListingApplicationsData {
 }
 
 /** Raw listing payload, re-exported so actions can work off the same object. */
-export type { ApiReplacementListing };
+export type { ApiReplacementListing, ReplacementListingStatus };

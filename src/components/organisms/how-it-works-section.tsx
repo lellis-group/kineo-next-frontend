@@ -1,6 +1,7 @@
 import { CheckIcon, PencilIcon, UsersIcon } from "@/components/atoms/icons";
 import { Reveal } from "@/components/atoms/reveal";
 import { SectionHeading } from "@/components/atoms/section-heading";
+import { MARKETING_CONTAINER } from "@/lib/layout";
 import { howItWorks } from "@/lib/marketing";
 
 const STEP_ICONS = {
@@ -9,13 +10,17 @@ const STEP_ICONS = {
   check: CheckIcon,
 } as const;
 
+/**
+ * The `#how-it-works` anchor the public nav scrolls to — without this section on
+ * the page, that link had no target.
+ */
 export function HowItWorksSection() {
   return (
     <section
       id="how-it-works"
       className="scroll-mt-20 border-b border-border bg-background"
     >
-      <div className="mx-auto w-full max-w-7xl px-4 py-16 sm:px-6 sm:py-20">
+      <div className={MARKETING_CONTAINER}>
         <SectionHeading
           title={howItWorks.title}
           subtitle={howItWorks.subtitle}

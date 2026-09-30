@@ -5,6 +5,7 @@
 
 export {
   LISTING_FALLBACK_TITLE,
+  STATUS_HEADLINES,
   STATUS_META,
   WITHDRAWABLE_STATUSES,
 } from "./adapters";
@@ -18,6 +19,7 @@ export type {
 export { APPLICATION_FILTERS } from "./contracts";
 export type { PaginationParams } from "./service";
 export {
+  APPLICATIONS_PAGE_SIZE,
   fetchApplicationDetail,
   fetchApplicationsData,
   updateApplicationMessage,

@@ -2,6 +2,7 @@ import { UsersIcon } from "@/components/atoms/icons";
 import { FilterChips } from "@/components/molecules/filter-chips";
 import { EmptyState } from "@/components/organisms/empty-state";
 import { MyListingCard } from "@/components/organisms/my-listing-card";
+import { PAGE_CONTAINER } from "@/lib/layout";
 import {
   countForFilter,
   LISTING_FILTERS,
@@ -57,10 +58,8 @@ export function MyListingsView({
   onClose,
   onCancel,
 }: MyListingsViewProps) {
-  const isFiltered = currentFilter !== "ALL";
-
   return (
-    <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 sm:py-10">
+    <div className={PAGE_CONTAINER}>
       <MyListingsHeader />
 
       {counts.total === 0 ? (
@@ -117,13 +116,6 @@ export function MyListingsView({
                 </li>
               ))}
             </ul>
-          )}
-
-          {/* A filter that hides everything is a dead end without a way back. */}
-          {isFiltered && listings.length === 0 && (
-            <output className="sr-only">
-              Aucune annonce ne correspond à ce filtre.
-            </output>
           )}
         </>
       )}

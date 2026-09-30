@@ -1,5 +1,9 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { ProfileEditContainer } from "@/components/templates/profile-edit-container";
+import { serverTransport } from "@/lib/api-transport.server";
+import { fetchMyProfile } from "@/lib/profile-service";
+import { fetchServerAuth } from "@/lib/server-auth";
 
 export const metadata: Metadata = {
   title: "Modifier le profil — Kineo",
@@ -8,6 +12,23 @@ export const metadata: Metadata = {
   robots: { index: false },
 };
 
-export default function ProfileEditPage() {
-  return <ProfileEditContainer />;
+/**
+ * Resolves the profile server-side. An expired session goes to sign-in and a
+ * member without a profile goes to the create form — both decided before any
+ * of the form is rendered, instead of after a round trip from the browser.
+ */
+export default async function ProfileEditPage() {
+  const [auth, profile] = await Promise.all([
+    fetchServerAuth(),
+    fetchMyProfile(serverTransport),
+  ]);
+
+  if (auth.status === "anonymous") {
+    redirect("/signin");
+  }
+  if (!profile) {
+    redirect("/profile/create");
+  }
+
+  return <ProfileEditContainer profile={profile} />;
 }

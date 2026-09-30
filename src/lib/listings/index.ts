@@ -15,27 +15,21 @@ export {
 } from "./adapters";
 export type {
   ApplicationApplicant,
+  ListingApplicationsData,
   ListingStatusCounts,
   ListingStatusMeta,
   ListingsFilter,
   ListingsFilterOption,
   MyListing,
   ReceivedApplication,
+  ReceivedApplicationCounts,
+  ReplacementListingStatus,
 } from "./contracts";
-export {
-  ACTIONABLE_STATUSES,
-  BLOCKING_LISTING_STATUSES,
-  LISTING_FILTERS,
-  RECRUITING_STATUSES,
-} from "./contracts";
-export type {
-  ListingApplicationsData,
-  MyListingsData,
-} from "./service";
+export { LISTING_FILTERS, RECRUITING_STATUSES } from "./contracts";
+export type { MyListingsData } from "./service";
 export {
   cancelListing,
   closeListing,
   fetchListingApplications,
   fetchMyListings,
-  removeListing,
 } from "./service";

@@ -10,7 +10,9 @@ export function adaptActivity(
   const listingTitles = new Map(listings.map((l) => [l.id, l.title]));
 
   // The feed reflects ONLY applications sent by the user — first-person messages.
-  return applications
+  // Copied before sorting: `applications` is the collection the other adapters
+  // read, and sorting it in place would reorder their input as a side effect.
+  return [...applications]
     .sort(
       (a, b) =>
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),

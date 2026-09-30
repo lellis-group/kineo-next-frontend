@@ -1,8 +1,7 @@
 "use client";
 
 import { useFormStatus } from "react-dom";
-import { Button } from "@/components/atoms/button";
-import { Spinner } from "@/components/atoms/spinner";
+import { PendingButton } from "@/components/molecules/pending-button";
 
 export interface SubmitButtonProps {
   /** Idle label. */
@@ -11,19 +10,24 @@ export interface SubmitButtonProps {
   pendingLabel?: string;
 }
 
-/** Form submit button: reads parent `pending` state (useFormStatus), disables and shows a spinner. */
-export function SubmitButton({
-  label,
-  pendingLabel = `${label}...`,
-}: SubmitButtonProps) {
+/**
+ * Form submit button for a `next/form` `action`.
+ *
+ * The pending state comes from `useFormStatus` rather than a prop, because the
+ * form that owns the submission is the parent. For an inline `<form onSubmit>`
+ * driven by local state, use `PendingButton` instead.
+ */
+export function SubmitButton({ label, pendingLabel }: SubmitButtonProps) {
   const { pending } = useFormStatus();
 
   return (
-    <Button type="submit" disabled={pending} size="lg" className="mt-2 w-full">
-      {pending && (
-        <Spinner className="h-4 w-4 border-primary-foreground/30 border-t-primary-foreground" />
-      )}
-      {pending ? pendingLabel : label}
-    </Button>
+    <PendingButton
+      type="submit"
+      size="lg"
+      pending={pending}
+      className="mt-2 w-full"
+      idleLabel={label}
+      pendingLabel={pendingLabel}
+    />
   );
 }

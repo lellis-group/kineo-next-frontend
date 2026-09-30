@@ -39,18 +39,6 @@ export const trustBar = {
   ] as const,
 };
 
-/**
- * PLACEHOLDER STATS — the proof bar was replaced by the testimonials section
- * (landing mockup). Kept for a future "numbers" block; unused by PublicHome.
- */
-export const proofStats = {
-  items: [
-    { value: 250, suffix: "+", label: "Professionnels de santé inscrits" },
-    { value: 42, suffix: "", label: "Départements couverts" },
-    { value: 900, suffix: "+", label: "Candidatures traitées chaque mois" },
-  ] as const,
-};
-
 export interface FeatureItem {
   icon: "pencil" | "users" | "mapPin";
   title: string;

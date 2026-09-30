@@ -3,6 +3,7 @@
  * (Better-Auth managed: name, image, email, emailVerified).
  */
 
+import { errorMessage } from "./api-errors";
 import { authClient } from "./auth-client";
 import type { ApiUser } from "./types/api";
 
@@ -51,23 +52,19 @@ export async function changeEmail(newEmail: string): Promise<{
   return { user: await fetchUserInfo(), message };
 }
 
-/** Maps an API error to a user-facing French message. */
+/**
+ * Maps an account-update failure to a user-facing French message.
+ *
+ * The backend's own `message` is deliberately not passed through: better-auth
+ * reports these in English ("User already exists"), and every screen here is
+ * French. The status is the only trustworthy part.
+ */
 export function mapUserError(error: unknown): string {
-  const status =
-    typeof error === "object" && error && "status" in error
-      ? (error as { status?: number }).status
-      : undefined;
-  const message =
-    typeof error === "object" && error && "message" in error
-      ? (error as { message?: string }).message
-      : undefined;
-
-  if (message) return message;
-  if (status === 401)
-    return "Votre session a expiré. Veuillez vous reconnecter.";
-  if (status === 403) return "Action non autorisée.";
-  if (status === 409) return "Cet email est déjà utilisé.";
-  return "Impossible de mettre à jour vos informations. Veuillez réessayer.";
+  return errorMessage(error, {
+    conflict: "Cet email est déjà utilisé.",
+    unavailable:
+      "Impossible de mettre à jour vos informations. Veuillez réessayer.",
+  });
 }
 
 /**
@@ -84,13 +81,25 @@ export async function deleteAccount(): Promise<void> {
   }
 }
 
-/** Maps a delete-account API error to a user-facing French message. */
-function mapDeleteAccountError(error: { status?: number; message?: string }) {
-  if (error.status === 401) {
-    return "Votre session a expiré. Veuillez vous reconnecter.";
-  }
-  if (error.status === 400 && /session/i.test(error.message ?? "")) {
+/**
+ * Maps a delete-account failure to a user-facing French message.
+ *
+ * The backend refuses an erasure that was requested from a session which has
+ * since been rotated. That is recoverable — sign out, sign in, ask again — so it
+ * is told apart from the cases where retrying changes nothing.
+ */
+function mapDeleteAccountError(error: unknown): string {
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "message" in error &&
+    typeof (error as { message?: unknown }).message === "string" &&
+    /session/i.test((error as { message: string }).message)
+  ) {
     return "Votre session est trop ancienne pour valider une suppression. Déconnectez-vous, reconnectez-vous, puis relancez la demande.";
   }
-  return "Impossible d'envoyer la demande de suppression. Veuillez réessayer plus tard.";
+  return errorMessage(error, {
+    unavailable:
+      "Impossible d'envoyer la demande de suppression. Veuillez réessayer plus tard.",
+  });
 }

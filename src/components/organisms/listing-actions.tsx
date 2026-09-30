@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import { Button } from "@/components/atoms/button";
-import { Card } from "@/components/atoms/card";
-import { AlertIcon, CloseIcon } from "@/components/atoms/icons";
-import { Spinner } from "@/components/atoms/spinner";
+import { CloseIcon } from "@/components/atoms/icons";
+import { DangerPanel } from "@/components/molecules/danger-panel";
+import { PendingButton } from "@/components/molecules/pending-button";
 import { plural } from "@/lib/format";
 
 /** The two actions that take a listing out of circulation. */
@@ -17,7 +17,6 @@ export interface ListingActionsProps {
   acting?: boolean;
   onClose: () => void;
   onCancel: () => void;
-  className?: string;
 }
 
 const ACTION_COPY: Record<
@@ -64,7 +63,6 @@ export function ListingActions({
   acting,
   onClose,
   onCancel,
-  className,
 }: ListingActionsProps) {
   const [pending, setPending] = useState<ListingAction | null>(null);
 
@@ -75,16 +73,12 @@ export function ListingActions({
   // must not move or change label when a step is added.
   const triggers = (
     <>
-      <Button
+      <PendingButton
         variant="outline"
+        pending={acting === true}
         onClick={() => (needsConfirm ? setPending("close") : onClose())}
-        disabled={acting}
-      >
-        {acting && pending === null && (
-          <Spinner className="h-4 w-4 border-foreground/30 border-t-foreground" />
-        )}
-        Clôturer l&apos;annonce
-      </Button>
+        idleLabel="Clôturer l'annonce"
+      />{" "}
       <Button
         variant="ghost"
         onClick={() => (needsConfirm ? setPending("cancel") : onCancel())}
@@ -96,32 +90,17 @@ export function ListingActions({
     </>
   );
 
-  if (!needsConfirm) {
-    return <div className={className}>{triggers}</div>;
-  }
-
-  if (!pending) {
-    return <div className={className}>{triggers}</div>;
+  // Two ways to reach the same place — nobody waiting, or a confirmation is not
+  // open — and both show the triggers.
+  if (!needsConfirm || !pending) {
+    return <div>{triggers}</div>;
   }
 
   const copy = ACTION_COPY[pending];
 
   return (
-    <Card className="border-danger/30 bg-danger/5 p-5 sm:p-6">
-      <div className="flex items-start gap-3">
-        <span
-          aria-hidden="true"
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-danger/15 text-danger"
-        >
-          <AlertIcon className="h-5 w-5" />
-        </span>
-        <div className="min-w-0">
-          <h3 className="text-base font-bold text-danger">{copy.title}</h3>
-          <p className="mt-0.5 text-sm leading-relaxed text-muted">
-            {copy.intro}
-          </p>
-        </div>
-      </div>
+    <DangerPanel title={copy.title}>
+      <p className="mt-0.5 text-sm leading-relaxed text-muted">{copy.intro}</p>
 
       <p className="mt-4 text-sm font-medium text-foreground">
         {activeCount} candidature{plural(activeCount)} en cours{" "}
@@ -129,16 +108,12 @@ export function ListingActions({
       </p>
 
       <div className="mt-4 flex flex-col gap-3 sm:flex-row">
-        <Button
+        <PendingButton
           variant="danger"
-          disabled={acting}
+          pending={acting === true}
           onClick={pending === "close" ? onClose : onCancel}
-        >
-          {acting && (
-            <Spinner className="h-4 w-4 border-danger-foreground/30 border-t-danger-foreground" />
-          )}
-          Confirmer&nbsp;: {copy.confirm.toLowerCase()}
-        </Button>
+          idleLabel={`Confirmer : ${copy.confirm.toLowerCase()}`}
+        />
         <Button
           variant="ghost"
           disabled={acting}
@@ -148,6 +123,6 @@ export function ListingActions({
           Revenir en arrière
         </Button>
       </div>
-    </Card>
+    </DangerPanel>
   );
 }

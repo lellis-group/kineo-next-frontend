@@ -1,17 +1,12 @@
 import type { BadgeTone } from "@/components/atoms/badge";
-import { type ApplicationEntry, STATUS_META } from "@/lib/applications";
+import {
+  type ApplicationEntry,
+  STATUS_HEADLINES,
+  STATUS_META,
+} from "@/lib/applications";
 import { cn } from "@/lib/cn";
 import { formatDateTime } from "@/lib/format";
 import type { ApplicationStatus } from "@/lib/types/api";
-
-/** Status headline — more explicit than the chip label. */
-const STATUS_HEADLINES: Record<ApplicationStatus, string> = {
-  PENDING: "En attente de réponse",
-  SHORTLISTED: "Présélectionnée",
-  ACCEPTED: "Candidature acceptée",
-  REJECTED: "Candidature rejetée",
-  WITHDRAWN: "Candidature retirée",
-};
 
 /** Band classes per badge tone. */
 const TONE_CLASSES: Record<BadgeTone, string> = {

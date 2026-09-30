@@ -4,8 +4,7 @@ import Form from "next/form";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Button } from "@/components/atoms/button";
-import { ArrowLeftIcon } from "@/components/atoms/icons";
+import { AuthPageFooter } from "@/components/molecules/auth-page-footer";
 import { EmailField } from "@/components/molecules/email-field";
 import { InlineAlert } from "@/components/molecules/inline-alert";
 import { PasswordInput } from "@/components/molecules/password-input";
@@ -65,12 +64,12 @@ export default function SignInPage() {
         <label className="flex flex-col gap-2" htmlFor="password">
           <span className="flex items-center justify-between">
             <span className="field-label">Mot de passe</span>
-            <a
+            <Link
               href="/forgot-password"
               className="text-xs text-muted transition-colors hover:text-primary"
             >
               Oublié ?
-            </a>
+            </Link>
           </span>
           <PasswordInput
             name="password"
@@ -94,22 +93,11 @@ export default function SignInPage() {
         />
       </Form>
 
-      <p className="mt-7 text-center text-sm text-muted">
-        Nouveau sur Kineo ?{" "}
-        <Link
-          href="/signup"
-          className="font-medium text-primary transition-colors hover:text-primary-hover"
-        >
-          Créer un compte
-        </Link>
-      </p>
-
-      <div className="mt-4 text-center">
-        <Button href="/" variant="ghost">
-          <ArrowLeftIcon className="h-4 w-4" />
-          <span>Accueil</span>
-        </Button>
-      </div>
+      <AuthPageFooter
+        lead="Nouveau sur Kineo ?"
+        actionLabel="Créer un compte"
+        actionHref="/signup"
+      />
     </AuthCard>
   );
 }

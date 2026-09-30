@@ -1,87 +1,35 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
-import { LoadingState } from "@/components/molecules/loading-state";
-import { ErrorState } from "@/components/organisms/error-state";
 import { ProfileForm } from "@/components/organisms/profile-form";
-import { ApiError } from "@/lib/api-client";
 import { type ProfileFormData, profileToFormValues } from "@/lib/profile";
-import {
-  fetchMyProfile,
-  mapProfileError,
-  updateProfile,
-} from "@/lib/profile-service";
+import { mapProfileError, updateProfile } from "@/lib/profile-service";
 import type { ApiProfile } from "@/lib/types/api";
 import { ProfileFormPage } from "./profile-form-page";
 
-type Status = "loading" | "error" | "ready";
-
-/** Orchestrator for /profile/edit: edit form, redirects to /profile/create if no profile. */
-export function ProfileEditContainer() {
+/**
+ * Orchestrator for /profile/edit.
+ *
+ * The profile is a required prop rather than something fetched here: the page
+ * has to load it anyway to decide whether this route is even reachable (no
+ * profile means the member belongs on the create form), and fetching it twice
+ * was how that redirect used to happen a beat late, from a `useEffect`.
+ */
+export function ProfileEditContainer({ profile }: { profile: ApiProfile }) {
   const router = useRouter();
-  const [status, setStatus] = useState<Status>("loading");
-  const [error, setError] = useState("");
-  const [profile, setProfile] = useState<ApiProfile | null>(null);
-
-  const load = useCallback(() => {
-    setStatus("loading");
-    setError("");
-    fetchMyProfile()
-      .then((loaded) => {
-        if (!loaded) {
-          router.replace("/profile/create");
-          return;
-        }
-        setProfile(loaded);
-        setStatus("ready");
-      })
-      .catch((err) => {
-        if (err instanceof ApiError && err.status === 401) {
-          router.replace("/signup");
-          return;
-        }
-        if (err instanceof Error && /404/i.test(err.message)) {
-          router.replace("/profile/create");
-          return;
-        }
-        setError(err instanceof Error ? err.message : "Erreur inconnue");
-        setStatus("error");
-      });
-  }, [router]);
-
-  useEffect(() => {
-    load();
-  }, [load]);
 
   async function handleSubmit(
     payload: ProfileFormData,
   ): Promise<string | undefined> {
-    if (!profile) {
-      router.replace("/profile/create");
-      return undefined;
-    }
-    setError("");
     try {
       await updateProfile(profile.id, payload);
-      router.replace("/profile");
+      // The confirmation banner lives on /profile, so the outcome travels in the
+      // URL through the redirect.
+      router.replace("/profile?saved=1");
       return undefined;
     } catch (err) {
       return mapProfileError(err);
     }
-  }
-
-  if (status === "loading") {
-    return <LoadingState />;
-  }
-
-  if (status === "error") {
-    return <ErrorState message={error} onRetry={load} />;
-  }
-
-  if (!profile) {
-    router.replace("/profile/create");
-    return null;
   }
 
   return (

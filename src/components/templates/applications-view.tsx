@@ -10,6 +10,7 @@ import {
   type ApplicationsData,
   type ApplicationsFilter,
 } from "@/lib/applications";
+import { PAGE_CONTAINER } from "@/lib/layout";
 
 interface ApplicationsViewProps {
   data: ApplicationsData;
@@ -27,7 +28,7 @@ export function ApplicationsView({
 }: ApplicationsViewProps) {
   if (data.counts.total === 0) {
     return (
-      <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 sm:py-10">
+      <div className={PAGE_CONTAINER}>
         <ApplicationsHeader />
         <EmptyState
           icon={<FileTextIcon className="h-8 w-8 text-primary" />}
@@ -41,7 +42,7 @@ export function ApplicationsView({
   }
 
   return (
-    <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 sm:py-10">
+    <div className={PAGE_CONTAINER}>
       <ApplicationsHeader />
 
       <FilterChips
