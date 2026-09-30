@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { ErrorState } from "@/components/organisms/error-state";
+import { Button } from "@/components/atoms/button";
 import { ApplicationsView } from "@/components/templates/applications-view";
 import { ApiError } from "@/lib/api-client";
 import {
@@ -15,11 +15,10 @@ import {
 /**
  * Orchestrator for /applications — renders ApplicationsView.
  *
- * The first, unfiltered page arrives from the server page, so a cold load shows
- * the list instead of a skeleton and no request is repeated for data already in
- * the payload. Paging and filtering are client state and do fetch — the effect
- * below is what does that, and it deliberately skips the case the server
- * already covered.
+ * The default view (first page, no status filter) arrives from the server page,
+ * so a cold load shows the list instead of a skeleton and the request is not
+ * repeated for data already in the payload. Every other combination of bucket
+ * and page is client state and fetches.
  */
 export function ApplicationsContainer({
   initialData,
@@ -59,12 +58,26 @@ export function ApplicationsContainer({
     [router],
   );
 
-  const isServerProvided = page === 1 && filter === "ALL";
+  /**
+   * Whether the requested view is the one the server already delivered.
+   *
+   * This has to *restore* that view rather than skip work. It used to only
+   * skip the fetch, which meant that coming back to « Toutes » from another
+   * bucket left the previous bucket's rows on screen under a chip row that had
+   * already switched: the condition was true again, so nothing was fetched and
+   * nothing was reset. Returning to the default view is a request like any
+   * other, and `initialData` is its answer.
+   */
+  const isDefaultView = page === 1 && filter === "ALL";
 
   useEffect(() => {
-    if (isServerProvided) return;
+    if (isDefaultView) {
+      setData(initialData);
+      setError(null);
+      return;
+    }
     load(page, filter);
-  }, [isServerProvided, load, page, filter]);
+  }, [isDefaultView, initialData, load, page, filter]);
 
   const handlePageChange = useCallback((newPage: number) => {
     setPage(newPage);
@@ -75,20 +88,29 @@ export function ApplicationsContainer({
     setPage(1); // Reset to first page when filter changes
   }, []);
 
-  // A failure is only fatal while there is nothing to show. Once a page has
-  // rendered, a failed refetch leaves that page in place rather than replacing
-  // a working list with an error card.
-  if (error && isServerProvided) {
-    return <ErrorState error={error} onRetry={() => load(page, filter)} />;
-  }
-
   return (
     <div>
+      {/* Never fatal: the server always delivered the default view, so there is
+          something to show even when a later read fails. Replacing a working
+          list with an error card would also hide the chips that would let the
+          reader navigate out of the broken state. */}
       {error !== null && (
-        <p className="mx-auto w-full max-w-7xl px-4 pt-4 text-sm text-danger sm:px-6">
-          Actualisation impossible. Les candidatures affichées peuvent être
-          obsolètes.
-        </p>
+        <div
+          role="alert"
+          className="mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-3 px-4 pt-4 sm:px-6"
+        >
+          <p className="text-sm text-danger">
+            Actualisation impossible. Les candidatures affichées peuvent être
+            obsolètes.
+          </p>
+          <Button
+            variant="secondary"
+            className="shrink-0"
+            onClick={() => load(page, filter)}
+          >
+            Réessayer
+          </Button>
+        </div>
       )}
       <ApplicationsView
         data={data}

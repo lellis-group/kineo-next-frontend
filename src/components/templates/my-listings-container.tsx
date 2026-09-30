@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { ErrorState } from "@/components/organisms/error-state";
+import { Button } from "@/components/atoms/button";
 import { MyListingsView } from "@/components/templates/my-listings-view";
 import { ApiError } from "@/lib/api-client";
 import {
@@ -82,15 +82,27 @@ export function MyListingsContainer({
     [router],
   );
 
-  // The unfiltered first page came from the server; only a bucket change has to
-  // re-read. `page` never moves off 1 here — the screen has no pagination
-  // control — so it is deliberately not a trigger.
-  const isServerProvided = filter === "ALL" && page === 1;
+  /**
+   * Whether the requested view is the one the server already delivered.
+   *
+   * This has to *restore* that view rather than skip work. It used to only skip
+   * the fetch, which meant that coming back to « Toutes » from another bucket
+   * left the previous bucket's rows on screen under a chip row that had already
+   * switched. Returning to the default bucket is a request like any other, and
+   * `initialData` is its answer.
+   */
+  const isDefaultView = filter === "ALL" && page === 1;
 
   useEffect(() => {
-    if (isServerProvided) return;
+    if (isDefaultView) {
+      setData(initialData);
+      setError(null);
+      setApplicationsByListing({});
+      setExpandedListingId(undefined);
+      return;
+    }
     load(filter, page);
-  }, [isServerProvided, load, filter, page]);
+  }, [isDefaultView, initialData, load, filter, page]);
 
   // Candidates are fetched on demand: a practice with ten listings should not
   // pay for ten requests to read one of them.
@@ -218,26 +230,44 @@ export function MyListingsContainer({
     [runAction],
   );
 
-  if (error && isServerProvided) {
-    return <ErrorState error={error} onRetry={() => load(filter, page)} />;
-  }
-
+  // Never fatal: the server always delivered the default bucket, so there is
+  // something to show even when a later read fails.
   return (
-    <MyListingsView
-      listings={data.listings}
-      counts={data.counts}
-      currentFilter={filter}
-      onFilterChange={handleFilterChange}
-      applicationsByListing={applicationsByListing}
-      expandedListingId={expandedListingId}
-      loadingListingId={loadingListingId}
-      actingListingId={actingListingId}
-      actionError={actionError}
-      actionFeedback={actionFeedback}
-      onToggle={handleToggle}
-      onClose={handleClose}
-      onCancel={handleCancel}
-    />
+    <>
+      {error !== null && (
+        <div
+          role="alert"
+          className="mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-3 px-4 pt-4 sm:px-6"
+        >
+          <p className="text-sm text-danger">
+            Actualisation impossible. Les annonces affichées peuvent être
+            obsolètes.
+          </p>
+          <Button
+            variant="secondary"
+            className="shrink-0"
+            onClick={() => load(filter, page)}
+          >
+            Réessayer
+          </Button>
+        </div>
+      )}
+      <MyListingsView
+        listings={data.listings}
+        counts={data.counts}
+        currentFilter={filter}
+        onFilterChange={handleFilterChange}
+        applicationsByListing={applicationsByListing}
+        expandedListingId={expandedListingId}
+        loadingListingId={loadingListingId}
+        actingListingId={actingListingId}
+        actionError={actionError}
+        actionFeedback={actionFeedback}
+        onToggle={handleToggle}
+        onClose={handleClose}
+        onCancel={handleCancel}
+      />
+    </>
   );
 }
 
