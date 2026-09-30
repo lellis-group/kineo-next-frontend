@@ -42,6 +42,32 @@ export const WITHDRAWABLE_STATUSES: ReadonlySet<ApplicationStatus> = new Set([
   "SHORTLISTED",
 ]);
 
+/**
+ * Statuses where the candidate is still waiting on the practice's answer.
+ *
+ * Same two statuses as `WITHDRAWABLE_STATUSES`, reached from the other side:
+ * that set is what the backend will still accept a withdrawal for, this one is
+ * what the dashboard counts as unresolved. They match because a practice can
+ * only decide after the candidate has applied, and everything from `ACCEPTED`
+ * onwards is a decision already taken.
+ *
+ * `SHORTLISTED` belongs here: being put forward is the practice responding, but
+ * it has not yet chosen anyone, so the candidate is still waiting. Counting only
+ * `PENDING` reported zero applications outstanding for anyone who had been
+ * shortlisted, which read as "nothing to wait for".
+ */
+export const AWAITING_DECISION_STATUSES: ReadonlySet<ApplicationStatus> =
+  new Set(["PENDING", "SHORTLISTED"]);
+
+/** How many applications are still awaiting the practice's decision. */
+export function countAwaitingDecision(
+  applications: ReadonlyArray<{ status: ApplicationStatus }>,
+): number {
+  return applications.filter((application) =>
+    AWAITING_DECISION_STATUSES.has(application.status),
+  ).length;
+}
+
 /** Label shown when the targeted listing no longer resolves. */
 export const LISTING_FALLBACK_TITLE = "Titre d'annonce indisponible";
 

@@ -1,3 +1,4 @@
+import { countAwaitingDecision } from "../applications";
 import { plural } from "../format";
 import { countRecruitingListings } from "../listings";
 import { SPECIALTY_LABELS } from "../profile";
@@ -38,13 +39,18 @@ export function adaptGreeting(
   // Same derivation as the "Mes annonces" stat card below, from the same named
   // set — the two used to disagree, because this copy left FULL out.
   const activeListings = countRecruitingListings(listings);
-  const pendingApps = applications.filter((a) => a.status === "PENDING").length;
+  // Same set as the « Mes candidatures » card, so the greeting and the card
+  // cannot disagree about what is still outstanding.
+  const pendingApps = countAwaitingDecision(applications);
 
   let subtitle: string;
   if (activeListings > 0 && pendingApps > 0) {
-    subtitle = `Ravi de vous revoir ! Vous avez ${activeListings} annonce${plural(activeListings)} active${plural(activeListings)} et ${pendingApps} candidature${plural(pendingApps)} en attente de réponse.`;
+    subtitle = `Ravi de vous revoir ! Vous avez ${activeListings} annonce${plural(activeListings)} active${plural(activeListings)} et ${pendingApps} candidature${plural(pendingApps)} en attente de décision.`;
   } else if (activeListings > 0) {
-    subtitle = `Vous avez ${activeListings} annonce${plural(activeListings)} active${plural(activeListings)}. Aucune candidature envoyée pour le moment.`;
+    // « en attente », not « envoyée »: the branch is reached when nothing is
+    // outstanding, which is not the same as having sent nothing. A user with one
+    // accepted application and no listing left has sent one.
+    subtitle = `Vous avez ${activeListings} annonce${plural(activeListings)} active${plural(activeListings)}. Aucune candidature en attente pour le moment.`;
   } else if (pendingApps > 0) {
     subtitle = `Vous avez ${pendingApps} candidature${plural(pendingApps)} envoyée${plural(pendingApps)}. Aucune annonce active pour le moment.`;
   } else {

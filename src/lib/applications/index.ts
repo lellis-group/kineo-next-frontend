@@ -4,6 +4,8 @@
  */
 
 export {
+  AWAITING_DECISION_STATUSES,
+  countAwaitingDecision,
   LISTING_FALLBACK_TITLE,
   STATUS_HEADLINES,
   STATUS_META,
