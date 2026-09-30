@@ -34,6 +34,10 @@ export const LISTING_STATUS_META: Record<
   FULL: { label: "Complet", tone: "warning" },
   FILLED: { label: "Pourvue", tone: "success" },
   CLOSED: { label: "Clôturée", tone: "neutral" },
+  CLOSED_NO_CANDIDATE: {
+    label: "Clôturée sans remplaçant",
+    tone: "neutral",
+  },
   CANCELLED: { label: "Annulée", tone: "danger" },
 };
 

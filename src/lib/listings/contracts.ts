@@ -80,7 +80,7 @@ export const RECRUITING_STATUSES: ReadonlySet<ReplacementListingStatus> =
 /**
  * Filter buckets above the list.
  *
- * Seven statuses would be unusable as seven chips, and a practice does not
+ * Eight statuses would be unusable as eight chips, and a practice does not
  * think in them: what it wants is "the ones still recruiting", "the one I
  * filled", "the ones I closed". Each bucket maps to one or more backend
  * statuses, sent as a single comma-separated `status` query parameter so the
@@ -109,7 +109,15 @@ export const LISTING_FILTERS: readonly ListingsFilterOption[] = [
     statuses: ["OPEN", "IN_DISCUSSION", "FULL"],
   },
   { id: "FILLED", label: "Pourvue", statuses: ["FILLED"] },
-  { id: "CLOSED", label: "Terminées", statuses: ["CLOSED", "CANCELLED"] },
+  {
+    id: "CLOSED",
+    label: "Terminées",
+    // `CLOSED_NO_CANDIDATE` belongs here: `close` writes it when the owner
+    // took a posting out of circulation without retaining anyone, and the
+    // applicant is told so in their rejection reason. Leaving it out would make
+    // those listings unreachable from every bucket.
+    statuses: ["CLOSED", "CLOSED_NO_CANDIDATE", "CANCELLED"],
+  },
   { id: "DRAFT", label: "Brouillons", statuses: ["DRAFT"] },
 ] as const;
 

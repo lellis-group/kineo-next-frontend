@@ -71,6 +71,7 @@ function emptyCounts(): ListingStatusCounts {
     FULL: 0,
     FILLED: 0,
     CLOSED: 0,
+    CLOSED_NO_CANDIDATE: 0,
     CANCELLED: 0,
   };
 }
@@ -168,7 +169,14 @@ export async function fetchListingApplications(
   };
 }
 
-/** PATCH /replacement-listings/:id/close — the replacement is done. */
+/**
+ * PATCH /replacement-listings/:id/close — the posting leaves circulation.
+ *
+ * Reachable from any status still recruiting, and the backend records which
+ * outcome it was: `CLOSED_NO_CANDIDATE` when nobody was retained, `CLOSED` from
+ * a filled listing. The applicant reads the difference in their rejection
+ * reason, which is why the confirmation copy spells it out.
+ */
 export async function closeListing(id: string): Promise<void> {
   // French verb: it is interpolated straight into the user-facing sentence,
   // and the English one leaked through on every 403 and generic failure.

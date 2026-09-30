@@ -59,6 +59,7 @@ export type ReplacementListingStatus =
   | "FULL"
   | "FILLED"
   | "CLOSED"
+  | "CLOSED_NO_CANDIDATE"
   | "CANCELLED";
 
 export interface ApiReplacementListing {

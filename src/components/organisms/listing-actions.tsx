@@ -27,7 +27,7 @@ const ACTION_COPY: Record<
     title: "Clôturer l'annonce",
     confirm: "Clôturer",
     intro:
-      "L'annonce ne recevra plus de candidature. Les candidats qui n'ont pas encore répondu verront leur candidature passer en refus.",
+      "L'annonce ne recevra plus de candidature. Les candidats qui n'ont pas encore répondu verront leur candidature passer en refus, avec la mention qu'aucun remplaçant n'a été retenu.",
   },
   cancel: {
     title: "Annuler l'annonce",
