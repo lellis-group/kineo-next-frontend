@@ -26,6 +26,26 @@ export function adaptStats(
   // as "nothing left to wait for" while the cabinet is still choosing.
   const awaitingDecision = countAwaitingDecision(applications);
 
+  // The two statuses behind that total, broken out so the reader can tell a
+  // request nobody has opened yet from one the practice has already put forward —
+  // the same shape as the listings breakdown below: total above, split below.
+  //
+  // Kept adjacent to `AWAITING_DECISION_STATUSES` on purpose. A status added to
+  // that set counts in the headline whether or not it is named here, so this list
+  // has to move with it; nothing enforces that today.
+  const pendingCount = applications.filter(
+    (a) => a.status === "PENDING",
+  ).length;
+  const shortlistedCount = applications.filter(
+    (a) => a.status === "SHORTLISTED",
+  ).length;
+
+  const appsBreakdown = [
+    // « en attente » is invariable — no plural suffix on either count.
+    `${pendingCount} en attente`,
+    `${shortlistedCount} présélectionnée${plural(shortlistedCount)}`,
+  ].filter((part) => !part.startsWith("0 "));
+
   // A subset of the figure above: the same statuses, narrowed to the ones the
   // practice has not opened yet. Kept on the same set so « dont N » can never
   // outnumber the total it qualifies.
@@ -85,10 +105,18 @@ export function adaptStats(
       // already been answered — the cabinet put it forward — what is still
       // outstanding is whether anyone gets picked.
       label: `candidature${plural(awaitingDecision)} envoyée${plural(awaitingDecision)} · en attente de décision du cabinet`,
+      // Split by status, then the unread count as a qualifier on the total. Both
+      // are kept: the split is what says which requests are still untouched, and
+      // the qualifier is the actionable half of it.
       detail:
-        unseenApps > 0
-          ? `dont ${unseenApps} pas encore vue${plural(unseenApps)} par le cabinet`
-          : undefined,
+        [
+          appsBreakdown.join(" · "),
+          unseenApps > 0
+            ? `dont ${unseenApps} pas encore vue${plural(unseenApps)} par le cabinet`
+            : undefined,
+        ]
+          .filter(Boolean)
+          .join(" · ") || undefined,
       icon: "users",
     },
     nextReplacement,
