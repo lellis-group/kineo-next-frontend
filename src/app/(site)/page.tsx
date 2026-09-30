@@ -8,30 +8,35 @@ import { requireMember } from "@/lib/require-member";
 import { fetchServerAuth } from "@/lib/server-auth";
 
 /**
- * Server-side branch: dashboard for members, marketing for anonymous.
+ * Static shell. The session decides which of the two pages this is, and it is
+ * read with `headers()` — uncached — so it cannot be awaited from the component
+ * that blocks the route; the boundary is what keeps the route instant.
  *
- * The session resolves first, because it decides which of the two this is. The
- * dashboard itself is streamed behind a Suspense boundary, so the shell arrives
- * immediately and the member's data resolves in parallel with the layout's own
- * session read.
+ * The fallback is the dashboard skeleton: geometry-matched, so a member sees the
+ * dashboard arrive without the layout shifting. An anonymous visitor sees it for
+ * the length of one session read, which is shorter than the wait they had while
+ * this page blocked on the same read.
  */
-export default async function HomePage() {
-  const auth = await fetchServerAuth();
-
-  if (auth.status === "member") {
-    return (
-      <Suspense fallback={<DashboardSkeleton />}>
-        <MemberDashboard name={auth.name} />
-      </Suspense>
-    );
-  }
-
-  return <PublicHome />;
+export default function HomePage() {
+  return (
+    <Suspense fallback={<DashboardSkeleton />}>
+      <Home />
+    </Suspense>
+  );
 }
 
-async function MemberDashboard({ name }: { name: string }) {
+async function Home() {
+  const auth = await fetchServerAuth();
+
+  if (auth.status !== "member") {
+    return <PublicHome />;
+  }
+
   // The session was valid a moment ago; it can still expire before the data
   // read, and that has to land on /signin rather than the error boundary.
-  const data = await requireMember(fetchDashboardData(name, serverTransport));
-  return <DashboardContainer userName={name} initialData={data} />;
+  const data = await requireMember(
+    fetchDashboardData(auth.name, serverTransport),
+  );
+
+  return <DashboardContainer userName={auth.name} initialData={data} />;
 }

@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
+import { LoadingState } from "@/components/molecules/loading-state";
 import { ProfileContainer } from "@/components/templates/profile-container";
 import { serverTransport } from "@/lib/api-transport.server";
 import { fetchMyProfile } from "@/lib/profile-service";
@@ -18,11 +20,28 @@ export const metadata: Metadata = {
  * the alternative — keeping it in client state — would not survive a refresh
  * either.
  *
- * Both reads are server-side, which also settles the two navigation questions
- * the container used to answer with a `useEffect`: a member without a profile
- * goes to the create form, and an expired session goes to sign-in.
+ * The page itself is a static shell. Both reads below are uncached and have to
+ * sit behind a Suspense boundary: the session is read with `headers()` and the
+ * profile with `cache: "no-store"`, and reaching either from the component that
+ * blocks the route is what "uncached data outside of <Suspense>" is — the route
+ * then cannot be prerendered and fails the instant check. Keeping them here also
+ * settles the two navigation questions the container used to answer from a
+ * `useEffect`: a member without a profile goes to the create form, and an
+ * expired session goes to sign-in.
  */
-export default async function ProfilePage({
+export default function ProfilePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ created?: string; saved?: string }>;
+}) {
+  return (
+    <Suspense fallback={<LoadingState className="min-h-[60vh]" />}>
+      <ProfileContent searchParams={searchParams} />
+    </Suspense>
+  );
+}
+
+async function ProfileContent({
   searchParams,
 }: {
   searchParams: Promise<{ created?: string; saved?: string }>;

@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
+import { LoadingState } from "@/components/molecules/loading-state";
 import { ProfileCreateContainer } from "@/components/templates/profile-create-container";
 import { serverTransport } from "@/lib/api-transport.server";
 import { fetchMyProfile } from "@/lib/profile-service";
@@ -14,14 +16,23 @@ export const metadata: Metadata = {
 };
 
 /**
- * An expired session goes to sign-in; a member who already has a profile is sent
- * to the edit form. Both decided before the form renders.
+ * Static shell; the session and profile reads are uncached and stream behind the
+ * boundary. An expired session goes to sign-in and a member who already has a
+ * profile is sent to the edit form — both decided before the form renders.
  *
  * A read that fails for any other reason still renders the form: this page's job
  * is to create the profile, and the failure that actually matters is reported by
  * the submit itself.
  */
-export default async function ProfileCreatePage() {
+export default function ProfileCreatePage() {
+  return (
+    <Suspense fallback={<LoadingState />}>
+      <ProfileCreateGate />
+    </Suspense>
+  );
+}
+
+async function ProfileCreateGate() {
   const [auth, profile] = await Promise.all([
     fetchServerAuth(),
     // A read failure that is not an expired session still shows the form: this

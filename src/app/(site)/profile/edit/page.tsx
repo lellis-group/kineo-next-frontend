@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
+import { LoadingState } from "@/components/molecules/loading-state";
 import { ProfileEditContainer } from "@/components/templates/profile-edit-container";
 import { serverTransport } from "@/lib/api-transport.server";
 import { fetchMyProfile } from "@/lib/profile-service";
@@ -14,11 +16,20 @@ export const metadata: Metadata = {
 };
 
 /**
- * Resolves the profile server-side. An expired session goes to sign-in and a
- * member without a profile goes to the create form — both decided before any
- * of the form is rendered, instead of after a round trip from the browser.
+ * Static shell; the session and profile reads are uncached and stream behind the
+ * boundary. An expired session goes to sign-in and a member without a profile
+ * goes to the create form — both decided before the form is rendered, instead of
+ * after a round trip from the browser.
  */
-export default async function ProfileEditPage() {
+export default function ProfileEditPage() {
+  return (
+    <Suspense fallback={<LoadingState />}>
+      <ProfileEditGate />
+    </Suspense>
+  );
+}
+
+async function ProfileEditGate() {
   const [auth, profile] = await Promise.all([
     fetchServerAuth(),
     // Not `.catch(() => null)`: a revoked session must sign the reader out, not
