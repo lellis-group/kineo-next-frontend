@@ -3,7 +3,7 @@ import {
   countAwaitingDecision,
 } from "../applications";
 import { formatDateRange, plural } from "../format";
-import { countRecruitingListings } from "../listings";
+import { countRecruitingListings, RECRUITING_STATUSES } from "../listings";
 import type { ApiApplication, ApiReplacementListing } from "../types/api";
 import type { DashboardStat } from "./contracts";
 
@@ -62,9 +62,15 @@ export function adaptStats(
     `${full} complet${plural(full)}`,
   ].filter((part) => !part.startsWith("0 "));
 
+  // Only a listing that is actually recruiting can be the next replacement to
+  // cover. The previous test was "not cancelled", which let a DRAFT (never
+  // published) or a CLOSED one — the replacement was found — surface here, and
+  // `RECRUITING_STATUSES` is the set that means what it says.
   const now = new Date();
   const upcoming = listings
-    .filter((l) => new Date(l.startDate) > now && l.status !== "CANCELLED")
+    .filter(
+      (l) => new Date(l.startDate) > now && RECRUITING_STATUSES.has(l.status),
+    )
     .sort(
       (a, b) =>
         new Date(a.startDate).getTime() - new Date(b.startDate).getTime(),
@@ -93,7 +99,14 @@ export function adaptStats(
       id: "listings",
       title: "Mes annonces",
       value: `${activeListings}`,
-      label: `annonce${plural(activeListings)} active${plural(activeListings)} · en recherche de remplaçant`,
+      // The label states what the figure means, not what the noun is: "Mes
+      // annonces" above already says which noun, so repeating it left the line
+      // reading like a fragment. And it is written for zero, where the earlier
+      // version described 0 as "annonce active · en recherche de remplaçant".
+      label:
+        activeListings > 0
+          ? "en recherche d'un remplaçant"
+          : "aucune en recherche de remplaçant",
       detail: breakdown.length > 0 ? breakdown.join(" · ") : undefined,
       icon: "layers",
     },
@@ -104,7 +117,10 @@ export function adaptStats(
       // « décision » rather than « réponse »: a shortlisted application has
       // already been answered — the cabinet put it forward — what is still
       // outstanding is whether anyone gets picked.
-      label: `candidature${plural(awaitingDecision)} envoyée${plural(awaitingDecision)} · en attente de décision du cabinet`,
+      label:
+        awaitingDecision > 0
+          ? "en attente de décision du cabinet"
+          : "aucune en attente de décision",
       // Split by status, then the unread count as a qualifier on the total. Both
       // are kept: the split is what says which requests are still untouched, and
       // the qualifier is the actionable half of it.
