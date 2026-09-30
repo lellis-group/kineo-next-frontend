@@ -4,6 +4,7 @@ import { LoadingState } from "@/components/molecules/loading-state";
 import { ApplicationDetailContainer } from "@/components/templates/application-detail-container";
 import { serverTransport } from "@/lib/api-transport.server";
 import { fetchApplicationDetail } from "@/lib/applications";
+import { requireExisting } from "@/lib/require-member";
 
 export const metadata: Metadata = {
   title: "Candidature — Kineo",
@@ -34,7 +35,9 @@ async function ApplicationDetailPageInner({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const application = await fetchApplicationDetail(id, serverTransport);
+  const application = await requireExisting(
+    fetchApplicationDetail(id, serverTransport),
+  );
 
   return (
     <ApplicationDetailContainer id={id} initialApplication={application} />

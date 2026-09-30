@@ -7,6 +7,7 @@ import {
   APPLICATIONS_PAGE_SIZE,
   fetchApplicationsData,
 } from "@/lib/applications";
+import { requireMember } from "@/lib/require-member";
 
 export const metadata: Metadata = {
   title: "Mes candidatures — Kineo",
@@ -23,9 +24,11 @@ export default function ApplicationsPage() {
 }
 
 async function Applications() {
-  const data = await fetchApplicationsData(
-    { page: 1, limit: APPLICATIONS_PAGE_SIZE },
-    serverTransport,
+  const data = await requireMember(
+    fetchApplicationsData(
+      { page: 1, limit: APPLICATIONS_PAGE_SIZE },
+      serverTransport,
+    ),
   );
   return <ApplicationsContainer initialData={data} />;
 }

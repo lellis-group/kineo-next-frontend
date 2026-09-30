@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { ProfileCreateContainer } from "@/components/templates/profile-create-container";
 import { serverTransport } from "@/lib/api-transport.server";
 import { fetchMyProfile } from "@/lib/profile-service";
+import { requireMember } from "@/lib/require-member";
 import { fetchServerAuth } from "@/lib/server-auth";
 
 export const metadata: Metadata = {
@@ -23,7 +24,10 @@ export const metadata: Metadata = {
 export default async function ProfileCreatePage() {
   const [auth, profile] = await Promise.all([
     fetchServerAuth(),
-    fetchMyProfile(serverTransport).catch(() => null),
+    // A read failure that is not an expired session still shows the form: this
+    // page's job is to create the profile, and the submit reports what matters.
+    // An expired one must not, though — hence the explicit 401 check.
+    requireMember(fetchMyProfile(serverTransport)).catch(() => null),
   ]);
 
   if (auth.status === "anonymous") {

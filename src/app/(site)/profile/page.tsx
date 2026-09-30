@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { ProfileContainer } from "@/components/templates/profile-container";
 import { serverTransport } from "@/lib/api-transport.server";
 import { fetchMyProfile } from "@/lib/profile-service";
+import { requireMember } from "@/lib/require-member";
 import { fetchServerAuth } from "@/lib/server-auth";
 
 export const metadata: Metadata = {
@@ -35,7 +36,7 @@ export default async function ProfilePage({
     redirect("/signin");
   }
 
-  const profile = await fetchMyProfile(serverTransport);
+  const profile = await requireMember(fetchMyProfile(serverTransport));
   if (!profile) {
     // A missing profile is an onboarding step, not an error.
     redirect("/profile/create");

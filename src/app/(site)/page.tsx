@@ -4,6 +4,7 @@ import { DashboardSkeleton } from "@/components/templates/dashboard-skeleton";
 import { PublicHome } from "@/components/templates/public-home";
 import { serverTransport } from "@/lib/api-transport.server";
 import { fetchDashboardData } from "@/lib/dashboard";
+import { requireMember } from "@/lib/require-member";
 import { fetchServerAuth } from "@/lib/server-auth";
 
 /**
@@ -29,6 +30,8 @@ export default async function HomePage() {
 }
 
 async function MemberDashboard({ name }: { name: string }) {
-  const data = await fetchDashboardData(name, serverTransport);
+  // The session was valid a moment ago; it can still expire before the data
+  // read, and that has to land on /signin rather than the error boundary.
+  const data = await requireMember(fetchDashboardData(name, serverTransport));
   return <DashboardContainer userName={name} initialData={data} />;
 }

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { ProfileEditContainer } from "@/components/templates/profile-edit-container";
 import { serverTransport } from "@/lib/api-transport.server";
 import { fetchMyProfile } from "@/lib/profile-service";
+import { requireMember } from "@/lib/require-member";
 import { fetchServerAuth } from "@/lib/server-auth";
 
 export const metadata: Metadata = {
@@ -20,7 +21,9 @@ export const metadata: Metadata = {
 export default async function ProfileEditPage() {
   const [auth, profile] = await Promise.all([
     fetchServerAuth(),
-    fetchMyProfile(serverTransport),
+    // Not `.catch(() => null)`: a revoked session must sign the reader out, not
+    // quietly answer "no profile" and offer them the create form.
+    requireMember(fetchMyProfile(serverTransport)),
   ]);
 
   if (auth.status === "anonymous") {

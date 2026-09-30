@@ -4,6 +4,7 @@ import { ListSkeleton } from "@/components/molecules/list-skeleton";
 import { MyListingsContainer } from "@/components/templates/my-listings-container";
 import { serverTransport } from "@/lib/api-transport.server";
 import { fetchMyListings } from "@/lib/listings";
+import { requireMember } from "@/lib/require-member";
 
 export const metadata: Metadata = {
   title: "Mes offres — Kineo",
@@ -25,6 +26,6 @@ export default function MyListingsPage() {
 }
 
 async function MyListings() {
-  const data = await fetchMyListings({}, serverTransport);
+  const data = await requireMember(fetchMyListings({}, serverTransport));
   return <MyListingsContainer initialData={data} />;
 }
