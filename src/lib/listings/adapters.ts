@@ -83,10 +83,6 @@ export const RECEIVED_DECISION_LABELS: Record<
   CANDIDATE_UNAVAILABLE: "Candidat déclaré indisponible",
 };
 
-/** Statuses where a received application is still awaiting the practice. */
-export const RECEIVED_AWAITING_STATUSES: ReadonlySet<ApplicationStatus> =
-  new Set(["PENDING", "SHORTLISTED"]);
-
 export function adaptMyListings(
   listings: ApiReplacementListing[],
 ): MyListing[] {
@@ -275,21 +271,23 @@ export function formatListingAge(listing: {
 }
 
 /**
- * « À traiter » / « Retiré par le candidat » — the reason behind a status.
+ * Why the practice ruled the way it did, when it has.
+ *
+ * Only a decided application has one. The open statuses used to fall back to
+ * « À traiter », printed right under the badge that already reads « En attente »
+ * or « Présélectionné » — the same fact twice, in two sizes, on the row a
+ * practice scans the fastest. There is nothing to add while nobody has ruled:
+ * the badge is the whole of it.
  *
  * Prefers the decision source over the status, for the reason
  * `RECEIVED_DECISION_LABELS` gives: `REJECTED` alone reads as a refusal the
  * practice chose, and most of the time it is something that happened to the
- * posting. Falls back to the queue wording while nobody has ruled yet, which is
- * the only state where there is genuinely nothing decided to report.
+ * posting.
  */
 export function receivedDecisionLabel(
-  application: Pick<ReceivedApplication, "status" | "decisionSource">,
+  application: Pick<ReceivedApplication, "decisionSource">,
 ): string | undefined {
-  if (application.decisionSource) {
-    return RECEIVED_DECISION_LABELS[application.decisionSource];
-  }
-  return RECEIVED_AWAITING_STATUSES.has(application.status)
-    ? "À traiter"
+  return application.decisionSource
+    ? RECEIVED_DECISION_LABELS[application.decisionSource]
     : undefined;
 }

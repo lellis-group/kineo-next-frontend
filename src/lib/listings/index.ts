@@ -13,7 +13,6 @@ export {
   formatCapacity,
   formatListingAge,
   LISTING_STATUS_META,
-  RECEIVED_AWAITING_STATUSES,
   RECEIVED_DECISION_LABELS,
   RECEIVED_STATUS_LABELS,
   receivedDecisionLabel,
