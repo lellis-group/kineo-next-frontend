@@ -64,6 +64,8 @@ export function mapUserError(error: unknown): string {
     conflict: "Cet email est déjà utilisé.",
     unavailable:
       "Impossible de mettre à jour vos informations. Veuillez réessayer.",
+    "service-down":
+      "Le service est hors service : vos informations n'ont pas été enregistrées. Réessayez dans quelques minutes.",
   });
 }
 
@@ -101,5 +103,7 @@ function mapDeleteAccountError(error: unknown): string {
   return errorMessage(error, {
     unavailable:
       "Impossible d'envoyer la demande de suppression. Veuillez réessayer plus tard.",
+    "service-down":
+      "Le service est hors service : la demande n'a pas été envoyée. Réessayez dans quelques minutes.",
   });
 }

@@ -69,10 +69,22 @@ export function mapProfileError(error: unknown): string {
     if (error.status === 409) {
       return "Ce numéro RPPS est déjà utilisé par un autre profil.";
     }
+    if (error.status === 403) {
+      // `PATCH /profile/:id` used to be reachable without a verified address:
+      // `EmailVerifiedGuard` only sat on the four `POST` handlers, so an
+      // unverified account could create a profile and then edit it freely. The
+      // backend now gates every write, which is right — and means the sentence
+      // has to name the address, not only the ownership the user cannot fix.
+      return "Vous n'êtes pas le propriétaire de ce profil, ou votre adresse e-mail n'est pas validée.";
+    }
   }
   return errorMessage(error, {
+    forbidden:
+      "Impossible d'enregistrer : votre adresse e-mail n'est pas validée.",
     unavailable:
       "Impossible d'enregistrer le profil. Vérifiez votre connexion, puis réessayez.",
+    "service-down":
+      "Le service est hors service : le profil n'a pas été enregistré. Réessayez dans quelques minutes.",
   });
 }
 

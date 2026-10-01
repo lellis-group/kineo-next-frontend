@@ -28,6 +28,8 @@ const WITHDRAW_COPY = {
   conflict:
     "Cette candidature ne peut plus être retirée dans son statut actuel.",
   unavailable: "Le retrait a échoué pour le moment. Veuillez réessayer.",
+  "service-down":
+    "Le service est hors service : le retrait n'a pas été enregistré. Réessayez dans quelques minutes.",
 } as const;
 
 /** Withdraw panel: outline trigger, then optional reason + danger confirm. */

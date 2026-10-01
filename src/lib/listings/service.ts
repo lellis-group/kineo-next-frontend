@@ -33,6 +33,34 @@ import type {
 } from "./contracts";
 
 /**
+ * Machine-readable discriminators for the listing transition refusals.
+ *
+ * Mirrors the backend's `LISTING_TRANSITION_CODES`. Every one of these used to
+ * reach this client as English prose only, and `translateStatusMessage` below
+ * branched on the wording — "only open or filled", "already closed or
+ * cancelled". Rewording a message server-side silently disabled the
+ * translation, and a practice was told to "try again" for a refusal that has a
+ * definite cause and a definite way out. That already happened once: the
+ * backend reworded both messages when `close` became reachable from a listing
+ * that was still recruiting, and the regexes stopped matching.
+ *
+ * The message text stays as a fallback for a backend one deploy behind, the
+ * same way `account-deletion-service.ts` keeps its `blocked` case.
+ */
+export const LISTING_TRANSITION_CODES = {
+  NOT_A_DRAFT: "LISTING_NOT_A_DRAFT",
+  NOT_MODIFIABLE: "LISTING_NOT_MODIFIABLE",
+  INVALID_PERIOD: "LISTING_INVALID_PERIOD",
+  FILLED_CANNOT_BE_DELETED: "LISTING_FILLED_CANNOT_BE_DELETED",
+  NOT_IN_CIRCULATION: "LISTING_NOT_IN_CIRCULATION",
+  FILLED_CANNOT_BE_CANCELLED: "LISTING_FILLED_CANNOT_BE_CANCELLED",
+  ALREADY_TERMINAL: "LISTING_ALREADY_TERMINAL",
+} as const;
+
+export type ListingTransitionCode =
+  (typeof LISTING_TRANSITION_CODES)[keyof typeof LISTING_TRANSITION_CODES];
+
+/**
  * Fallback for a response without the status breakdown. Zeros rather than
  * guessed numbers: the tab counters must never claim a candidate exists in a
  * status the server did not confirm.
@@ -180,71 +208,130 @@ export async function fetchListingApplications(
 export async function closeListing(id: string): Promise<void> {
   // French verb: it is interpolated straight into the user-facing sentence,
   // and the English one leaked through on every 403 and generic failure.
-  await mutateListing(id, "close", "clôturer");
+  // `done` is the past participle, needed separately: deriving it as `${verb}e`
+  // would produce "clôturee" and "annulee" — the first over-accented, the
+  // second without the e the past tense needs.
+  await mutateListing(id, "close", "clôturer", "clôturée");
 }
 
 /** PATCH /replacement-listings/:id/cancel — called off before it is filled. */
 export async function cancelListing(id: string): Promise<void> {
-  await mutateListing(id, "cancel", "annuler");
+  await mutateListing(id, "cancel", "annuler", "annulée");
 }
 
 async function mutateListing(
   id: string,
   action: "close" | "cancel",
   verb: string,
+  done: string,
 ): Promise<void> {
   try {
     await apiFetch(`/replacement-listings/${id}/${action}`, {
       method: "PATCH",
     });
   } catch (error) {
-    throw new Error(mapListingActionError(error, verb));
+    throw new Error(mapListingActionError(error, verb, done));
   }
 }
 
-function mapListingActionError(error: unknown, verb: string): string {
+function mapListingActionError(
+  error: unknown,
+  verb: string,
+  done: string,
+): string {
   if (error instanceof ApiError) {
     if (error.status === 404) {
       return "Cette annonce n'existe plus.";
     }
     if (error.status === 403) {
-      return "Vous n'êtes pas le propriétaire de cette annonce.";
+      // Two unrelated refusals share this status since the backend widened
+      // `EmailVerifiedGuard` to every write: not the owner, or an address that
+      // has not been confirmed. The generic copy names both, and a signed-out
+      // reader is not told to retry a request that could never succeed.
+      return errorMessage(error, {
+        forbidden:
+          "Vous n'êtes pas le propriétaire de cette annonce, ou votre adresse e-mail n'est pas validée.",
+      });
     }
     if (error.status === 409) {
       return `Impossible de ${verb} l'annonce : des candidatures d'autres candidats sont encore actives.`;
     }
-    // The backend refuses impossible transitions with a 400 whose message is
-    // the only thing that explains which one was attempted.
-    if (error.status === 400 && error.apiMessage) {
-      return translateStatusMessage(error.apiMessage, verb);
+    if (error.status === 400) {
+      return (
+        translateByCode(error.code, verb) ??
+        translateStatusMessage(error.apiMessage ?? "", verb)
+      );
     }
   }
-  // Everything else — including the 401 the branches above do not cover, which
-  // previously fell through to "please try again" and asked a signed-out reader
-  // to retry a request that could never succeed.
+  // Everything else — including the 401 the branches above do not cover.
   return errorMessage(error, {
     unavailable: `Impossible de ${verb} l'annonce pour le moment. Veuillez réessayer.`,
+    "service-down": `Le service est hors service : l'annonce n'a pas été ${done}. Réessayez dans quelques minutes.`,
   });
 }
 
 /**
- * The backend states transition refusals in English ("Only open or filled
- * listings can be closed"). Rather than surface that to a French-speaking
+ * The refusal, in French, from the backend's machine-readable code.
+ *
+ * Returns undefined for an unknown code so the caller falls back to the message
+ * text rather than guessing: a new code from a newer backend must degrade to a
+ * sentence, never to a wrong one.
+ */
+function translateByCode(
+  code: string | undefined,
+  verb: string,
+): string | undefined {
+  switch (code) {
+    case LISTING_TRANSITION_CODES.NOT_A_DRAFT:
+      return "Seule une annonce en brouillon peut être publiée.";
+    case LISTING_TRANSITION_CODES.NOT_MODIFIABLE:
+      return "Cette annonce n'est plus modifiable : elle a quitté la diffusion.";
+    case LISTING_TRANSITION_CODES.INVALID_PERIOD:
+      return "La date de début doit précéder la date de fin.";
+    case LISTING_TRANSITION_CODES.FILLED_CANNOT_BE_DELETED:
+      return "Impossible de supprimer l'annonce : elle est pourvue. Clôturez-la à la place.";
+    case LISTING_TRANSITION_CODES.NOT_IN_CIRCULATION:
+      return `Impossible de ${verb} l'annonce : elle n'est plus en diffusion.`;
+    case LISTING_TRANSITION_CODES.FILLED_CANNOT_BE_CANCELLED:
+      return "Impossible d'annuler l'annonce : elle est pourvue. Clôturez-la à la place.";
+    case LISTING_TRANSITION_CODES.ALREADY_TERMINAL:
+      return "Cette annonce est déjà clôturée ou annulée.";
+    default:
+      return undefined;
+  }
+}
+
+/**
+ * Fallback for a backend that sends no `code` — one deploy behind, or a route
+ * that has not been converted yet.
+ *
+ * The backend states transition refusals in English ("Only a listing still in
+ * circulation can be closed"). Rather than surface that to a French-speaking
  * practice, map the known ones and keep a generic fallback.
  *
- * The "pending applications" case is absent on purpose: it is answered from the
- * 409 above, which returns before ever reaching here, so the branch could only
- * ever be dead code reading as if it were the guard.
+ * Every pattern below is matched case-insensitively against the *current*
+ * wording, and deliberately tolerates the older phrasing too: a reword must not
+ * turn this into dead code, because the `code` path is the real contract and
+ * this is only insurance against a rolling deploy.
  */
 function translateStatusMessage(message: string, verb: string): string {
   if (/filled listing cannot be deleted/i.test(message)) {
     return "Impossible de supprimer l'annonce : elle est pourvue. Clôturez-la à la place.";
   }
-  if (/only open or filled/i.test(message)) {
-    return "Impossible de clôturer l'annonce : elle n'est ni ouverte ni pourvue.";
+  if (/still in circulation|only open or filled/i.test(message)) {
+    return `Impossible de ${verb} l'annonce : elle n'est plus en diffusion.`;
   }
-  if (/already closed or cancelled/i.test(message)) {
+  if (/already closed or cancelled|already closed or canceled/i.test(message)) {
     return "Cette annonce est déjà clôturée ou annulée.";
+  }
+  if (/filled listing cannot be cancelled/i.test(message)) {
+    return "Impossible d'annuler l'annonce : elle est pourvue. Clôturez-la à la place.";
+  }
+  if (/only draft listings can be published/i.test(message)) {
+    return "Seule une annonce en brouillon peut être publiée.";
+  }
+  if (/no longer be modified/i.test(message)) {
+    return "Cette annonce n'est plus modifiable : elle a quitté la diffusion.";
   }
   return `Impossible de ${verb} l'annonce pour le moment. Veuillez réessayer.`;
 }

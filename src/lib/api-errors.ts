@@ -33,12 +33,46 @@ export type ErrorKind =
   | "conflict"
   /** Field-level validation issues. */
   | "validation"
-  /** Server-side fault, or the network is down. */
+  /**
+   * The backend answered with a fault of its own — a 5xx other than the
+   * service-down trio.
+   *
+   * The request reached the service and it failed. Retrying may help.
+   */
   | "unavailable"
+  /**
+   * The backend could not be reached at all, or answered "not serving right
+   * now" (502/503/504, or a connection that never completed).
+   *
+   * Kept apart from `unavailable` because the two call for different advice: a
+   * 500 means something went wrong inside a service that is otherwise up,
+   * while a 502 means the request never got there — a deploy, a dropped
+   * connection, a backend that is not booting. Telling someone to "réessayer"
+   * about a 502 implies a second attempt two seconds later is worth making, and
+   * against a crash loop it is not. The message says the service is down rather
+   * than degraded, so the reader knows the problem is not on their side and that
+   * nothing they did was lost.
+   */
+  | "service-down"
+  /** Anything the classifier could not place. */
   | "unknown";
 
 /** The status codes every endpoint in this API answers with. */
 const SESSION_STATUSES = new Set([401]);
+
+/**
+ * Statuses meaning the request never got an answer from the backend.
+ *
+ * 502 is what this app's own proxy returns when the hop to the backend fails —
+ * see `lib/backend-proxy.ts`, which is where a 502 actually comes from in this
+ * deployment. 503 and 504 are its siblings: "not serving right now" and
+ * "timed out waiting for it".
+ *
+ * 500 is deliberately NOT here: it means the request did arrive and the service
+ * answered with a fault of its own, which is a different situation and keeps the
+ * `unavailable` copy.
+ */
+const SERVICE_DOWN_STATUSES = new Set([502, 503, 504]);
 
 /**
  * Reads the status off whatever was thrown.
@@ -74,10 +108,12 @@ export function classifyError(error: unknown): ErrorKind {
   const status = statusOf(error);
 
   if (status === undefined) {
-    // A thrown `TypeError` from `fetch` means the request never landed.
-    return error instanceof TypeError ? "unavailable" : "unknown";
+    // A thrown `TypeError` from `fetch` means the request never landed, which is
+    // the same situation as a 502 by another route: nothing is on the other end.
+    return error instanceof TypeError ? "service-down" : "unknown";
   }
   if (SESSION_STATUSES.has(status)) return "session";
+  if (SERVICE_DOWN_STATUSES.has(status)) return "service-down";
   if (status === 403) return "forbidden";
   if (status === 404) return "not-found";
   if (status === 400 || status === 409 || status === 422) return "conflict";
@@ -94,7 +130,9 @@ const DEFAULT_COPY: Record<ErrorKind, string> = {
   conflict: "L'opération n'est pas possible dans l'état actuel des données.",
   validation: "Certains champs sont invalides. Vérifiez le formulaire.",
   unavailable:
-    "Le service est temporairement indisponible. Veuillez réessayer.",
+    "Le service a rencontré un problème. Veuillez réessayer dans un instant.",
+  "service-down":
+    "Le service est momentanément hors service. Vos données sont intactes, mais rien ne peut être enregistré pour le moment : réessayez dans quelques minutes.",
   unknown: "Une erreur inattendue est survenue. Veuillez réessayer.",
 };
 

@@ -31,6 +31,8 @@ const MAX_MESSAGE_LENGTH = 2000;
 const MESSAGE_COPY = {
   conflict: "Cette candidature ne peut plus être modifiée.",
   unavailable: "L'enregistrement a échoué pour le moment. Veuillez réessayer.",
+  "service-down":
+    "Le service est hors service : votre message n'a pas été enregistré. Réessayez dans quelques minutes.",
 } as const;
 
 /** "Votre message" section — display, plus inline editing while pending. */
