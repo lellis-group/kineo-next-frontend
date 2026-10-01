@@ -56,18 +56,12 @@ export interface ApplicationsFilterOption {
 
 export const APPLICATION_FILTERS: readonly ApplicationsFilterOption[] = [
   { id: "ALL", label: "Toutes" },
-  {
-    id: "PENDING",
-    label: "En attente",
-    status: "PENDING",
-    countKeys: ["undecided"],
-  },
-  {
-    id: "SHORTLISTED",
-    label: "Présélectionnées",
-    status: "SHORTLISTED",
-    countKeys: ["undecided"],
-  },
+  // No `countKeys`: these three are exactly one status, and the status totals
+  // already answer them. Pointing them at `undecided` would have given both
+  // chips the same number — the union of the two, since a decisionSource is null
+  // for every open application whichever side of the shortlist it is on.
+  { id: "PENDING", label: "En attente", status: "PENDING" },
+  { id: "SHORTLISTED", label: "Présélectionnées", status: "SHORTLISTED" },
   { id: "ACCEPTED", label: "Acceptées", status: "ACCEPTED" },
   {
     id: "PASSED_OVER",
