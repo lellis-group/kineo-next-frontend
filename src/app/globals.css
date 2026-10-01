@@ -134,6 +134,7 @@
     min-height: 2.75rem;
     font-size: 0.8125rem;
     font-weight: 500;
+    line-height: 1.2;
     color: var(--muted);
     background: rgb(255 255 255 / 3%);
     border: 1px solid transparent;
@@ -164,6 +165,18 @@
     padding: 0.25rem 0.625rem;
     font-size: 0.75rem;
     font-weight: 500;
+    line-height: 1.2;
+    /*
+     * Un statut ne se coupe jamais.
+     *
+     * Les badges vivent dans des colonnes étroites (le statut d'un candidat à
+     * droite de sa carte) et sans cette contrainte « Présélectionné » ou
+     * « Clôturée sans remplaçant » passait sur deux lignes, ce qui désalignait
+     * toute la colonne et-halait la hauteur de la carte. Une ligne qui déborde
+     * est un problème de mise en page, pas un problème de libellé : c'est au
+     * caller de choisir un autre mot.
+     */
+    white-space: nowrap;
     color: var(--muted);
     background: rgb(255 255 255 / 4%);
     border: 1px solid var(--border);
@@ -191,12 +204,6 @@
     color: var(--info);
     background: rgb(147 197 253 / 8%);
     border-color: rgb(147 197 253 / 20%);
-  }
-
-  .status-text {
-    font-size: 0.8125rem;
-    font-weight: 500;
-    color: var(--muted);
   }
 
   .table {
