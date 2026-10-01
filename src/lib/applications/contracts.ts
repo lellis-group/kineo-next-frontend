@@ -163,6 +163,12 @@ export interface ApplicationsData {
    * Totals per decision source over the whole collection, like `counts`. The
    * chip counters sum from this rather than from `counts`, because the buckets
    * cut across statuses.
+   *
+   * Optional, not because the service leaves it out — it always fills it — but
+   * because an older backend does not send it, and a rolling deploy must not
+   * take the page down over a counter. Every reader treats it as possibly
+   * absent and falls back to zero; that shows an empty counter rather than a
+   * TypeError.
    */
-  decisionCounts: ApiApplicationDecisionCounts;
+  decisionCounts?: ApiApplicationDecisionCounts;
 }

@@ -44,8 +44,19 @@ function countForBucket(
   // `countKeys` are decision-source names, but typed loosely so a bucket can
   // name any of them. A key the server does not send reads 0 rather than NaN —
   // the difference between « nobody in this case » and a broken counter.
+  //
+  // The whole map may be absent: a payload serialised before `decisionCounts`
+  // existed has no such key, and indexing it unguarded threw on a page that was
+  // otherwise fine. An older backend behaves the same way during a rolling
+  // deploy. Empty counters are the honest degradation — the list is still
+  // correct, only the numbers are missing.
+  const sources = data.decisionCounts;
+  if (!sources) {
+    return 0;
+  }
+
   return option.countKeys.reduce<number>(
-    (sum, key) => sum + (data.decisionCounts[key] ?? 0),
+    (sum, key) => sum + (sources[key] ?? 0),
     0,
   );
 }
