@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { ListingDetailView } from "@/components/templates/listing-detail-view";
 import { ApiError } from "@/lib/api-client";
+import { errorMessage } from "@/lib/api-errors";
 import {
   cancelListing,
   closeListing,
@@ -16,6 +17,25 @@ import {
   type ReceivedApplicationsFilter,
 } from "@/lib/listings";
 import type { ApplicationStatus } from "@/lib/types/api";
+
+/**
+ * A failed read, in French, with the 403 case spelled out.
+ *
+ * The candidates endpoint answers a bare English « You do not own this listing »
+ * on a 403, which is the same string the service layer maps for the *write*
+ * actions. Surfacing `err.message` instead put that sentence — plus the
+ * `API 403 (/applications/listing/…):` prefix `apiFetch` builds — in front of a
+ * French-speaking practice. `errorMessage` classifies the typed status; only the
+ * 403 needed domain wording, because the generic « action non autorisée » copy
+ * is about the unverified-email guard and would have sent them to check an
+ * address that is fine.
+ */
+function readErrorMessage(error: unknown): string {
+  return errorMessage(error, {
+    forbidden:
+      "Cette annonce ne vous appartient pas, ou elle n'existe plus. Retournez à vos annonces.",
+  });
+}
 
 /** The backend status behind a candidate chip; undefined means « no filter ». */
 function statusForFilter(
@@ -83,13 +103,7 @@ export function ListingDetailContainer({
           router.replace("/signin");
           return;
         }
-        if (!cancelled) {
-          setError(
-            err instanceof Error
-              ? err.message
-              : "Impossible de charger les candidatures.",
-          );
-        }
+        if (!cancelled) setError(readErrorMessage(err));
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -142,10 +156,11 @@ export function ListingDetailContainer({
           router.replace("/signin");
           return;
         }
+        // `closeListing` / `cancelListing` already come back as French sentences
+        // (see `mapListingActionError`); only the re-reads that follow can throw
+        // a raw API error, so the classifier covers what they leave behind.
         setError(
-          err instanceof Error
-            ? err.message
-            : "L'opération a échoué. Veuillez réessayer.",
+          err instanceof ApiError ? readErrorMessage(err) : errorMessage(err),
         );
       } finally {
         setActing(false);

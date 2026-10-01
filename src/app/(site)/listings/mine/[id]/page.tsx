@@ -8,7 +8,7 @@ import {
   fetchMyListing,
   LISTING_APPLICATIONS_PAGE_SIZE,
 } from "@/lib/listings";
-import { requireExisting, requireMember } from "@/lib/require-member";
+import { requireExisting } from "@/lib/require-member";
 
 export const metadata: Metadata = {
   title: "Annonce — Kineo",
@@ -25,13 +25,13 @@ export const metadata: Metadata = {
  * to a listing the first one has to have authorised, and running them in
  * sequence would double the time to first paint for no gain.
  *
- * Neither read is allowed to degrade into an empty result. The listing read is
- * wrapped in `requireExisting`, so a row that is absent or belongs to somebody
- * else is a 404 rather than a crash. A candidate read that fails for any other
- * reason is a real fault, and answering it with « aucune candidature reçue »
- * would put a sentence on screen that reads like data about the posting while
- * describing nothing at all. The genuinely empty case arrives as a successful
- * `total: 0`.
+ * Neither read is allowed to degrade into an empty result. Both are wrapped in
+ * `requireExisting` because both can answer "this is not yours" — the listing
+ * read with a 404, the candidates read with a 403, the backend not being
+ * consistent between the two — and a reader who guessed another practice's
+ * listing id must land on the 404 page rather than on a crash or, worse, on a
+ * confident « aucune candidature reçue » describing somebody else's posting.
+ * The genuinely empty case arrives as a successful `total: 0`.
  */
 export default function ListingDetailPage({
   params,
@@ -54,7 +54,7 @@ async function ListingDetailPageInner({
 
   const [listing, received] = await Promise.all([
     requireExisting(fetchMyListing(id, serverTransport)),
-    requireMember(
+    requireExisting(
       fetchListingApplications(
         id,
         { limit: LISTING_APPLICATIONS_PAGE_SIZE },
