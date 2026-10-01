@@ -1,0 +1,73 @@
+import type { Metadata } from "next";
+import { Suspense } from "react";
+import { LoadingState } from "@/components/molecules/loading-state";
+import { ListingDetailContainer } from "@/components/templates/listing-detail-container";
+import { serverTransport } from "@/lib/api-transport.server";
+import {
+  fetchListingApplications,
+  fetchMyListing,
+  LISTING_APPLICATIONS_PAGE_SIZE,
+} from "@/lib/listings";
+import { requireExisting, requireMember } from "@/lib/require-member";
+
+export const metadata: Metadata = {
+  title: "Annonce — Kineo",
+  description:
+    "Détail d'une annonce de remplacement : période, spécialité, candidats reçus et actions sur les candidatures.",
+};
+
+/**
+ * Dedicated listing page — routed by listing id. Reads the dynamic params inside
+ * a Suspense boundary so the route stays instant-streamable instead of blocking
+ * prerendering, like the candidate application page.
+ *
+ * The listing and its candidates are read together: the candidate read is scoped
+ * to a listing the first one has to have authorised, and running them in
+ * sequence would double the time to first paint for no gain.
+ *
+ * Neither read is allowed to degrade into an empty result. The listing read is
+ * wrapped in `requireExisting`, so a row that is absent or belongs to somebody
+ * else is a 404 rather than a crash. A candidate read that fails for any other
+ * reason is a real fault, and answering it with « aucune candidature reçue »
+ * would put a sentence on screen that reads like data about the posting while
+ * describing nothing at all. The genuinely empty case arrives as a successful
+ * `total: 0`.
+ */
+export default function ListingDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  return (
+    <Suspense fallback={<LoadingState label="Chargement de l'annonce" />}>
+      <ListingDetailPageInner params={params} />
+    </Suspense>
+  );
+}
+
+async function ListingDetailPageInner({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+
+  const [listing, received] = await Promise.all([
+    requireExisting(fetchMyListing(id, serverTransport)),
+    requireMember(
+      fetchListingApplications(
+        id,
+        { limit: LISTING_APPLICATIONS_PAGE_SIZE },
+        serverTransport,
+      ),
+    ),
+  ]);
+
+  return (
+    <ListingDetailContainer
+      listingId={id}
+      initialListing={listing}
+      initialReceived={received}
+    />
+  );
+}

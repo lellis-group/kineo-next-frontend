@@ -1,22 +1,17 @@
-import { UsersIcon } from "@/components/atoms/icons";
+import { FileTextIcon, UsersIcon } from "@/components/atoms/icons";
 import { FilterChips } from "@/components/molecules/filter-chips";
+import { Pagination } from "@/components/molecules/pagination";
 import { EmptyState } from "@/components/organisms/empty-state";
 import { MyListingCard } from "@/components/organisms/my-listing-card";
 import { PAGE_CONTAINER } from "@/lib/layout";
 import {
   countForFilter,
   LISTING_FILTERS,
+  type ListingApplicationsData,
   type ListingStatusCounts,
   type ListingsFilter,
   type MyListing,
-  type ReceivedApplication,
 } from "@/lib/listings";
-
-/** A message bound to the listing it concerns. */
-export interface ListingMessage {
-  listingId: string;
-  message: string;
-}
 
 export interface MyListingsViewProps {
   listings: MyListing[];
@@ -24,14 +19,20 @@ export interface MyListingsViewProps {
   counts: ListingStatusCounts;
   currentFilter: ListingsFilter;
   onFilterChange: (filter: ListingsFilter) => void;
+  /** Narrows any bucket to the postings flagged urgent. */
+  urgentOnly: boolean;
+  onUrgentToggle: () => void;
+  page: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
   /** Candidates per listing id, present only for the expanded listing. */
-  applicationsByListing: Record<string, ReceivedApplication[]>;
+  receivedByListing: Record<string, ListingApplicationsData>;
   loadingListingId?: string;
   expandedListingId?: string;
   /**
    * Failure, scoped to one listing. The id is part of the value so a card can
-   * only ever render the message that concerns it — a bare string here would
-   * be painted on every card in the list.
+   * only ever render the message that concerns it — a bare string here would be
+   * painted on every card in the list.
    */
   actionError?: ListingMessage | null;
   /** Confirmation after a close/cancel, scoped the same way. */
@@ -42,13 +43,24 @@ export interface MyListingsViewProps {
   onCancel: (listingId: string) => void;
 }
 
+/** A message bound to the listing it concerns. */
+export interface ListingMessage {
+  listingId: string;
+  message: string;
+}
+
 /** Presentational list of the user's listings, each expandable into candidates. */
 export function MyListingsView({
   listings,
   counts,
   currentFilter,
   onFilterChange,
-  applicationsByListing,
+  urgentOnly,
+  onUrgentToggle,
+  page,
+  totalPages,
+  onPageChange,
+  receivedByListing,
   loadingListingId,
   expandedListingId,
   actionError,
@@ -64,14 +76,14 @@ export function MyListingsView({
 
       {counts.total === 0 ? (
         <EmptyState
-          icon={<UsersIcon className="h-8 w-8 text-primary" />}
+          icon={<FileTextIcon className="h-8 w-8 text-primary" />}
           title="Aucune annonce publiée"
           description="Vous n'avez pas encore d'annonce de remplacement. Publiez-en une pour recevoir des candidatures."
         />
       ) : (
         <>
           <FilterChips
-            ariaLabel="Filtrer les annonces par état"
+            ariaLabel="Filtrer les annonces par situation"
             className="mt-6"
             options={LISTING_FILTERS.map((option) => ({
               ...option,
@@ -81,11 +93,36 @@ export function MyListingsView({
             onChange={onFilterChange}
           />
 
+          {/* Urgency is orthogonal to the status buckets — a posting can be
+              urgent and closed — so it is a toggle next to the row rather than
+              a tenth chip. It carries no counter: the endpoint breaks its totals
+              down by status only, and a « (0) » that meant "the server did not
+              send this" would be worse than no number at all. */}
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              className="chip"
+              aria-pressed={urgentOnly}
+              onClick={onUrgentToggle}
+            >
+              Urgentes seulement
+            </button>
+            {urgentOnly && (
+              <p className="text-xs text-muted">
+                Combiné avec «&nbsp;{bucketLabel(currentFilter)}&nbsp;».
+              </p>
+            )}
+          </div>
+
           {listings.length === 0 ? (
             <EmptyState
               icon={<UsersIcon className="h-8 w-8 text-primary" />}
               title="Aucune annonce dans cette catégorie"
-              description="Changez de filtre pour voir vos autres annonces."
+              description={
+                urgentOnly
+                  ? "Aucune annonce urgente dans cette catégorie. Retirez le filtre « Urgentes seulement » pour voir les autres."
+                  : "Changez de filtre pour voir vos autres annonces."
+              }
             />
           ) : (
             <ul className="mt-8 space-y-5">
@@ -93,7 +130,7 @@ export function MyListingsView({
                 <li key={listing.id}>
                   <MyListingCard
                     listing={listing}
-                    applications={applicationsByListing[listing.id]}
+                    received={receivedByListing[listing.id]}
                     loading={loadingListingId === listing.id}
                     expanded={expandedListingId === listing.id}
                     acting={actingListingId === listing.id}
@@ -117,9 +154,27 @@ export function MyListingsView({
               ))}
             </ul>
           )}
+
+          {/* Hidden for single-page results. The list is the one collection
+              screen that had no way past its first twenty postings: a practice
+              with more could see them all on no page at all. */}
+          {totalPages > 1 && (
+            <Pagination
+              currentPage={page}
+              totalPages={totalPages}
+              onPageChange={onPageChange}
+            />
+          )}
         </>
       )}
     </div>
+  );
+}
+
+/** Label of the selected bucket, for the urgency reminder. */
+function bucketLabel(filter: ListingsFilter): string {
+  return (
+    LISTING_FILTERS.find((option) => option.id === filter)?.label ?? "Toutes"
   );
 }
 

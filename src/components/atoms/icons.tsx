@@ -81,6 +81,15 @@ export function CalendarIcon(props: SVGProps<SVGSVGElement>) {
   );
 }
 
+export function ClockIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Svg {...props}>
+      <circle cx="12" cy="12" r="10" />
+      <polyline points="12 6 12 12 16 14" />
+    </Svg>
+  );
+}
+
 export function BellIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <Svg {...props}>

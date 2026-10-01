@@ -3,7 +3,10 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/atoms/button";
-import { MyListingsView } from "@/components/templates/my-listings-view";
+import {
+  type ListingMessage,
+  MyListingsView,
+} from "@/components/templates/my-listings-view";
 import { ApiError } from "@/lib/api-client";
 import {
   cancelListing,
@@ -11,9 +14,10 @@ import {
   fetchListingApplications,
   fetchMyListings,
   LISTING_FILTERS,
+  type ListingApplicationsData,
   type ListingsFilter,
+  MY_LISTINGS_PAGE_SIZE,
   type MyListingsData,
-  type ReceivedApplication,
   type ReplacementListingStatus,
 } from "@/lib/listings";
 
@@ -42,33 +46,37 @@ export function MyListingsContainer({
   const router = useRouter();
   const [data, setData] = useState<MyListingsData>(initialData);
   const [error, setError] = useState<unknown>(null);
-  const [actionError, setActionError] = useState<ListingActionError | null>(
+  const [actionError, setActionError] = useState<ListingMessage | null>(null);
+  const [actionFeedback, setActionFeedback] = useState<ListingMessage | null>(
     null,
   );
-  const [actionFeedback, setActionFeedback] =
-    useState<ListingActionError | null>(null);
   const [filter, setFilter] = useState<ListingsFilter>("ALL");
   const [page, setPage] = useState(1);
+  const [urgentOnly, setUrgentOnly] = useState(false);
   const [expandedListingId, setExpandedListingId] = useState<string>();
   const [loadingListingId, setLoadingListingId] = useState<string>();
   const [actingListingId, setActingListingId] = useState<string>();
-  const [applicationsByListing, setApplicationsByListing] = useState<
-    Record<string, ReceivedApplication[]>
+  // The whole page of candidates, not just its rows: the panel has to be able
+  // to say « 10 affichées sur 24 » instead of implying it showed everything.
+  const [receivedByListing, setReceivedByListing] = useState<
+    Record<string, ListingApplicationsData>
   >({});
 
   const load = useCallback(
-    (targetFilter: ListingsFilter, targetPage: number) => {
+    (targetFilter: ListingsFilter, targetPage: number, urgent: boolean) => {
       setError(null);
 
       fetchMyListings({
         statuses: statusesForFilter(targetFilter),
         page: targetPage,
+        limit: MY_LISTINGS_PAGE_SIZE,
+        urgentOnly: urgent,
       })
         .then((loaded) => {
           setData(loaded);
           // The refetched rows are the truth; anything cached for them may
           // describe an application that has since been withdrawn elsewhere.
-          setApplicationsByListing({});
+          setReceivedByListing({});
           setExpandedListingId(undefined);
         })
         .catch((err) => {
@@ -90,19 +98,24 @@ export function MyListingsContainer({
    * left the previous bucket's rows on screen under a chip row that had already
    * switched. Returning to the default bucket is a request like any other, and
    * `initialData` is its answer.
+   *
+   * The urgency toggle is part of the key: it is a narrowing the server has to
+   * apply, so a default view reached with the toggle on is not the view the
+   * server delivered, and restoring `initialData` there would silently drop the
+   * filter the reader just asked for.
    */
-  const isDefaultView = filter === "ALL" && page === 1;
+  const isDefaultView = filter === "ALL" && page === 1 && !urgentOnly;
 
   useEffect(() => {
     if (isDefaultView) {
       setData(initialData);
       setError(null);
-      setApplicationsByListing({});
+      setReceivedByListing({});
       setExpandedListingId(undefined);
       return;
     }
-    load(filter, page);
-  }, [isDefaultView, initialData, load, filter, page]);
+    load(filter, page, urgentOnly);
+  }, [isDefaultView, initialData, load, filter, page, urgentOnly]);
 
   // Candidates are fetched on demand: a practice with ten listings should not
   // pay for ten requests to read one of them.
@@ -117,7 +130,7 @@ export function MyListingsContainer({
 
       setExpandedListingId(listingId);
 
-      if (applicationsByListing[listingId]) {
+      if (receivedByListing[listingId]) {
         return;
       }
 
@@ -125,9 +138,9 @@ export function MyListingsContainer({
 
       fetchListingApplications(listingId)
         .then((result) => {
-          setApplicationsByListing((current) => ({
+          setReceivedByListing((current) => ({
             ...current,
-            [listingId]: result.applications,
+            [listingId]: result,
           }));
         })
         .catch((err) => {
@@ -143,7 +156,7 @@ export function MyListingsContainer({
           setLoadingListingId(undefined);
         });
     },
-    [expandedListingId, applicationsByListing],
+    [expandedListingId, receivedByListing],
   );
 
   const runAction = useCallback(
@@ -163,14 +176,20 @@ export function MyListingsContainer({
         // both terminate the applications server-side and recalculate the
         // listing status, so the authoritative counts come back from the API.
         //
-        // The active bucket is carried over: refetching without it would swap
-        // the rows under a chip row still showing the old bucket selected.
+        // The active bucket and page are carried over: refetching without them
+        // would swap the rows under a chip row still showing the old selection,
+        // and page 3 of a bucket that just lost a row is page 3 of nothing.
         setData(
-          await fetchMyListings({ statuses: statusesForFilter(filter), page }),
+          await fetchMyListings({
+            statuses: statusesForFilter(filter),
+            page,
+            limit: MY_LISTINGS_PAGE_SIZE,
+            urgentOnly,
+          }),
         );
 
         // The candidates just left the pipeline, so the cached panel is stale.
-        setApplicationsByListing((current) => {
+        setReceivedByListing((current) => {
           const { [listingId]: _removed, ...rest } = current;
           return rest;
         });
@@ -188,7 +207,7 @@ export function MyListingsContainer({
         setActingListingId(undefined);
       }
     },
-    [filter, page],
+    [filter, page, urgentOnly],
   );
 
   /**
@@ -207,7 +226,24 @@ export function MyListingsContainer({
     setActionError(null);
     setActionFeedback(null);
     setExpandedListingId(undefined);
-    setApplicationsByListing({});
+    setReceivedByListing({});
+  }, []);
+
+  const handleUrgentToggle = useCallback(() => {
+    setUrgentOnly((current) => !current);
+    setPage(1);
+    setActionError(null);
+    setActionFeedback(null);
+    setExpandedListingId(undefined);
+    setReceivedByListing({});
+  }, []);
+
+  const handlePageChange = useCallback((next: number) => {
+    setPage(next);
+    // The new page is a different set of listings: a panel left open on the old
+    // one would keep showing candidates next to a card that is no longer there.
+    setExpandedListingId(undefined);
+    setReceivedByListing({});
   }, []);
 
   const handleClose = useCallback(
@@ -246,7 +282,7 @@ export function MyListingsContainer({
           <Button
             variant="secondary"
             className="shrink-0"
-            onClick={() => load(filter, page)}
+            onClick={() => load(filter, page, urgentOnly)}
           >
             Réessayer
           </Button>
@@ -257,7 +293,12 @@ export function MyListingsContainer({
         counts={data.counts}
         currentFilter={filter}
         onFilterChange={handleFilterChange}
-        applicationsByListing={applicationsByListing}
+        urgentOnly={urgentOnly}
+        onUrgentToggle={handleUrgentToggle}
+        page={data.page}
+        totalPages={data.totalPages}
+        onPageChange={handlePageChange}
+        receivedByListing={receivedByListing}
         expandedListingId={expandedListingId}
         loadingListingId={loadingListingId}
         actingListingId={actingListingId}
@@ -269,16 +310,4 @@ export function MyListingsContainer({
       />
     </>
   );
-}
-
-/**
- * A message bound to the listing it concerns.
- *
- * The id travels *with* the message rather than in a parallel state: keeping
- * them apart is what let a single failure render on every card, because the
- * view had no way to tell which listing the bare string belonged to.
- */
-interface ListingActionError {
-  listingId: string;
-  message: string;
 }

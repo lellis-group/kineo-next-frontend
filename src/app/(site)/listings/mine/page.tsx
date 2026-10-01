@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { ListSkeleton } from "@/components/molecules/list-skeleton";
 import { MyListingsContainer } from "@/components/templates/my-listings-container";
 import { serverTransport } from "@/lib/api-transport.server";
-import { fetchMyListings } from "@/lib/listings";
+import { fetchMyListings, MY_LISTINGS_PAGE_SIZE } from "@/lib/listings";
 import { requireMember } from "@/lib/require-member";
 
 export const metadata: Metadata = {
@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 };
 
 /** Matches the placeholder's rhythm in `ListSkeleton`. */
-const SKELETON_CHIPS = 5;
+const SKELETON_CHIPS = 9;
 
 export default function MyListingsPage() {
   return (
@@ -26,6 +26,8 @@ export default function MyListingsPage() {
 }
 
 async function MyListings() {
-  const data = await requireMember(fetchMyListings({}, serverTransport));
+  const data = await requireMember(
+    fetchMyListings({ limit: MY_LISTINGS_PAGE_SIZE }, serverTransport),
+  );
   return <MyListingsContainer initialData={data} />;
 }

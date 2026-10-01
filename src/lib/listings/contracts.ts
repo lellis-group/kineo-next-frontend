@@ -9,6 +9,7 @@
 import type {
   ApiApplication,
   ApiReplacementListing,
+  ApplicationDecisionSource,
   ApplicationStatus,
   ProfileType,
   ReplacementListingStatus,
@@ -30,12 +31,24 @@ export interface MyListing {
   specialty: Specialty;
   /** Formatted period — e.g. « Du 15 oct. au 30 oct. 2025 ». */
   dateRange?: string;
+  /**
+   * Raw ISO bounds, kept alongside `dateRange`.
+   *
+   * The formatted range is one string built for a line of text; the detail page
+   * needs the two bounds apart (« Du 15 oct. au 30 oct. 2025 » → début, fin) and
+   * needs to compare them with today to say whether a posting is behind it.
+   * Re-parsing the French sentence to get them back is not an option.
+   */
+  startDate: string;
+  endDate: string;
   description?: string;
   urgent: boolean;
   /** Active candidates (PENDING / SHORTLISTED) — the capacity that matters. */
   applicationsCount: number;
   maxApplications?: number;
   createdAt: string;
+  /** Last write on the row, when the backend reports one. */
+  updatedAt?: string;
 }
 
 /**
@@ -63,11 +76,16 @@ export interface ApplicationApplicant {
 export interface ReceivedApplication {
   id: string;
   status: ApplicationStatus;
+  /** Who decided; null while the application is still open. */
+  decisionSource: ApplicationDecisionSource | null;
   /** « Postulé il y a 3 jours ». */
   submittedLabel: string;
   message?: string;
   rejectionReason?: string;
   withdrawnReason?: string;
+  /** True once the practice has opened the application (viewedAt set). */
+  viewed: boolean;
+  viewedAt?: string;
   applicant: ApplicationApplicant;
   /** Raw application, for the actions the backend still allows. */
   raw: ApiApplication;
@@ -80,16 +98,34 @@ export const RECRUITING_STATUSES: ReadonlySet<ReplacementListingStatus> =
 /**
  * Filter buckets above the list.
  *
- * Eight statuses would be unusable as eight chips, and a practice does not
- * think in them: what it wants is "the ones still recruiting", "the one I
- * filled", "the ones I closed". Each bucket maps to one or more backend
- * statuses, sent as a single comma-separated `status` query parameter so the
- * filtering stays server-side and pagination keeps working.
+ * The same reasoning as the applications screen, applied to the practice side.
+ * The backend has eight listing statuses, but a practice does not think in
+ * them: what it wants is « which ones can still take someone », « which one did
+ * I fill », « which ones died without a replacement ». The first cut of this row
+ * had five buckets and threw three of those situations into « En cours » and two
+ * into « Terminées » — `FULL` (capacity reached) and `IN_DISCUSSION` (candidates
+ * coming in) are not the same morning, and a posting that ended with nobody
+ * retained is not the same as one that was cancelled before it started.
+ *
+ * So the buckets cut the statuses the way the applicant screen cuts `REJECTED`:
+ * one chip per situation, each naming the statuses behind it, and a counter that
+ * sums those statuses out of the server's unfiltered totals. Filtering stays
+ * server-side, so a bucket is never assembled in the browser from a page of
+ * results and pagination keeps counting the right rows.
+ *
+ * `RECRUITING` is the union bucket and stays first after « Toutes »: it is the
+ * one a practice comes back to every day, and it is also the set the close /
+ * cancel gate and the dashboard headline are built on, so it must not be
+ * re-derived anywhere else.
  */
 export type ListingsFilter =
   | "ALL"
   | "RECRUITING"
+  | "OPEN"
+  | "IN_DISCUSSION"
+  | "FULL"
   | "FILLED"
+  | "NO_CANDIDATE"
   | "CLOSED"
   | "DRAFT";
 
@@ -100,7 +136,6 @@ export interface ListingsFilterOption {
   statuses: ReplacementListingStatus[];
 }
 
-/** Filter row configuration — same shape as the applications screen. */
 export const LISTING_FILTERS: readonly ListingsFilterOption[] = [
   { id: "ALL", label: "Toutes", statuses: [] },
   {
@@ -108,17 +143,65 @@ export const LISTING_FILTERS: readonly ListingsFilterOption[] = [
     label: "En cours",
     statuses: ["OPEN", "IN_DISCUSSION", "FULL"],
   },
-  { id: "FILLED", label: "Pourvue", statuses: ["FILLED"] },
+  { id: "OPEN", label: "Ouvertes", statuses: ["OPEN"] },
+  { id: "IN_DISCUSSION", label: "En discussion", statuses: ["IN_DISCUSSION"] },
+  {
+    id: "FULL",
+    label: "Capacité atteinte",
+    statuses: ["FULL"],
+  },
+  { id: "FILLED", label: "Pourvues", statuses: ["FILLED"] },
+  {
+    id: "NO_CANDIDATE",
+    label: "Sans remplaçant",
+    statuses: ["CLOSED_NO_CANDIDATE"],
+  },
   {
     id: "CLOSED",
     label: "Terminées",
-    // `CLOSED_NO_CANDIDATE` belongs here: `close` writes it when the owner
-    // took a posting out of circulation without retaining anyone, and the
-    // applicant is told so in their rejection reason. Leaving it out would make
-    // those listings unreachable from every bucket.
-    statuses: ["CLOSED", "CLOSED_NO_CANDIDATE", "CANCELLED"],
+    // `CLOSED` is a filled posting taken out of circulation, `CANCELLED` one
+    // abandoned. `CLOSED_NO_CANDIDATE` is deliberately absent — it has its own
+    // chip, because « nobody was kept » and « nobody ever applied » are different
+    // histories and the practice reading the second one is the one that needs
+    // to publish again.
+    statuses: ["CLOSED", "CANCELLED"],
   },
   { id: "DRAFT", label: "Brouillons", statuses: ["DRAFT"] },
+] as const;
+
+/**
+ * Chips over the candidates received on one listing.
+ *
+ * One status per bucket, which is what makes the counters trivial: each reads a
+ * single key of the per-status totals the endpoint already returns. The split by
+ * decision source that the applicant screen offers is not available here — that
+ * endpoint sends the status breakdown only, and inventing a second total from a
+ * page of rows would give a number that changes as you page. The *reason* a
+ * candidate was ruled on is still shown, per row, from the row's own
+ * `decisionSource`.
+ */
+export type ReceivedApplicationsFilter =
+  | "ALL"
+  | "PENDING"
+  | "SHORTLISTED"
+  | "ACCEPTED"
+  | "REJECTED"
+  | "WITHDRAWN";
+
+export interface ReceivedApplicationsFilterOption {
+  id: ReceivedApplicationsFilter;
+  label: string;
+  /** Backend status filter; absent means « no filter ». */
+  status?: ApplicationStatus;
+}
+
+export const RECEIVED_FILTERS: readonly ReceivedApplicationsFilterOption[] = [
+  { id: "ALL", label: "Tous" },
+  { id: "PENDING", label: "En attente", status: "PENDING" },
+  { id: "SHORTLISTED", label: "Présélectionnés", status: "SHORTLISTED" },
+  { id: "ACCEPTED", label: "Acceptés", status: "ACCEPTED" },
+  { id: "REJECTED", label: "Refusés", status: "REJECTED" },
+  { id: "WITHDRAWN", label: "Retirés", status: "WITHDRAWN" },
 ] as const;
 
 /** Per-status totals over the whole collection, as returned by the backend. */

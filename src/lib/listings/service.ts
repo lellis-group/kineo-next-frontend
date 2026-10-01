@@ -23,7 +23,11 @@ import type {
   ApplicationStatus,
   ReplacementListingStatus,
 } from "../types/api";
-import { adaptMyListings, adaptReceivedApplication } from "./adapters";
+import {
+  adaptMyListing,
+  adaptMyListings,
+  adaptReceivedApplication,
+} from "./adapters";
 import type {
   ListingApplicationsData,
   ListingStatusCounts,
@@ -105,12 +109,29 @@ function emptyCounts(): ListingStatusCounts {
 }
 
 /**
+ * Page size for the listings list, server page and client container alike.
+ *
+ * Lives here, next to the endpoint, for the reason `APPLICATIONS_PAGE_SIZE` does
+ * on the other side: the number the server rendered and the number the client
+ * refetches have to be one number, or a filter change silently changes the
+ * page size and the reader lands on a page that does not exist.
+ */
+export const MY_LISTINGS_PAGE_SIZE = 10;
+
+/** Same, for the candidates received on one listing. */
+export const LISTING_APPLICATIONS_PAGE_SIZE = 10;
+
+/**
  * GET /replacement-listings/mine — the listings the user published, optionally
  * narrowed to a status bucket.
  *
  * The bucket is resolved to backend statuses by the caller and sent as a
  * comma-separated list, so the server does the filtering and the result stays
  * correctly paginated.
+ *
+ * `urgentOnly` is a separate narrowing rather than a filter bucket: the endpoint
+ * has no per-urgency total, so a « Urgentes (n) » chip would have to report a
+ * number the server never sent. As a toggle it costs no counter and stays exact.
  */
 export async function fetchMyListings(
   params: {
@@ -118,6 +139,8 @@ export async function fetchMyListings(
     page?: number;
     /** Page size, capped at 100 by the endpoint. */
     limit?: number;
+    /** Narrow to postings flagged urgent, on top of the status bucket. */
+    urgentOnly?: boolean;
   } = {},
   transport?: ApiTransport,
 ): Promise<MyListingsData> {
@@ -125,6 +148,9 @@ export async function fetchMyListings(
 
   if (params.statuses?.length) {
     searchParams.set("status", params.statuses.join(","));
+  }
+  if (params.urgentOnly) {
+    searchParams.set("urgent", "true");
   }
   if (params.page) {
     searchParams.set("page", String(params.page));
@@ -168,12 +194,16 @@ export async function fetchMyListings(
 /** GET /applications/listing/:listingId — candidates who applied to a listing. */
 export async function fetchListingApplications(
   listingId: string,
-  params: { page?: number; limit?: number; status?: ApplicationStatus } = {},
+  params: {
+    page?: number;
+    limit?: number;
+    status?: ApplicationStatus;
+  } = {},
   transport?: ApiTransport,
 ): Promise<ListingApplicationsData> {
   const searchParams = new URLSearchParams({
     page: String(params.page ?? 1),
-    limit: String(params.limit ?? 20),
+    limit: String(params.limit ?? LISTING_APPLICATIONS_PAGE_SIZE),
   });
 
   if (params.status) {
@@ -195,6 +225,35 @@ export async function fetchListingApplications(
     total: raw.meta.total,
     counts: { ...EMPTY_APPLICATION_COUNTS, ...raw.meta.counts },
   };
+}
+
+/**
+ * One of the user's own listings, by id — the `/listings/mine/[id]` page.
+ *
+ * The resource endpoint answers for every status the owner can see, drafts and
+ * cancelled postings included, so this is a single read and the 404 it raises is
+ * the real one: the listing does not exist, or it belongs to somebody else. Both
+ * are the 404 page, which is the honest answer either way.
+ *
+ * It is deliberately not assembled from `/replacement-listings/mine` by scanning
+ * the owner's pages for a matching id. That was tried first, on the assumption
+ * that the endpoint only serves postings still in circulation — the OpenAPI
+ * summary says « not found or not open », and the backend does gate on `status`
+ * — but it relaxes that gate for the owner, so the fallback never ran and only
+ * cost a full collection read on the 404 path, which is the one request where a
+ * wrong answer matters most.
+ */
+export async function fetchMyListing(
+  id: string,
+  transport?: ApiTransport,
+): Promise<MyListing> {
+  const listing = await apiFetch<ApiReplacementListing>(
+    `/replacement-listings/${id}`,
+    undefined,
+    transport,
+  );
+
+  return adaptMyListing(listing);
 }
 
 /**
