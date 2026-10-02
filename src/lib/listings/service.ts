@@ -379,9 +379,6 @@ function translateStatusMessage(message: string, verb: string): string {
  * 403 needed domain wording, because the generic « action non autorisée » copy
  * is about the unverified-email guard and would have sent them to check an
  * address that is fine.
- *
- * This lived in `listing-detail-container.tsx`. Domain wording belongs with the
- * other listings wording, not in the one component that happened to need it.
  */
 export function listingReadErrorMessage(error: unknown): string {
   return errorMessage(error, {

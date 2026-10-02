@@ -12,11 +12,6 @@ export interface ProfileFormPageProps {
   children: ReactNode;
 }
 
-/**
- * Shared page shell for /profile/create and /profile/edit: back button,
- * heading and the form card. Removes the duplicated markup between the two
- * orchestrators.
- */
 export function ProfileFormPage({
   backLabel,
   onBack,

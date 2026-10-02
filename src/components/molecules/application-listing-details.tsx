@@ -1,7 +1,6 @@
 import { Fact, FactList } from "@/components/molecules/fact-list";
 import type { ApplicationListingInfo } from "@/lib/applications";
 
-/** Targeted-listing facts (period, remuneration) and description. */
 export function ApplicationListingDetails({
   listing,
 }: {

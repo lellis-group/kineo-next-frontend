@@ -15,13 +15,6 @@ type MemberAuth = Extract<ServerAuthState, { status: "member" }>;
 
 import type { ApiProfile } from "./types/api";
 
-/**
- * Which of the three profile routes is being entered.
- *
- * All three answer the same two questions — is there a session, is there a
- * profile — and all three redirect on a surprising answer, so the questions and
- * the redirects were written out three times.
- */
 export type ProfileGateMode = "view" | "create" | "edit";
 
 /**
@@ -56,14 +49,12 @@ export async function passProfileGate(
   switch (mode) {
     case "view":
     case "edit":
-      // Reachable only from a valid session that has a profile.
       if (!profile) {
         redirect("/profile/create");
       }
       return { auth, profile };
 
     case "create":
-      // Reachable only from a valid session that has none.
       if (profile) {
         redirect("/profile/edit");
       }

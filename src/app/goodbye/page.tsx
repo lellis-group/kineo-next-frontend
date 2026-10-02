@@ -7,14 +7,6 @@ import { LoadingState } from "@/components/molecules/loading-state";
 import { useSession } from "@/lib/auth-client";
 import { useDeletionConfirmation } from "@/lib/hooks/use-deletion-confirmation";
 
-/**
- * Everything except the token and the focus target.
- *
- * The two things left in this file are the ones that belong to the screen: the
- * token from the URL, and the ref the heading is focused through when the flow
- * settles. The request, the job cache, the outcome mapping and the sign-out are
- * `useDeletionConfirmation`'s.
- */
 function GoodbyeContent() {
   const token = useSearchParams().get("token");
   const { data: session } = useSession();

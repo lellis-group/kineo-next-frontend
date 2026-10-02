@@ -13,9 +13,8 @@ export const metadata: Metadata = {
 };
 
 /**
- * Dedicated application page — routed by application id. Reads the dynamic
- * params inside a Suspense boundary so the route stays instant-streamable
- * instead of blocking prerendering.
+ * Reads the dynamic params inside a Suspense boundary so the route stays
+ * instant-streamable instead of blocking prerendering.
  */
 export default function ApplicationDetailPage({
   params,

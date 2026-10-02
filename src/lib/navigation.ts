@@ -1,8 +1,3 @@
-/**
- * Structural navigation — editorial content lives in `lib/marketing.ts`.
- * Member nav is role-based (`profileType`); null falls back to discovery.
- */
-
 import type { ProfileType } from "./types/api";
 
 export interface HeaderLink {

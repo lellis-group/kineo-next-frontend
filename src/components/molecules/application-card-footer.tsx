@@ -2,7 +2,6 @@ import { ArrowRightIcon } from "@/components/atoms/icons";
 import { MetaRow, MetaRowItem } from "@/components/molecules/meta-row";
 import type { ApplicationEntry } from "@/lib/applications";
 
-/** Card state row under a divider: viewed indicator, submission time, CTA. */
 export function ApplicationCardFooter({
   application,
 }: {

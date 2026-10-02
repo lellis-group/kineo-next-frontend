@@ -22,7 +22,6 @@ const TONE_CLASSES: Record<BadgeTone, string> = {
   info: "border-info/20 bg-info/10 text-info",
 };
 
-/** Key dates while the application is still open. */
 function buildOpenSummary(application: ApplicationEntry): string {
   if (application.status === "SHORTLISTED") {
     return application.viewedAt
@@ -71,7 +70,6 @@ function buildDecidedSummary(application: ApplicationEntry): string {
   return base;
 }
 
-/** Tinted outcome banner: status headline + summary (key dates or reason). */
 export function ApplicationStatusBanner({
   application,
   className,

@@ -20,7 +20,6 @@ import {
 } from "@/lib/listings";
 import type { ApplicationStatus } from "@/lib/types/api";
 
-/** The candidate filter and page currently on screen. */
 interface View {
   page: number;
   filter: ReceivedApplicationsFilter;
@@ -113,11 +112,6 @@ export function ListingDetailContainer({
     },
   });
 
-  /**
-   * `closeListing` / `cancelListing` already come back as French sentences (see
-   * `mapListingActionError`); only the re-reads that follow can throw a raw API
-   * error, so the classifier covers what they leave behind.
-   */
   /**
    * One listing is in scope here, so the scoping the list screen needs (which
    * card shows the message) collapses to the message itself.

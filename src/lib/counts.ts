@@ -7,16 +7,7 @@
  * the counters are zeroed rather than guessed, because a chip that claims a
  * candidate exists in a status nobody confirmed is worse than a chip that shows
  * nothing.
- *
- * This exists because four hand-written zero records had grown across two
- * modules, with the key lists copied into them. They were the same shape written
- * four times, and the copies were not checked against the status unions they
- * claimed to cover: adding a status to the API would have left one of them
- * quietly missing a key, and a `Record<Status, number>` with a hole in it reads
- * as `undefined` at runtime rather than failing to compile — the counter would
- * have rendered `NaN`.
  */
-
 import {
   APPLICATION_DECISION_SOURCES,
   APPLICATION_STATUSES,

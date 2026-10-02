@@ -16,11 +16,7 @@ import type { ApiProfile } from "@/lib/types/api";
 import { ProfileFormPage } from "./profile-form-page";
 
 /**
- * What differs between the create and edit screens.
- *
- * These were two components with a body each, and the bodies were the same shape
- * line for line: read the router, submit, redirect on success, map the failure,
- * render `ProfileFormPage` around `ProfileForm`. Five values changed between
+ * What differs between the create and edit screens. Five values change between
  * them, which is what a single component parameterised by a mode is for — and
  * the risk was not the duplication itself but the drift: the day one of the two
  * gained an error path, the other would quietly keep the old behaviour.

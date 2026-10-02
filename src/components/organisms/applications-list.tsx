@@ -3,7 +3,6 @@ import { ApplicationCard } from "@/components/molecules/application-card";
 import { EmptyState } from "@/components/organisms/empty-state";
 import type { ApplicationEntry } from "@/lib/applications";
 
-/** Application list — one card per application. */
 export function ApplicationsList({
   applications,
 }: {

@@ -1,12 +1,6 @@
 /**
  * The one place a failure becomes a French sentence.
  *
- * Every screen used to carry its own `mapXError`, all of them re-deciding what a
- * 401 or a 409 means and re-typing the same session-expired sentence. That made
- * the copy drift apart per screen, and it made `ErrorState` classify failures by
- * running a regex over the *message* of an `ApiError` — which quietly stopped
- * matching the moment the message template changed.
- *
  * Classification reads the typed `status` / `code` / `fieldErrors` that
  * `apiFetch` already extracts, never the rendered string. Domain-specific
  * wording (a refused transition, a taken RPPS number) stays in the domain
@@ -57,7 +51,6 @@ export type ErrorKind =
   /** Anything the classifier could not place. */
   | "unknown";
 
-/** The status codes every endpoint in this API answers with. */
 const SESSION_STATUSES = new Set([401]);
 
 /**

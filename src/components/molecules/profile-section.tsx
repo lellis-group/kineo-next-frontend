@@ -3,7 +3,6 @@ import { Card } from "@/components/atoms/card";
 
 type SectionIcon = ComponentType<SVGProps<SVGSVGElement>>;
 
-/** Card with tinted icon header — shared section layout of the profile view mode. */
 export function ProfileSection({
   icon: Icon,
   title,

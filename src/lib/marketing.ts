@@ -1,9 +1,3 @@
-/**
- * Editorial content of the public pages.
- * Kept separate from components so organisms stay presentational.
- * Structural navigation lives in `lib/navigation.ts`.
- */
-
 export const hero = {
   title: "Le remplacement médical,",
   titleAccent: "simplifié.",
@@ -11,7 +5,6 @@ export const hero = {
     "Kineo connecte médecins installés et remplaçants avec un suivi transparent et une gestion administrative automatisée.",
   primaryCta: { label: "Trouver un remplaçant", href: "/signup" },
   secondaryCta: { label: "Chercher un remplacement", href: "/signup" },
-  /** Live console preview panel (hero side visual). */
   livePreview: {
     caption: "kineo-live-console",
     contractTitle: "Contrat Généré #8012",

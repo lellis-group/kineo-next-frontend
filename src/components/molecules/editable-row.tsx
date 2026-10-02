@@ -5,7 +5,6 @@ import { Button } from "@/components/atoms/button";
 import { InlineAlert } from "@/components/molecules/inline-alert";
 import { SubmitButton } from "@/components/molecules/submit-button";
 
-/** One input in an editable row. */
 export interface EditableField {
   name: string;
   label: string;

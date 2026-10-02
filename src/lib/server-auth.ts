@@ -1,11 +1,6 @@
 /**
  * Server-side auth state for the shell (RSC only).
  *
- * One read, one shape. The header used to read the session and the role from
- * two independent helpers with two independent failure modes, so the nav could
- * render as "anonymous", then as "member with the default role", then settle
- * on the real role — three different headers for one page load.
- *
  * `status` is the only thing the UI branches on, and it has exactly two
  * members, so there is no such thing as "half signed in".
  */
@@ -29,15 +24,9 @@ export type ServerAuthState =
 const ANONYMOUS: ServerAuthState = { status: "anonymous" };
 
 /**
- * Cached per request: the layout and the page both read it.
- *
- * Both reads go through this app's own `/api/*` proxy, exactly like every other
- * server read (`api-transport.server.ts`). This used to reach the backend
- * directly, off `NEXT_PUBLIC_BACKEND_URL`, which left two paths to the same
- * service: a backend-down answer reached the shell through the proxy's shaped
- * 502 and reached the page as a raw fetch failure, so the two halves of one page
- * load could disagree about what was wrong. It also meant a second reader of
- * that env var, outside the one place allowed to know it.
+ * Cached per request: the layout and the page both read it. Both go through this
+ * app's own `/api/*` proxy, exactly like every other server read
+ * (`api-transport.server.ts`).
  */
 export const fetchServerAuth = cache(async (): Promise<ServerAuthState> => {
   const {
@@ -77,19 +66,12 @@ export const fetchServerAuth = cache(async (): Promise<ServerAuthState> => {
   // `.catch` is what makes it best-effort: `fetchMyProfile` only softens a 404,
   // so the header needs its own floor or an outage would escalate into the
   // route's error boundary instead of staying a header.
-  //
-  // It is the same cached read the profile and dashboard routes make, which is
-  // the point: this used to hand-roll a second request for the same row, and a
-  // render that needed both got two answers that could disagree.
   const profile = await fetchMyProfile(serverTransport).catch(() => null);
 
   return {
     status: "member",
     name: user.name?.trim() || "Professionnel",
     role: profile?.profileType ?? null,
-    // Carried, not re-fetched: the profile page used to read the session a
-    // second time through the client auth client and cast the result, which
-    // meant two session reads per render that could disagree.
     user,
   };
 });

@@ -41,7 +41,6 @@ export interface InlineAlertProps {
   children: ReactNode;
 }
 
-/** Form inline message — consolidates styles previously duplicated across auth pages. */
 export function InlineAlert({
   tone = "info",
   as: Component = "output",

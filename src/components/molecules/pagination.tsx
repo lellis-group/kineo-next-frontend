@@ -6,21 +6,10 @@ import { ArrowLeftIcon, ArrowRightIcon } from "@/components/atoms/icons";
 interface PaginationProps {
   /** Current page number (1-based). */
   currentPage: number;
-  /** Total number of pages. */
   totalPages: number;
-  /** Callback when page changes. */
   onPageChange: (page: number) => void;
 }
 
-/**
- * Pagination controls — previous/next buttons with page indicator.
- *
- * Hides itself when there is one page. That check used to be written at each
- * call site instead, which meant three copies of it and a docblock here claiming
- * the opposite — the component has never rendered on a single page, so the
- * comment described a behaviour nobody had. One page needs no way to change it,
- * and « Page 1 sur 1 » is noise under a short list.
- */
 export function Pagination({
   currentPage,
   totalPages,

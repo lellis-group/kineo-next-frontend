@@ -4,12 +4,6 @@ import { ApiError } from "./api-client";
 /**
  * Session handling for server-side reads.
  *
- * Moving the data fetches out of the client containers took their 401 handling
- * with them: the container used to catch the rejection and redirect, but a
- * server component `await`ing the same call just let it propagate to the route
- * error boundary, so an expired session produced a generic 500 page instead of
- * the sign-in screen. These keep the behaviour the readers already had.
- *
  * Both send an expired session to `/signin`, never `/signup` — the account still
  * exists, they hold its credentials, and landing on « Créer un compte » reads as
  * being asked to register again. See the same reasoning on sign-out in

@@ -17,7 +17,6 @@ import {
 } from "@/lib/listings";
 import type { ReplacementListingStatus } from "@/lib/types/api";
 
-/** The bucket, page and urgency toggle currently on screen. */
 interface View {
   page: number;
   filter: ListingsFilter;

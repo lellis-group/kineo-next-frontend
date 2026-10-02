@@ -1,8 +1,3 @@
-/**
- * Profile presentation contracts — French labels, form state, validation.
- * Raw API types live in `./types/api`, API calls in `./profile-service`.
- */
-
 import type { ApiProfile, ProfileType, Specialty } from "./types/api";
 
 export const SPECIALTY_LABELS: Record<Specialty, string> = {

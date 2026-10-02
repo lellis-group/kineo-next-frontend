@@ -12,7 +12,6 @@ import {
 } from "@/lib/applications";
 import { usePaginatedResource } from "@/lib/hooks/use-paginated-resource";
 
-/** The filter and page currently on screen. */
 interface View {
   page: number;
   filter: ApplicationsFilter;

@@ -12,18 +12,14 @@ export function DashboardSkeleton() {
     <div className={PAGE_CONTAINER}>
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
         <div className="min-w-0 space-y-6">
-          {/* Greeting */}
           <div className="h-28 animate-pulse rounded-control bg-surface" />
-          {/* Stats */}
           <div className="grid gap-4 sm:grid-cols-3">
             <div className="h-32 animate-pulse rounded-control bg-surface" />
             <div className="h-32 animate-pulse rounded-control bg-surface" />
             <div className="h-32 animate-pulse rounded-control bg-surface" />
           </div>
-          {/* Activity */}
           <div className="h-64 animate-pulse rounded-control bg-surface" />
         </div>
-        {/* Sidebar */}
         <aside className="h-96 animate-pulse rounded-control bg-surface" />
       </div>
     </div>

@@ -45,7 +45,6 @@ export interface MyListingsViewProps {
   onCancel: (listingId: string) => void;
 }
 
-/** Presentational list of the user's listings, each expandable into candidates. */
 export function MyListingsView({
   listings,
   counts,

@@ -4,8 +4,7 @@ import { SignUpContainer } from "@/components/templates/signup-container";
 
 /**
  * `?email=` arrives from the landing page call to action, which submits a plain
- * GET form. It was being sent all along and then dropped, so the address someone
- * typed on the landing page never made it into the form.
+ * GET form so it works before hydration.
  *
  * Reading search params opts a route out of prerendering, so the read happens
  * behind a Suspense boundary: the shell stays static and streams, and the form

@@ -9,7 +9,6 @@ interface TimelineEvent {
   dotClass: string;
 }
 
-/** Submission / viewed / responded tracking as dot + label + date rows. */
 export function ApplicationTimeline({
   application,
 }: {

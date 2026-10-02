@@ -6,7 +6,6 @@ import { ReactivityPanel } from "@/components/organisms/reactivity-panel";
 import type { DashboardData } from "@/lib/dashboard";
 import { PAGE_CONTAINER } from "@/lib/layout";
 
-/** Logged-in page content — receives data via props. Shell provided by the (site) layout. */
 export function MemberHome({ data }: { data: DashboardData }) {
   return (
     <div className={PAGE_CONTAINER}>

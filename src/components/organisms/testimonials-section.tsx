@@ -3,10 +3,6 @@ import { Reveal } from "@/components/atoms/reveal";
 import { MARKETING_CONTAINER } from "@/lib/layout";
 import { testimonialsSection } from "@/lib/marketing";
 
-/**
- * Testimonials section — social proof carousel replacement in static grid:
- * section title + rating on the right, three quote cards (staggered on desktop).
- */
 export function TestimonialsSection() {
   return (
     <section className="border-b border-border bg-background">

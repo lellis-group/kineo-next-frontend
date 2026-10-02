@@ -4,13 +4,11 @@ import { cn } from "@/lib/cn";
 
 export interface AvatarProps {
   name: string;
-  /** Image URL — when provided, renders the picture instead of the initial. */
   image?: string | null;
   /** Additional classes (size…). */
   className?: string;
 }
 
-/** Circular avatar with initial or profile image. */
 export const Avatar = forwardRef<HTMLSpanElement, AvatarProps>(function Avatar(
   { name, image, className },
   ref,

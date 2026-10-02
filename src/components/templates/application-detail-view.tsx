@@ -6,7 +6,6 @@ import {
   WITHDRAWABLE_STATUSES,
 } from "@/lib/applications";
 
-/** Application detail page — back link, detail card, withdraw section. */
 export function ApplicationDetailView({
   application,
   onWithdrawn,

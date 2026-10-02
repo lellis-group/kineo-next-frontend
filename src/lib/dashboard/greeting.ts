@@ -15,14 +15,6 @@ function formatSpecialty(specialty: ApiProfile["specialty"]): string {
 /**
  * Sous-titre de bienvenue : dit où en est le membre, sans répéter les chiffres.
  *
- * Il les répétait — « Vous avez 2 annonces actives et 4 candidatures en
- * attente » — immédiatement au-dessus des deux cartes qui affichent
- * exactement 2 et 4, avec la même décomposition en détail. Même source de
- * dérive que le reste de l'écran : les deux phrases étaient calculées par deux
- * chemins distincts, ce qui est précisément pourquoi « FULL » manquait d'un
- * côté et pas de l'autre, et pourquoi le greeting et la carte donnaient des
- * chiffres différents.
- *
  * Un tableau de bord n'a besoin qu'une fois de chaque nombre. Le greeting dit
  * maintenant ce qui mérite l'attention ; les chiffres restent une ligne plus
  * bas, et il n'y a qu'une version.

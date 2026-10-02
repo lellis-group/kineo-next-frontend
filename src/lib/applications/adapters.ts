@@ -256,5 +256,3 @@ export function countForBucket(
     0,
   );
 }
-
-/** Applications tracking page — situation filters, list and pagination. */

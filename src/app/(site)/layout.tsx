@@ -4,7 +4,6 @@ import { AppHeaderLoader } from "@/components/organisms/app-header-loader";
 import { HeaderSkeleton } from "@/components/organisms/header-skeleton";
 import { SiteFooter } from "@/components/organisms/site-footer";
 
-/** Shell for public and member pages: shared navbar + footer. */
 export default function SiteLayout({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-dvh flex-col bg-background text-foreground">

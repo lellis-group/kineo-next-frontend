@@ -48,7 +48,6 @@ export function Section({
   );
 }
 
-/** A heading inside a section. */
 export function Subheading({ children }: { children: ReactNode }) {
   return (
     <h3 className="pt-2 text-sm font-bold tracking-tight text-foreground">

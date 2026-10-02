@@ -6,7 +6,6 @@ import { ApplicationStatusBanner } from "@/components/molecules/application-stat
 import { ApplicationTimeline } from "@/components/molecules/application-timeline";
 import type { ApplicationEntry } from "@/lib/applications";
 
-/** Section wrapper with the top divider used across the detail card. */
 function DetailSection({ children }: { children: React.ReactNode }) {
   return (
     <div className="mt-8 border-t border-border pt-8 sm:mt-10 sm:pt-10">

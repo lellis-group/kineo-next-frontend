@@ -9,11 +9,6 @@ const ACTION_ICONS = {
   layers: LayersIcon,
 } as const;
 
-/**
- * Welcome banner: greeting + summary + primary actions.
- * Layout follows the member mockup — full-width card, actions in a
- * wrapping row (primary first), compact vertical rhythm on mobile.
- */
 export function DashboardGreeting({
   greeting,
   actions,

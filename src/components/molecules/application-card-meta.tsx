@@ -2,7 +2,6 @@ import { MapPinIcon } from "@/components/atoms/icons";
 import { MetaRow, MetaRowItem } from "@/components/molecules/meta-row";
 import type { ApplicationEntry } from "@/lib/applications";
 
-/** Practice (name · city) under the title; falls back to the submission time. */
 export function ApplicationCardMeta({
   application,
 }: {

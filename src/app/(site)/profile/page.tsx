@@ -20,10 +20,7 @@ export const metadata: Metadata = {
  * sit behind a Suspense boundary: the session is read with `headers()` and the
  * profile with `cache: "no-store"`, and reaching either from the component that
  * blocks the route is what "uncached data outside of <Suspense>" is — the route
- * then cannot be prerendered and fails the instant check. Keeping them here also
- * settles the two navigation questions the container used to answer from a
- * `useEffect`: a member without a profile goes to the create form, and an
- * expired session goes to sign-in.
+ * then cannot be prerendered and fails the instant check.
  */
 export default function ProfilePage({
   searchParams,

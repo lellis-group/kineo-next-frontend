@@ -32,7 +32,6 @@ const WITHDRAW_COPY = {
     "Le service est hors service : le retrait n'a pas été enregistré. Réessayez dans quelques minutes.",
 } as const;
 
-/** Withdraw panel: outline trigger, then optional reason + danger confirm. */
 export function ApplicationWithdraw({
   application,
   onWithdrawn,

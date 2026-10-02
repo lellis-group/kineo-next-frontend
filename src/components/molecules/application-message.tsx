@@ -35,7 +35,6 @@ const MESSAGE_COPY = {
     "Le service est hors service : votre message n'a pas été enregistré. Réessayez dans quelques minutes.",
 } as const;
 
-/** "Votre message" section — display, plus inline editing while pending. */
 export function ApplicationMessage({
   applicationId,
   message,

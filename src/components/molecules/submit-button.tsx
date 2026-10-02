@@ -4,9 +4,7 @@ import { useFormStatus } from "react-dom";
 import { PendingButton } from "@/components/molecules/pending-button";
 
 export interface SubmitButtonProps {
-  /** Idle label. */
   label: string;
-  /** Label shown during submission. */
   pendingLabel?: string;
 }
 

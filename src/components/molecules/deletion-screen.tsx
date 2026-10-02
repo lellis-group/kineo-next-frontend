@@ -43,7 +43,6 @@ export interface DeletionScreenProps {
   headingRef: RefObject<HTMLHeadingElement | null>;
 }
 
-/** Where to send someone who is still signed in, or send them to sign in. */
 function exitHref(hasSession: boolean) {
   return hasSession ? "/profile" : "/signin";
 }

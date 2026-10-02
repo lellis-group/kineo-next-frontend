@@ -22,7 +22,6 @@ const SIZE_CLASSES: Record<ButtonSize, string> = {
 };
 
 export interface ButtonProps extends ComponentProps<"button"> {
-  /** Visual variant. */
   variant?: ButtonVariant;
   /** md: section actions · lg: primary actions (auth forms). */
   size?: ButtonSize;

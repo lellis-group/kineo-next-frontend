@@ -9,8 +9,6 @@ import { proxyToBackend } from "@/lib/backend-proxy";
  *
  * /api/auth/* is handled by the more specific src/app/api/auth/[...all]/route.ts.
  */
-
-/** Strip the "/api" prefix: /api/profile/me -> /profile/me */
 const toBackendPath = (pathname: string) =>
   pathname.replace(/^\/api/, "") || "/";
 

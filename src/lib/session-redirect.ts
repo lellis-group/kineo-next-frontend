@@ -11,13 +11,6 @@ type Router = ReturnType<typeof useRouter>;
 /**
  * The client-side twin of `lib/require-member.ts`.
  *
- * `requireMember` is what a server component wraps a read in; this is what a
- * client container puts in a `catch`. Five call sites had the same three lines
- * copied into them, each carrying its own restatement of why an expired session
- * goes to `/signin` rather than to `/signup` — which is how the reasoning ends
- * up recorded four times and, if one copy is ever edited, contradicted by the
- * other three.
- *
  * Returns whether it handled the error, so the caller can tell "redirected" from
  * "a real failure worth showing":
  *
