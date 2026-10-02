@@ -13,9 +13,11 @@ import {
   ApiError,
   type ApiTransport,
   apiFetch,
+  buildQuery,
   notFoundAs,
 } from "../api-client";
 import { errorMessage } from "../api-errors";
+import { COUNT_KEYS, withZeroCounts, zeroCounts } from "../counts";
 import type {
   ApiApplication,
   ApiPaginated,
@@ -64,20 +66,6 @@ export const LISTING_TRANSITION_CODES = {
 export type ListingTransitionCode =
   (typeof LISTING_TRANSITION_CODES)[keyof typeof LISTING_TRANSITION_CODES];
 
-/**
- * Fallback for a response without the status breakdown. Zeros rather than
- * guessed numbers: the tab counters must never claim a candidate exists in a
- * status the server did not confirm.
- */
-const EMPTY_APPLICATION_COUNTS: ReceivedApplicationCounts = {
-  total: 0,
-  PENDING: 0,
-  SHORTLISTED: 0,
-  ACCEPTED: 0,
-  REJECTED: 0,
-  WITHDRAWN: 0,
-};
-
 /** The listings page: the filtered slice plus the totals behind the chips. */
 export interface MyListingsData {
   listings: MyListing[];
@@ -93,19 +81,13 @@ export interface MyListingsData {
   counts: ListingStatusCounts;
 }
 
-/** Zeroed counts — for a response without the breakdown, or a brand-new user. */
+/**
+ * Zeroed counts — for a response without the breakdown, or a brand-new user.
+ * Zeros rather than guessed numbers: the tab counters must never claim a
+ * listing exists in a status the server did not confirm.
+ */
 function emptyCounts(): ListingStatusCounts {
-  return {
-    total: 0,
-    DRAFT: 0,
-    OPEN: 0,
-    IN_DISCUSSION: 0,
-    FULL: 0,
-    FILLED: 0,
-    CLOSED: 0,
-    CLOSED_NO_CANDIDATE: 0,
-    CANCELLED: 0,
-  };
+  return zeroCounts(0, COUNT_KEYS.listingStatus);
 }
 
 /**
@@ -144,22 +126,12 @@ export async function fetchMyListings(
   } = {},
   transport?: ApiTransport,
 ): Promise<MyListingsData> {
-  const searchParams = new URLSearchParams();
-
-  if (params.statuses?.length) {
-    searchParams.set("status", params.statuses.join(","));
-  }
-  if (params.urgentOnly) {
-    searchParams.set("urgent", "true");
-  }
-  if (params.page) {
-    searchParams.set("page", String(params.page));
-  }
-  if (params.limit) {
-    searchParams.set("limit", String(params.limit));
-  }
-
-  const query = searchParams.toString();
+  const query = buildQuery({
+    status: params.statuses?.join(","),
+    urgent: params.urgentOnly ? "true" : undefined,
+    page: params.page,
+    limit: params.limit,
+  });
   const raw = await apiFetch<
     ApiPaginated<ApiReplacementListing> & {
       meta: { counts?: Partial<ListingStatusCounts> };
@@ -187,7 +159,7 @@ export async function fetchMyListings(
     total: raw.meta.total,
     // Partial on the wire (a status the backend does not know about would be
     // absent), so it is completed rather than cast.
-    counts: { ...emptyCounts(), ...raw.meta.counts },
+    counts: withZeroCounts(raw.meta.counts, COUNT_KEYS.listingStatus),
   };
 }
 
@@ -201,20 +173,17 @@ export async function fetchListingApplications(
   } = {},
   transport?: ApiTransport,
 ): Promise<ListingApplicationsData> {
-  const searchParams = new URLSearchParams({
-    page: String(params.page ?? 1),
-    limit: String(params.limit ?? LISTING_APPLICATIONS_PAGE_SIZE),
+  const query = buildQuery({
+    page: params.page ?? 1,
+    limit: params.limit ?? LISTING_APPLICATIONS_PAGE_SIZE,
+    status: params.status,
   });
-
-  if (params.status) {
-    searchParams.set("status", params.status);
-  }
 
   const raw = await apiFetch<
     ApiPaginated<ApiApplication> & {
       meta: { counts?: Partial<ReceivedApplicationCounts> };
     }
-  >(`/applications/listing/${listingId}?${searchParams}`, undefined, transport);
+  >(`/applications/listing/${listingId}?${query}`, undefined, transport);
 
   return {
     applications: raw.data
@@ -223,7 +192,7 @@ export async function fetchListingApplications(
     page: raw.meta.page,
     totalPages: raw.meta.totalPages,
     total: raw.meta.total,
-    counts: { ...EMPTY_APPLICATION_COUNTS, ...raw.meta.counts },
+    counts: withZeroCounts(raw.meta.counts, COUNT_KEYS.applicationStatus),
   };
 }
 
@@ -393,4 +362,30 @@ function translateStatusMessage(message: string, verb: string): string {
     return "Cette annonce n'est plus modifiable : elle a quitté la diffusion.";
   }
   return `Impossible de ${verb} l'annonce pour le moment. Veuillez réessayer.`;
+}
+
+/**
+ * A failed *read* on a listing, in French, with the 403 case spelled out.
+ *
+ * The sibling of `mapListingActionError`, and separate from it because the two
+ * endpoints answer 403 for different reasons and the reader needs a different
+ * way out of each.
+ *
+ * The candidates endpoint answers a bare English « You do not own this listing »
+ * on a 403, which is the same string the service layer maps for the *write*
+ * actions. Surfacing `err.message` instead put that sentence — plus the
+ * `API 403 (/applications/listing/…):` prefix `apiFetch` builds — in front of a
+ * French-speaking practice. `errorMessage` classifies the typed status; only the
+ * 403 needed domain wording, because the generic « action non autorisée » copy
+ * is about the unverified-email guard and would have sent them to check an
+ * address that is fine.
+ *
+ * This lived in `listing-detail-container.tsx`. Domain wording belongs with the
+ * other listings wording, not in the one component that happened to need it.
+ */
+export function listingReadErrorMessage(error: unknown): string {
+  return errorMessage(error, {
+    forbidden:
+      "Cette annonce ne vous appartient pas, ou elle n'existe plus. Retournez à vos annonces.",
+  });
 }

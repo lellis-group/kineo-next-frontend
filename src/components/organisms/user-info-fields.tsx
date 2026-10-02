@@ -1,11 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { Button } from "@/components/atoms/button";
 import { MailIcon, PencilIcon } from "@/components/atoms/icons";
-import { InlineAlert } from "@/components/molecules/inline-alert";
-import { SubmitButton } from "@/components/molecules/submit-button";
+import { EditableRow } from "@/components/molecules/editable-row";
 import {
   EMAIL_ERROR_MESSAGE,
   EMAIL_MAX_LENGTH,
@@ -21,196 +18,117 @@ import {
 import type { ApiUser } from "@/lib/types/api";
 import { changeEmail, mapUserError, updateUserInfo } from "@/lib/user-service";
 
+/**
+ * The account's own name, picture and email address.
+ *
+ * Two editable values, two different write endpoints and two different validation
+ * rules — which is why this is not one generic form. Everything around them (the
+ * row, the inline editor, the error and success slots) is `EditableRow`.
+ *
+ * A write that succeeds needs the server-rendered header and profile refreshed,
+ * since both show the name; the refresh is why these are mutations rather than
+ * optimistic local state.
+ */
 export function UserInfoFields({ user }: { user: ApiUser }) {
   const router = useRouter();
-  const [editing, setEditing] = useState<"name" | "email" | null>(null);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
-  async function handleNameSubmit(formData: FormData) {
-    setError("");
-    setSuccess("");
-    const name = (formData.get("name") as string).trim();
-    const image = (formData.get("image") as string).trim() || null;
-
-    // Client-side mirror of the backend `before` hook validation.
-    if (!isValidName(name)) {
-      setError(NAME_ERROR_MESSAGE);
-      return;
-    }
-    if (image && !isValidHttpsUrl(image)) {
-      setError(IMAGE_HTTPS_ERROR_MESSAGE);
-      return;
-    }
-
-    try {
-      await updateUserInfo({ name, image });
-      setSuccess("Informations mises à jour.");
-      setEditing(null);
-      router.refresh();
-    } catch (err) {
-      setError(mapUserError(err));
-    }
-  }
-
-  async function handleEmailSubmit(formData: FormData) {
-    setError("");
-    setSuccess("");
-    const newEmail = normalizeEmail(formData.get("email") as string);
-
-    if (newEmail.length > EMAIL_MAX_LENGTH) {
-      setError(EMAIL_ERROR_MESSAGE);
-      return;
-    }
-
-    try {
-      const { message } = await changeEmail(newEmail);
-      setSuccess(message);
-      setEditing(null);
-      router.refresh();
-    } catch (err) {
-      setError(mapUserError(err));
-    }
-  }
 
   return (
     <div className="space-y-3">
-      {success && (
-        <InlineAlert as="p" tone="success" className="text-sm">
-          {success}
-        </InlineAlert>
-      )}
-      {editing === "email" ? (
-        <form
-          action={handleEmailSubmit}
-          className="flex flex-col gap-2 rounded-lg bg-surface-2 p-3"
-        >
-          <label className="flex flex-col gap-1.5">
-            <span className="field-label">Nouvel email</span>
-            <input
-              name="email"
-              type="email"
-              required
-              maxLength={EMAIL_MAX_LENGTH}
-              defaultValue={user.email}
-              autoComplete="email"
-              placeholder="jean.dupont@exemple.fr"
-              className="field-input"
-            />
-          </label>
-          {error && (
-            <InlineAlert as="p" tone="danger">
-              {error}
-            </InlineAlert>
-          )}
-          <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-            <SubmitButton label="Envoyer" pendingLabel="Envoi…" />
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => setEditing(null)}
-            >
-              Annuler
-            </Button>
-          </div>
-        </form>
-      ) : (
-        <div className="flex items-center justify-between gap-3 rounded-lg bg-surface-2 px-3 py-2.5">
-          <div className="min-w-0 flex-1">
-            <p className="text-xs text-muted">Email</p>
-            <p className="truncate text-sm font-medium break-all">
-              {user.email}
-            </p>
-          </div>
-          <Button
-            type="button"
-            variant="outline"
-            size="md"
-            className="shrink-0"
-            onClick={() => {
-              setEditing("email");
-              setSuccess("");
-            }}
-          >
-            <MailIcon className="h-3.5 w-3.5" />
-            Changer
-          </Button>
-        </div>
-      )}
-
-      {editing === "name" ? (
-        <form
-          action={handleNameSubmit}
-          className="flex flex-col gap-2 rounded-lg bg-surface-2 p-3"
-        >
-          <label className="flex flex-col gap-1.5">
-            <span className="field-label">Nom complet</span>
-            <input
-              name="name"
-              type="text"
-              required
-              maxLength={NAME_MAX_LENGTH}
-              pattern={NAME_PATTERN}
-              defaultValue={user.name ?? ""}
-              autoComplete="name"
-              placeholder="Dr Jean Dupont"
-              className="field-input"
-            />
-          </label>
-          <label className="flex flex-col gap-1.5">
-            <span className="field-label">Image (URL https)</span>
-            <input
-              name="image"
-              type="url"
-              maxLength={IMAGE_MAX_LENGTH}
-              defaultValue={user.image ?? ""}
-              placeholder="https://exemple.fr/photo.jpg"
-              className="field-input"
-            />
-          </label>
-          {error && (
-            <InlineAlert as="p" tone="danger">
-              {error}
-            </InlineAlert>
-          )}
-          <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-            <SubmitButton label="Enregistrer" pendingLabel="En cours…" />
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => setEditing(null)}
-            >
-              Annuler
-            </Button>
-          </div>
-        </form>
-      ) : (
-        <div className="flex items-center justify-between gap-3 rounded-lg bg-surface-2 px-3 py-2.5">
-          <div className="min-w-0 flex-1">
-            <p className="text-xs text-muted">Nom</p>
-            <p className="truncate text-sm font-medium">
-              {user.name ?? "Non renseigné"}
-            </p>
+      <EditableRow
+        label="Nom"
+        display={
+          <>
+            {user.name ?? "Non renseigné"}
             {user.image && (
-              <p className="truncate text-xs break-all text-faint">
+              <span className="block truncate text-xs break-all text-faint">
                 {user.image}
-              </p>
+              </span>
             )}
-          </div>
-          <Button
-            type="button"
-            variant="outline"
-            size="md"
-            className="shrink-0"
-            onClick={() => {
-              setEditing("name");
-              setSuccess("");
-            }}
-          >
-            <PencilIcon className="h-3.5 w-3.5" />
-            Modifier
-          </Button>
-        </div>
-      )}
+          </>
+        }
+        editIcon={<PencilIcon className="h-3.5 w-3.5" />}
+        editLabel="Modifier"
+        submitLabel="Enregistrer"
+        pendingLabel="En cours…"
+        fields={[
+          {
+            name: "name",
+            label: "Nom complet",
+            value: user.name ?? "",
+            required: true,
+            maxLength: NAME_MAX_LENGTH,
+            pattern: NAME_PATTERN,
+            autoComplete: "name",
+            placeholder: "Dr Jean Dupont",
+          },
+          {
+            name: "image",
+            label: "Image (URL https)",
+            value: user.image ?? "",
+            type: "url",
+            maxLength: IMAGE_MAX_LENGTH,
+            placeholder: "https://exemple.fr/photo.jpg",
+          },
+        ]}
+        onSubmit={async (values) => {
+          // Client-side mirror of the backend `before` hook validation, so the
+          // obvious cases never cost a round trip. The backend still validates.
+          if (!isValidName(values.name)) {
+            throw new Error(NAME_ERROR_MESSAGE);
+          }
+          if (values.image && !isValidHttpsUrl(values.image)) {
+            throw new Error(IMAGE_HTTPS_ERROR_MESSAGE);
+          }
+
+          try {
+            await updateUserInfo({
+              name: values.name,
+              image: values.image || null,
+            });
+          } catch (err) {
+            // better-auth rejects with a plain object, not an `Error`, so the
+            // wording has to be chosen here rather than by the row.
+            throw new Error(mapUserError(err));
+          }
+          router.refresh();
+          return "Informations mises à jour.";
+        }}
+      />
+
+      <EditableRow
+        label="Email"
+        display={user.email}
+        editIcon={<MailIcon className="h-3.5 w-3.5" />}
+        editLabel="Changer"
+        submitLabel="Envoyer"
+        pendingLabel="Envoi…"
+        fields={[
+          {
+            name: "email",
+            label: "Nouvel email",
+            value: user.email,
+            type: "email",
+            required: true,
+            maxLength: EMAIL_MAX_LENGTH,
+            autoComplete: "email",
+            placeholder: "jean.dupont@exemple.fr",
+          },
+        ]}
+        onSubmit={async (values) => {
+          const email = normalizeEmail(values.email);
+          if (email.length > EMAIL_MAX_LENGTH) {
+            throw new Error(EMAIL_ERROR_MESSAGE);
+          }
+
+          try {
+            const { message } = await changeEmail(email);
+            router.refresh();
+            return message;
+          } catch (err) {
+            throw new Error(mapUserError(err));
+          }
+        }}
+      />
     </div>
   );
 }

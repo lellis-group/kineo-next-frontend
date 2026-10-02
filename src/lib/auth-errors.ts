@@ -1,34 +1,71 @@
+import { classifyError, neverReached } from "@/lib/api-errors";
 import {
   EMAIL_ERROR_MESSAGE,
   NAME_ERROR_MESSAGE,
   PASSWORD_LENGTH_MESSAGE,
 } from "@/lib/auth-validation";
 
-/** Re-exported for callers that imported it from this module before v2 of the validation constants. */
-export { PASSWORD_LENGTH_MESSAGE };
-
 /**
- * Auth error handling — user-friendly French messages and classification
- * helpers for the auth flows (signin, signup, password reset, email
- * verification).
+ * Auth error handling — user-friendly French messages for the auth flows
+ * (signin, signup, password reset, email verification).
  *
- * better-auth returns errors with `code` and/or `message`; thrown errors may
- * carry the raw message (network, proxy). This module centralizes the string
- * matching so pages stay presentation-only.
+ * Two things worth separating, because they answer different questions:
+ *
+ *  - *What kind of failure was this?* That is `api-errors.ts`'s job, and this
+ *    module asks it rather than re-deciding. It used to carry its own
+ *    `!status || status >= 500` rule, which quietly disagreed with the main
+ *    classifier — a status-less failure was "unavailable" here and
+ *    `service-down` there — so the same outage could be described two ways
+ *    depending on which screen hit it first.
+ *  - *What does better-auth actually say?* That stays here, because better-auth
+ *    answers with string `code`s (`EMAIL_NOT_VERIFIED`, `USER_ALREADY_EXISTS`…)
+ *    rather than HTTP statuses, and those codes are specific to the auth
+ *    endpoints.
+ *
+ * On `message` matching, which `api-errors.ts` otherwise forbids: a `code` is
+ * always tried first, and the `message` check is the fallback for a backend one
+ * deploy behind that still answers with the older code inside the text. This is
+ * the same rolling-deploy concession `lib/listings/service.ts` documents for
+ * its status regex — deliberate, and kept as long as both backends can be
+ * deployed independently. Nothing here matches on a *rendered* sentence.
  */
-
-/** Server outage / network cut — no status or a 5xx response. */
-export function isAuthServiceUnavailable(error: { status?: number }): boolean {
-  return !error.status || error.status >= 500;
-}
-
-/** Shown when the account exists but the email hasn't been verified. */
-export const EMAIL_NOT_VERIFIED_MESSAGE =
-  "Adresse e-mail non vérifiée. Consultez votre boîte de réception et cliquez sur le lien de vérification pour activer votre compte.";
 
 /** Server outage / network cut — shared copy across the auth pages. */
 export const AUTH_SERVICE_UNAVAILABLE_MESSAGE =
   "Service d'authentification indisponible. Veuillez réessayer dans quelques instants.";
+
+/**
+ * The same outage, from a call that *threw* instead of returning an error object.
+ *
+ * Distinct from `AUTH_SERVICE_UNAVAILABLE_MESSAGE` above, which is what
+ * `mapNetworkSignInError` returns. Two sentences for one situation is a smell
+ * worth settling on purpose rather than by accident — but they are not obviously
+ * interchangeable: this one is written for a reader who is mid-form and does not
+ * know the auth service exists, so it names what they can act on ("votre
+ * connexion") instead of naming a subsystem. Left as-is, and now a constant
+ * rather than three literals that could drift.
+ */
+export const AUTH_UNREACHABLE_MESSAGE =
+  "Impossible de contacter le serveur. Réessayez plus tard.";
+
+/**
+ * Whether this is worth retrying later rather than something the reader did
+ * wrong: the service is down, or the connection never completed.
+ *
+ * Delegates the 5xx threshold to `api-errors.ts`, and asks separately whether
+ * anything was ever received — the auth client resolves with a status-less
+ * object when the network drops, which the main classifier has no way to
+ * recognise on its own.
+ */
+export function isAuthServiceUnavailable(error: { status?: number }): boolean {
+  if (neverReached(error)) return true;
+  const kind = classifyError(error);
+  return kind === "unavailable" || kind === "service-down";
+}
+
+/** Shown when the account exists but the email hasn't been verified. */
+const EMAIL_NOT_VERIFIED_MESSAGE =
+  "Adresse e-mail non vérifiée. Consultez votre boîte de réception et cliquez sur le lien de vérification pour activer votre compte.";
 
 /** Maps a better-auth sign-in error to a user-friendly French message. Checks `error.code` first, then `error.message`. */
 export function mapSignInError(error: {

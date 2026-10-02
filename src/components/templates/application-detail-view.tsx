@@ -1,6 +1,5 @@
-import Link from "next/link";
-import { ArrowLeftIcon } from "@/components/atoms/icons";
 import { ApplicationWithdraw } from "@/components/molecules/application-withdraw";
+import { BackLink } from "@/components/molecules/back-link";
 import { ApplicationDetail } from "@/components/organisms/application-detail";
 import {
   type ApplicationEntry,
@@ -21,13 +20,7 @@ export function ApplicationDetailView({
 
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6 sm:py-10">
-      <Link
-        href="/applications"
-        className="inline-flex items-center gap-2 text-sm font-medium text-muted transition-colors hover:text-foreground"
-      >
-        <ArrowLeftIcon className="h-4 w-4" />
-        Retour à mes candidatures
-      </Link>
+      <BackLink href="/applications">Retour à mes candidatures</BackLink>
 
       <div className="mt-8">
         <ApplicationDetail

@@ -1,4 +1,3 @@
-import type { BadgeTone } from "@/components/atoms/badge";
 import {
   type ApplicationEntry,
   DECISION_SUMMARIES,
@@ -7,8 +6,14 @@ import {
 } from "@/lib/applications";
 import { cn } from "@/lib/cn";
 import { formatDateTime } from "@/lib/format";
+import type { BadgeTone } from "@/lib/ui-tokens";
 
-/** Band classes per badge tone. */
+/**
+ * Band classes per badge tone.
+ *
+ * Same tones as the badge, painted as a wide band rather than a chip — the
+ * vocabulary is shared (see `lib/ui-tokens.ts`), only the treatment differs.
+ */
 const TONE_CLASSES: Record<BadgeTone, string> = {
   neutral: "border-border bg-surface-2 text-foreground",
   success: "border-success/20 bg-success/10 text-success",

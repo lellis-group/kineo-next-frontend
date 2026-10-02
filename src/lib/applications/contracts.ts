@@ -50,8 +50,46 @@ export interface ApplicationsFilterOption {
   status?: string;
   /** Backend decision-source filter, comma-separated when several. */
   decisionSource?: string;
-  /** Keys in `decisionCounts` to sum for the chip's counter. */
+  /**
+   * Keys in `decisionCounts` to sum for the chip's counter.
+   *
+   * Declared only by the buckets the backend narrows with a `decisionSource`.
+   * A bucket that sends no `decisionSource` must leave this undefined and be
+   * counted from `counts` instead, because otherwise the chip counts a
+   * *different set* from the one the list below it shows — and nothing on screen
+   * says so. The reader sees « Retirées par vous (0) » over three rows, and the
+   * only way to know whether the number or the list is wrong is to go and look.
+   *
+   * A bucket needs `countKeys` exactly when its `status` alone does not identify
+   * it: the three `REJECTED` buckets are each one decision source, so each needs
+   * both. `WITHDRAWN` is the only bucket whose status is unique to it, and the
+   * status totals already answer it.
+   */
   countKeys?: readonly DecisionCountKey[];
+}
+
+/**
+ * The owner actions that end a posting — the practice closed the listing,
+ * closed it without picking anyone, cancelled it, or erased it.
+ *
+ * Declared once here because the « Annonce terminée » bucket needs this set in
+ * two shapes at once: the backend filters on a comma-separated string, while
+ * the chip's counter sums `decisionCounts` keys. Both are derived from this one
+ * list, because the pair used to be hand-written side by side and nothing
+ * checked them against each other — adding a fifth way to end a posting would
+ * have updated the counter and left the filter behind, which is the kind of
+ * drift that shows up as a chip that never quite agrees with the list under it.
+ */
+const POSTING_ENDED_SOURCES = [
+  "LISTING_CLOSED",
+  "LISTING_CLOSED_NO_CANDIDATE",
+  "LISTING_CANCELLED",
+  "LISTING_ERASED",
+] as const satisfies readonly ApplicationDecisionSource[];
+
+/** `"A,B,C"` — the query shape the backend filters on. */
+function csv(values: readonly string[]): string {
+  return values.join(",");
 }
 
 export const APPLICATION_FILTERS: readonly ApplicationsFilterOption[] = [
@@ -81,20 +119,16 @@ export const APPLICATION_FILTERS: readonly ApplicationsFilterOption[] = [
     id: "POSTING_ENDED",
     label: "Annonce terminée",
     status: "REJECTED",
-    decisionSource:
-      "LISTING_CLOSED,LISTING_CLOSED_NO_CANDIDATE,LISTING_CANCELLED,LISTING_ERASED",
-    countKeys: [
-      "LISTING_CLOSED",
-      "LISTING_CLOSED_NO_CANDIDATE",
-      "LISTING_CANCELLED",
-      "LISTING_ERASED",
-    ],
+    decisionSource: csv(POSTING_ENDED_SOURCES),
+    countKeys: POSTING_ENDED_SOURCES,
   },
   {
     id: "WITHDRAWN",
     label: "Retirées par vous",
     status: "WITHDRAWN",
-    countKeys: ["CANDIDATE_WITHDREW"],
+    // No `countKeys`, on purpose — see the note on the type below. This bucket
+    // is defined by its status, so it is counted from `counts.WITHDRAWN`, like
+    // the three single-status buckets above.
   },
 ] as const;
 

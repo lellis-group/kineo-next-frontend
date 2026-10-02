@@ -1,9 +1,10 @@
-import Link from "next/link";
-import { ArrowLeftIcon, UsersIcon } from "@/components/atoms/icons";
+import { UsersIcon } from "@/components/atoms/icons";
+import { BackLink } from "@/components/molecules/back-link";
 import { FilterChips } from "@/components/molecules/filter-chips";
 import { InlineAlert } from "@/components/molecules/inline-alert";
 import { Pagination } from "@/components/molecules/pagination";
 import { ReceivedApplicationCard } from "@/components/molecules/received-application-card";
+import { SoftPanel } from "@/components/molecules/soft-panel";
 import { ListingDetail } from "@/components/organisms/listing-detail";
 import { plural } from "@/lib/format";
 import {
@@ -51,13 +52,7 @@ export function ListingDetailView({
 }: ListingDetailViewProps) {
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 sm:py-10">
-      <Link
-        href="/listings/mine"
-        className="inline-flex items-center gap-2 text-sm font-medium text-muted transition-colors hover:text-foreground"
-      >
-        <ArrowLeftIcon className="h-4 w-4" />
-        Retour à mes offres
-      </Link>
+      <BackLink href="/listings/mine">Retour à mes offres</BackLink>
 
       <div className="mt-8">
         <ListingDetail
@@ -114,15 +109,15 @@ export function ListingDetailView({
             Chargement des candidatures…
           </p>
         ) : received.total === 0 ? (
-          <p className="mt-6 rounded-xl border border-border bg-background/40 px-4 py-6 text-center text-sm text-muted">
+          <SoftPanel as="p" className="mt-6">
             {listing.status === "DRAFT"
               ? "Cette annonce est encore en brouillon : elle n'a pas été diffusée, donc aucune candidature ne peut encore arriver."
               : receivedFilter === "ALL"
                 ? "Aucune candidature n'a été reçue pour cette annonce."
                 : `Aucun candidat ${bucketLabel(receivedFilter).toLowerCase()}.`}
-          </p>
+          </SoftPanel>
         ) : received.applications.length === 0 ? (
-          <div className="mt-6 rounded-xl border border-border bg-background/40 px-4 py-6 text-center">
+          <SoftPanel className="mt-6">
             <p className="text-sm text-muted">
               Aucun candidat dans cette catégorie.
             </p>
@@ -133,7 +128,7 @@ export function ListingDetailView({
             >
               Revenir à tous les candidats
             </button>
-          </div>
+          </SoftPanel>
         ) : (
           <ul className="mt-6 space-y-5">
             {received.applications.map((application) => (
@@ -144,13 +139,11 @@ export function ListingDetailView({
           </ul>
         )}
 
-        {received.totalPages > 1 && (
-          <Pagination
-            currentPage={received.page}
-            totalPages={received.totalPages}
-            onPageChange={onPageChange}
-          />
-        )}
+        <Pagination
+          currentPage={received.page}
+          totalPages={received.totalPages}
+          onPageChange={onPageChange}
+        />
       </section>
     </div>
   );

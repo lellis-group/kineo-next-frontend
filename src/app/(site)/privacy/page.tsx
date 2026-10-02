@@ -1,6 +1,19 @@
 import type { Metadata } from "next";
-import { ChevronDownIcon } from "@/components/atoms/icons";
 import { LegalDocument } from "@/components/templates/legal-document";
+import {
+  BulletList,
+  Paragraph,
+  PendingCallout,
+  PendingNote,
+  Section,
+  Steps,
+  Subheading,
+} from "@/components/templates/legal-primitives";
+import {
+  PENDING_ITEMS,
+  PRIVACY_SECTIONS,
+  RETENTION_PERIODS,
+} from "@/lib/legal/privacy";
 
 export const metadata: Metadata = {
   title: "Politique de confidentialité — Kineo",
@@ -11,160 +24,11 @@ export const metadata: Metadata = {
 /**
  * Privacy policy.
  *
- * Two kinds of content, deliberately not mixed:
- *
- * - sections describing what the platform actually does today, verified
- *   against the schema and the services (data inventory, retention, erasure
- *   lifecycle). These are binding and a user is entitled to read them, so they
- *   are written in full;
- * - sections that only the legal team can settle (legal basis per purpose,
- *   sub-processor list, DPO, supervisory authority, hosting location). Rather
- *   than interrupt the reading flow with a badge in every one of them, they are
- *   collected once in the status callout at the top, which lists exactly what
- *   is still open.
- *
- * A notice that invents those facts is worse than one that admits it is
- * incomplete, so the open items are named rather than papered over.
+ * Structure and pending items come from `@/lib/legal/privacy`; the prose
+ * vocabulary from `legal-primitives`. What is left here is the composition — and
+ * the copy itself, which is the point of the page and has no business in a
+ * module about routing.
  */
-
-/** Anchors, in reading order — the sidebar and the headings share the ids. */
-const SECTIONS = [
-  { id: "responsable", label: "Responsable de traitement" },
-  { id: "donnees", label: "Données collectées" },
-  { id: "finalites", label: "Finalités et bases légales" },
-  { id: "conservation", label: "Durées de conservation" },
-  { id: "suppression", label: "Suppression de votre compte" },
-  { id: "droits", label: "Vos droits" },
-  { id: "sous-traitants", label: "Sous-traitants" },
-  { id: "securite", label: "Sécurité" },
-  { id: "contact", label: "Nous contacter" },
-] as const;
-
-/** Still to be settled by the legal team, surfaced once at the top. */
-const PENDING = [
-  "Identité légale et adresse du siège (section 1)",
-  "Base légale et finalité de chaque traitement (section 3)",
-  "Durée de conservation des annonces, cabinets et candidatures (section 4)",
-  "Modalités d'exercice des droits non encore automatisés (section 6)",
-  "Liste des sous-traitants et localisation de l'hébergement (section 7)",
-  "Contact du DPO et autorité de contrôle (section 9)",
-] as const;
-
-/** Paragraph measure: ~72 characters, where French prose reads comfortably. */
-const PROSE = "max-w-[70ch] text-[0.925rem] leading-relaxed";
-
-function Section({
-  id,
-  index,
-  title,
-  children,
-}: {
-  id: string;
-  index: number;
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section id={id} className="scroll-mt-28">
-      <h2 className="text-xl font-bold tracking-tight sm:text-2xl">
-        <span className="text-faint">{index}.</span> {title}
-      </h2>
-      <div className="mt-4 space-y-4">{children}</div>
-    </section>
-  );
-}
-
-function Subheading({ children }: { children: React.ReactNode }) {
-  return (
-    <h3 className="pt-2 text-sm font-bold tracking-tight text-foreground">
-      {children}
-    </h3>
-  );
-}
-
-function Paragraph({ children }: { children: React.ReactNode }) {
-  return <p className={PROSE}>{children}</p>;
-}
-
-function BulletList({ items }: { items: readonly string[] }) {
-  return (
-    <ul className={`space-y-2.5 ${PROSE} list-none`}>
-      {items.map((item) => (
-        <li key={item} className="flex items-start gap-3">
-          <span
-            aria-hidden="true"
-            className="mt-2 h-1 w-1 shrink-0 rounded-full bg-primary"
-          />
-          <span className="text-foreground/85">{item}</span>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-/** Numbered procedure — used for the erasure timeline. */
-function Steps({ items }: { items: readonly string[] }) {
-  return (
-    <ol className={`space-y-3 ${PROSE} list-none`}>
-      {items.map((item, index) => (
-        <li key={item} className="flex items-start gap-3">
-          <span
-            aria-hidden="true"
-            className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/15 text-[11px] font-bold text-primary"
-          >
-            {index + 1}
-          </span>
-          <span className="text-foreground/85">{item}</span>
-        </li>
-      ))}
-    </ol>
-  );
-}
-
-/** Note pinned to a section the legal team has still to settle. */
-function PendingNote({ children }: { children: React.ReactNode }) {
-  return (
-    <p
-      className={`${PROSE} border-l-2 border-warning/40 pl-4 text-sm text-muted`}
-    >
-      {children}
-    </p>
-  );
-}
-
-const RETENTION = [
-  {
-    data: "Sessions de connexion expirées",
-    duration: "Purge à l'échéance",
-    note: "Balayage horaire. Supprime le jeton, l'adresse IP et l'agent utilisateur.",
-  },
-  {
-    data: "Jetons de vérification expirés",
-    duration: "Purge à l'échéance",
-    note: "Ces lignes contiennent l'adresse e-mail en clair tant qu'elles sont valides, y compris pour une demande de suppression abandonnée.",
-  },
-  {
-    data: "Trace d'une demande de suppression exécutée",
-    duration: "365 jours",
-    note: "Deux empreintes non réversibles et des horodatages. Aucun nom, aucune adresse e-mail.",
-  },
-  {
-    data: "Trace d'une demande jamais confirmée",
-    duration: "30 jours",
-    note: "Elle n'a enregistré qu'une intention.",
-  },
-  {
-    data: "Compte anonymisé",
-    duration: "30 jours",
-    note: "Délai de grâce avant suppression définitive. Voir la section 5.",
-  },
-  {
-    data: "Annonces, cabinets et candidatures",
-    duration: "Non définies",
-    note: "Aucune purge automatique ne s'applique à ces données tant que le compte est actif.",
-  },
-] as const;
-
 export default function PrivacyPage() {
   return (
     <LegalDocument
@@ -175,7 +39,7 @@ export default function PrivacyPage() {
       containerClassName="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6 sm:py-14"
     >
       {/* Intro sits above the two-column grid: centred like the header above
-            it, so the document opens as one block before the body starts. */}
+          it, so the document opens as one block before the body starts. */}
       <div className="mx-auto max-w-[52ch] space-y-4 text-center text-sm leading-relaxed text-foreground/85">
         <p>
           Cette page décrit la manière dont Kineo traite les données
@@ -189,32 +53,7 @@ export default function PrivacyPage() {
         </p>
       </div>
 
-      {/* One callout instead of a badge interrupting every pending section. */}
-      <details className="group mt-8 rounded-2xl border border-warning/25 bg-warning/5">
-        <summary className="flex cursor-pointer list-none items-center justify-between gap-4 p-5 text-sm font-semibold text-warning marker:content-none">
-          <span>
-            En attente de validation juridique ({PENDING.length} points)
-          </span>
-          <ChevronDownIcon
-            aria-hidden="true"
-            className="h-4 w-4 shrink-0 transition-transform group-open:rotate-180"
-          />
-        </summary>
-        <ul className="space-y-2 border-t border-warning/20 px-5 py-4">
-          {PENDING.map((item) => (
-            <li
-              key={item}
-              className="flex items-start gap-3 text-sm text-muted"
-            >
-              <span
-                aria-hidden="true"
-                className="mt-2 h-1 w-1 shrink-0 rounded-full bg-warning/60"
-              />
-              {item}
-            </li>
-          ))}
-        </ul>
-      </details>
+      <PendingCallout items={PENDING_ITEMS} />
 
       <div className="mt-12 grid gap-10 lg:grid-cols-[13rem_minmax(0,1fr)] lg:gap-12">
         <nav
@@ -225,7 +64,7 @@ export default function PrivacyPage() {
             Sommaire
           </p>
           <ol className="space-y-0.5">
-            {SECTIONS.map((section, index) => (
+            {PRIVACY_SECTIONS.map((section, index) => (
               <li key={section.id}>
                 <a
                   href={`#${section.id}`}
@@ -335,7 +174,7 @@ export default function PrivacyPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {RETENTION.map((row) => (
+                  {RETENTION_PERIODS.map((row) => (
                     <tr key={row.data}>
                       {/* `scope="row"`: the first column carries what each
                             row is about, and a screen reader reading cell by

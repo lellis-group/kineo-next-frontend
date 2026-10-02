@@ -8,7 +8,7 @@ import { authClient } from "./auth-client";
 import type { ApiUser } from "./types/api";
 
 /** GET /get-session — returns the current user. */
-export async function fetchUserInfo(): Promise<ApiUser> {
+async function fetchUserInfo(): Promise<ApiUser> {
   const { data, error } = await authClient.getSession();
   if (error || !data?.user) {
     throw error ?? new Error("Failed to fetch user info");

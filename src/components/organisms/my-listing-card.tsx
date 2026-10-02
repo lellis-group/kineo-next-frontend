@@ -6,6 +6,7 @@ import { Spinner } from "@/components/atoms/spinner";
 import { InlineAlert } from "@/components/molecules/inline-alert";
 import { MetaRow, MetaRowItem } from "@/components/molecules/meta-row";
 import { ReceivedApplicationCard } from "@/components/molecules/received-application-card";
+import { SoftPanel } from "@/components/molecules/soft-panel";
 import { ListingActions } from "@/components/organisms/listing-actions";
 import { plural } from "@/lib/format";
 import {
@@ -167,9 +168,7 @@ export function MyListingCard({
           )}
 
           {!loading && candidateCount === 0 && (
-            <p className="rounded-xl border border-border bg-background/40 px-4 py-6 text-center text-sm text-muted">
-              Aucune candidature pour le moment.
-            </p>
+            <SoftPanel as="p">Aucune candidature pour le moment.</SoftPanel>
           )}
 
           {!loading &&

@@ -19,7 +19,7 @@ import type { ApiPaginated } from "./types/api";
  * src/app/api/[...path]/route.ts). No backend IP/port is ever embedded in
  * client code, so the app works from any device/network (mobile included).
  */
-export const API_BASE = "/api";
+const API_BASE = "/api";
 
 /**
  * How a request reaches the backend.
@@ -36,7 +36,7 @@ export type ApiTransport = (
  * Default: the browser calling this Next.js app, which proxies to the backend.
  * `credentials: "include"` is what carries the session cookie.
  */
-export const browserTransport: ApiTransport = (path, init) =>
+const browserTransport: ApiTransport = (path, init) =>
   fetch(`${API_BASE}${path}`, { credentials: "include", ...init });
 
 /** Typed API error — status, optional business message, optional machine code. */
@@ -130,6 +130,59 @@ export async function apiFetch<T>(
   return JSON.parse(text) as T;
 }
 
+/**
+ * Which of the three shapes a collection endpoint answered with.
+ *
+ * `GET /applications/mine` is documented to answer either as a bare array or as
+ * the `{ data, meta }` envelope, and the array form carries no pagination or
+ * totals at all. Both callers of this needed to tell the two apart — and needed
+ * a third answer for "neither", which is what a backend that changed the shape
+ * looks like — so the detection lives here once.
+ *
+ * `unknown` is not an error. A screen that can still show something useful from
+ * an empty list should; that is each caller's decision, and `fetchAllPages`
+ * treats it as an empty collection while the applications screen zeroes its
+ * counters.
+ */
+export type CollectionShape<T> =
+  | { kind: "array"; rows: T[] }
+  | { kind: "envelope"; rows: T[]; meta: ApiPaginated<T>["meta"] }
+  /** Nothing readable came back — `rows` is empty so callers can spread it. */
+  | { kind: "unknown"; rows: [] };
+
+export function unwrapCollection<T>(raw: unknown): CollectionShape<T> {
+  if (Array.isArray(raw)) {
+    return { kind: "array", rows: raw };
+  }
+  if (raw && typeof raw === "object" && "data" in raw && "meta" in raw) {
+    const envelope = raw as ApiPaginated<T>;
+    return { kind: "envelope", rows: envelope.data ?? [], meta: envelope.meta };
+  }
+  return { kind: "unknown", rows: [] };
+}
+
+/** A query string from a record of optional parameters.
+ *
+ * `undefined`, `null` and `""` are left out; everything else is sent, including
+ * `false` and `0`. That is deliberate — a flag whose value is genuinely `false`
+ * is not the same as one the caller had no opinion about, and silently dropping
+ * it would make `urgentOnly: false` indistinguishable from not narrowing at all
+ * at the call site that can only pass one of the two. Callers with a truthiness
+ * rule (`urgentOnly || undefined`) say so themselves.
+ *
+ * Four call sites had this loop written out by hand.
+ */
+export function buildQuery(
+  params: Record<string, string | number | boolean | undefined | null>,
+): string {
+  const searchParams = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value === undefined || value === null || value === "") continue;
+    searchParams.set(key, String(value));
+  }
+  return searchParams.toString();
+}
+
 /** Converts an expected 404 to a fallback; other errors keep propagating. */
 export function notFoundAs<T>(fallback: T) {
   return (error: unknown): T => {
@@ -173,29 +226,28 @@ export async function fetchAllPages<T>(
   const collected: T[] = [];
 
   for (let page = 1; page <= MAX_PAGES; page += 1) {
-    const searchParams = new URLSearchParams({
-      page: String(page),
-      limit: String(MAX_PAGE_SIZE),
+    const query = buildQuery({
+      page,
+      limit: MAX_PAGE_SIZE,
+      ...params,
     });
-    for (const [key, value] of Object.entries(params)) {
-      if (value !== undefined) searchParams.set(key, value);
-    }
 
-    const raw = await apiFetch<ApiPaginated<T> | T[]>(
-      `${path}?${searchParams.toString()}`,
+    const raw = await apiFetch<unknown>(
+      `${path}?${query}`,
       undefined,
       transport,
-    ).catch(notFoundAs<ApiPaginated<T> | T[] | null>(null));
+    ).catch(notFoundAs<unknown>(null));
     if (!raw) return collected;
 
-    if (Array.isArray(raw)) {
-      collected.push(...raw);
-      break;
-    }
+    const shape = unwrapCollection<T>(raw);
+    collected.push(...shape.rows);
 
-    collected.push(...(raw.data ?? []));
+    // A bare array is the whole collection — there is no next page to ask for.
+    // A shape we cannot read stops the walk too: continuing would re-request
+    // the first page until MAX_PAGES and then report a total nobody sent.
+    if (shape.kind !== "envelope") break;
 
-    if (page >= (raw.meta?.totalPages ?? 1)) break;
+    if (page >= (shape.meta?.totalPages ?? 1)) break;
   }
 
   return collected;

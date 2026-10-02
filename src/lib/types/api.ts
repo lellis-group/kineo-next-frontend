@@ -52,15 +52,26 @@ export interface ApiProfile {
   updatedAt: string;
 }
 
+/**
+ * Listing lifecycle, in the order a posting moves through it.
+ *
+ * A const array rather than a bare union so the same list exists at runtime:
+ * the zeroed counters that stand in for a response without its breakdown have to
+ * enumerate the same statuses, and a hand-copied second list is a silent drift.
+ */
+export const REPLACEMENT_LISTING_STATUSES = [
+  "DRAFT",
+  "OPEN",
+  "IN_DISCUSSION",
+  "FULL",
+  "FILLED",
+  "CLOSED",
+  "CLOSED_NO_CANDIDATE",
+  "CANCELLED",
+] as const;
+
 export type ReplacementListingStatus =
-  | "DRAFT"
-  | "OPEN"
-  | "IN_DISCUSSION"
-  | "FULL"
-  | "FILLED"
-  | "CLOSED"
-  | "CLOSED_NO_CANDIDATE"
-  | "CANCELLED";
+  (typeof REPLACEMENT_LISTING_STATUSES)[number];
 
 export interface ApiReplacementListing {
   id: string;
@@ -80,12 +91,16 @@ export interface ApiReplacementListing {
   updatedAt: string;
 }
 
-export type ApplicationStatus =
-  | "PENDING"
-  | "SHORTLISTED"
-  | "ACCEPTED"
-  | "REJECTED"
-  | "WITHDRAWN";
+/** Const array, not a bare union — see `REPLACEMENT_LISTING_STATUSES`. */
+export const APPLICATION_STATUSES = [
+  "PENDING",
+  "SHORTLISTED",
+  "ACCEPTED",
+  "REJECTED",
+  "WITHDRAWN",
+] as const;
+
+export type ApplicationStatus = (typeof APPLICATION_STATUSES)[number];
 
 /**
  * Which outcome ended the application, when one has.
@@ -98,17 +113,23 @@ export type ApplicationStatus =
  * erasure.
  *
  * Null while the application is still open: nobody has decided yet.
+ *
+ * Const array, not a bare union — see `REPLACEMENT_LISTING_STATUSES`.
  */
+export const APPLICATION_DECISION_SOURCES = [
+  "CANDIDATE_WITHDREW",
+  "PRACTICE_ACCEPTED",
+  "PRACTICE_REJECTED",
+  "ANOTHER_CANDIDATE_SELECTED",
+  "LISTING_CLOSED",
+  "LISTING_CLOSED_NO_CANDIDATE",
+  "LISTING_CANCELLED",
+  "LISTING_ERASED",
+  "CANDIDATE_UNAVAILABLE",
+] as const;
+
 export type ApplicationDecisionSource =
-  | "CANDIDATE_WITHDREW"
-  | "PRACTICE_ACCEPTED"
-  | "PRACTICE_REJECTED"
-  | "ANOTHER_CANDIDATE_SELECTED"
-  | "LISTING_CLOSED"
-  | "LISTING_CLOSED_NO_CANDIDATE"
-  | "LISTING_CANCELLED"
-  | "LISTING_ERASED"
-  | "CANDIDATE_UNAVAILABLE";
+  (typeof APPLICATION_DECISION_SOURCES)[number];
 
 /** Practice data embedded in an application response. */
 export interface ApiApplicationPractice {
@@ -172,32 +193,32 @@ export interface ApiApplication {
   applicant?: ApiApplicationApplicant;
 }
 
-/** Server-computed totals for a collection of applications. */
-export interface ApiApplicationStatusCounts {
-  /** Count across all statuses — backs the « Toutes » tab. */
-  total: number;
-  PENDING: number;
-  SHORTLISTED: number;
-  ACCEPTED: number;
-  REJECTED: number;
-  WITHDRAWN: number;
-}
+/**
+ * One counter per value of `S`, plus the `total` across all of them.
+ *
+ * Generic over the key set because the API serves three different breakdowns —
+ * by application status, by listing status, by decision source — and they all
+ * have this shape. The wire type and the presentation contract that describe a
+ * given breakdown stay separately named, being different layers, but both are
+ * written this way so they cannot drift apart in shape.
+ *
+ * See `lib/counts.ts` for the zeroed stand-in used when a response carries no
+ * breakdown.
+ */
+export type StatusCounts<S extends string> = Record<S | "total", number>;
 
-/** Same totals, split by who decided rather than by status. */
-export interface ApiApplicationDecisionCounts {
-  total: number;
-  CANDIDATE_WITHDREW: number;
-  PRACTICE_ACCEPTED: number;
-  PRACTICE_REJECTED: number;
-  ANOTHER_CANDIDATE_SELECTED: number;
-  LISTING_CLOSED: number;
-  LISTING_CLOSED_NO_CANDIDATE: number;
-  LISTING_CANCELLED: number;
-  LISTING_ERASED: number;
-  CANDIDATE_UNAVAILABLE: number;
-  /** Applications nobody has ruled on — `decisionSource` is null there. */
-  undecided: number;
-}
+/** Server-computed totals for a collection of applications, by status. */
+export type ApiApplicationStatusCounts = StatusCounts<ApplicationStatus>;
+
+/**
+ * Same totals, split by who decided rather than by status.
+ *
+ * `undecided` is not an `ApplicationDecisionSource` — it is the absence of one —
+ * so the key set is the union rather than the enum alone.
+ */
+export type ApiApplicationDecisionCounts = StatusCounts<
+  ApplicationDecisionSource | "undecided"
+>;
 
 /**
  * A paginated response.

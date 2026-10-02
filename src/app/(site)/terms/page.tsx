@@ -1,5 +1,10 @@
 import type { Metadata } from "next";
 import { LegalDocument } from "@/components/templates/legal-document";
+import {
+  BulletList,
+  Paragraph,
+  Subheading,
+} from "@/components/templates/legal-primitives";
 
 export const metadata: Metadata = {
   title: "Conditions d'utilisation — Kineo",
@@ -11,6 +16,10 @@ export const metadata: Metadata = {
  * are the standard ToS structure; the legal team completes them before
  * production. Stating what the page does not yet say is better than shipping
  * placeholder terms that read as final.
+ *
+ * The prose is the privacy policy's, from `legal-primitives` — this page used to
+ * carry its own paragraph measure and its own bullet rows, which is how two
+ * documents on the same site ended up on two different widths.
  */
 export default function TermsPage() {
   return (
@@ -20,16 +29,16 @@ export default function TermsPage() {
       backHref="/signup"
       backLabel="← Retour à l'inscription"
     >
-      <p className="text-sm leading-relaxed text-foreground/75 sm:text-[0.925rem]">
+      <Paragraph>
         Les conditions générales d'utilisation de la console Kineo sont en cours
         de rédaction par notre service juridique. Elles seront publiées ici
         avant la mise en production de la plateforme.
-      </p>
+      </Paragraph>
 
       <div className="mt-8 space-y-3">
-        <h2 className="text-lg font-semibold">Elles couvriront notamment :</h2>
-        <ul className="space-y-2">
-          {[
+        <Subheading>Elles couvriront notamment :</Subheading>
+        <BulletList
+          items={[
             "L'objet du service et son accès",
             "La création et la gestion du compte utilisateur",
             "Le traitement des données personnelles (RGPD)",
@@ -37,19 +46,8 @@ export default function TermsPage() {
             "La responsabilité des parties",
             "Les modalités de modification des présentes conditions",
             "Le contact du support Kineo",
-          ].map((item) => (
-            <li
-              key={item}
-              className="flex items-start gap-2.5 text-sm text-foreground/85"
-            >
-              <span
-                aria-hidden="true"
-                className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary"
-              />
-              {item}
-            </li>
-          ))}
-        </ul>
+          ]}
+        />
       </div>
     </LegalDocument>
   );

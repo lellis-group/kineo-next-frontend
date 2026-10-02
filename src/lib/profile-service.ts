@@ -3,6 +3,7 @@
  * Soft/blocking 404 policy: only GET /profile/me treats 404 as expected.
  */
 
+import { cache } from "react";
 import {
   ApiError,
   type ApiTransport,
@@ -17,14 +18,30 @@ import type { ApiProfile } from "./types/api";
 /**
  * GET /profile/me — soft 404 when the profile does not exist yet (documented
  * by the API); returns null so callers can show the create form instead.
+ *
+ * Cached per request. `fetchServerAuth` reads this same row to resolve the role
+ * for the header, and the profile and dashboard routes read it for the page
+ * itself, so every one of those renders used to ask the backend twice. React
+ * dedupes on the arguments and the `serverTransport` a server component passes
+ * is a module constant, so those call sites collapse into a single request.
+ *
+ * Only the two callers that pass the same transport share a result — the header
+ * reads it from a client component with no transport at all, and gets its own.
+ *
+ * The soft 404 stays exactly as narrow as it was. This function is best-effort
+ * for the header's sake, but a page still has to be able to tell "no profile
+ * yet" apart from "the backend is down", and it can: only a 404 resolves to
+ * null, everything else still throws. Reading the profile out of
+ * `fetchServerAuth` instead would have collapsed precisely those two cases — its
+ * own read swallows any failure and reports `null` — and turned an outage into
+ * a redirect to the onboarding form.
  */
-export async function fetchMyProfile(
-  transport?: ApiTransport,
-): Promise<ApiProfile | null> {
-  return apiFetch<ApiProfile>("/profile/me", undefined, transport).catch(
-    notFoundAs(null),
-  );
-}
+export const fetchMyProfile = cache(
+  async (transport?: ApiTransport): Promise<ApiProfile | null> =>
+    apiFetch<ApiProfile>("/profile/me", undefined, transport).catch(
+      notFoundAs(null),
+    ),
+);
 
 /** POST /profile — creates the profile for the current user (201, 403, 409). */
 export async function createProfile(

@@ -13,6 +13,7 @@
  */
 
 import { ApiError, apiFetch } from "./api-client";
+import { classifyError } from "./api-errors";
 
 /** Mirrors the backend's `ERASURE_ERROR_CODES`. */
 export const ERASURE_ERROR_CODES = {
@@ -25,14 +26,23 @@ export const ERASURE_ERROR_CODES = {
 /**
  * Why a confirmation did not go through.
  *
+ * This is deliberately *not* an `ErrorKind`, and the distinction is worth
+ * keeping. `ErrorKind` answers "how did the request fail" and is shared by every
+ * screen. These are the outcomes this one endpoint reports, and the UI branches
+ * on them for different reasons: `already-erased` is not a failure at all but a
+ * screen of its own, and `rate-limited` tells the reader to wait a quarter of an
+ * hour rather than to retry. Folding them into `ErrorKind` would either lose
+ * both screens or replace their copy with generic wording, and would throw away
+ * the facts the backend actually told us (the 24h window, the 5 attempts per
+ * quarter hour). What *is* shared with every other endpoint is the transport
+ * verdict underneath, and that is delegated to `classifyError` below.
+ *
  * `blocked` is legacy: the backend no longer refuses an erasure over other
  * candidates' applications, it detaches them so the request can go through. It
  * survives only so a link confirmed against a backend one deploy behind still
  * produces a real French sentence rather than an empty error.
  * `no-pending-request` looks like a conflict but is not — nothing is in the way
- * and retrying cannot help. `already-erased` means the work is done, which is
- * not a failure at all. `rate-limited` and `unavailable` are transient and
- * worth retrying.
+ * and retrying cannot help. `invalid` means the token itself was refused.
  */
 export type DeletionFailure =
   | "blocked"
@@ -41,6 +51,24 @@ export type DeletionFailure =
   | "invalid"
   | "rate-limited"
   | "unavailable";
+
+/**
+ * Where a confirmation attempt landed.
+ *
+ * A second layer over `DeletionFailure`: two failures can share a reason and still
+ * need different advice, and one reason (`blocked`) is deliberately folded into
+ * another. Lives here rather than on the screen component so the flow that drives
+ * it does not have to import a type out of `components/` to name a state — which
+ * is the dependency running backwards, and the reason `lib/ui-tokens.ts` exists.
+ */
+export type DeletionOutcome =
+  | "deleting"
+  | "success"
+  | "already-erased"
+  | "no-pending-request"
+  | "invalid"
+  | "rate-limited"
+  | "error";
 
 /** A refused confirmation, carrying the reason the UI has to react to. */
 export class AccountDeletionError extends Error {
@@ -139,7 +167,15 @@ function mapConfirmDeletionError(error: unknown): {
           "Trop de tentatives depuis ce lien. Patientez une quinzaine de minutes avant de réessayer : la limite est de 5 essais par quart d'heure.",
       };
     }
-    if (error.status >= 500) {
+
+    // Past the codes and statuses this endpoint discriminates for itself, what
+    // is left is an ordinary transport failure, and the shared classifier is
+    // what says so — a 5xx means the same thing here as it does on any other
+    // route. Only the wording stays local: "vos données n'ont pas été
+    // modifiées" is worth saying on an erasure, where a reader's first thought
+    // is whether the half-done deletion left something behind.
+    const kind = classifyError(error);
+    if (kind === "unavailable" || kind === "service-down") {
       return {
         failure: "unavailable",
         message:

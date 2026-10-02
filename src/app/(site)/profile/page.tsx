@@ -1,12 +1,8 @@
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { LoadingState } from "@/components/molecules/loading-state";
-import { ProfileContainer } from "@/components/templates/profile-container";
-import { serverTransport } from "@/lib/api-transport.server";
-import { fetchMyProfile } from "@/lib/profile-service";
-import { requireMember } from "@/lib/require-member";
-import { fetchServerAuth } from "@/lib/server-auth";
+import { ProfileView } from "@/components/templates/profile-view";
+import { passProfileGate } from "@/lib/profile-gate";
 
 export const metadata: Metadata = {
   title: "Profil — Kineo",
@@ -46,23 +42,15 @@ async function ProfileContent({
 }: {
   searchParams: Promise<{ created?: string; saved?: string }>;
 }) {
-  const [{ created, saved }, auth] = await Promise.all([
+  const [{ created, saved }, { auth, profile }] = await Promise.all([
     searchParams,
-    fetchServerAuth(),
+    // An expired session goes to sign-in; a member without a profile goes to the
+    // create form. A missing profile is an onboarding step, not an error.
+    passProfileGate("view"),
   ]);
 
-  if (auth.status === "anonymous") {
-    redirect("/signin");
-  }
-
-  const profile = await requireMember(fetchMyProfile(serverTransport));
-  if (!profile) {
-    // A missing profile is an onboarding step, not an error.
-    redirect("/profile/create");
-  }
-
   return (
-    <ProfileContainer
+    <ProfileView
       profile={profile}
       user={auth.user}
       feedback={created ? "created" : saved ? "saved" : null}

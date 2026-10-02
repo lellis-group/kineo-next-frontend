@@ -2,8 +2,6 @@ import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
 import type { BadgeTone } from "@/lib/ui-tokens";
 
-export type { BadgeTone };
-
 /**
  * Tones map to the global badge classes of `globals.css` — the site's
  * canonical badge look: button-shaped chip with a tinted variant per tone.

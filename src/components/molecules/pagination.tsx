@@ -14,13 +14,22 @@ interface PaginationProps {
 
 /**
  * Pagination controls — previous/next buttons with page indicator.
- * Renders even with a single page so users can see the pagination state.
+ *
+ * Hides itself when there is one page. That check used to be written at each
+ * call site instead, which meant three copies of it and a docblock here claiming
+ * the opposite — the component has never rendered on a single page, so the
+ * comment described a behaviour nobody had. One page needs no way to change it,
+ * and « Page 1 sur 1 » is noise under a short list.
  */
 export function Pagination({
   currentPage,
   totalPages,
   onPageChange,
 }: PaginationProps) {
+  if (totalPages <= 1) {
+    return null;
+  }
+
   const hasPrevious = currentPage > 1;
   const hasNext = currentPage < totalPages;
 

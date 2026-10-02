@@ -24,7 +24,7 @@ import type {
 import { RECRUITING_STATUSES } from "./contracts";
 
 /** Shown in place of a name once the account is erased. */
-export const ANONYMIZED_APPLICANT_NAME = "Candidat anonymisé";
+const ANONYMIZED_APPLICANT_NAME = "Candidat anonymisé";
 
 /** French labels + tone per listing status. */
 export const LISTING_STATUS_META: Record<

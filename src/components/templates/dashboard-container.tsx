@@ -4,8 +4,8 @@ import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 import { ErrorState } from "@/components/organisms/error-state";
 import { MemberHome } from "@/components/templates/member-home";
-import { ApiError } from "@/lib/api-client";
 import { type DashboardData, fetchDashboardData } from "@/lib/dashboard";
+import { signInOnExpiredSession } from "@/lib/session-redirect";
 
 /**
  * Orchestrator for the logged-in page: delegates rendering to MemberHome.
@@ -38,11 +38,10 @@ export function DashboardContainer({
         setReloading(false);
       })
       .catch((err) => {
-        // Deleted account or expired session: the home page itself renders
-        // PublicHome, but the client dashboard must not linger on an error.
-        // `/signin`, not `/signup` — see `applications-container`.
-        if (err instanceof ApiError && err.status === 401) {
-          router.replace("/signin");
+        // The home page itself renders PublicHome, but the client dashboard
+        // must not linger on an error.
+        if (signInOnExpiredSession(err, router)) {
+          setReloading(false);
           return;
         }
         setError(err);

@@ -1,8 +1,17 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
+import type { InlineAlertTone } from "@/lib/ui-tokens";
 
-export type InlineAlertTone = "info" | "success" | "warning" | "danger";
-
+/**
+ * Alert treatment per tone.
+ *
+ * Note that `info` paints as `primary` here while the badge and the status
+ * banner paint it as `info`. That is a real divergence between two components
+ * sharing a tone name, kept because it is what ships today: the alerts sit in
+ * forms, next to a primary submit button, where a distinct hue would read as a
+ * second action. Worth settling deliberately — one way or the other — rather
+ * than leaving it to whichever component was written last.
+ */
 const TONE_CLASSES: Record<InlineAlertTone, string> = {
   info: "border-primary/30 bg-primary/10",
   success: "border-success/30 bg-success/10",

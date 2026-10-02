@@ -8,12 +8,12 @@
 
 import type {
   ApiApplication,
-  ApiReplacementListing,
   ApplicationDecisionSource,
   ApplicationStatus,
   ProfileType,
   ReplacementListingStatus,
   Specialty,
+  StatusCounts,
 } from "@/lib/types/api";
 import type { BadgeTone } from "@/lib/ui-tokens";
 
@@ -205,16 +205,10 @@ export const RECEIVED_FILTERS: readonly ReceivedApplicationsFilterOption[] = [
 ] as const;
 
 /** Per-status totals over the whole collection, as returned by the backend. */
-export type ListingStatusCounts = Record<
-  ReplacementListingStatus | "total",
-  number
->;
+export type ListingStatusCounts = StatusCounts<ReplacementListingStatus>;
 
 /** Per-status totals for the applications received on one listing. */
-export type ReceivedApplicationCounts = Record<
-  ApplicationStatus | "total",
-  number
->;
+export type ReceivedApplicationCounts = StatusCounts<ApplicationStatus>;
 
 /** Candidates received on a listing, plus the totals behind their filter. */
 export interface ListingApplicationsData {
@@ -226,5 +220,17 @@ export interface ListingApplicationsData {
   counts: ReceivedApplicationCounts;
 }
 
-/** Raw listing payload, re-exported so actions can work off the same object. */
-export type { ApiReplacementListing, ReplacementListingStatus };
+/**
+ * The outcome of one owner action, bound to the listing it concerns.
+ *
+ * A domain contract rather than a prop shape: the container produces it from a
+ * mutation and the view keys its feedback banner off it. It used to be declared
+ * on the view and imported *by* the container — the dependency pointing at the
+ * presentation component from the orchestrator, which is the way round this
+ * module exists to prevent.
+ */
+export interface ListingMessage {
+  listingId: string;
+  /** French sentence shown on success. */
+  message: string;
+}

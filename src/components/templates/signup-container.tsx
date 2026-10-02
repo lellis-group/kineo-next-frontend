@@ -6,7 +6,7 @@ import {
   SignUpView,
 } from "@/components/templates/signup-view";
 import { signUp } from "@/lib/auth-client";
-import { mapSignUpError } from "@/lib/auth-errors";
+import { AUTH_UNREACHABLE_MESSAGE, mapSignUpError } from "@/lib/auth-errors";
 import {
   EMAIL_ERROR_MESSAGE,
   isValidName,
@@ -73,7 +73,7 @@ export function SignUpContainer({ prefillEmail }: { prefillEmail?: string }) {
 
       setConfirmationEmail(email);
     } catch {
-      setError("Impossible de contacter le serveur. Réessayez plus tard.");
+      setError(AUTH_UNREACHABLE_MESSAGE);
     }
   }
 

@@ -10,7 +10,12 @@ import type {
   ApplicationStatus,
 } from "../types/api";
 import type { BadgeTone } from "../ui-tokens";
-import type { ApplicationEntry, ApplicationListingInfo } from "./contracts";
+import type {
+  ApplicationEntry,
+  ApplicationListingInfo,
+  ApplicationsData,
+  ApplicationsFilterOption,
+} from "./contracts";
 
 export interface ApplicationStatusMeta {
   label: string;
@@ -86,14 +91,6 @@ export const DECISION_SUMMARIES: Record<
   },
 };
 
-/** The three owner actions that end a posting, all reading the same way. */
-export const POSTING_ENDED_SOURCES: readonly ApplicationDecisionSource[] = [
-  "LISTING_CLOSED",
-  "LISTING_CLOSED_NO_CANDIDATE",
-  "LISTING_CANCELLED",
-  "LISTING_ERASED",
-];
-
 /**
  * Headline for the outcome banner. A second, more explicit register than
  * `STATUS_META.label`: that one is the chip's short form (« En attente »), this
@@ -161,9 +158,7 @@ function visibleField(value: string | undefined | null): string | undefined {
  * Resolves an application's listing from the data embedded server-side — no
  * extra fetches, works for listings hidden to the user.
  */
-export function adaptListingInfo(
-  application: ApiApplication,
-): ApplicationListingInfo {
+function adaptListingInfo(application: ApiApplication): ApplicationListingInfo {
   const embedded = application.listing;
 
   if (!embedded) {
@@ -215,3 +210,51 @@ export function adaptApplicationEntry(
     listing: adaptListingInfo(application),
   };
 }
+
+/**
+ * Counter for one bucket.
+ *
+ * Lives here beside `countForFilter` and `countForReceivedFilter` on the listings
+ * side, which answer the same question for the other two screens. It was the
+ * only one of the three living in a component.
+ *
+ * Sums `decisionCounts` over the keys the bucket names, because the buckets cut
+ * across statuses: « Un autre candidat retenu » and « Refusées par le cabinet »
+ * are both `REJECTED`, and a status-based counter would show the same number on
+ * both chips. The totals come from the server over the whole collection, so
+ * they hold still while paging.
+ */
+export function countForBucket(
+  option: ApplicationsFilterOption,
+  data: ApplicationsData,
+): number {
+  if (option.id === "ALL") {
+    return data.counts.total;
+  }
+
+  if (!option.countKeys) {
+    // No keys declared: the bucket is exactly one status.
+    return data.counts[option.id as keyof typeof data.counts] ?? 0;
+  }
+
+  // `countKeys` are decision-source names, but typed loosely so a bucket can
+  // name any of them. A key the server does not send reads 0 rather than NaN —
+  // the difference between « nobody in this case » and a broken counter.
+  //
+  // The whole map may be absent: a payload serialised before `decisionCounts`
+  // existed has no such key, and indexing it unguarded threw on a page that was
+  // otherwise fine. An older backend behaves the same way during a rolling
+  // deploy. Empty counters are the honest degradation — the list is still
+  // correct, only the numbers are missing.
+  const sources = data.decisionCounts;
+  if (!sources) {
+    return 0;
+  }
+
+  return option.countKeys.reduce<number>(
+    (sum, key) => sum + (sources[key] ?? 0),
+    0,
+  );
+}
+
+/** Applications tracking page — situation filters, list and pagination. */

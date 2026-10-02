@@ -1,12 +1,8 @@
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { LoadingState } from "@/components/molecules/loading-state";
-import { ProfileEditContainer } from "@/components/templates/profile-edit-container";
-import { serverTransport } from "@/lib/api-transport.server";
-import { fetchMyProfile } from "@/lib/profile-service";
-import { requireMember } from "@/lib/require-member";
-import { fetchServerAuth } from "@/lib/server-auth";
+import { ProfileFormContainer } from "@/components/templates/profile-form-container";
+import { passProfileGate } from "@/lib/profile-gate";
 
 export const metadata: Metadata = {
   title: "Modifier le profil — Kineo",
@@ -30,19 +26,7 @@ export default function ProfileEditPage() {
 }
 
 async function ProfileEditGate() {
-  const [auth, profile] = await Promise.all([
-    fetchServerAuth(),
-    // Not `.catch(() => null)`: a revoked session must sign the reader out, not
-    // quietly answer "no profile" and offer them the create form.
-    requireMember(fetchMyProfile(serverTransport)),
-  ]);
-
-  if (auth.status === "anonymous") {
-    redirect("/signin");
-  }
-  if (!profile) {
-    redirect("/profile/create");
-  }
-
-  return <ProfileEditContainer profile={profile} />;
+  const { profile } = await passProfileGate("edit");
+  // `passProfileGate` redirects rather than returning null on this route.
+  return <ProfileFormContainer mode="edit" profile={profile} />;
 }

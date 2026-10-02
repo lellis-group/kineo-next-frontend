@@ -5,7 +5,6 @@
  */
 
 export {
-  ANONYMIZED_APPLICANT_NAME,
   countForFilter,
   countForReceivedFilter,
   countRecruitingListings,
@@ -21,6 +20,7 @@ export {
 export type {
   ApplicationApplicant,
   ListingApplicationsData,
+  ListingMessage,
   ListingStatusCounts,
   ListingStatusMeta,
   ListingsFilter,
@@ -30,7 +30,6 @@ export type {
   ReceivedApplicationCounts,
   ReceivedApplicationsFilter,
   ReceivedApplicationsFilterOption,
-  ReplacementListingStatus,
 } from "./contracts";
 export {
   LISTING_FILTERS,
@@ -45,5 +44,6 @@ export {
   fetchMyListing,
   fetchMyListings,
   LISTING_APPLICATIONS_PAGE_SIZE,
+  listingReadErrorMessage,
   MY_LISTINGS_PAGE_SIZE,
 } from "./service";

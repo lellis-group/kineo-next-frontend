@@ -7,12 +7,30 @@
  * backwards: the adapters decide what a status looks like, and the components
  * render it, so the vocabulary belongs below both.
  *
- * The components re-export these, so `import { BadgeTone } from
- * "@/components/atoms/badge"` keeps working for anything that reads it there.
+ * One vocabulary, several renderings. A chip, a bordered banner, a dot and an
+ * alert are four different components with four different CSS treatments, so
+ * each keeps its own class map — what must not happen is four different
+ * *vocabularies*, where the same meaning gets a different name depending on
+ * which component asked for it. That is why the sets below are derived from
+ * `Tone` rather than written out: a tone added here is either renderable
+ * everywhere or a compile error at every site that cannot honour it.
  */
 
+/**
+ * The semantic tones the product speaks in.
+ *
+ * Each maps to a CSS color token (`--color-success`, `--color-danger`, …).
+ */
+export type Tone = "neutral" | "success" | "warning" | "danger" | "info";
+
 /** Tinted chip, mapped to the `.badge-*` classes in `globals.css`. */
-export type BadgeTone = "neutral" | "success" | "warning" | "danger" | "info";
+export type BadgeTone = Tone;
+
+/**
+ * Alert tones: every tone except `neutral`, because a bordered alert is always
+ * saying something — a neutral one would read as a panel and say nothing.
+ */
+export type InlineAlertTone = Exclude<Tone, "neutral">;
 
 /** Button treatments, mapped to the variant classes on `Button`. */
 export type ButtonVariant =

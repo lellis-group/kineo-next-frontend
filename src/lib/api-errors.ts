@@ -121,6 +121,21 @@ export function classifyError(error: unknown): ErrorKind {
   return status >= 500 ? "unavailable" : "unknown";
 }
 
+/**
+ * Whether the request never got an answer at all — no status was ever received.
+ *
+ * Exposed separately from `classifyError` because it has to recognise two
+ * different shapes. A thrown `TypeError` from a cut connection is recognisable,
+ * and `classifyError` reads it as `service-down`. The auth client is not: it
+ * resolves with a plain error object and no status at all when the network
+ * drops, so a missing status is the only evidence there is. Without this, that
+ * case classifies as `unknown` and the auth pages would answer a connection
+ * failure with "unexpected error" instead of "try again in a moment".
+ */
+export function neverReached(error: unknown): boolean {
+  return statusOf(error) === undefined;
+}
+
 /** The default French sentence for a kind of failure. */
 const DEFAULT_COPY: Record<ErrorKind, string> = {
   session: "Votre session a expiré. Veuillez vous reconnecter.",

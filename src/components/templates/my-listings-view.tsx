@@ -1,9 +1,11 @@
 import { FileTextIcon, UsersIcon } from "@/components/atoms/icons";
+import { PageHeader } from "@/components/atoms/page-header";
 import { FilterChips } from "@/components/molecules/filter-chips";
 import { Pagination } from "@/components/molecules/pagination";
 import { EmptyState } from "@/components/organisms/empty-state";
 import { MyListingCard } from "@/components/organisms/my-listing-card";
 import { PAGE_CONTAINER } from "@/lib/layout";
+import type { ListingMessage } from "@/lib/listings";
 import {
   countForFilter,
   LISTING_FILTERS,
@@ -41,12 +43,6 @@ export interface MyListingsViewProps {
   onToggle: (listingId: string) => void;
   onClose: (listingId: string) => void;
   onCancel: (listingId: string) => void;
-}
-
-/** A message bound to the listing it concerns. */
-export interface ListingMessage {
-  listingId: string;
-  message: string;
 }
 
 /** Presentational list of the user's listings, each expandable into candidates. */
@@ -158,13 +154,11 @@ export function MyListingsView({
           {/* Hidden for single-page results. The list is the one collection
               screen that had no way past its first twenty postings: a practice
               with more could see them all on no page at all. */}
-          {totalPages > 1 && (
-            <Pagination
-              currentPage={page}
-              totalPages={totalPages}
-              onPageChange={onPageChange}
-            />
-          )}
+          <Pagination
+            currentPage={page}
+            totalPages={totalPages}
+            onPageChange={onPageChange}
+          />
         </>
       )}
     </div>
@@ -180,13 +174,9 @@ function bucketLabel(filter: ListingsFilter): string {
 
 function MyListingsHeader() {
   return (
-    <header>
-      <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
-        Mes offres
-      </h1>
-      <p className="mt-1.5 text-sm leading-relaxed text-muted">
-        Suivez vos annonces et traitez les candidatures qu&apos;elles reçoivent.
-      </p>
-    </header>
+    <PageHeader
+      title="Mes offres"
+      subtitle="Suivez vos annonces et traitez les candidatures qu&apos;elles reçoivent."
+    />
   );
 }

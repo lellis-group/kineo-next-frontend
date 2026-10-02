@@ -6,27 +6,29 @@ import { Button } from "@/components/atoms/button";
 import { Spinner } from "@/components/atoms/spinner";
 import { InlineAlert } from "@/components/molecules/inline-alert";
 import { AuthCard } from "@/components/organisms/auth-card";
+import type { DeletionOutcome } from "@/lib/account-deletion-service";
+
+export type DeletionScreenStatus = DeletionOutcome;
 
 /**
  * One screen per outcome of the account-erasure confirmation.
  *
- * Kept apart from the flow that drives them: `goodbye/page.tsx` owns the token,
- * the request and the sign-out, while this file is only the wording and the
- * actions. The five screens share a shell and nothing else, so the thing worth
- * protecting is the mapping from an outcome to a screen — which is why
- * `screenFor` is exhaustive rather than a chain of conditionals: a failure the
- * service can report but this map does not cover would otherwise fall through
+ * Kept apart from the flow that drives them: `useDeletionConfirmation` owns the
+ * request, the job cache and the sign-out, while this file is only the wording
+ * and the actions. The screens share a shell and almost nothing else, so the
+ * thing worth protecting is the mapping from an outcome to a screen — which lives
+ * with the flow and is exhaustive rather than a chain of conditionals: a failure
+ * the service can report but that map does not cover would otherwise fall through
  * to a generic screen, which is how a retryable 429 once ended up with no retry
  * button on it.
+ *
+ * `already-erased` and `success` read alike — same title, same « recréer un
+ * compte » button — but they are not one screen: the first is reached because the
+ * link was already used and the session may never have been cleared, and it says
+ * so in one line, while the second is the only place that explains what was
+ * replaced, when the rows are really gone, and what the 365-day trace holds. Two
+ * paragraphs and a policy link between them is more than a conditional.
  */
-export type DeletionScreenStatus =
-  | "deleting"
-  | "success"
-  | "already-erased"
-  | "no-pending-request"
-  | "invalid"
-  | "rate-limited"
-  | "error";
 
 export interface DeletionScreenProps {
   status: DeletionScreenStatus;
