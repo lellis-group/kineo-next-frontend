@@ -41,7 +41,7 @@ function FooterLinkColumn({
 export function SiteFooter() {
   return (
     <footer className="border-t border-border bg-background">
-      <div className="mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 sm:py-14">
+      <div className="mx-auto w-full max-w-7xl px-4 pt-12 pb-[calc(2.5rem+env(safe-area-inset-bottom))] sm:px-6 sm:pt-14 sm:pb-[calc(3.5rem+env(safe-area-inset-bottom))]">
         <div className="grid gap-10 sm:grid-cols-2 md:grid-cols-[minmax(0,1fr)_auto_auto] md:gap-16">
           <div className="max-w-sm sm:col-span-2 md:col-span-1">
             <Link

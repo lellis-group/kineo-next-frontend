@@ -49,12 +49,12 @@ export function ListingDetail({
 
   return (
     <Card className="p-6 sm:p-8">
-      <div className="flex flex-wrap items-start justify-between gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <h1 className="min-w-0 flex-1 text-xl leading-snug font-bold break-words tracking-tight text-foreground sm:text-2xl">
           {listing.title}
         </h1>
 
-        <div className="flex shrink-0 flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 sm:shrink-0">
           {listing.urgent && <Badge tone="danger">Urgent</Badge>}
           <Badge tone={status.tone}>{status.label}</Badge>
         </div>
