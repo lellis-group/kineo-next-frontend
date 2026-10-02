@@ -1,6 +1,7 @@
 import { CheckIcon, PencilIcon, UsersIcon } from "@/components/atoms/icons";
 import { Reveal } from "@/components/atoms/reveal";
 import { SectionHeading } from "@/components/atoms/section-heading";
+import { cn } from "@/lib/cn";
 import { MARKETING_CONTAINER } from "@/lib/layout";
 import { howItWorks } from "@/lib/marketing";
 
@@ -26,14 +27,18 @@ export function HowItWorksSection() {
           subtitle={howItWorks.subtitle}
         />
 
-        <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 [&>*:last-child:nth-child(2n+1)]:sm:col-span-2 [&>*:last-child:nth-child(2n+1)]:lg:col-span-1">
+        <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {howItWorks.steps.map((step, index) => {
             const Icon = STEP_ICONS[step.icon];
+            const isLast = index === howItWorks.steps.length - 1;
             return (
               <Reveal
                 key={step.title}
                 delay={index * 90}
-                className="card-lift h-full rounded-2xl border border-border bg-surface p-6"
+                className={cn(
+                  "card-lift h-full rounded-2xl border border-border bg-surface p-6",
+                  isLast && "sm:col-span-2 lg:col-span-1",
+                )}
               >
                 <div className="mb-5 flex items-center gap-3">
                   <span

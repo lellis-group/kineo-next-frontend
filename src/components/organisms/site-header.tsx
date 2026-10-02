@@ -37,7 +37,7 @@ export function SiteHeader({
 }) {
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
-      <div className="mx-auto flex h-16 w-full max-w-360 items-center justify-between gap-2 px-4 sm:h-19 sm:gap-6 sm:px-8 lg:px-10">
+      <div className="mx-auto flex h-[calc(4rem+env(safe-area-inset-top))] w-full max-w-360 items-center justify-between gap-2 px-4 pt-[env(safe-area-inset-top)] sm:h-[calc(4.75rem+env(safe-area-inset-top))] sm:gap-6 sm:px-8 lg:px-10">
         <div className="flex min-w-0 items-center gap-6 lg:gap-10">
           <Link href="/" aria-label="Kineo — Accueil">
             <KineoLogo />
@@ -50,7 +50,7 @@ export function SiteHeader({
           />
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex self-stretch items-center gap-2 sm:gap-3">
           {user ? (
             <>
               <NotificationsButton />
@@ -84,7 +84,7 @@ export function SiteHeader({
 
               <Link
                 href="/signup"
-                className="inline-flex shrink-0 items-center justify-center rounded-full bg-primary px-3 py-1.5 text-[13px] font-semibold whitespace-nowrap text-primary-foreground transition-colors hover:bg-primary-hover sm:px-4 sm:py-2 sm:text-sm"
+                className="inline-flex shrink-0 items-center justify-center rounded-full bg-primary px-2 py-1.5 text-xs font-semibold whitespace-nowrap text-primary-foreground transition-colors hover:bg-primary-hover min-[360px]:px-3 min-[360px]:text-[13px] sm:px-4 sm:py-2 sm:text-sm"
               >
                 Créer un compte
               </Link>

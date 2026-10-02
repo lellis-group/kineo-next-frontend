@@ -82,7 +82,7 @@ export function MyListingCard({
 
   return (
     <Card className="p-5 sm:p-7">
-      <div className="flex flex-wrap items-start justify-between gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 flex-1">
           {/* The title is the link, not a link wrapped around the card: the card
               also holds two disclosure-driven panels and two terminal actions,
@@ -106,7 +106,7 @@ export function MyListingCard({
           </MetaRow>
         </div>
 
-        <div className="flex shrink-0 flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 sm:shrink-0">
           {listing.urgent && <Badge tone="danger">Urgent</Badge>}
           <Badge tone={status.tone}>{status.label}</Badge>
         </div>

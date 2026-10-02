@@ -86,23 +86,25 @@ export function MobileMenu({
   }, [open]);
 
   return (
-    <div ref={rootRef} className="relative lg:hidden">
-      <button
-        ref={triggerRef}
-        type="button"
-        aria-expanded={open}
-        aria-controls={menuId}
-        aria-label={open ? "Fermer le menu" : "Ouvrir le menu"}
-        onClick={() => setOpen((value) => !value)}
-        className={cn(
-          "flex h-10 w-10 items-center justify-center rounded-lg border transition-all duration-200 active:scale-95",
-          open
-            ? "border-primary/50 text-foreground"
-            : "border-border text-foreground/80",
-        )}
-      >
-        {open ? <CloseIcon /> : <MenuIcon />}
-      </button>
+    <div ref={rootRef} className="relative self-stretch lg:hidden">
+      <div className="flex h-full items-center">
+        <button
+          ref={triggerRef}
+          type="button"
+          aria-expanded={open}
+          aria-controls={menuId}
+          aria-label={open ? "Fermer le menu" : "Ouvrir le menu"}
+          onClick={() => setOpen((value) => !value)}
+          className={cn(
+            "flex h-10 w-10 items-center justify-center rounded-lg border transition-all duration-200 active:scale-95",
+            open
+              ? "border-primary/50 text-foreground"
+              : "border-border text-foreground/80",
+          )}
+        >
+          {open ? <CloseIcon /> : <MenuIcon />}
+        </button>
+      </div>
 
       <div
         ref={panelRef}
@@ -112,7 +114,7 @@ export function MobileMenu({
         tabIndex={-1}
         inert={!open}
         className={cn(
-          "absolute top-12 right-0 z-50 max-h-[70dvh] w-56 max-w-[calc(100vw-2rem)] overflow-y-auto rounded-xl border border-border bg-surface p-2 shadow-2xl shadow-black/50 outline-none transition-all duration-200 ease-out",
+          "absolute top-[calc(100%+0.5rem)] right-0 z-50 max-h-[70dvh] w-56 max-w-[calc(100vw-2rem)] overflow-y-auto rounded-xl border border-border bg-surface p-2 shadow-2xl shadow-black/50 outline-none transition-all duration-200 ease-out",
           open
             ? "pointer-events-auto translate-y-0 scale-100 opacity-100"
             : "pointer-events-none -translate-y-2 scale-[0.98] opacity-0",

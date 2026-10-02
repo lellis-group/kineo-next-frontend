@@ -33,13 +33,6 @@ export function Fact({
   );
 }
 
-/**
- * A grid of labelled values.
- *
- * `columns` is the count at the `sm` breakpoint; below it everything is two
- * columns, which keeps a long date range from being squeezed into one
- * character-wide column on a phone.
- */
 export function FactList({
   children,
   columns = 2,
@@ -49,10 +42,14 @@ export function FactList({
   columns?: 2 | 3 | 4;
   className?: string;
 }) {
+  const narrow =
+    columns === 2 ? "grid-cols-2" : "grid-cols-1 min-[380px]:grid-cols-2";
+
   return (
     <dl
       className={cn(
-        "grid grid-cols-2 gap-x-6 gap-y-6 sm:gap-y-7",
+        "grid gap-x-6 gap-y-6 sm:gap-y-7",
+        narrow,
         columns === 2 && "sm:grid-cols-2",
         columns === 3 && "sm:grid-cols-3",
         columns === 4 && "sm:grid-cols-4",
