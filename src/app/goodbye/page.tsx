@@ -2,8 +2,8 @@
 
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef } from "react";
-import { DeletionScreen } from "@/components/molecules/deletion-screen";
 import { LoadingState } from "@/components/molecules/loading-state";
+import { DeletionScreen } from "@/components/organisms/deletion-screen";
 import { useSession } from "@/lib/auth-client";
 import { useDeletionConfirmation } from "@/lib/hooks/use-deletion-confirmation";
 

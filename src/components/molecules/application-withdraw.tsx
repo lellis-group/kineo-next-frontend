@@ -8,12 +8,9 @@ import { DangerPanel } from "@/components/molecules/danger-panel";
 import { InlineAlert } from "@/components/molecules/inline-alert";
 import { PendingButton } from "@/components/molecules/pending-button";
 import { errorMessage } from "@/lib/api-errors";
-import { type ApplicationEntry, withdrawApplication } from "@/lib/applications";
 
 export interface ApplicationWithdrawProps {
-  application: ApplicationEntry;
-  /** Called after a successful withdrawal — updated entry when the API echoes one, null to refetch. */
-  onWithdrawn: (updated: ApplicationEntry | null) => void;
+  onWithdraw: (reason: string) => Promise<void>;
   className?: string;
 }
 
@@ -33,8 +30,7 @@ const WITHDRAW_COPY = {
 } as const;
 
 export function ApplicationWithdraw({
-  application,
-  onWithdrawn,
+  onWithdraw,
   className,
 }: ApplicationWithdrawProps) {
   const [confirming, setConfirming] = useState(false);
@@ -47,8 +43,7 @@ export function ApplicationWithdraw({
     setError("");
     setSubmitting(true);
     try {
-      const updated = await withdrawApplication(application.id, reason);
-      onWithdrawn(updated);
+      await onWithdraw(reason);
     } catch (err) {
       setError(errorMessage(err, WITHDRAW_COPY));
     } finally {

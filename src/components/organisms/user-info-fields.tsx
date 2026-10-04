@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { MailIcon, PencilIcon } from "@/components/atoms/icons";
 import { EditableRow } from "@/components/molecules/editable-row";
 import {
@@ -16,7 +15,6 @@ import {
   normalizeEmail,
 } from "@/lib/auth-validation";
 import type { ApiUser } from "@/lib/types/api";
-import { changeEmail, mapUserError, updateUserInfo } from "@/lib/user-service";
 
 /**
  * The account's own name, picture and email address.
@@ -24,14 +22,19 @@ import { changeEmail, mapUserError, updateUserInfo } from "@/lib/user-service";
  * Two editable values, two different write endpoints and two different validation
  * rules — which is why this is not one generic form. Everything around them (the
  * row, the inline editor, the error and success slots) is `EditableRow`.
- *
- * A write that succeeds needs the server-rendered header and profile refreshed,
- * since both show the name; the refresh is why these are mutations rather than
- * optimistic local state.
  */
-export function UserInfoFields({ user }: { user: ApiUser }) {
-  const router = useRouter();
-
+export function UserInfoFields({
+  user,
+  onUpdateInfo,
+  onChangeEmail,
+}: {
+  user: ApiUser;
+  onUpdateInfo: (values: {
+    name: string;
+    image: string | null;
+  }) => Promise<string>;
+  onChangeEmail: (email: string) => Promise<string>;
+}) {
   return (
     <div className="space-y-3">
       <EditableRow
@@ -80,18 +83,10 @@ export function UserInfoFields({ user }: { user: ApiUser }) {
             throw new Error(IMAGE_HTTPS_ERROR_MESSAGE);
           }
 
-          try {
-            await updateUserInfo({
-              name: values.name,
-              image: values.image || null,
-            });
-          } catch (err) {
-            // better-auth rejects with a plain object, not an `Error`, so the
-            // wording has to be chosen here rather than by the row.
-            throw new Error(mapUserError(err));
-          }
-          router.refresh();
-          return "Informations mises à jour.";
+          return onUpdateInfo({
+            name: values.name,
+            image: values.image || null,
+          });
         }}
       />
 
@@ -120,13 +115,7 @@ export function UserInfoFields({ user }: { user: ApiUser }) {
             throw new Error(EMAIL_ERROR_MESSAGE);
           }
 
-          try {
-            const { message } = await changeEmail(email);
-            router.refresh();
-            return message;
-          } catch (err) {
-            throw new Error(mapUserError(err));
-          }
+          return onChangeEmail(email);
         }}
       />
     </div>

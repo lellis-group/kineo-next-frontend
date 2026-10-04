@@ -11,7 +11,12 @@ import { DeleteAccountSection } from "@/components/organisms/delete-account-sect
 import { ProfileHeaderCard } from "@/components/organisms/profile-header-card";
 import { PROSE_CONTAINER } from "@/lib/layout";
 import type { ApiProfile, ApiUser } from "@/lib/types/api";
-import { deleteAccount } from "@/lib/user-service";
+import {
+  changeEmail,
+  deleteAccount,
+  mapUserError,
+  updateUserInfo,
+} from "@/lib/user-service";
 
 /** Which success banner the redirect from the edit form left behind. */
 export type ProfileFeedback = "created" | "saved" | null;
@@ -50,6 +55,31 @@ export function ProfileView({
     await deleteAccount();
   }
 
+  async function handleUpdateInfo(values: {
+    name: string;
+    image: string | null;
+  }): Promise<string> {
+    try {
+      await updateUserInfo(values);
+    } catch (err) {
+      // better-auth rejects with a plain object, not an `Error`, so the wording
+      // has to be chosen here rather than by the row.
+      throw new Error(mapUserError(err));
+    }
+    router.refresh();
+    return "Informations mises à jour.";
+  }
+
+  async function handleChangeEmail(email: string): Promise<string> {
+    try {
+      const { message } = await changeEmail(email);
+      router.refresh();
+      return message;
+    } catch (err) {
+      throw new Error(mapUserError(err));
+    }
+  }
+
   return (
     <div className={PROSE_CONTAINER}>
       {feedback === "created" && (
@@ -75,6 +105,8 @@ export function ProfileView({
           onEditProfile={() => {
             router.push("/profile/edit");
           }}
+          onUpdateInfo={handleUpdateInfo}
+          onChangeEmail={handleChangeEmail}
         />
 
         <ProfileSection

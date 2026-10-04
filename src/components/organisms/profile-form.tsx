@@ -85,7 +85,7 @@ export function ProfileForm({
           {Object.entries(PROFILE_TYPE_LABELS).map(([value, label]) => (
             <label
               key={value}
-              className="flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-lg border border-border bg-surface-2 px-4 py-3 text-center text-sm text-muted hover:bg-surface-3 has-[:checked]:border-primary has-[:checked]:bg-primary/10 has-[:checked]:font-semibold has-[:checked]:text-primary"
+              className="flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-lg border border-border bg-surface-2 px-4 py-3 text-center text-sm text-muted hover:bg-surface-3 has-checked:border-primary has-checked:bg-primary/10 has-checked:font-semibold has-checked:text-primary"
             >
               <input
                 type="radio"

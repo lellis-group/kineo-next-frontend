@@ -53,3 +53,33 @@ export function getMemberNav(profileType?: ProfileType | null): HeaderLink[] {
       return replacementNav;
   }
 }
+
+/** Longest prefix wins, so `/listings/mine` beats `/listings`. */
+export function resolveActiveLink(
+  links: HeaderLink[],
+  pathname: string,
+): HeaderLink | undefined {
+  const activeSegments = pathname.split("/").filter(Boolean);
+  let best: HeaderLink | undefined;
+  let bestLength = -1;
+  for (const link of links) {
+    if (link.href === "/") {
+      if (activeSegments.length === 0 && bestLength < 0) {
+        best = link;
+        bestLength = 0;
+      }
+      continue;
+    }
+    // Hash links never match.
+    if (link.href.startsWith("#")) continue;
+    const linkSegments = link.href.split("/").filter(Boolean);
+    const matches =
+      activeSegments.length >= linkSegments.length &&
+      linkSegments.every((seg, i) => activeSegments[i] === seg);
+    if (matches && linkSegments.length > bestLength) {
+      best = link;
+      bestLength = linkSegments.length;
+    }
+  }
+  return best;
+}

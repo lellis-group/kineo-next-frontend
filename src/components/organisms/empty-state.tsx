@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Button } from "@/components/atoms/button";
 import { Card } from "@/components/atoms/card";
 import { FileTextIcon } from "@/components/atoms/icons";
@@ -9,7 +10,7 @@ export function EmptyState({
   actionLabel,
   actionHref,
 }: {
-  icon?: React.ReactNode;
+  icon?: ReactNode;
   title: string;
   description: string;
   actionLabel?: string;

@@ -6,6 +6,8 @@ import { ApplicationDetailView } from "@/components/templates/application-detail
 import {
   type ApplicationEntry,
   fetchApplicationDetail,
+  updateApplicationMessage,
+  withdrawApplication,
 } from "@/lib/applications";
 
 /**
@@ -45,6 +47,20 @@ export function ApplicationDetailContainer({
     [load],
   );
 
+  const saveMessage = useCallback(
+    async (message: string) => {
+      handleEntryUpdated(await updateApplicationMessage(id, message));
+    },
+    [id, handleEntryUpdated],
+  );
+
+  const withdraw = useCallback(
+    async (reason: string) => {
+      handleEntryUpdated(await withdrawApplication(id, reason));
+    },
+    [id, handleEntryUpdated],
+  );
+
   if (error) {
     return <ErrorState error={error} onRetry={load} />;
   }
@@ -52,8 +68,8 @@ export function ApplicationDetailContainer({
   return (
     <ApplicationDetailView
       application={application}
-      onWithdrawn={handleEntryUpdated}
-      onMessageSaved={handleEntryUpdated}
+      onSaveMessage={saveMessage}
+      onWithdraw={withdraw}
     />
   );
 }

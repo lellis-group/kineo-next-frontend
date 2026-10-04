@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Card } from "@/components/atoms/card";
 import { ApplicationDetailHeader } from "@/components/molecules/application-detail-header";
 import { ApplicationListingDetails } from "@/components/molecules/application-listing-details";
@@ -6,7 +7,7 @@ import { ApplicationStatusBanner } from "@/components/molecules/application-stat
 import { ApplicationTimeline } from "@/components/molecules/application-timeline";
 import type { ApplicationEntry } from "@/lib/applications";
 
-function DetailSection({ children }: { children: React.ReactNode }) {
+function DetailSection({ children }: { children: ReactNode }) {
   return (
     <div className="mt-8 border-t border-border pt-8 sm:mt-10 sm:pt-10">
       {children}
@@ -17,10 +18,10 @@ function DetailSection({ children }: { children: React.ReactNode }) {
 /** Full application detail — read-only (practice actions live on "Mes offres"). */
 export function ApplicationDetail({
   application,
-  onMessageSaved,
+  onSaveMessage,
 }: {
   application: ApplicationEntry;
-  onMessageSaved?: (updated: ApplicationEntry | null) => void;
+  onSaveMessage: (message: string) => Promise<void>;
 }) {
   return (
     <Card className="p-6 sm:p-8">
@@ -34,10 +35,9 @@ export function ApplicationDetail({
 
       <DetailSection>
         <ApplicationMessage
-          applicationId={application.id}
           message={application.message}
           canEdit={application.status === "PENDING"}
-          onSaved={onMessageSaved}
+          onSaveMessage={onSaveMessage}
         />
       </DetailSection>
 

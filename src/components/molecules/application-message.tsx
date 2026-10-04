@@ -7,18 +7,12 @@ import { PencilIcon } from "@/components/atoms/icons";
 import { InlineAlert } from "@/components/molecules/inline-alert";
 import { PendingButton } from "@/components/molecules/pending-button";
 import { errorMessage } from "@/lib/api-errors";
-import {
-  type ApplicationEntry,
-  updateApplicationMessage,
-} from "@/lib/applications";
 
 export interface ApplicationMessageProps {
-  applicationId: string;
   message?: string;
   /** Editable while the application is pending — the caller gates this. */
   canEdit?: boolean;
-  /** Called after a successful save — updated entry when echoed, null to refetch. */
-  onSaved?: (updated: ApplicationEntry | null) => void;
+  onSaveMessage: (message: string) => Promise<void>;
 }
 
 /** Backend UpdateApplicationDto — required message, 1-2000 chars. */
@@ -36,10 +30,9 @@ const MESSAGE_COPY = {
 } as const;
 
 export function ApplicationMessage({
-  applicationId,
   message,
   canEdit = false,
-  onSaved,
+  onSaveMessage,
 }: ApplicationMessageProps) {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -59,8 +52,7 @@ export function ApplicationMessage({
     setError("");
     setSaving(true);
     try {
-      const updated = await updateApplicationMessage(applicationId, trimmed);
-      onSaved?.(updated);
+      await onSaveMessage(trimmed);
       setEditing(false);
     } catch (err) {
       setError(errorMessage(err, MESSAGE_COPY));
