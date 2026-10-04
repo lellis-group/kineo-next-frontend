@@ -63,9 +63,6 @@ export const LISTING_TRANSITION_CODES = {
   ALREADY_TERMINAL: "LISTING_ALREADY_TERMINAL",
 } as const;
 
-export type ListingTransitionCode =
-  (typeof LISTING_TRANSITION_CODES)[keyof typeof LISTING_TRANSITION_CODES];
-
 /** The listings page: the filtered slice plus the totals behind the chips. */
 export interface MyListingsData {
   listings: MyListing[];

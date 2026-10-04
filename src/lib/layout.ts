@@ -31,6 +31,3 @@ export const SOFT_PANEL = "rounded-xl border border-border bg-background/40";
 
 /** Centred text inside a `SOFT_PANEL`. */
 export const SOFT_PANEL_BODY = "px-4 py-6 text-center text-sm text-muted";
-
-/** A form's vertical rhythm — one field, label, hint, error after another. */
-export const FORM_STACK = "flex flex-col gap-5";
