@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
+  isAddressChangeFlow,
   type VerificationStage,
   VerifyEmailView,
 } from "@/components/templates/verify-email-view";
@@ -38,12 +39,22 @@ export function VerifyEmailContainer() {
   const token = searchParams.get("token");
   const callbackURL = safeCallbackURL(searchParams.get("callbackURL"));
   const email = searchParams.get("email");
+  // The backend reads the flow off the token and labels the link with it: a
+  // change of address and a sign-up land on the same page, and only the server
+  // can tell them apart.
+  const flow = searchParams.get("flow");
+  const isAddressChange = isAddressChangeFlow(flow);
 
   const [stage, setStage] = useState<VerificationStage>(
     token ? "verifying" : "invalid",
   );
   const [error, setError] = useState("");
-  const { status: resend, resend: resendEmail } = useResendVerification(email);
+  // On a change of address the resend would issue a *sign-up* link, which
+  // verifies the address without ever applying the pending change — worse than
+  // no button, so the hook is left idle and the screen offers the profile.
+  const { status: resend, resend: resendEmail } = useResendVerification(
+    isAddressChange ? null : email,
+  );
 
   useEffect(() => {
     if (!token) {
@@ -90,6 +101,7 @@ export function VerifyEmailContainer() {
   return (
     <VerifyEmailView
       stage={stage}
+      flow={isAddressChange ? flow : undefined}
       error={error}
       resendStatus={resend}
       onResend={resendEmail}
