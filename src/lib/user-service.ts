@@ -29,9 +29,14 @@ export async function updateUserInfo(payload: {
 }
 
 /**
- * POST /change-email — requests an email change. If the instance requires
- * verification, a confirmation link is sent to the new address and the email
- * is only updated once verified.
+ * POST /change-email — requests an email change. Nothing is applied yet.
+ *
+ * Two steps, and which one starts depends on the account: when the current
+ * address is verified, better-auth asks *it* to approve the change and only then
+ * emails the new address; when it is not, there is nothing to prove, so the new
+ * address is emailed straight away. The wording below names both, because saying
+ * "we emailed the new address" is false in the first case — and an unverified
+ * account is every account while the backend ships with verification off.
  */
 export async function changeEmail(newEmail: string): Promise<{
   user: ApiUser;
@@ -44,7 +49,7 @@ export async function changeEmail(newEmail: string): Promise<{
   const message =
     (data as { message?: string }).message === "Email updated"
       ? "Email mis à jour."
-      : "Un email de vérification a été envoyé à la nouvelle adresse.";
+      : "Demande enregistrée. Un email de confirmation part soit vers votre adresse actuelle pour approuver le changement, soit directement vers la nouvelle adresse si celle-ci n'a jamais été vérifiée. Le changement n'est appliqué qu'après ces confirmations.";
   const user = (data as { user?: ApiUser }).user;
   if (user) {
     return { user: user as ApiUser, message };

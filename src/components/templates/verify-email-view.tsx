@@ -12,14 +12,25 @@ export type VerificationStage = "verifying" | "success" | "error" | "invalid";
  * What the link is for, as the backend labelled it.
  *
  * The backend reads the flow off the token and puts it in the query string: a
- * change of address and a sign-up share this page and nothing else on it.
+ * change of address, the approval that releases it, and a sign-up all share this
+ * page and nothing else on it.
+ *
+ * `change-email-approval` and `change-email` both withhold the resend for the
+ * same reason — `sendVerificationEmail` re-issues a *sign-up* link, which never
+ * advances either step of a change.
  */
-export type VerificationFlow = "change-email";
+export type VerificationFlow = "change-email" | "change-email-approval";
 
 export function isAddressChangeFlow(
   flow: string | null | undefined,
 ): flow is VerificationFlow {
-  return flow === "change-email";
+  return flow === "change-email" || flow === "change-email-approval";
+}
+
+export function isApprovalFlow(
+  flow: string | null | undefined,
+): flow is "change-email-approval" {
+  return flow === "change-email-approval";
 }
 
 /**
@@ -31,11 +42,12 @@ export function isAddressChangeFlow(
  * Both offer a resend on a sign-up link, because both leave the reader needing
  * the same next step.
  *
- * `flow` says what the link was for. It matters twice: the success screen cannot
- * claim a brand new account is now active when the reader only changed their
- * address, and a resend cannot help — `sendVerificationEmail` re-issues a
- * *sign-up* link, which for a change verifies the address without ever applying
- * the pending one. So on `change-email` the resend is replaced by the way out.
+ * `flow` says what the link was for, and it picks between three success
+ * screens: a change of address confirms the address, the approval that releases
+ * it confirms nothing at all, and anything else is a sign-up claiming an account
+ * has just become active. A resend cannot help on the first two either:
+ * `sendVerificationEmail` re-issues a *sign-up* link, which never advances
+ * either step of a change.
  */
 export function VerifyEmailView({
   stage,
@@ -97,6 +109,18 @@ export function VerifyEmailView({
             {isAddressChange ? "Aller à mon profil" : "Se connecter"}
           </Button>
         </div>
+      </AuthCard>
+    );
+  }
+
+  if (stage === "success" && isApprovalFlow(flow)) {
+    return (
+      <AuthCard title="Demande approuvée" subtitle="Le changement est autorisé">
+        <AuthScreen
+          message="Un email vient d'être envoyé à la nouvelle adresse : la personne qui la contrôle devra le confirmer pour que l'adresse change effectivement. Sans cette confirmation, rien ne change."
+          actionLabel="Continuer"
+          onAction={onContinue}
+        />
       </AuthCard>
     );
   }
