@@ -5,12 +5,14 @@
 
 export {
   AWAITING_DECISION_STATUSES,
+  byNewestFirst,
   countAwaitingDecision,
   countForBucket,
   DECISION_SUMMARIES,
   decisionHeadline,
   decisionSummary,
   LISTING_FALLBACK_TITLE,
+  practiceLabel,
   STATUS_HEADLINES,
   STATUS_META,
   WITHDRAWABLE_STATUSES,

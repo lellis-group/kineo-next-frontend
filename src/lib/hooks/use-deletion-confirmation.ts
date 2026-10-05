@@ -8,6 +8,7 @@ import {
   type DeletionOutcome,
 } from "@/lib/account-deletion-service";
 import { signOut } from "@/lib/auth-client";
+import { authCallFailed } from "@/lib/auth-errors";
 
 /** What a confirmation attempt settled on, with the wording to show. */
 export interface DeletionResult {
@@ -135,7 +136,7 @@ function requestDeletion(token: string): Promise<DeletionResult> {
         error:
           error instanceof Error
             ? error.message
-            : "Suppression impossible pour le moment. Vérifiez votre connexion, puis réessayez.",
+            : authCallFailed("Suppression"),
       };
     },
   );

@@ -13,6 +13,7 @@ import {
 } from "./api-client";
 import { errorMessage } from "./api-errors";
 import type { ProfileFormData } from "./profile";
+import { RPPS_DIGITS } from "./profile";
 import type { ApiProfile } from "./types/api";
 
 /**
@@ -78,7 +79,10 @@ export function mapProfileError(error: unknown): string {
       return formatFieldErrors(error.fieldErrors, PROFILE_FIELD_LABELS, {
         "City must contain only letters, spaces, hyphens or apostrophes":
           "ne peut contenir que des lettres, espaces, tirets ou apostrophes.",
-        "String must be 11 digits": "doit contenir exactement 11 chiffres.",
+        // Keyed on better-auth's English zod message, and rendered with the
+        // same sentence the client-side validator uses. It used to be its own
+        // phrasing, so the same mistake was described two ways.
+        "String must be 11 digits": `doit contenir exactement ${RPPS_DIGITS} chiffres.`,
         "latitude and longitude must be provided together":
           "la latitude et la longitude doivent être renseignées ensemble.",
       });

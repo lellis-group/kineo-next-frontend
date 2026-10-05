@@ -172,6 +172,39 @@ export function countAwaitingDecision(
 export const LISTING_FALLBACK_TITLE = "Titre d'annonce indisponible";
 
 /**
+ * "Practice · City", or whichever of the two is known.
+ *
+ * The card and the detail header both built this by hand, which is how they came
+ * to disagree about a missing name: the card fell back to when the application
+ * was sent, the header rendered nothing at all. The fallback belongs to each
+ * screen — it is a layout choice, not a fact about the listing — so this only
+ * answers the label.
+ */
+/**
+ * Newest first, on `createdAt`.
+ *
+ * Two screens sorted this identically — same expression, same direction — and
+ * nothing said so; the dashboard's copy even noted the copy it had to make
+ * before sorting. Both now ask here, so a change of "most recent" cannot leave
+ * one screen behind.
+ */
+export function byNewestFirst<T extends { createdAt: string }>(
+  a: T,
+  b: T,
+): number {
+  return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+}
+
+export function practiceLabel(listing: {
+  practiceName?: string;
+  practiceCity?: string;
+}): string {
+  return listing.practiceName
+    ? `${listing.practiceName}${listing.practiceCity ? ` · ${listing.practiceCity}` : ""}`
+    : (listing.practiceCity ?? "");
+}
+
+/**
  * Placeholder the backend writes over erased practice fields. It is a redaction
  * marker, not a name, so it must never reach the screen: joined with the city
  * it rendered as « — · — », and on a ghost listing as

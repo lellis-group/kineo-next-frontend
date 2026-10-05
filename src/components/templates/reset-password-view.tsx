@@ -101,8 +101,9 @@ export function ResetPasswordView({
         />
 
         <p className="text-center text-xs text-muted">
-          Entre 8 et 128 caractères. Astuce : une phrase longue est plus facile
-          à retenir qu&apos;un mot compliqué.
+          Entre {PASSWORD_MIN_LENGTH} et {PASSWORD_MAX_LENGTH} caractères.
+          Astuce : une phrase longue est plus facile à retenir qu&apos;un mot
+          compliqué.
         </p>
       </Form>
     </AuthCard>

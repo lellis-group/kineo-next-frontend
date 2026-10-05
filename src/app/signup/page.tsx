@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { LoadingState } from "@/components/molecules/loading-state";
 import { SignUpContainer } from "@/components/templates/signup-container";
+import { EMAIL_MAX_LENGTH } from "@/lib/auth-validation";
 
 /**
  * `?email=` arrives from the landing page call to action, which submits a plain
@@ -39,5 +40,7 @@ async function SignUpFromQuery({
 function sanitizeEmail(raw: string | undefined): string | undefined {
   if (!raw) return undefined;
   const trimmed = raw.trim();
-  return trimmed.length > 0 && trimmed.length <= 254 ? trimmed : undefined;
+  return trimmed.length > 0 && trimmed.length <= EMAIL_MAX_LENGTH
+    ? trimmed
+    : undefined;
 }

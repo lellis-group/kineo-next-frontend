@@ -14,6 +14,7 @@
 
 import { ApiError, apiFetch } from "./api-client";
 import { classifyError } from "./api-errors";
+import { authCallFailed } from "./auth-errors";
 
 /** Mirrors the backend's `ERASURE_ERROR_CODES`. */
 export const ERASURE_ERROR_CODES = {
@@ -185,8 +186,7 @@ function mapConfirmDeletionError(error: unknown): {
   }
   return {
     failure: "unavailable",
-    message:
-      "Suppression impossible pour le moment. Vérifiez votre connexion, puis réessayez.",
+    message: authCallFailed("Suppression"),
   };
 }
 

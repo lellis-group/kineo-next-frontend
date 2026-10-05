@@ -9,6 +9,7 @@ import { signUp } from "@/lib/auth-client";
 import { AUTH_UNREACHABLE_MESSAGE, mapSignUpError } from "@/lib/auth-errors";
 import {
   EMAIL_ERROR_MESSAGE,
+  EMAIL_MAX_LENGTH,
   isValidName,
   isValidPasswordLength,
   NAME_ERROR_MESSAGE,
@@ -45,7 +46,7 @@ export function SignUpContainer({ prefillEmail }: { prefillEmail?: string }) {
       setError(NAME_ERROR_MESSAGE);
       return;
     }
-    if (email.length > 254) {
+    if (email.length > EMAIL_MAX_LENGTH) {
       setError(EMAIL_ERROR_MESSAGE);
       return;
     }

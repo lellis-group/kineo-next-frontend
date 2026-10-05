@@ -18,7 +18,7 @@ import type {
   ApiApplicationPage,
   ApiApplicationStatusCounts,
 } from "../types/api";
-import { adaptApplicationEntry } from "./adapters";
+import { adaptApplicationEntry, byNewestFirst } from "./adapters";
 import type { ApplicationEntry, ApplicationsData } from "./contracts";
 
 /**
@@ -148,10 +148,7 @@ export async function fetchApplicationsData(
   // Newest submissions first — matches the backend orderBy, kept as a guard
   const entries: ApplicationEntry[] = applications
     .slice()
-    .sort(
-      (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-    )
+    .sort(byNewestFirst)
     .map(adaptApplicationEntry);
 
   return {

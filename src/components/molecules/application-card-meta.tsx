@@ -1,18 +1,15 @@
 import { MapPinIcon } from "@/components/atoms/icons";
 import { MetaRow, MetaRowItem } from "@/components/molecules/meta-row";
-import type { ApplicationEntry } from "@/lib/applications";
+import { type ApplicationEntry, practiceLabel } from "@/lib/applications";
 
 export function ApplicationCardMeta({
   application,
 }: {
   application: ApplicationEntry;
 }) {
-  const { practiceName, practiceCity } = application.listing;
-  const practiceLabel = practiceName
-    ? `${practiceName}${practiceCity ? ` · ${practiceCity}` : ""}`
-    : practiceCity;
+  const label = practiceLabel(application.listing);
 
-  if (!practiceLabel) {
+  if (!label) {
     return (
       <p className="mt-2 text-[13px] text-muted sm:text-sm">
         {application.submittedLabel}
@@ -23,7 +20,7 @@ export function ApplicationCardMeta({
   return (
     <MetaRow className="mt-2">
       <MetaRowItem icon={MapPinIcon} truncate>
-        {practiceLabel}
+        {label}
       </MetaRowItem>
     </MetaRow>
   );

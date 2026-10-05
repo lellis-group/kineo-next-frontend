@@ -54,6 +54,18 @@ export const AUTH_UNREACHABLE_MESSAGE =
   "Impossible de contacter le serveur. Réessayez plus tard.";
 
 /**
+ * The sentence for "the call did not get through", for whichever action it was.
+ *
+ * Six screens each typed their own, swapping only the leading verb — and the verbs
+ * are the part that drifts: the reset-password one already reordered its second
+ * clause, with nothing recording why. One template now, so the wording of a
+ * network blip is the same everywhere it is shown.
+ */
+export function authCallFailed(action: string): string {
+  return `${action} impossible pour le moment. Vérifiez votre connexion, puis réessayez.`;
+}
+
+/**
  * Whether this is worth retrying later rather than something the reader did
  * wrong: the service is down, or the connection never completed.
  *
@@ -95,7 +107,7 @@ export function mapSignInError(error: {
     return "E-mail ou mot de passe incorrect. Vérifiez votre saisie, puis réessayez.";
   }
 
-  return "Connexion impossible pour le moment. Vérifiez votre connexion, puis réessayez.";
+  return authCallFailed("Connexion");
 }
 
 /** Maps a thrown sign-in error (network/proxy) — the raw message may still carry the verification hint. */
@@ -181,9 +193,29 @@ export function mapSignUpError(error: {
 
   return {
     existingAccount: false,
-    message:
-      "Inscription impossible pour le moment. Vérifiez votre connexion, puis réessayez.",
+    message: authCallFailed("Inscription"),
   };
+}
+
+/**
+ * Whether this instance has password reset switched off.
+ *
+ * Lives here rather than in the container, because it is a reading of what
+ * better-auth says — which is this module's whole subject — and the container was
+ * the only one of five doing its own. A code added here from now on reaches this
+ * screen too, instead of being handled on four and missed on the fifth.
+ */
+export function isPasswordResetDisabled(failure: {
+  code?: string | null;
+  message?: string | null;
+}): boolean {
+  const code = failure.code ?? "";
+  const message = (failure.message ?? "").toLowerCase();
+  return (
+    code === "RESET_PASSWORD_DISABLED" ||
+    message.includes("isn't enabled") ||
+    message.includes("not enabled")
+  );
 }
 
 /** Maps a better-auth reset-password error to a user-friendly French message. */

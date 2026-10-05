@@ -6,7 +6,13 @@ import {
   ForgotPasswordView,
 } from "@/components/templates/forgot-password-view";
 import { requestPasswordReset } from "@/lib/auth-client";
-import { AUTH_UNREACHABLE_MESSAGE } from "@/lib/auth-errors";
+import {
+  AUTH_SERVICE_UNAVAILABLE_MESSAGE,
+  AUTH_UNREACHABLE_MESSAGE,
+  authCallFailed,
+  isAuthServiceUnavailable,
+  isPasswordResetDisabled,
+} from "@/lib/auth-errors";
 
 /**
  * Orchestrator for /forgot-password.
@@ -35,13 +41,17 @@ export function ForgotPasswordContainer() {
       });
 
       if (failure) {
-        if (isResetDisabled(failure)) {
+        if (isPasswordResetDisabled(failure)) {
           // Its own screen — nothing about this failure is about the reader.
           setStage("not-enabled");
         } else {
           setStage("form");
+          // A 5xx used to be reported with the same words as a refused request.
+          // It is not the reader's address that is at fault, so it now says so.
           setError(
-            "L'envoi a échoué. Vérifiez votre connexion, puis réessayez.",
+            isAuthServiceUnavailable(failure)
+              ? AUTH_SERVICE_UNAVAILABLE_MESSAGE
+              : authCallFailed("Envoi"),
           );
         }
         return;
@@ -55,25 +65,5 @@ export function ForgotPasswordContainer() {
 
   return (
     <ForgotPasswordView stage={stage} error={error} onSubmit={handleSubmit} />
-  );
-}
-
-/**
- * Whether this instance has password reset switched off.
- *
- * better-auth answers with a machine code; the `message` checks are the
- * rolling-deploy fallback, the same concession documented on
- * `lib/listings/service.ts`.
- */
-function isResetDisabled(failure: {
-  code?: string | null;
-  message?: string | null;
-}): boolean {
-  const code = failure.code ?? "";
-  const message = (failure.message ?? "").toLowerCase();
-  return (
-    code === "RESET_PASSWORD_DISABLED" ||
-    message.includes("isn't enabled") ||
-    message.includes("not enabled")
   );
 }

@@ -1,4 +1,4 @@
-import { LISTING_FALLBACK_TITLE } from "@/lib/applications";
+import { byNewestFirst, LISTING_FALLBACK_TITLE } from "@/lib/applications";
 import { formatRelativeTime } from "../format";
 import type { ApiApplication, ApiReplacementListing } from "../types/api";
 import type { ActivityEntry } from "./contracts";
@@ -13,10 +13,7 @@ export function adaptActivity(
   // Copied before sorting: `applications` is the collection the other adapters
   // read, and sorting it in place would reorder their input as a side effect.
   return [...applications]
-    .sort(
-      (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-    )
+    .sort(byNewestFirst)
     .slice(0, 4)
     .map((app) => {
       const listingLabel =
