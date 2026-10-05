@@ -27,7 +27,12 @@ import {
  * deploy behind that still answers with the older code inside the text. This is
  * the same rolling-deploy concession `lib/listings/service.ts` documents for
  * its status regex — deliberate, and kept as long as both backends can be
- * deployed independently. Nothing here matches on a *rendered* sentence.
+ * deployed independently.
+ *
+ * Nothing here matches on a *rendered sentence*. The one place a message is
+ * read at all, it reads better-auth's structured `[body.<field>]` prefix rather
+ * than a French or English phrase, and the reason it is not a code is written
+ * where it happens.
  */
 
 /** Server outage / network cut — shared copy across the auth pages. */
@@ -134,18 +139,43 @@ export function mapSignUpError(error: {
     };
   }
 
-  // Backend `before`-hook validation messages pass straight through.
+  // Field-level rejections, matched on the code. All three used to be matched on
+  // a *sentence* — and on a French one, which the backend has never emitted: it
+  // answers in English, and its own copy has been reworded since. Every one of
+  // these branches was unreachable, so a name or password the server refused
+  // fell through to "vérifiez votre connexion" below, which is a sentence about
+  // the network for someone who mistyped their name.
+  //
+  // The password codes come from our own `before` hook (`PASSWORD_TOO_SHORT_OR_LONG`)
+  // or from better-auth's own length check, depending on which got there first;
+  // both are listed so the reader is told the same thing either way.
   if (
-    message.includes("8 et 128 caractères") ||
-    message.includes("too short") ||
-    message.includes("too long")
+    code === "PASSWORD_TOO_SHORT_OR_LONG" ||
+    code === "PASSWORD_TOO_SHORT" ||
+    code === "PASSWORD_TOO_LONG" ||
+    code === "INVALID_PASSWORD"
   ) {
     return { existingAccount: false, message: PASSWORD_LENGTH_MESSAGE };
   }
-  if (message.includes("nom contient des caractères non autorisés")) {
+  if (code === "INVALID_NAME") {
     return { existingAccount: false, message: NAME_ERROR_MESSAGE };
   }
-  if (message.includes("adresse e-mail invalide")) {
+
+  // An invalid email is the one case with no code to match.
+  //
+  // Our hook validates the email's *bounds* only (trim, lowercase, length) and
+  // leaves the shape to better-auth, so the rejection comes from its own zod
+  // layer, which answers `VALIDATION_ERROR` for any field — too coarse to say
+  // which. Its message is structured, though: `[body.<field>] <reason>`, and the
+  // field is named. So the code plus that prefix is what identifies this, which
+  // is still a string match, but on a format rather than on prose.
+  //
+  // What would remove the coupling: our hook rejecting a malformed email with its
+  // own `INVALID_EMAIL`, the way it already rejects the name. That would be a
+  // behaviour change on every path `emailSchema` guards — including sign-in
+  // lookups against stored values — so it is a deliberate decision, not a
+  // cleanup to slip in here.
+  if (code === "VALIDATION_ERROR" && message.includes("[body.email]")) {
     return { existingAccount: false, message: EMAIL_ERROR_MESSAGE };
   }
 
