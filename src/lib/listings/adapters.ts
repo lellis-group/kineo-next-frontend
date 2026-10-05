@@ -75,12 +75,7 @@ export const RECEIVED_DECISION_LABELS: Record<
   CANDIDATE_WITHDREW: "Candidature retirée par le candidat",
   PRACTICE_ACCEPTED: "Acceptée par le cabinet",
   PRACTICE_REJECTED: "Refusée par le cabinet",
-  ANOTHER_CANDIDATE_SELECTED: "Un autre candidat a été retenu",
-  LISTING_CLOSED: "Annonce clôturée",
-  LISTING_CLOSED_NO_CANDIDATE: "Annonce clôturée sans remplaçant",
-  LISTING_CANCELLED: "Annonce annulée",
-  LISTING_ERASED: "Cabinet fermé son compte",
-  CANDIDATE_UNAVAILABLE: "Candidat déclaré indisponible",
+  SYSTEM: "Compte fermé",
 };
 
 export function adaptMyListings(

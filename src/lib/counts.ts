@@ -9,9 +9,7 @@
  * nothing.
  */
 import {
-  APPLICATION_DECISION_SOURCES,
   APPLICATION_STATUSES,
-  type ApplicationDecisionSource,
   type ApplicationStatus,
   REPLACEMENT_LISTING_STATUSES,
   type ReplacementListingStatus,
@@ -56,13 +54,7 @@ export function withZeroCounts<S extends string>(
 export const COUNT_KEYS = {
   applicationStatus: APPLICATION_STATUSES,
   listingStatus: REPLACEMENT_LISTING_STATUSES,
-  decisionSource: [
-    ...APPLICATION_DECISION_SOURCES,
-    /** Applications nobody has ruled on — `decisionSource` is null there. */
-    "undecided",
-  ],
 } as const satisfies {
   applicationStatus: readonly ApplicationStatus[];
   listingStatus: readonly ReplacementListingStatus[];
-  decisionSource: readonly (ApplicationDecisionSource | "undecided")[];
 };

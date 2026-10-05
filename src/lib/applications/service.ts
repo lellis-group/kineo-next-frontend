@@ -168,10 +168,6 @@ export async function fetchApplicationsData(
       { total: meta.total, ...meta.counts },
       COUNT_KEYS.applicationStatus,
     ),
-    decisionCounts: withZeroCounts(
-      { total: meta.total, ...meta.decisionCounts },
-      COUNT_KEYS.decisionSource,
-    ),
   };
 }
 

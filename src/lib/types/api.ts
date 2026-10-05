@@ -105,12 +105,23 @@ export type ApplicationStatus = (typeof APPLICATION_STATUSES)[number];
 /**
  * Which outcome ended the application, when one has.
  *
- * The status alone cannot answer the question the applicant actually has. Four
- * different things all land on `REJECTED` — another candidate was retained, the
- * posting ended with nobody chosen, the practice gave up on the replacement, or
- * the practice refused this person — and they read nothing alike. `WITHDRAWN`
- * used to mix a self-service withdrawal with one written by the account
- * erasure.
+ * The status alone cannot answer the question the applicant actually has: two
+ * things land on `REJECTED` — the practice refused this person, or an account was
+ * erased — and they read nothing alike. `WITHDRAWN` mixes a self-service
+ * withdrawal with one written by the account erasure too.
+ *
+ * These four are what the backend's `DecisionSource` enum holds, and they are the
+ * only four it can ever send. This list used to hold nine, and the extra five were
+ * worse than unused: reading it as the vocabulary, the code believed it could
+ * name outcomes the database had no way of expressing — another candidate
+ * retained, the posting closed or cancelled, a practice that closed its account —
+ * while the value the database *does* produce for an erased account had no entry
+ * at all, and indexing the label table with it threw. Nobody noticed because the
+ * two sides were never compared.
+ *
+ * Which account was erased is not in this value: `SYSTEM` covers both, and the
+ * status tells them apart — `WITHDRAWN` when the candidate erased their own,
+ * `REJECTED` when the practice's account went.
  *
  * Null while the application is still open: nobody has decided yet.
  *
@@ -120,12 +131,7 @@ export const APPLICATION_DECISION_SOURCES = [
   "CANDIDATE_WITHDREW",
   "PRACTICE_ACCEPTED",
   "PRACTICE_REJECTED",
-  "ANOTHER_CANDIDATE_SELECTED",
-  "LISTING_CLOSED",
-  "LISTING_CLOSED_NO_CANDIDATE",
-  "LISTING_CANCELLED",
-  "LISTING_ERASED",
-  "CANDIDATE_UNAVAILABLE",
+  "SYSTEM",
 ] as const;
 
 export type ApplicationDecisionSource =

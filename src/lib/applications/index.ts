@@ -8,6 +8,8 @@ export {
   countAwaitingDecision,
   countForBucket,
   DECISION_SUMMARIES,
+  decisionHeadline,
+  decisionSummary,
   LISTING_FALLBACK_TITLE,
   STATUS_HEADLINES,
   STATUS_META,

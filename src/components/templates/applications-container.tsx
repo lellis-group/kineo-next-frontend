@@ -84,8 +84,5 @@ export function ApplicationsContainer({
 /** The backend query a bucket stands for, or nothing for « Toutes ». */
 function bucketParams(filter: ApplicationsFilter) {
   const bucket = APPLICATION_FILTERS.find((option) => option.id === filter);
-  return {
-    status: bucket?.status,
-    decisionSource: bucket?.decisionSource,
-  };
+  return { status: bucket?.status };
 }

@@ -1,6 +1,7 @@
 import {
   type ApplicationEntry,
-  DECISION_SUMMARIES,
+  decisionHeadline,
+  decisionSummary,
   STATUS_HEADLINES,
   STATUS_META,
 } from "@/lib/applications";
@@ -46,28 +47,7 @@ function buildOpenSummary(application: ApplicationEntry): string {
  * one is what this whole column exists to stop.
  */
 function buildDecidedSummary(application: ApplicationEntry): string {
-  const source = application.decisionSource;
-
-  if (!source) {
-    // Rows written before the column existed, or a status that never sets one.
-    if (application.status === "ACCEPTED") {
-      return "Le cabinet a accepté votre candidature.";
-    }
-    return (
-      application.rejectionReason ??
-      "Aucun motif n'a été communiqué par le cabinet."
-    );
-  }
-
-  const base = DECISION_SUMMARIES[source].summary;
-  const decidedByPractice =
-    source === "PRACTICE_REJECTED" || source === "PRACTICE_ACCEPTED";
-
-  if (decidedByPractice && application.rejectionReason) {
-    return `${base} Son motif : « ${application.rejectionReason} »`;
-  }
-
-  return base;
+  return decisionSummary(application);
 }
 
 export function ApplicationStatusBanner({
@@ -82,9 +62,10 @@ export function ApplicationStatusBanner({
 
   // The decision names the situation better than the status can; the status is
   // what covers rows written before `decisionSource` existed.
-  const headline = application.decisionSource
-    ? DECISION_SUMMARIES[application.decisionSource].headline
-    : STATUS_HEADLINES[application.status];
+  const headline = decisionHeadline(
+    application,
+    (status) => STATUS_HEADLINES[status],
+  );
 
   const summary = stillOpen
     ? buildOpenSummary(application)

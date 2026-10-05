@@ -6,19 +6,10 @@
  */
 
 import type {
-  ApiApplicationDecisionCounts,
   ApiApplicationStatusCounts,
   ApplicationDecisionSource,
   ApplicationStatus,
 } from "@/lib/types/api";
-
-/**
- * Keys of `decisionCounts` a bucket can be counted from: every decision source
- * plus `undecided`, the applications nobody has ruled on. Typing them means a
- * typo in a bucket is a compile error rather than a counter that silently reads
- * zero.
- */
-export type DecisionCountKey = keyof ApiApplicationDecisionCounts;
 
 /**
  * Filter buckets above the list.
@@ -29,18 +20,20 @@ export type DecisionCountKey = keyof ApiApplicationDecisionCounts;
  * practice gave up on the replacement entirely. A chip counting all of them told
  * them nothing about which had happened.
  *
- * Each bucket names a status and the decision sources that belong to it, which
- * the backend filters on directly, so a bucket is never assembled in the browser
- * from a page of results.
+ * Each bucket names a status the backend filters on directly, so a bucket is
+ * never assembled in the browser from a page of results.
+ *
+ * Only statuses, though. These buckets used to name decision sources as well,
+ * which the backend rejects as an unrecognised key, and which named four
+ * outcomes its `DecisionSource` enum cannot express. There were three buckets
+ * involved and none of them worked.
  */
 export type ApplicationsFilter =
   | "ALL"
   | "PENDING"
   | "SHORTLISTED"
   | "ACCEPTED"
-  | "PASSED_OVER"
   | "REFUSED"
-  | "POSTING_ENDED"
   | "WITHDRAWN";
 
 export interface ApplicationsFilterOption {
@@ -48,48 +41,6 @@ export interface ApplicationsFilterOption {
   label: string;
   /** Backend status filter, comma-separated when the bucket spans several. */
   status?: string;
-  /** Backend decision-source filter, comma-separated when several. */
-  decisionSource?: string;
-  /**
-   * Keys in `decisionCounts` to sum for the chip's counter.
-   *
-   * Declared only by the buckets the backend narrows with a `decisionSource`.
-   * A bucket that sends no `decisionSource` must leave this undefined and be
-   * counted from `counts` instead, because otherwise the chip counts a
-   * *different set* from the one the list below it shows — and nothing on screen
-   * says so. The reader sees « Retirées par vous (0) » over three rows, and the
-   * only way to know whether the number or the list is wrong is to go and look.
-   *
-   * A bucket needs `countKeys` exactly when its `status` alone does not identify
-   * it: the three `REJECTED` buckets are each one decision source, so each needs
-   * both. `WITHDRAWN` is the only bucket whose status is unique to it, and the
-   * status totals already answer it.
-   */
-  countKeys?: readonly DecisionCountKey[];
-}
-
-/**
- * The owner actions that end a posting — the practice closed the listing,
- * closed it without picking anyone, cancelled it, or erased it.
- *
- * Declared once here because the « Annonce terminée » bucket needs this set in
- * two shapes at once: the backend filters on a comma-separated string, while
- * the chip's counter sums `decisionCounts` keys. Both are derived from this one
- * list, because the pair used to be hand-written side by side and nothing
- * checked them against each other — adding a fifth way to end a posting would
- * have updated the counter and left the filter behind, which is the kind of
- * drift that shows up as a chip that never quite agrees with the list under it.
- */
-const POSTING_ENDED_SOURCES = [
-  "LISTING_CLOSED",
-  "LISTING_CLOSED_NO_CANDIDATE",
-  "LISTING_CANCELLED",
-  "LISTING_ERASED",
-] as const satisfies readonly ApplicationDecisionSource[];
-
-/** `"A,B,C"` — the query shape the backend filters on. */
-function csv(values: readonly string[]): string {
-  return values.join(",");
 }
 
 export const APPLICATION_FILTERS: readonly ApplicationsFilterOption[] = [
@@ -102,25 +53,16 @@ export const APPLICATION_FILTERS: readonly ApplicationsFilterOption[] = [
   { id: "SHORTLISTED", label: "Présélectionnées", status: "SHORTLISTED" },
   { id: "ACCEPTED", label: "Acceptées", status: "ACCEPTED" },
   {
-    id: "PASSED_OVER",
-    label: "Un autre candidat retenu",
-    status: "REJECTED",
-    decisionSource: "ANOTHER_CANDIDATE_SELECTED",
-    countKeys: ["ANOTHER_CANDIDATE_SELECTED"],
-  },
-  {
+    // Label says « refused », not « refused by the practice»: the backend has no
+    // decision-source filter, so this bucket is every rejected application and
+    // cannot promise which of them were a judgement of the applicant. It used to
+    // claim the narrower thing and send a `decisionSource` the backend rejects —
+    // the chips above it were worse, filtering on sources the database has no
+    // value for. Each row carries its own reason, which is where that
+    // distinction is actually readable.
     id: "REFUSED",
-    label: "Refusées par le cabinet",
+    label: "Refusées",
     status: "REJECTED",
-    decisionSource: "PRACTICE_REJECTED",
-    countKeys: ["PRACTICE_REJECTED"],
-  },
-  {
-    id: "POSTING_ENDED",
-    label: "Annonce terminée",
-    status: "REJECTED",
-    decisionSource: csv(POSTING_ENDED_SOURCES),
-    countKeys: POSTING_ENDED_SOURCES,
   },
   {
     id: "WITHDRAWN",
@@ -187,16 +129,4 @@ export interface ApplicationsData {
    * these numbers only — they are never derived from `applications`.
    */
   counts: ApiApplicationStatusCounts;
-  /**
-   * Totals per decision source over the whole collection, like `counts`. The
-   * chip counters sum from this rather than from `counts`, because the buckets
-   * cut across statuses.
-   *
-   * Optional, not because the service leaves it out — it always fills it — but
-   * because an older backend does not send it, and a rolling deploy must not
-   * take the page down over a counter. Every reader treats it as possibly
-   * absent and falls back to zero; that shows an empty counter rather than a
-   * TypeError.
-   */
-  decisionCounts?: ApiApplicationDecisionCounts;
 }

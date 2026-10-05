@@ -44,6 +44,13 @@ export const STATUS_META: Record<ApplicationStatus, ApplicationStatusMeta> = {
  * `PRACTICE_REJECTED` is the only one that can carry free text, and a missing
  * reason there falls back to saying so rather than inventing a motive.
  */
+/** What the two decision helpers read: the row's status and who settled it. */
+export interface ApplicationStatusHint {
+  status: ApplicationStatus;
+  decisionSource: ApplicationDecisionSource | null;
+  rejectionReason?: string;
+}
+
 export const DECISION_SUMMARIES: Record<
   ApplicationDecisionSource,
   { headline: string; summary: string }
@@ -60,36 +67,60 @@ export const DECISION_SUMMARIES: Record<
     headline: "Candidature refusée",
     summary: "Le cabinet a refusé votre candidature.",
   },
-  ANOTHER_CANDIDATE_SELECTED: {
-    headline: "Un autre candidat a été retenu",
+  SYSTEM: {
+    headline: "Compte fermé",
     summary:
-      "Le cabinet a retenu un autre candidat pour cette annonce. Votre profil n'a pas été jugé insuffisant : la place était pourvue.",
-  },
-  LISTING_CLOSED: {
-    headline: "Annonce clôturée",
-    summary:
-      "Le cabinet a clôturé son annonce. Aucun remplacement n'a été retenu sur celle-ci.",
-  },
-  LISTING_CLOSED_NO_CANDIDATE: {
-    headline: "Annonce clôturée sans remplaçant",
-    summary:
-      "Le cabinet a clôturé son annonce sans retenir de remplaçant. Cela ne dit rien de votre candidature.",
-  },
-  LISTING_CANCELLED: {
-    headline: "Annonce annulée",
-    summary:
-      "Le cabinet a abandonné le remplacement qu'il avait publié. Cela ne dit rien de votre candidature.",
-  },
-  LISTING_ERASED: {
-    headline: "Cabinet fermé son compte",
-    summary:
-      "Le cabinet a fermé son compte et l'annonce n'existe plus. Votre candidature reste enregistrée ici.",
-  },
-  CANDIDATE_UNAVAILABLE: {
-    headline: "Candidat indisponible",
-    summary: "Le cabinet a annoncé que ce candidat n'était plus disponible.",
+      "Un compte lié à cette candidature a été fermé. Cela ne dit rien de votre candidature.",
   },
 };
+
+/**
+ * The one `SYSTEM` outcome, told apart by the status it arrives with.
+ *
+ * The erasure path writes `SYSTEM` whether the account that went was the
+ * candidate's or the practice's — deliberately, since what survives an erasure is
+ * the fact that someone decided rather than who — and the two are not the same
+ * news for the reader. A `WITHDRAWN` one is the candidate's own erasure; a
+ * `REJECTED` one is a practice that no longer exists.
+ */
+export function decisionHeadline(
+  entry: ApplicationStatusHint,
+  fallback: (status: ApplicationStatus) => string,
+): string {
+  if (entry.decisionSource === "SYSTEM") {
+    return entry.status === "WITHDRAWN"
+      ? "Vous avez fermé votre compte"
+      : "Cabinet fermé son compte";
+  }
+  return entry.decisionSource
+    ? DECISION_SUMMARIES[entry.decisionSource].headline
+    : fallback(entry.status);
+}
+
+/** The summary half of the same two questions. */
+export function decisionSummary(entry: ApplicationStatusHint): string {
+  if (entry.decisionSource === "SYSTEM") {
+    return entry.status === "WITHDRAWN"
+      ? "Vous avez fermé votre compte : cette candidature a été retirée."
+      : "Le cabinet a fermé son compte et l'annonce n'existe plus. Votre candidature reste enregistrée ici.";
+  }
+  if (!entry.decisionSource) {
+    return entry.status === "ACCEPTED"
+      ? "Le cabinet a accepté votre candidature."
+      : "Aucun motif n'a été communiqué par le cabinet.";
+  }
+
+  const base = DECISION_SUMMARIES[entry.decisionSource].summary;
+  const decidedByPractice =
+    entry.decisionSource === "PRACTICE_REJECTED" ||
+    entry.decisionSource === "PRACTICE_ACCEPTED";
+
+  if (decidedByPractice && entry.rejectionReason) {
+    return `${base} Son motif : « ${entry.rejectionReason} »`;
+  }
+
+  return base;
+}
 
 /**
  * Headline for the outcome banner. A second, more explicit register than
@@ -218,41 +249,16 @@ export function adaptApplicationEntry(
  * side, which answer the same question for the other two screens. It was the
  * only one of the three living in a component.
  *
- * Sums `decisionCounts` over the keys the bucket names, because the buckets cut
- * across statuses: « Un autre candidat retenu » and « Refusées par le cabinet »
- * are both `REJECTED`, and a status-based counter would show the same number on
- * both chips. The totals come from the server over the whole collection, so
- * they hold still while paging.
+ * One line now, and that is the whole story: every bucket is exactly one status,
+ * so the status totals answer it. It used to sum a `decisionCounts` map for the
+ * buckets that cut across statuses — a map the backend has never sent, so the
+ * number it computed was zero on every one of those chips.
  */
 export function countForBucket(
   option: ApplicationsFilterOption,
   data: ApplicationsData,
 ): number {
-  if (option.id === "ALL") {
-    return data.counts.total;
-  }
-
-  if (!option.countKeys) {
-    // No keys declared: the bucket is exactly one status.
-    return data.counts[option.id as keyof typeof data.counts] ?? 0;
-  }
-
-  // `countKeys` are decision-source names, but typed loosely so a bucket can
-  // name any of them. A key the server does not send reads 0 rather than NaN —
-  // the difference between « nobody in this case » and a broken counter.
-  //
-  // The whole map may be absent: a payload serialised before `decisionCounts`
-  // existed has no such key, and indexing it unguarded threw on a page that was
-  // otherwise fine. An older backend behaves the same way during a rolling
-  // deploy. Empty counters are the honest degradation — the list is still
-  // correct, only the numbers are missing.
-  const sources = data.decisionCounts;
-  if (!sources) {
-    return 0;
-  }
-
-  return option.countKeys.reduce<number>(
-    (sum, key) => sum + (sources[key] ?? 0),
-    0,
-  );
+  return option.id === "ALL"
+    ? data.counts.total
+    : (data.counts[option.id as keyof typeof data.counts] ?? 0);
 }
