@@ -6,8 +6,10 @@
  */
 
 import type {
+  ApiApplicationBucketCounts,
   ApiApplicationStatusCounts,
   ApplicationDecisionSource,
+  ApplicationRejectionBucket,
   ApplicationStatus,
 } from "@/lib/types/api";
 
@@ -44,7 +46,10 @@ export interface ApplicationsFilterOption {
 }
 
 export const APPLICATION_FILTERS: readonly ApplicationsFilterOption[] = [
-  { id: "ALL", label: "Toutes" },
+  // Not « Toutes », though the row above has one: these sit on adjacent lines and
+  // mean different things — every application against every rejection. Two chips
+  // with one label, two different scopes, is a misread waiting to happen.
+  { id: "ALL", label: "Tous les refus" },
   // No `countKeys`: these three are exactly one status, and the status totals
   // already answer them. Pointing them at `undecided` would have given both
   // chips the same number — the union of the two, since a decisionSource is null
@@ -72,6 +77,38 @@ export const APPLICATION_FILTERS: readonly ApplicationsFilterOption[] = [
     // is defined by its status, so it is counted from `counts.WITHDRAWN`, like
     // the three single-status buckets above.
   },
+] as const;
+
+/**
+ * Which situation is selected, or « ALL » for every rejection.
+ *
+ * Not nullable: the row carries its own « Toutes » chip, the way the status row
+ * does, so the reset is a thing you can see rather than a second click on the
+ * chip you already picked.
+ */
+export type RejectionSituationFilter = ApplicationRejectionBucket | "ALL";
+
+export interface RejectionSituationOption {
+  id: RejectionSituationFilter;
+  label: string;
+}
+
+/**
+ * The second chip row, shown while « Refusées » is selected.
+ *
+ * A single « Refusées » chip counted all three of these together, which is the one
+ * number an applicant cannot act on: two of the three say nothing was wrong with
+ * them. The backend classifies each row and counts them, so nothing here decides
+ * which situation a row is — these are labels for values it sends.
+ *
+ * Order is the order a person reads them in when asking what happened to me:
+ * a decision about them, then the competition, then the posting going away.
+ */
+export const REJECTION_SITUATIONS: readonly RejectionSituationOption[] = [
+  { id: "ALL", label: "Toutes" },
+  { id: "REFUSED", label: "Refusées par le cabinet" },
+  { id: "PASSED_OVER", label: "Un autre candidat retenu" },
+  { id: "POSTING_ENDED", label: "L'annonce a pris fin" },
 ] as const;
 
 /** The listing an application was sent to (embedded by the backend). */
@@ -103,6 +140,15 @@ export interface ApplicationEntry {
   /** Message sent with the application, trimmed (undefined when empty). */
   message?: string;
   rejectionReason?: string;
+  /**
+   * Which situation a rejection is, as the backend named it; null for anything that
+   * is not one of the three.
+   *
+   * `undefined` from an older backend is read as null rather than as a bucket: the
+   * card shows the reason text either way, and an unclassified row is not a
+   * classified one.
+   */
+  rejectionBucket: ApplicationRejectionBucket | null;
   withdrawnReason?: string;
   viewedAt?: string;
   respondedAt?: string;
@@ -129,4 +175,10 @@ export interface ApplicationsData {
    * these numbers only — they are never derived from `applications`.
    */
   counts: ApiApplicationStatusCounts;
+  /**
+   * Per-situation totals over the whole collection, zeroed when the backend sends
+   * none. Never derived from `applications`: these must describe what exists, not
+   * what the current page happens to hold.
+   */
+  bucketCounts: ApiApplicationBucketCounts;
 }

@@ -137,6 +137,34 @@ export const APPLICATION_DECISION_SOURCES = [
 export type ApplicationDecisionSource =
   (typeof APPLICATION_DECISION_SOURCES)[number];
 
+/**
+ * The three situations a rejected application can be.
+ *
+ * Named by the backend and computed there: `REJECTED` alone covers a practice
+ * refusing this person, another candidate being retained, and the posting leaving
+ * circulation, and those need three different reactions. The backend derives it
+ * from fields it already stores, so the client never re-decides which is which.
+ */
+export const APPLICATION_REJECTION_BUCKETS = [
+  "PASSED_OVER",
+  "POSTING_ENDED",
+  "REFUSED",
+] as const;
+
+export type ApplicationRejectionBucket =
+  (typeof APPLICATION_REJECTION_BUCKETS)[number];
+
+/**
+ * Per-situation totals, over the whole collection.
+ *
+ * Optional because an older backend does not send it; every reader fills the gap
+ * with 0, which shows an empty chip rather than a broken page.
+ */
+export type ApiApplicationBucketCounts = Record<
+  ApplicationRejectionBucket,
+  number
+>;
+
 /** Practice data embedded in an application response. */
 export interface ApiApplicationPractice {
   id: string;
@@ -188,6 +216,14 @@ export interface ApiApplication {
   decisionSource?: ApplicationDecisionSource | null;
   message?: string;
   rejectionReason?: string;
+  /**
+   * Which situation a rejection is, or null when it is none of them — a pending
+   * application, or one an erasure settled.
+   *
+   * Optional in the type for the same reason as `bucketCounts`: `undefined` from an
+   * older backend is read as null, never as a bucket nobody assigned.
+   */
+  rejectionBucket?: ApplicationRejectionBucket | null;
   withdrawnReason?: string;
   viewedAt?: string;
   respondedAt?: string;
@@ -217,16 +253,6 @@ export type StatusCounts<S extends string> = Record<S | "total", number>;
 export type ApiApplicationStatusCounts = StatusCounts<ApplicationStatus>;
 
 /**
- * Same totals, split by who decided rather than by status.
- *
- * `undecided` is not an `ApplicationDecisionSource` — it is the absence of one —
- * so the key set is the union rather than the enum alone.
- */
-export type ApiApplicationDecisionCounts = StatusCounts<
-  ApplicationDecisionSource | "undecided"
->;
-
-/**
  * A paginated response.
  *
  * `counts` is deliberately left to each caller rather than typed here: the
@@ -251,6 +277,7 @@ export interface ApiApplicationPage<T> extends ApiPaginated<T> {
   meta: ApiPaginated<T>["meta"] & {
     /** Only the applications endpoints return a breakdown. */
     counts?: Partial<ApiApplicationStatusCounts>;
-    decisionCounts?: Partial<ApiApplicationDecisionCounts>;
+    /** Per-situation totals for the rejected applications. Absent on older backends. */
+    bucketCounts?: Partial<ApiApplicationBucketCounts>;
   };
 }

@@ -12,11 +12,17 @@ import {
   notFoundAs,
   unwrapCollection,
 } from "../api-client";
-import { COUNT_KEYS, withZeroCounts, zeroCounts } from "../counts";
+import {
+  COUNT_KEYS,
+  withZeroCounts,
+  zeroBucketCounts,
+  zeroCounts,
+} from "../counts";
 import type {
   ApiApplication,
   ApiApplicationPage,
   ApiApplicationStatusCounts,
+  ApplicationRejectionBucket,
 } from "../types/api";
 import { adaptApplicationEntry, byNewestFirst } from "./adapters";
 import type { ApplicationEntry, ApplicationsData } from "./contracts";
@@ -45,12 +51,14 @@ export interface PaginationParams {
    */
   status?: string;
   /**
-   * Comma-separated decision sources, sent only alongside a status. Buckets
-   * like « Un autre candidat retenu » are a REJECTED narrowed to one source;
-   * passing this without a status would select rows across statuses, which no
-   * chip asks for.
+   * Which situation, among the rejected applications. Sent only alongside
+   * `status: "REJECTED"`, which is the chip row it belongs to.
+   *
+   * Distinct from `decisionSource`, which nothing sends any more: a situation is
+   * read by the backend off fields it already stores, and it is named by the
+   * backend rather than guessed here.
    */
-  decisionSource?: string;
+  bucket?: ApplicationRejectionBucket;
 }
 
 function statusCounts(total: number): ApiApplicationStatusCounts {
@@ -64,17 +72,24 @@ async function fetchMyApplications(
   applications: ApiApplication[];
   meta: ApiApplicationPage<ApiApplication>["meta"];
 }> {
-  // A bucket names a status, a decision source, or both. Sent as the
-  // comma-separated lists the backend accepts, so the filtering stays
-  // server-side and the counters keep describing the whole collection rather
-  // than the page that came back. "ALL" is the no-filter case, and sending it
-  // would narrow to rows that do not exist.
+  // The filtering stays server-side, so the counters keep describing the whole
+  // collection rather than the page that came back. "ALL" is the no-filter case,
+  // and sending it would narrow to rows that do not exist.
+  //
+  // `decisionSource` is gone rather than left dormant: the backend's query schema
+  // is strict and rejects it, so the one chip that used to send it was relying on a
+  // parameter that no longer worked. The situations it selected are `bucket` now,
+  // which the backend computes off fields it already stores.
   const narrowed = params.status !== "ALL";
   const query = buildQuery({
     page: params.page,
     limit: params.limit,
     status: narrowed ? params.status : undefined,
-    decisionSource: narrowed ? params.decisionSource : undefined,
+    // Sent whenever the caller sets it: it only ever accompanies `REJECTED`, so
+    // there is nothing to guard against here, and dropping it would silently
+    // widen the query — the chips would then show a situation filter that changes
+    // no rows, which reads as a broken screen rather than a missing parameter.
+    bucket: params.bucket,
   });
 
   const raw = await apiFetch<unknown>(
@@ -98,6 +113,16 @@ async function fetchMyApplications(
     for (const application of shape.rows) {
       counts[application.status] += 1;
     }
+    // A bare array carries no meta of its own. The situations can still be counted
+    // here without any classification — every row already names its own bucket, so
+    // this only adds up what the backend decided, unlike the status counts above
+    // which have to be read off `status`.
+    const bucketCounts = zeroBucketCounts();
+    for (const application of shape.rows) {
+      if (application.rejectionBucket) {
+        bucketCounts[application.rejectionBucket] += 1;
+      }
+    }
     return {
       applications: shape.rows,
       meta: {
@@ -106,6 +131,7 @@ async function fetchMyApplications(
         limit: shape.rows.length || 1,
         totalPages: 1,
         counts,
+        bucketCounts,
       },
     };
   }
@@ -118,6 +144,7 @@ async function fetchMyApplications(
       limit: params.limit,
       totalPages: 0,
       counts: statusCounts(0),
+      bucketCounts: zeroBucketCounts(),
     },
   };
 }
@@ -165,6 +192,13 @@ export async function fetchApplicationsData(
       { total: meta.total, ...meta.counts },
       COUNT_KEYS.applicationStatus,
     ),
+    // Zeroed when absent, for the same reason as the status totals: a chip claiming
+    // a situation exists when the backend confirmed nothing is worse than one that
+    // shows nothing.
+    bucketCounts: withZeroCounts(
+      meta.bucketCounts,
+      COUNT_KEYS.rejectionBucket,
+    ) as ApplicationsData["bucketCounts"],
   };
 }
 

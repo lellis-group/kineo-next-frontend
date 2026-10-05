@@ -9,18 +9,23 @@ import {
   type ApplicationsData,
   type ApplicationsFilter,
   fetchApplicationsData,
+  type RejectionSituationFilter,
 } from "@/lib/applications";
 import { usePaginatedResource } from "@/lib/hooks/use-paginated-resource";
 
 interface View {
   page: number;
   filter: ApplicationsFilter;
+  /** Which situation, within « Refusées » only. */
+  situation: RejectionSituationFilter;
 }
 
 const DEFAULT_FILTER: ApplicationsFilter = "ALL";
 
 function isDefaultView(view: View): boolean {
-  return view.page === 1 && view.filter === DEFAULT_FILTER;
+  return (
+    view.page === 1 && view.filter === DEFAULT_FILTER && view.situation === null
+  );
 }
 
 /**
@@ -38,8 +43,12 @@ export function ApplicationsContainer({
 }) {
   const [page, setPage] = useState(1);
   const [filter, setFilter] = useState<ApplicationsFilter>(DEFAULT_FILTER);
+  const [situation, setSituation] = useState<RejectionSituationFilter>("ALL");
 
-  const view = useMemo(() => ({ page, filter }), [page, filter]);
+  const view = useMemo(
+    () => ({ page, filter, situation }),
+    [page, filter, situation],
+  );
 
   const load = useCallback(
     (target: View) =>
@@ -51,6 +60,7 @@ export function ApplicationsContainer({
         // statuses and decision sources. One definition, so the chip, the request
         // and the counter cannot drift apart.
         ...bucketParams(target.filter),
+        ...(target.situation === "ALL" ? {} : { bucket: target.situation }),
       }),
     [],
   );
@@ -73,9 +83,21 @@ export function ApplicationsContainer({
         onPageChange={setPage}
         onFilterChange={(next) => {
           setFilter(next);
+          // Leaving « Refusées » clears the situation with it. Carried over, it
+          // would silently keep narrowing the next chip: « En attente » plus a
+          // situation that only exists among rejections returns nothing, and an
+          // empty list looks like a bug rather than a stale filter.
+          if (next !== "REFUSED") {
+            setSituation("ALL");
+          }
           setPage(1);
         }}
         currentFilter={filter}
+        currentSituation={situation}
+        onSituationChange={(next) => {
+          setSituation(next);
+          setPage(1);
+        }}
       />
     </div>
   );

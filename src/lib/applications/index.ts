@@ -8,6 +8,7 @@ export {
   byNewestFirst,
   countAwaitingDecision,
   countForBucket,
+  countForSituation,
   DECISION_SUMMARIES,
   decisionHeadline,
   decisionSummary,
@@ -23,8 +24,12 @@ export type {
   ApplicationsData,
   ApplicationsFilter,
   ApplicationsFilterOption,
+  RejectionSituationFilter,
 } from "./contracts";
-export { APPLICATION_FILTERS } from "./contracts";
+export {
+  APPLICATION_FILTERS,
+  REJECTION_SITUATIONS,
+} from "./contracts";
 export type { PaginationParams } from "./service";
 export {
   APPLICATIONS_PAGE_SIZE,

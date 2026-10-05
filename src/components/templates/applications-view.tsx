@@ -11,6 +11,9 @@ import {
   type ApplicationsData,
   type ApplicationsFilter,
   countForBucket,
+  countForSituation,
+  REJECTION_SITUATIONS,
+  type RejectionSituationFilter,
 } from "@/lib/applications";
 import { PAGE_CONTAINER } from "@/lib/layout";
 
@@ -19,6 +22,8 @@ interface ApplicationsViewProps {
   onPageChange: (page: number) => void;
   onFilterChange: (filter: ApplicationsFilter) => void;
   currentFilter: ApplicationsFilter;
+  currentSituation: RejectionSituationFilter;
+  onSituationChange: (situation: RejectionSituationFilter) => void;
 }
 
 export function ApplicationsView({
@@ -26,6 +31,8 @@ export function ApplicationsView({
   onPageChange,
   onFilterChange,
   currentFilter,
+  currentSituation,
+  onSituationChange,
 }: ApplicationsViewProps) {
   if (data.counts.total === 0) {
     return (
@@ -57,6 +64,25 @@ export function ApplicationsView({
         onChange={onFilterChange}
       />
 
+      {/*
+       * Only under « Refusées », and only for the situations that exist. Every
+       * rejected row a candidate holds is in one of the three or in none — the
+       * backend says which — so an empty list here is a reason to hide the row, not
+       * three chips reading 0.
+       */}
+      {currentFilter === "REFUSED" && hasSituation(data) && (
+        <FilterChips
+          ariaLabel="Filtrer les candidatures refusées par situation"
+          className="mt-3"
+          options={REJECTION_SITUATIONS.map((option) => ({
+            ...option,
+            count: countForSituation(option.id, data),
+          }))}
+          value={currentSituation}
+          onChange={onSituationChange}
+        />
+      )}
+
       <div className="mt-8">
         <ApplicationsList applications={data.applications} />
       </div>
@@ -78,5 +104,23 @@ function ApplicationsHeader() {
       title="Mes candidatures"
       subtitle="Suivez l&apos;état de vos candidatures envoyées aux cabinets."
     />
+  );
+}
+
+/**
+ * Whether any of the three situations is confirmed to have happened.
+ *
+ * Over the named buckets only, never over « Toutes »: that one reads the rejected
+ * total, and an erasure settles a rejection without putting it in any of the three.
+ * Including it would show three chips reading 0 under a row of applications the
+ * candidate can plainly see.
+ *
+ * The totals describe the whole collection, so this stays true while a situation is
+ * selected and the list below is narrowed to it — hiding the row then would take
+ * away the only way back out.
+ */
+function hasSituation(data: ApplicationsData): boolean {
+  return REJECTION_SITUATIONS.some(
+    (option) => option.id !== "ALL" && countForSituation(option.id, data) > 0,
   );
 }

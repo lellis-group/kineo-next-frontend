@@ -9,7 +9,9 @@
  * nothing.
  */
 import {
+  APPLICATION_REJECTION_BUCKETS,
   APPLICATION_STATUSES,
+  type ApplicationRejectionBucket,
   type ApplicationStatus,
   REPLACEMENT_LISTING_STATUSES,
   type ReplacementListingStatus,
@@ -50,11 +52,29 @@ export function withZeroCounts<S extends string>(
   return { ...zeroCounts(0, keys), ...counts };
 }
 
+/**
+ * A zeroed per-situation breakdown, for the rejected applications.
+ *
+ * Kept as its own name rather than a `StatusCounts` because there is no `total`
+ * here: three situations do not add up to a number of anything, and the rejected
+ * total is a fourth, larger figure — a settled rejection belongs to it and to none
+ * of the three.
+ */
+export function zeroBucketCounts(): Record<ApplicationRejectionBucket, number> {
+  return {
+    PASSED_OVER: 0,
+    POSTING_ENDED: 0,
+    REFUSED: 0,
+  };
+}
+
 /** The canonical key list for each breakdown the API serves. */
 export const COUNT_KEYS = {
   applicationStatus: APPLICATION_STATUSES,
   listingStatus: REPLACEMENT_LISTING_STATUSES,
+  rejectionBucket: APPLICATION_REJECTION_BUCKETS,
 } as const satisfies {
   applicationStatus: readonly ApplicationStatus[];
   listingStatus: readonly ReplacementListingStatus[];
+  rejectionBucket: readonly ApplicationRejectionBucket[];
 };

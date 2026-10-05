@@ -15,6 +15,7 @@ import type {
   ApplicationListingInfo,
   ApplicationsData,
   ApplicationsFilterOption,
+  RejectionSituationFilter,
 } from "./contracts";
 
 export interface ApplicationStatusMeta {
@@ -268,6 +269,7 @@ export function adaptApplicationEntry(
     viewed: Boolean(application.viewedAt),
     message: message || undefined,
     rejectionReason: application.rejectionReason?.trim() || undefined,
+    rejectionBucket: application.rejectionBucket ?? null,
     withdrawnReason: application.withdrawnReason?.trim() || undefined,
     viewedAt: application.viewedAt,
     respondedAt: application.respondedAt,
@@ -282,10 +284,37 @@ export function adaptApplicationEntry(
  * side, which answer the same question for the other two screens. It was the
  * only one of the three living in a component.
  *
- * One line now, and that is the whole story: every bucket is exactly one status,
- * so the status totals answer it. It used to sum a `decisionCounts` map for the
- * buckets that cut across statuses — a map the backend has never sent, so the
- * number it computed was zero on every one of those chips.
+ * Every status bucket is exactly one status, so the status totals answer it. The
+ * situations are the opposite: they are all one status, which is why they need the
+ * backend's own totals.
+ */
+/**
+ * Counter for one situation.
+ *
+ * Never summed from `applications`: the list is one page of a filtered query, so a
+ * count read off it would describe the page rather than what exists — and the
+ * situation row stays on screen while a situation is selected, where that would
+ * make every remaining chip read 1.
+ */
+export function countForSituation(
+  situation: RejectionSituationFilter,
+  data: ApplicationsData,
+): number {
+  if (situation === "ALL") {
+    // The rejected total, not the sum of the three: an erasure settles a rejection
+    // too, and it is in this count and in none of the others. Summing the parts
+    // here would make « Toutes » disagree with « Refusées » directly above it, by
+    // exactly the number that was settled rather than decided.
+    return data.counts.REJECTED ?? 0;
+  }
+  return data.bucketCounts[situation] ?? 0;
+}
+
+/**
+ * Counter for one status chip.
+ *
+ * Lives here beside `countForSituation` and the listings-side counters, which
+ * answer the same question for the other two screens.
  */
 export function countForBucket(
   option: ApplicationsFilterOption,
