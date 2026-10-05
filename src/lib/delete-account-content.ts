@@ -32,13 +32,30 @@ export const deleteAccount = {
     "Impossible de supprimer le compte pour le moment. Veuillez réessayer plus tard.",
 } as const;
 
+/**
+ * What an erasure leaves behind, stated once.
+ *
+ * The backend's `DataDeletionRequest` keeps two keyed fingerprints — one over the
+ * user id, one over the email — plus the request's own dates, so the trail can
+ * answer « was this request processed? » without keeping the address it is about.
+ * The pepper that produces them never reaches the database, so neither can be
+ * turned back into either value.
+ *
+ * This sentence was written out five times across the erasure screens and the
+ * privacy policy, and the copies had drifted into saying one fingerprint, or
+ * « some fingerprints », or two. A statement about what a company retains after
+ * erasing someone is not a thing to say five ways, and the two that said one were
+ * the ones a person reads right before deleting their account.
+ */
+export const ERASURE_RETENTION_FACT =
+  "deux empreintes non réversibles — une sur votre identifiant, une sur votre adresse e-mail — ainsi que les dates de la demande";
+
 /** Shown once the request is registered but before the email link is opened. */
 export const deleteAccountRequested = {
   confirmation:
     "Votre demande est enregistrée. Un email de confirmation vient de partir : ouvrez le lien qu'il contient pour anonymiser définitivement votre compte. Ce lien est valable 24 heures. Jusqu'à confirmation, votre compte reste actif.",
   otherCandidates:
     "Si d'autres candidats vous ont adressé des candidatures, l'email vous en indique le nombre. Elles leur appartiennent : nous les conservons pour eux, qui en gardent l'accès, et vous n'y avez plus accès.",
-  retention:
-    "Conformément à notre politique de confidentialité, seule une empreinte non réversible de votre identité et les dates de la demande sont conservées, à des fins de preuve, pendant une durée limitée.",
+  retention: `Conformément à notre politique de confidentialité, ${ERASURE_RETENTION_FACT} sont conservés, à des fins de preuve, pendant une durée limitée.`,
   privacyLinkLabel: "politique de confidentialité",
 } as const;

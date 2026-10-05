@@ -9,6 +9,7 @@ import {
   Steps,
   Subheading,
 } from "@/components/templates/legal-primitives";
+import { ERASURE_RETENTION_FACT } from "@/lib/delete-account-content";
 import {
   PENDING_ITEMS,
   PRIVACY_SECTIONS,
@@ -243,10 +244,9 @@ export default function PrivacyPage() {
             <Paragraph>
               Conformément à l&apos;article 5 du RGPD, nous conservons une trace
               de votre demande pendant 365 jours. Elle ne contient ni votre nom
-              ni votre adresse e-mail : uniquement deux empreintes non
-              réversibles et les dates. Elle nous permet de prouver que votre
-              demande a été traitée sans détenir d&apos;identifiant permettant
-              de vous retrouver.
+              ni votre adresse e-mail : {ERASURE_RETENTION_FACT}. Elle nous
+              permet de prouver que votre demande a été traitée sans détenir
+              d&apos;identifiant permettant de vous retrouver.
             </Paragraph>
 
             <Subheading>Ce que nous conservons malgré votre demande</Subheading>

@@ -1,3 +1,5 @@
+import { ERASURE_RETENTION_FACT } from "@/lib/delete-account-content";
+
 /**
  * The privacy policy's structure, as data.
  *
@@ -68,7 +70,7 @@ export const RETENTION_PERIODS = [
   {
     data: "Trace d'une demande de suppression exécutée",
     duration: "365 jours",
-    note: "Deux empreintes non réversibles et des horodatages. Aucun nom, aucune adresse e-mail.",
+    note: `${ERASURE_RETENTION_FACT.charAt(0).toUpperCase()}${ERASURE_RETENTION_FACT.slice(1)}. Aucun nom, aucune adresse e-mail.`,
   },
   {
     data: "Trace d'une demande jamais confirmée",

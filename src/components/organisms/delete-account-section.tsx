@@ -9,6 +9,7 @@ import { PendingButton } from "@/components/molecules/pending-button";
 import {
   deleteAccount as copy,
   deleteAccountRequested,
+  ERASURE_RETENTION_FACT,
   erasedFields,
 } from "@/lib/delete-account-content";
 
@@ -145,9 +146,8 @@ function ErasureRequested() {
           >
             {deleteAccountRequested.privacyLinkLabel}
           </Link>
-          , seule une empreinte non réversible de votre identité et les dates de
-          la demande sont conservées, à des fins de preuve, pendant une durée
-          limitée.
+          , {ERASURE_RETENTION_FACT} sont conservés, à des fins de preuve,
+          pendant une durée limitée.
         </p>
       </DangerPanel>
     </section>

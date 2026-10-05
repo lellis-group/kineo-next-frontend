@@ -7,6 +7,7 @@ import { Spinner } from "@/components/atoms/spinner";
 import { InlineAlert } from "@/components/molecules/inline-alert";
 import { AuthCard } from "@/components/organisms/auth-card";
 import type { DeletionOutcome } from "@/lib/account-deletion-service";
+import { ERASURE_RETENTION_FACT } from "@/lib/delete-account-content";
 
 export type DeletionScreenStatus = DeletionOutcome;
 
@@ -191,7 +192,7 @@ export function DeletionScreen({
             </Link>
             , la trace de votre demande est conservée pendant une durée limitée
             à des fins de preuve. Elle ne contient ni votre nom ni votre adresse
-            e-mail, seulement des empreintes non réversibles et les dates.
+            e-mail : {ERASURE_RETENTION_FACT}.
           </p>
 
           {!signedOut ? (
