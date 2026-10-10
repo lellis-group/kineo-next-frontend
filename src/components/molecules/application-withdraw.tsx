@@ -3,7 +3,7 @@
 import type { FormEvent } from "react";
 import { useState } from "react";
 import { Button } from "@/components/atoms/button";
-import { ArrowLeftIcon } from "@/components/atoms/icons";
+import { UndoIcon } from "@/components/atoms/icons";
 import { DangerPanel } from "@/components/molecules/danger-panel";
 import { InlineAlert } from "@/components/molecules/inline-alert";
 import { PendingButton } from "@/components/molecules/pending-button";
@@ -54,7 +54,7 @@ export function ApplicationWithdraw({
   return (
     <section aria-label="Retrait de la candidature" className={className}>
       <DangerPanel
-        icon={<ArrowLeftIcon className="h-5 w-5" />}
+        icon={<UndoIcon className="h-5 w-5" />}
         title="Retirer ma candidature"
         headingLevel="h2"
         className="p-6"

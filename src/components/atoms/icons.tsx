@@ -251,3 +251,20 @@ export function TrashIcon(props: SVGProps<SVGSVGElement>) {
     </Svg>
   );
 }
+
+/**
+ * Undo — curved arrow returning to its origin.
+ *
+ * Distinct from `ArrowLeftIcon` (straight arrow = navigate back) and from
+ * `CloseIcon` (cross = dismiss). Used for « Retirer ma candidature »: the
+ * reader takes back something they sent, rather than going back a page or
+ * closing a dialog. Same 24 box, 2px round stroke as the rest of the library.
+ */
+export function UndoIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Svg {...props}>
+      <path d="M9 14 4 9l5-5" />
+      <path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5 5.5 5.5 0 0 1-5.5 5.5H11" />
+    </Svg>
+  );
+}
