@@ -3,6 +3,7 @@ import { Badge } from "@/components/atoms/badge";
 import { CalendarIcon } from "@/components/atoms/icons";
 import { ApplicationCardFooter } from "@/components/molecules/application-card-footer";
 import { ApplicationCardMeta } from "@/components/molecules/application-card-meta";
+import { MetaRow, MetaRowItem } from "@/components/molecules/meta-row";
 import { type ApplicationEntry, STATUS_META } from "@/lib/applications";
 
 /** One application in the list — whole-card link to its detail page. */
@@ -32,10 +33,9 @@ export function ApplicationCard({
       </div>
 
       {dateRange && (
-        <p className="mt-3 flex min-w-0 items-center gap-2 text-[13px] text-foreground sm:mt-4 sm:text-sm">
-          <CalendarIcon className="h-4 w-4 shrink-0 text-faint" />
-          <span className="min-w-0 flex-1 break-words">{dateRange}</span>
-        </p>
+        <MetaRow className="mt-4 text-foreground">
+          <MetaRowItem icon={CalendarIcon}>{dateRange}</MetaRowItem>
+        </MetaRow>
       )}
 
       {application.message && (

@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
-
-export type BadgeTone = "neutral" | "success" | "warning" | "danger" | "info";
+import type { BadgeTone } from "@/lib/ui-tokens";
 
 /**
  * Tones map to the global badge classes of `globals.css` — the site's

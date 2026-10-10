@@ -23,7 +23,7 @@ export function MarketingHero() {
   return (
     <section className="border-b border-border">
       <div className="mx-auto grid w-full max-w-7xl items-center gap-10 px-4 pt-12 pb-10 sm:px-6 sm:pt-16 lg:grid-cols-2 lg:gap-14 lg:pt-20">
-        <div className="text-center lg:text-left">
+        <div className="min-w-0 text-center lg:text-left">
           <h1
             className="hero-enter text-[2.5rem] leading-[1.05] font-bold tracking-tight text-balance sm:text-5xl lg:text-6xl"
             style={heroDelay(0)}
@@ -61,7 +61,7 @@ export function MarketingHero() {
           </div>
         </div>
 
-        <div className="hero-enter" style={heroDelay(240)}>
+        <div className="hero-enter min-w-0" style={heroDelay(240)}>
           <div
             aria-hidden="true"
             className="rounded-2xl border border-border bg-surface p-4 sm:p-5"

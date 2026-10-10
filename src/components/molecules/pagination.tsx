@@ -6,21 +6,19 @@ import { ArrowLeftIcon, ArrowRightIcon } from "@/components/atoms/icons";
 interface PaginationProps {
   /** Current page number (1-based). */
   currentPage: number;
-  /** Total number of pages. */
   totalPages: number;
-  /** Callback when page changes. */
   onPageChange: (page: number) => void;
 }
 
-/**
- * Pagination controls — previous/next buttons with page indicator.
- * Renders even with a single page so users can see the pagination state.
- */
 export function Pagination({
   currentPage,
   totalPages,
   onPageChange,
 }: PaginationProps) {
+  if (totalPages <= 1) {
+    return null;
+  }
+
   const hasPrevious = currentPage > 1;
   const hasNext = currentPage < totalPages;
 

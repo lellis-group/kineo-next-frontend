@@ -1,122 +1,110 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
-import { ErrorState } from "@/components/organisms/error-state";
+import { useCallback, useMemo, useState } from "react";
+import { InlineRetryBanner } from "@/components/molecules/inline-retry-banner";
 import { ApplicationsView } from "@/components/templates/applications-view";
-import { ApiError } from "@/lib/api-client";
 import {
+  APPLICATION_FILTERS,
+  APPLICATIONS_PAGE_SIZE,
   type ApplicationsData,
   type ApplicationsFilter,
   fetchApplicationsData,
+  type RejectionSituationFilter,
 } from "@/lib/applications";
+import { usePaginatedResource } from "@/lib/hooks/use-paginated-resource";
 
-type Status = "loading" | "error" | "success";
+interface View {
+  page: number;
+  filter: ApplicationsFilter;
+  /** Which situation, within « Refusées » only. */
+  situation: RejectionSituationFilter;
+}
 
-const DEFAULT_PAGE_SIZE = 5;
+const DEFAULT_FILTER: ApplicationsFilter = "ALL";
 
-/** Orchestrator for /applications — fetches data (loading/error/success) and renders ApplicationsView. */
-export function ApplicationsContainer() {
-  const router = useRouter();
-  const [status, setStatus] = useState<Status>("loading");
-  const [data, setData] = useState<ApplicationsData | null>(null);
-  const [error, setError] = useState<string>("");
-  const [page, setPage] = useState(1);
-  const [filter, setFilter] = useState<ApplicationsFilter>("ALL");
-
-  const load = useCallback(() => {
-    setStatus("loading");
-    setError("");
-
-    fetchApplicationsData({
-      page,
-      limit: DEFAULT_PAGE_SIZE,
-      status: filter !== "ALL" ? filter : undefined,
-    })
-      .then((applicationsData) => {
-        setData(applicationsData);
-        setStatus("success");
-      })
-      .catch((err) => {
-        // Deleted account or expired session: don't linger on an error card,
-        // bounce to signup like the other protected areas.
-        if (err instanceof ApiError && err.status === 401) {
-          router.replace("/signup");
-          return;
-        }
-        setError(err instanceof Error ? err.message : "Erreur inconnue");
-        setStatus("error");
-      });
-  }, [router, page, filter]);
-
-  useEffect(() => {
-    load();
-  }, [load]);
-
-  const handlePageChange = useCallback((newPage: number) => {
-    setPage(newPage);
-  }, []);
-
-  const handleFilterChange = useCallback((newFilter: ApplicationsFilter) => {
-    setFilter(newFilter);
-    setPage(1); // Reset to first page when filter changes
-  }, []);
-
-  // Keep previous data on refetch so the tab counters don't flash.
-  if (status === "loading" && !data) {
-    return <ApplicationsSkeleton />;
-  }
-
-  if (status === "error" && !data) {
-    return <ErrorState message={error} onRetry={load} />;
-  }
-
-  if (!data) {
-    return null;
-  }
-
+function isDefaultView(view: View): boolean {
   return (
-    <ApplicationsView
-      data={data}
-      onPageChange={handlePageChange}
-      onFilterChange={handleFilterChange}
-      currentFilter={filter}
-    />
+    view.page === 1 && view.filter === DEFAULT_FILTER && view.situation === null
   );
 }
 
-/** Static skeleton keys — no index keys. */
-const SKELETON_CHIPS = [
-  "chip-1",
-  "chip-2",
-  "chip-3",
-  "chip-4",
-  "chip-5",
-  "chip-6",
-];
-const SKELETON_CARDS = ["card-1", "card-2", "card-3"];
+/**
+ * Orchestrator for /applications — renders ApplicationsView.
+ *
+ * The first page of « Toutes » arrives from the server page, so a cold load shows
+ * the list rather than a skeleton; every other view is client state. That
+ * pairing, and the redirect an expired session triggers, are `usePaginatedResource`'s
+ * — the same two rules the listings screens follow.
+ */
+export function ApplicationsContainer({
+  initialData,
+}: {
+  initialData: ApplicationsData;
+}) {
+  const [page, setPage] = useState(1);
+  const [filter, setFilter] = useState<ApplicationsFilter>(DEFAULT_FILTER);
+  const [situation, setSituation] = useState<RejectionSituationFilter>("ALL");
 
-function ApplicationsSkeleton() {
+  const view = useMemo(
+    () => ({ page, filter, situation }),
+    [page, filter, situation],
+  );
+
+  const load = useCallback(
+    (target: View) =>
+      fetchApplicationsData({
+        page: target.page,
+        limit: APPLICATIONS_PAGE_SIZE,
+        // The bucket is translated through APPLICATION_FILTERS rather than sent
+        // as-is: the ids are presentation values, and the backend only knows
+        // statuses and decision sources. One definition, so the chip, the request
+        // and the counter cannot drift apart.
+        ...bucketParams(target.filter),
+        ...(target.situation === "ALL" ? {} : { bucket: target.situation }),
+      }),
+    [],
+  );
+
+  const { data, error, reload } = usePaginatedResource<ApplicationsData, View>({
+    initialData,
+    view,
+    isDefaultView,
+    load,
+  });
+
   return (
-    <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 sm:py-10">
-      <div className="h-9 w-64 animate-pulse rounded-control bg-surface" />
-      <div className="mt-3 h-5 w-96 max-w-full animate-pulse rounded-control bg-surface" />
-      <div className="mt-6 flex flex-wrap gap-2">
-        {SKELETON_CHIPS.map((key) => (
-          <div
-            key={key}
-            className="h-8 w-24 animate-pulse rounded-full bg-surface"
-          />
-        ))}
-      </div>
-      <div className="mt-8 space-y-5">
-        {SKELETON_CARDS.map((key) => (
-          <div
-            key={key}
-            className="h-36 animate-pulse rounded-2xl bg-surface"
-          />
-        ))}
-      </div>
+    <div>
+      {/* Never fatal: the server always delivered the default view. */}
+      {error !== null && (
+        <InlineRetryBanner noun="Les candidatures" onRetry={reload} />
+      )}
+      <ApplicationsView
+        data={data}
+        onPageChange={setPage}
+        onFilterChange={(next) => {
+          setFilter(next);
+          // Leaving « Refusées » clears the situation with it. Carried over, it
+          // would silently keep narrowing the next chip: « En attente » plus a
+          // situation that only exists among rejections returns nothing, and an
+          // empty list looks like a bug rather than a stale filter.
+          if (next !== "REFUSED") {
+            setSituation("ALL");
+          }
+          setPage(1);
+        }}
+        currentFilter={filter}
+        currentSituation={situation}
+        onSituationChange={(next) => {
+          setSituation(next);
+          setPage(1);
+        }}
+      />
     </div>
   );
+}
+
+/** The backend query a bucket stands for, or nothing for « Toutes ». */
+function bucketParams(filter: ApplicationsFilter) {
+  const bucket = APPLICATION_FILTERS.find((option) => option.id === filter);
+  return { status: bucket?.status };
 }

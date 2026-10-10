@@ -6,7 +6,6 @@
 export type {
   ActivityEntry,
   DashboardAction,
-  DashboardActionIcon,
   DashboardData,
   DashboardStat,
   ReactivityStat,

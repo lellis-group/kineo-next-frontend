@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { LoadingState } from "@/components/molecules/loading-state";
 import { ApplicationDetailContainer } from "@/components/templates/application-detail-container";
+import { serverTransport } from "@/lib/api-transport.server";
+import { fetchApplicationDetail } from "@/lib/applications";
+import { requireExisting } from "@/lib/require-member";
 
 export const metadata: Metadata = {
   title: "Candidature — Kineo",
@@ -10,9 +13,8 @@ export const metadata: Metadata = {
 };
 
 /**
- * Dedicated application page — routed by application id. Reads the dynamic
- * params inside a Suspense boundary so the route stays instant-streamable
- * instead of blocking prerendering.
+ * Reads the dynamic params inside a Suspense boundary so the route stays
+ * instant-streamable instead of blocking prerendering.
  */
 export default function ApplicationDetailPage({
   params,
@@ -32,5 +34,11 @@ async function ApplicationDetailPageInner({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  return <ApplicationDetailContainer id={id} />;
+  const application = await requireExisting(
+    fetchApplicationDetail(id, serverTransport),
+  );
+
+  return (
+    <ApplicationDetailContainer id={id} initialApplication={application} />
+  );
 }

@@ -5,72 +5,134 @@
  * error.
  */
 
-import { apiFetch, notFoundAs } from "../api-client";
+import {
+  type ApiTransport,
+  apiFetch,
+  buildQuery,
+  notFoundAs,
+  unwrapCollection,
+} from "../api-client";
+import {
+  COUNT_KEYS,
+  withZeroCounts,
+  zeroBucketCounts,
+  zeroCounts,
+} from "../counts";
 import type {
   ApiApplication,
+  ApiApplicationPage,
   ApiApplicationStatusCounts,
-  ApiPaginated,
+  ApplicationRejectionBucket,
 } from "../types/api";
-import { adaptApplicationEntry } from "./adapters";
+import { adaptApplicationEntry, byNewestFirst } from "./adapters";
 import type { ApplicationEntry, ApplicationsData } from "./contracts";
+
+/**
+ * Rows per page on the applications screen.
+ *
+ * Lives here rather than in the container because the server page needs it to
+ * fetch the first slice: if the two disagreed, the page would send a limit the
+ * container did not expect and the first client-driven page change would skip a
+ * row.
+ */
+export const APPLICATIONS_PAGE_SIZE = 5;
 
 /** Pagination parameters for fetching applications. */
 export interface PaginationParams {
   page: number;
   limit: number;
+  /**
+   * Backend status filter, comma-separated when a bucket spans several.
+   *
+   * The buckets are not the backend statuses — « Un autre candidat retenu » is
+   * a `REJECTED` narrowed to one decision source — so this stays a string
+   * rather than the enum. What protects it is the backend, which 400s on a
+   * value outside the enum instead of ignoring it.
+   */
   status?: string;
+  /**
+   * Which situation, among the rejected applications. Sent only alongside
+   * `status: "REJECTED"`, which is the chip row it belongs to.
+   *
+   * Distinct from `decisionSource`, which nothing sends any more: a situation is
+   * read by the backend off fields it already stores, and it is named by the
+   * backend rather than guessed here.
+   */
+  bucket?: ApplicationRejectionBucket;
 }
 
 function statusCounts(total: number): ApiApplicationStatusCounts {
-  return {
-    total,
-    PENDING: 0,
-    SHORTLISTED: 0,
-    ACCEPTED: 0,
-    REJECTED: 0,
-    WITHDRAWN: 0,
-  };
+  return zeroCounts(total, COUNT_KEYS.applicationStatus);
 }
 
-async function fetchMyApplications(params: PaginationParams): Promise<{
+async function fetchMyApplications(
+  params: PaginationParams,
+  transport?: ApiTransport,
+): Promise<{
   applications: ApiApplication[];
-  meta: ApiPaginated<ApiApplication>["meta"];
+  meta: ApiApplicationPage<ApiApplication>["meta"];
 }> {
-  const searchParams = new URLSearchParams({
-    page: String(params.page),
-    limit: String(params.limit),
+  // The filtering stays server-side, so the counters keep describing the whole
+  // collection rather than the page that came back. "ALL" is the no-filter case,
+  // and sending it would narrow to rows that do not exist.
+  //
+  // `decisionSource` is gone rather than left dormant: the backend's query schema
+  // is strict and rejects it, so the one chip that used to send it was relying on a
+  // parameter that no longer worked. The situations it selected are `bucket` now,
+  // which the backend computes off fields it already stores.
+  const narrowed = params.status !== "ALL";
+  const query = buildQuery({
+    page: params.page,
+    limit: params.limit,
+    status: narrowed ? params.status : undefined,
+    // Sent whenever the caller sets it: it only ever accompanies `REJECTED`, so
+    // there is nothing to guard against here, and dropping it would silently
+    // widen the query — the chips would then show a situation filter that changes
+    // no rows, which reads as a broken screen rather than a missing parameter.
+    bucket: params.bucket,
   });
 
-  if (params.status && params.status !== "ALL") {
-    searchParams.set("status", params.status);
+  const raw = await apiFetch<unknown>(
+    `/applications/mine?${query}`,
+    undefined,
+    transport,
+  ).catch(notFoundAs<unknown>(null));
+
+  const shape = unwrapCollection<ApiApplication>(raw);
+
+  if (shape.kind === "envelope") {
+    return { applications: shape.rows, meta: shape.meta };
   }
 
-  const raw = await apiFetch<ApiPaginated<ApiApplication> | ApiApplication[]>(
-    `/applications/mine?${searchParams}`,
-  ).catch(notFoundAs([]));
-
-  // Legacy shape: a bare array is the whole collection — counts stay stable.
-  if (Array.isArray(raw)) {
-    const counts = statusCounts(raw.length);
-    for (const application of raw) {
+  if (shape.kind === "array") {
+    // Legacy shape: a bare array is the whole collection, with no totals of its
+    // own. The counts are summed here so the chips stay stable — the counters
+    // must describe the collection either way, and this response carries
+    // everything in it, so nothing is being guessed.
+    const counts = statusCounts(shape.rows.length);
+    for (const application of shape.rows) {
       counts[application.status] += 1;
     }
+    // A bare array carries no meta of its own. The situations can still be counted
+    // here without any classification — every row already names its own bucket, so
+    // this only adds up what the backend decided, unlike the status counts above
+    // which have to be read off `status`.
+    const bucketCounts = zeroBucketCounts();
+    for (const application of shape.rows) {
+      if (application.rejectionBucket) {
+        bucketCounts[application.rejectionBucket] += 1;
+      }
+    }
     return {
-      applications: raw,
+      applications: shape.rows,
       meta: {
-        total: raw.length,
+        total: shape.rows.length,
         page: 1,
-        limit: raw.length || 1,
+        limit: shape.rows.length || 1,
         totalPages: 1,
         counts,
+        bucketCounts,
       },
-    };
-  }
-
-  if (raw && typeof raw === "object" && "data" in raw && "meta" in raw) {
-    return {
-      applications: raw.data,
-      meta: raw.meta,
     };
   }
 
@@ -82,6 +144,7 @@ async function fetchMyApplications(params: PaginationParams): Promise<{
       limit: params.limit,
       totalPages: 0,
       counts: statusCounts(0),
+      bucketCounts: zeroBucketCounts(),
     },
   };
 }
@@ -93,23 +156,26 @@ async function fetchMyApplications(params: PaginationParams): Promise<{
  */
 export async function fetchApplicationDetail(
   id: string,
+  transport?: ApiTransport,
 ): Promise<ApplicationEntry> {
-  const application = await apiFetch<ApiApplication>(`/applications/${id}`);
+  const application = await apiFetch<ApiApplication>(
+    `/applications/${id}`,
+    undefined,
+    transport,
+  );
   return adaptApplicationEntry(application);
 }
 
 export async function fetchApplicationsData(
-  params: PaginationParams = { page: 1, limit: 2 },
+  params: PaginationParams = { page: 1, limit: APPLICATIONS_PAGE_SIZE },
+  transport?: ApiTransport,
 ): Promise<ApplicationsData> {
-  const { applications, meta } = await fetchMyApplications(params);
+  const { applications, meta } = await fetchMyApplications(params, transport);
 
   // Newest submissions first — matches the backend orderBy, kept as a guard
   const entries: ApplicationEntry[] = applications
     .slice()
-    .sort(
-      (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-    )
+    .sort(byNewestFirst)
     .map(adaptApplicationEntry);
 
   return {
@@ -120,9 +186,37 @@ export async function fetchApplicationsData(
       limit: meta.limit,
       totalPages: meta.totalPages,
     },
-    // Server-computed totals — never derived from the loaded page
-    counts: meta.counts ?? statusCounts(meta.total),
+    // Server-computed totals — never derived from the loaded page. Completed
+    // from a partial breakdown so a missing status reads 0, not undefined.
+    counts: withZeroCounts(
+      { total: meta.total, ...meta.counts },
+      COUNT_KEYS.applicationStatus,
+    ),
+    // Zeroed when absent, for the same reason as the status totals: a chip claiming
+    // a situation exists when the backend confirmed nothing is worse than one that
+    // shows nothing.
+    bucketCounts: withZeroCounts(
+      meta.bucketCounts,
+      COUNT_KEYS.rejectionBucket,
+    ) as ApplicationsData["bucketCounts"],
   };
+}
+
+/**
+ * Whether a mutation answered by echoing the row back.
+ *
+ * Two of the write endpoints here answer with the updated application and two
+ * answer `204` — both are legitimate, and the caller refetches when there is
+ * nothing to adapt. The check is on the *shape* of the body rather than on the
+ * status code, because a `200` with a body the backend has since changed should
+ * be treated as "no echo" and refetched rather than adapted into a broken
+ * entry.
+ */
+function echoedApplicationEntry(raw: unknown): ApplicationEntry | null {
+  if (raw && typeof raw === "object" && "id" in raw && "status" in raw) {
+    return adaptApplicationEntry(raw as ApiApplication);
+  }
+  return null;
 }
 
 /**
@@ -140,10 +234,7 @@ export async function withdrawApplication(
     body: JSON.stringify(trimmed ? { withdrawnReason: trimmed } : {}),
   });
 
-  if (raw && typeof raw === "object" && "id" in raw && "status" in raw) {
-    return adaptApplicationEntry(raw as ApiApplication);
-  }
-  return null;
+  return echoedApplicationEntry(raw);
 }
 
 /**
@@ -160,8 +251,5 @@ export async function updateApplicationMessage(
     body: JSON.stringify({ message: message.trim() }),
   });
 
-  if (raw && typeof raw === "object" && "id" in raw && "status" in raw) {
-    return adaptApplicationEntry(raw as ApiApplication);
-  }
-  return null;
+  return echoedApplicationEntry(raw);
 }

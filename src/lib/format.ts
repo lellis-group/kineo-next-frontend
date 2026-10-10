@@ -45,7 +45,7 @@ export function formatRelativeTime(dateStr: string): string {
 }
 
 /** Absolute date in French — e.g. « 10 janv. 2026 ». */
-export function formatDate(dateStr: string): string {
+function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString("fr-FR", {
     day: "numeric",
     month: "short",

@@ -1,8 +1,17 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
+import type { InlineAlertTone } from "@/lib/ui-tokens";
 
-export type InlineAlertTone = "info" | "success" | "warning" | "danger";
-
+/**
+ * Alert treatment per tone.
+ *
+ * Note that `info` paints as `primary` here while the badge and the status
+ * banner paint it as `info`. That is a real divergence between two components
+ * sharing a tone name, kept because it is what ships today: the alerts sit in
+ * forms, next to a primary submit button, where a distinct hue would read as a
+ * second action. Worth settling deliberately — one way or the other — rather
+ * than leaving it to whichever component was written last.
+ */
 const TONE_CLASSES: Record<InlineAlertTone, string> = {
   info: "border-primary/30 bg-primary/10",
   success: "border-success/30 bg-success/10",
@@ -11,7 +20,7 @@ const TONE_CLASSES: Record<InlineAlertTone, string> = {
 };
 
 /**
- * Layout per element type: `p` (compact error) vs `output`/`div` (spacious confirmation).
+ * Layout per variant: `p` (compact, blocking) vs `output` (spacious, result).
  * Avoids utility class conflicts — `cn` resolves them predictably.
  */
 const ELEMENT_CLASSES: Record<InlineAlertProps["as"] & string, string> = {
@@ -22,13 +31,16 @@ const ELEMENT_CLASSES: Record<InlineAlertProps["as"] & string, string> = {
 
 export interface InlineAlertProps {
   tone?: InlineAlertTone;
-  /** `p`: blocking error (announced via role="alert") · `output`: action result (confirmation). */
+  /**
+   * `p` for a blocking error, announced immediately via `role="alert"` ·
+   * `output` for a result worth reporting — the semantic element the project's
+   * a11y lint expects for a polite status message.
+   */
   as?: "p" | "output" | "div";
   className?: string;
   children: ReactNode;
 }
 
-/** Form inline message — consolidates styles previously duplicated across auth pages. */
 export function InlineAlert({
   tone = "info",
   as: Component = "output",

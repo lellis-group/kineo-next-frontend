@@ -1,40 +1,39 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { LoadingState } from "@/components/molecules/loading-state";
+import { useCallback, useState } from "react";
 import { ErrorState } from "@/components/organisms/error-state";
 import { ApplicationDetailView } from "@/components/templates/application-detail-view";
 import {
   type ApplicationEntry,
   fetchApplicationDetail,
+  updateApplicationMessage,
+  withdrawApplication,
 } from "@/lib/applications";
 
-type Status = "loading" | "error" | "success";
-
-/** Orchestrator for /applications/[id] — fetches one application and renders ApplicationDetailView. */
-export function ApplicationDetailContainer({ id }: { id: string }) {
-  const [status, setStatus] = useState<Status>("loading");
-  const [application, setApplication] = useState<ApplicationEntry | null>(null);
-  const [error, setError] = useState<string>("");
+/**
+ * Orchestrator for /applications/[id] — renders ApplicationDetailView.
+ *
+ * The application arrives from the server page. The refetch paths remain: the
+ * backend does not always echo the updated row on a write, and a withdrawal has
+ * to re-read the listing the candidates were attached to.
+ */
+export function ApplicationDetailContainer({
+  id,
+  initialApplication,
+}: {
+  id: string;
+  initialApplication: ApplicationEntry;
+}) {
+  const [application, setApplication] =
+    useState<ApplicationEntry>(initialApplication);
+  const [error, setError] = useState<unknown>(null);
 
   const load = useCallback(() => {
-    setStatus("loading");
-    setError("");
-
+    setError(null);
     fetchApplicationDetail(id)
-      .then((entry) => {
-        setApplication(entry);
-        setStatus("success");
-      })
-      .catch((err) => {
-        setError(err instanceof Error ? err.message : "Erreur inconnue");
-        setStatus("error");
-      });
+      .then((entry) => setApplication(entry))
+      .catch(setError);
   }, [id]);
-
-  useEffect(() => {
-    load();
-  }, [load]);
 
   // Instant update when the API echoes the entry, refetch otherwise.
   const handleEntryUpdated = useCallback(
@@ -48,23 +47,29 @@ export function ApplicationDetailContainer({ id }: { id: string }) {
     [load],
   );
 
-  if (status === "loading") {
-    return <LoadingState className="min-h-[60vh]" />;
-  }
+  const saveMessage = useCallback(
+    async (message: string) => {
+      handleEntryUpdated(await updateApplicationMessage(id, message));
+    },
+    [id, handleEntryUpdated],
+  );
 
-  if (status === "error") {
-    return <ErrorState message={error} onRetry={load} />;
-  }
+  const withdraw = useCallback(
+    async (reason: string) => {
+      handleEntryUpdated(await withdrawApplication(id, reason));
+    },
+    [id, handleEntryUpdated],
+  );
 
-  if (!application) {
-    return null;
+  if (error) {
+    return <ErrorState error={error} onRetry={load} />;
   }
 
   return (
     <ApplicationDetailView
       application={application}
-      onWithdrawn={handleEntryUpdated}
-      onMessageSaved={handleEntryUpdated}
+      onSaveMessage={saveMessage}
+      onWithdraw={withdraw}
     />
   );
 }

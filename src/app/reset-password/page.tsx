@@ -1,157 +1,22 @@
-"use client";
-
-import Form from "next/form";
-import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useState } from "react";
-import { Button } from "@/components/atoms/button";
-import { InlineAlert } from "@/components/molecules/inline-alert";
+import type { Metadata } from "next";
+import { Suspense } from "react";
 import { LoadingState } from "@/components/molecules/loading-state";
-import { PasswordInput } from "@/components/molecules/password-input";
-import { SubmitButton } from "@/components/molecules/submit-button";
-import { AuthCard } from "@/components/organisms/auth-card";
-import { resetPassword } from "@/lib/auth-client";
-import { mapResetPasswordError } from "@/lib/auth-errors";
-import {
-  isValidPasswordLength,
-  PASSWORD_LENGTH_MESSAGE,
-  PASSWORD_MAX_LENGTH,
-  PASSWORD_MIN_LENGTH,
-} from "@/lib/auth-validation";
+import { ResetPasswordContainer } from "@/components/templates/reset-password-container";
 
-function ResetPasswordForm() {
-  const router = useRouter();
-  const token = useSearchParams().get("token") ?? "";
-  const [error, setError] = useState("");
-  const [done, setDone] = useState(false);
+export const metadata: Metadata = {
+  title: "Nouveau mot de passe — Kineo",
+  description: "Choisissez un nouveau mot de passe pour votre compte Kineo.",
+};
 
-  async function handleSubmit(formData: FormData) {
-    setError("");
-    const newPassword = formData.get("password") as string;
-    const confirm = formData.get("confirm") as string;
-
-    if (newPassword !== confirm) {
-      setError("Les deux mots de passe ne sont pas identiques.");
-      return;
-    }
-    // Client-side mirror of the backend policy (8–128 chars, same as signup).
-    if (!isValidPasswordLength(newPassword)) {
-      setError(PASSWORD_LENGTH_MESSAGE);
-      return;
-    }
-
-    try {
-      const { error } = await resetPassword({ newPassword, token });
-
-      if (error) {
-        setError(mapResetPasswordError(error));
-        return;
-      }
-
-      setDone(true);
-    } catch {
-      setError("Impossible de contacter le serveur. Réessayez plus tard.");
-    }
-  }
-
-  if (!token) {
-    return (
-      <AuthCard
-        title="Lien invalide"
-        subtitle="Ce lien de réinitialisation est incomplet ou expiré"
-      >
-        <div className="space-y-6 text-center">
-          <p className="text-sm leading-relaxed text-muted">
-            Demandez un nouveau lien pour choisir un nouveau mot de passe.
-          </p>
-
-          <Button href="/forgot-password" size="lg" className="w-full">
-            Demander un nouveau lien
-          </Button>
-        </div>
-      </AuthCard>
-    );
-  }
-
-  if (done) {
-    return (
-      <AuthCard
-        title="Mot de passe modifié"
-        subtitle="Votre nouveau mot de passe est actif"
-      >
-        <div className="space-y-6">
-          <InlineAlert tone="info">
-            Vous pouvez dès maintenant vous connecter avec votre nouveau mot de
-            passe.
-          </InlineAlert>
-
-          <Button
-            onClick={() => router.push("/signin")}
-            size="lg"
-            className="w-full"
-          >
-            Se connecter
-          </Button>
-        </div>
-      </AuthCard>
-    );
-  }
-
-  return (
-    <AuthCard
-      title="Nouveau mot de passe"
-      subtitle="Choisissez un mot de passe pour votre compte Kineo"
-    >
-      <Form action={handleSubmit} className="flex flex-col gap-5">
-        <label className="flex flex-col gap-2" htmlFor="password">
-          <span className="field-label">Nouveau mot de passe</span>
-          <PasswordInput
-            name="password"
-            id="password"
-            required
-            minLength={PASSWORD_MIN_LENGTH}
-            maxLength={PASSWORD_MAX_LENGTH}
-            autoComplete="new-password"
-            placeholder="••••••••••••"
-          />
-        </label>
-
-        <label className="flex flex-col gap-2" htmlFor="confirm">
-          <span className="field-label">Confirmer le mot de passe</span>
-          <PasswordInput
-            name="confirm"
-            id="confirm"
-            required
-            minLength={PASSWORD_MIN_LENGTH}
-            maxLength={PASSWORD_MAX_LENGTH}
-            autoComplete="new-password"
-            placeholder="••••••••••••"
-          />
-        </label>
-
-        {error && (
-          <InlineAlert as="p" tone="danger">
-            {error}
-          </InlineAlert>
-        )}
-
-        <SubmitButton
-          label="Enregistrer le mot de passe"
-          pendingLabel="Enregistrement..."
-        />
-
-        <p className="text-center text-xs text-muted">
-          Entre 8 et 128 caractères. Astuce : une phrase longue est plus facile
-          à retenir qu&apos;un mot compliqué.
-        </p>
-      </Form>
-    </AuthCard>
-  );
-}
-
+/**
+ * The Suspense boundary is the route's only job left: the container reads the
+ * token with `useSearchParams`, and that cannot happen while the route is being
+ * prerendered.
+ */
 export default function ResetPasswordPage() {
   return (
     <Suspense fallback={<LoadingState className="min-h-dvh bg-background" />}>
-      <ResetPasswordForm />
+      <ResetPasswordContainer />
     </Suspense>
   );
 }

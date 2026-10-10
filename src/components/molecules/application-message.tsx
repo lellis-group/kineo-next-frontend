@@ -4,44 +4,35 @@ import type { FormEvent } from "react";
 import { useState } from "react";
 import { Button } from "@/components/atoms/button";
 import { PencilIcon } from "@/components/atoms/icons";
-import { Spinner } from "@/components/atoms/spinner";
 import { InlineAlert } from "@/components/molecules/inline-alert";
-import { ApiError } from "@/lib/api-client";
-import {
-  type ApplicationEntry,
-  updateApplicationMessage,
-} from "@/lib/applications";
+import { PendingButton } from "@/components/molecules/pending-button";
+import { errorMessage } from "@/lib/api-errors";
 
 export interface ApplicationMessageProps {
-  applicationId: string;
   message?: string;
   /** Editable while the application is pending — the caller gates this. */
   canEdit?: boolean;
-  /** Called after a successful save — updated entry when echoed, null to refetch. */
-  onSaved?: (updated: ApplicationEntry | null) => void;
+  onSaveMessage: (message: string) => Promise<void>;
 }
 
 /** Backend UpdateApplicationDto — required message, 1-2000 chars. */
 const MAX_MESSAGE_LENGTH = 2000;
 
-function errorMessage(error: unknown): string {
-  if (error instanceof ApiError) {
-    if (error.status === 400) {
-      return "Cette candidature ne peut plus être modifiée.";
-    }
-    if (error.status === 401 || error.status === 403) {
-      return "Votre session a expiré. Veuillez vous reconnecter.";
-    }
-  }
-  return "L'enregistrement a échoué pour le moment. Veuillez réessayer.";
-}
+/**
+ * Editing is refused once the practice has answered, so the 400 is a state the
+ * reader can act on rather than a fault to retry.
+ */
+const MESSAGE_COPY = {
+  conflict: "Cette candidature ne peut plus être modifiée.",
+  unavailable: "L'enregistrement a échoué pour le moment. Veuillez réessayer.",
+  "service-down":
+    "Le service est hors service : votre message n'a pas été enregistré. Réessayez dans quelques minutes.",
+} as const;
 
-/** "Votre message" section — display, plus inline editing while pending. */
 export function ApplicationMessage({
-  applicationId,
   message,
   canEdit = false,
-  onSaved,
+  onSaveMessage,
 }: ApplicationMessageProps) {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -61,11 +52,10 @@ export function ApplicationMessage({
     setError("");
     setSaving(true);
     try {
-      const updated = await updateApplicationMessage(applicationId, trimmed);
-      onSaved?.(updated);
+      await onSaveMessage(trimmed);
       setEditing(false);
     } catch (err) {
-      setError(errorMessage(err));
+      setError(errorMessage(err, MESSAGE_COPY));
     } finally {
       setSaving(false);
     }
@@ -101,12 +91,13 @@ export function ApplicationMessage({
           )}
 
           <div className="mt-3 flex flex-col gap-3 sm:flex-row">
-            <Button type="submit" disabled={saving || !draft.trim()}>
-              {saving && (
-                <Spinner className="h-4 w-4 border-primary-foreground/30 border-t-primary-foreground" />
-              )}
-              {saving ? "Enregistrement…" : "Enregistrer"}
-            </Button>
+            <PendingButton
+              type="submit"
+              pending={saving}
+              disabled={!draft.trim()}
+              idleLabel="Enregistrer"
+              pendingLabel="Enregistrement…"
+            />
             <Button
               variant="ghost"
               disabled={saving}

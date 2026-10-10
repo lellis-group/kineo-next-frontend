@@ -10,7 +10,6 @@ export interface UserIdentityProps {
   href?: string;
 }
 
-/** Displays current user: name/role + circular avatar. */
 export function UserIdentity({
   name,
   subtitle,

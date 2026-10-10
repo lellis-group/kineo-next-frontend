@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Button } from "@/components/atoms/button";
 import { Card } from "@/components/atoms/card";
 import { ArrowLeftIcon } from "@/components/atoms/icons";
+import { PROSE_CONTAINER } from "@/lib/layout";
 
 export interface ProfileFormPageProps {
   backLabel: string;
@@ -11,11 +12,6 @@ export interface ProfileFormPageProps {
   children: ReactNode;
 }
 
-/**
- * Shared page shell for /profile/create and /profile/edit: back button,
- * heading and the form card. Removes the duplicated markup between the two
- * orchestrators.
- */
 export function ProfileFormPage({
   backLabel,
   onBack,
@@ -24,7 +20,7 @@ export function ProfileFormPage({
   children,
 }: ProfileFormPageProps) {
   return (
-    <div className="mx-auto w-full max-w-3xl px-4 py-10 sm:px-6 sm:py-14">
+    <div className={PROSE_CONTAINER}>
       <Button variant="ghost" onClick={onBack} className="mb-6">
         <ArrowLeftIcon className="h-4 w-4" />
         {backLabel}

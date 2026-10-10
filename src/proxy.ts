@@ -6,8 +6,6 @@ import { type NextRequest, NextResponse } from "next/server";
 // cache header, which the proxy (middleware) cannot do for Cache-Control.
 
 export function proxy(request: NextRequest) {
-  // Optimistic auth guard: redirects to /signin when no session cookie is
-  // present.
   if (!getSessionCookie(request)) {
     return NextResponse.redirect(new URL("/signin", request.url));
   }

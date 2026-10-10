@@ -1,85 +1,61 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { ErrorState } from "@/components/organisms/error-state";
 import { MemberHome } from "@/components/templates/member-home";
-import { ApiError } from "@/lib/api-client";
 import { type DashboardData, fetchDashboardData } from "@/lib/dashboard";
-
-type Status = "loading" | "error" | "success";
+import { signInOnExpiredSession } from "@/lib/session-redirect";
 
 /**
- * Orchestrator for the logged-in page: fetches data (loading/error/success)
- * and delegates rendering to MemberHome. Lives in `templates/` — organisms
- * must never import templates.
+ * Orchestrator for the logged-in page: delegates rendering to MemberHome.
+ * Lives in `templates/` — organisms must never import templates.
+ *
+ * The data arrives already loaded from the server page, so there is no fetch on
+ * mount and no skeleton on a warm navigation: what renders first is the real
+ * dashboard. `reload` still exists for the client-side paths that have to
+ * re-read — retrying after a failure, mainly.
  */
-export function DashboardContainer({ userName }: { userName?: string }) {
+export function DashboardContainer({
+  userName,
+  initialData,
+}: {
+  userName?: string;
+  initialData: DashboardData;
+}) {
   const router = useRouter();
-  const [status, setStatus] = useState<Status>("loading");
-  const [data, setData] = useState<DashboardData | null>(null);
-  const [error, setError] = useState<string>("");
+  const [data, setData] = useState<DashboardData>(initialData);
+  const [error, setError] = useState<unknown>(null);
+  const [reloading, setReloading] = useState(false);
 
-  const load = useCallback(() => {
-    setStatus("loading");
-    setError("");
+  const reload = useCallback(() => {
+    setReloading(true);
+    setError(null);
 
     fetchDashboardData(userName)
       .then((dashboardData) => {
         setData(dashboardData);
-        setStatus("success");
+        setReloading(false);
       })
       .catch((err) => {
-        // Deleted account or expired session: the home page itself renders
-        // PublicHome, but the client dashboard must not linger on an error.
-        if (err instanceof ApiError && err.status === 401) {
-          router.replace("/signup");
+        // The home page itself renders PublicHome, but the client dashboard
+        // must not linger on an error.
+        if (signInOnExpiredSession(err, router)) {
+          setReloading(false);
           return;
         }
-        const message = err instanceof Error ? err.message : "Unknown error";
-        setError(message);
-        setStatus("error");
+        setError(err);
+        setReloading(false);
       });
   }, [router, userName]);
 
-  useEffect(() => {
-    load();
-  }, [load]);
-
-  if (status === "loading") {
-    return <DashboardSkeleton />;
+  if (error) {
+    return <ErrorState error={error} onRetry={reload} />;
   }
 
-  if (status === "error") {
-    return <ErrorState message={error} onRetry={load} />;
-  }
-
-  if (!data) {
-    return null;
-  }
-
-  return <MemberHome data={data} />;
-}
-
-function DashboardSkeleton() {
   return (
-    <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 sm:py-10">
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
-        <div className="min-w-0 space-y-6">
-          {/* Greeting */}
-          <div className="h-28 animate-pulse rounded-control bg-surface" />
-          {/* Stats */}
-          <div className="grid gap-4 sm:grid-cols-3">
-            <div className="h-32 animate-pulse rounded-control bg-surface" />
-            <div className="h-32 animate-pulse rounded-control bg-surface" />
-            <div className="h-32 animate-pulse rounded-control bg-surface" />
-          </div>
-          {/* Activity */}
-          <div className="h-64 animate-pulse rounded-control bg-surface" />
-        </div>
-        {/* Sidebar */}
-        <aside className="h-96 animate-pulse rounded-control bg-surface" />
-      </div>
+    <div aria-busy={reloading || undefined}>
+      <MemberHome data={data} />
     </div>
   );
 }

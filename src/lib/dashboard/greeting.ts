@@ -1,4 +1,5 @@
-import { plural } from "../format";
+import { countAwaitingDecision } from "../applications";
+import { countRecruitingListings } from "../listings";
 import { SPECIALTY_LABELS } from "../profile";
 import type {
   ApiApplication,
@@ -12,9 +13,11 @@ function formatSpecialty(specialty: ApiProfile["specialty"]): string {
 }
 
 /**
- * Sous-titre informatif et déterministe : résume ce que la page affiche et
- * d'où viennent les chiffres (annonces publiées par l'utilisateur,
- * candidatures qu'il a envoyées). Remplace les messages d'accueil aléatoires.
+ * Sous-titre de bienvenue : dit où en est le membre, sans répéter les chiffres.
+ *
+ * Un tableau de bord n'a besoin qu'une fois de chaque nombre. Le greeting dit
+ * maintenant ce qui mérite l'attention ; les chiffres restent une ligne plus
+ * bas, et il n'y a qu'une version.
  */
 export function adaptGreeting(
   profile: ApiProfile | null,
@@ -34,18 +37,22 @@ export function adaptGreeting(
         .join(" · ")
     : "";
 
-  const activeListings = listings.filter(
-    (l) => l.status === "OPEN" || l.status === "IN_DISCUSSION",
-  ).length;
-  const pendingApps = applications.filter((a) => a.status === "PENDING").length;
+  // Only used to pick the line, never printed: the cards are the figures.
+  const recruiting = countRecruitingListings(listings) > 0;
+  const outstanding = countAwaitingDecision(applications) > 0;
 
   let subtitle: string;
-  if (activeListings > 0 && pendingApps > 0) {
-    subtitle = `Ravi de vous revoir ! Vous avez ${activeListings} annonce${plural(activeListings)} active${plural(activeListings)} et ${pendingApps} candidature${plural(pendingApps)} en attente de réponse.`;
-  } else if (activeListings > 0) {
-    subtitle = `Vous avez ${activeListings} annonce${plural(activeListings)} active${plural(activeListings)}. Aucune candidature envoyée pour le moment.`;
-  } else if (pendingApps > 0) {
-    subtitle = `Vous avez ${pendingApps} candidature${plural(pendingApps)} envoyée${plural(pendingApps)}. Aucune annonce active pour le moment.`;
+  if (recruiting && outstanding) {
+    subtitle =
+      "Annonces en ligne, candidatures en cours. Les décisions des cabinets apparaissent au fil de votre activité.";
+  } else if (recruiting) {
+    subtitle =
+      "Vos annonces sont en ligne. Les candidatures reçues apparaissent au fil de votre activité.";
+  } else if (outstanding) {
+    // Not « les cabinets vous ont répondu »: this branch is reached by PENDING
+    // too, which is precisely an application nobody has answered yet.
+    subtitle =
+      "Vos candidatures sont en cours. Les décisions des cabinets apparaissent au fil de votre activité.";
   } else {
     subtitle =
       "Créez votre première annonce ou candidatez à un remplacement pour démarrer.";

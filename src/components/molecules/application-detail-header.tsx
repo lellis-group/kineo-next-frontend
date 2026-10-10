@@ -1,5 +1,6 @@
 import { MapPinIcon } from "@/components/atoms/icons";
-import type { ApplicationEntry } from "@/lib/applications";
+import { MetaRow, MetaRowItem } from "@/components/molecules/meta-row";
+import { type ApplicationEntry, practiceLabel } from "@/lib/applications";
 
 /** Listing title and targeted practice — the status lives in the banner below. */
 export function ApplicationDetailHeader({
@@ -8,20 +9,19 @@ export function ApplicationDetailHeader({
   application: ApplicationEntry;
 }) {
   const { listing } = application;
-  const practiceLabel = listing.practiceName
-    ? `${listing.practiceName}${listing.practiceCity ? ` · ${listing.practiceCity}` : ""}`
-    : listing.practiceCity;
+  const label = practiceLabel(listing);
 
   return (
     <div className="min-w-0">
       <h1 className="text-xl leading-snug font-bold tracking-tight text-balance text-foreground sm:text-2xl">
         {listing.title}
       </h1>
-      {practiceLabel && (
-        <p className="mt-1.5 flex items-center gap-1.5 text-sm text-muted">
-          <MapPinIcon className="h-4 w-4 shrink-0 text-faint" />
-          <span className="truncate">{practiceLabel}</span>
-        </p>
+      {label && (
+        <MetaRow className="mt-2">
+          <MetaRowItem icon={MapPinIcon} truncate>
+            {label}
+          </MetaRowItem>
+        </MetaRow>
       )}
     </div>
   );

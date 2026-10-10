@@ -1,7 +1,18 @@
 /**
- * Profile presentation contracts — French labels, form state, validation.
- * Raw API types live in `./types/api`, API calls in `./profile-service`.
+ * The RPPS number's rule, in one place.
+ *
+ * It was written five times: as a regex here, as a `pattern` and a `maxLength`
+ * in the form, and as two different French sentences in the validator and the
+ * error translator. `maxLength` cannot read a regex, so `RPPS_DIGITS` exists for
+ * it — and the length the form allows is derived from the pattern rather than
+ * decided again.
  */
+export const RPPS_DIGITS = 11;
+export const RPPS_PATTERN = new RegExp(`^\\d{${RPPS_DIGITS}}$`);
+export const RPPS_ERROR_MESSAGE = `Le numéro RPPS doit contenir exactement ${RPPS_DIGITS} chiffres.`;
+
+/** Mirrors the backend's `city` bound (`textField(100, "City")`). */
+export const CITY_MAX_LENGTH = 100;
 
 import type { ApiProfile, ProfileType, Specialty } from "./types/api";
 
@@ -86,13 +97,15 @@ export function validateProfileForm(
   }
 
   const rpps = values.rppsNumber.trim();
-  if (rpps && !/^\d{11}$/.test(rpps)) {
-    return { error: "Le numéro RPPS doit contenir exactement 11 chiffres." };
+  if (rpps && !RPPS_PATTERN.test(rpps)) {
+    return { error: RPPS_ERROR_MESSAGE };
   }
 
   const city = values.city.trim();
-  if (city.length > 100) {
-    return { error: "Le nom de la ville ne peut pas dépasser 100 caractères." };
+  if (city.length > CITY_MAX_LENGTH) {
+    return {
+      error: `Le nom de la ville ne peut pas dépasser ${CITY_MAX_LENGTH} caractères.`,
+    };
   }
 
   return {

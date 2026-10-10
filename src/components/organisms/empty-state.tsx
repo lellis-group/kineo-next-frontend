@@ -1,8 +1,8 @@
+import type { ReactNode } from "react";
 import { Button } from "@/components/atoms/button";
 import { Card } from "@/components/atoms/card";
 import { FileTextIcon } from "@/components/atoms/icons";
 
-/** Generic empty state: icon, title, description and optional CTA. */
 export function EmptyState({
   icon = <FileTextIcon className="h-8 w-8 text-primary" />,
   title,
@@ -10,7 +10,7 @@ export function EmptyState({
   actionLabel,
   actionHref,
 }: {
-  icon?: React.ReactNode;
+  icon?: ReactNode;
   title: string;
   description: string;
   actionLabel?: string;

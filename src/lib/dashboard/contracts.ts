@@ -4,7 +4,7 @@
  * adapted by the dashboard service (`./service`).
  */
 
-import type { ButtonVariant } from "@/components/atoms/button";
+import type { ButtonVariant } from "../ui-tokens";
 
 export interface UserSummary {
   name: string;

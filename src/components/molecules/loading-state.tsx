@@ -4,11 +4,24 @@ import { cn } from "@/lib/cn";
 export interface LoadingStateProps {
   /** Accessible label announced to screen readers. */
   label?: string;
-  /** Vertical space + extra layout classes (e.g. "min-h-dvh bg-background"). */
+  /**
+   * Overrides the reserved height, for a route that fills the viewport
+   * (`"min-h-dvh"` on the auth and erasure screens, which sit outside the site
+   * layout).
+   */
   className?: string;
 }
 
-/** Centered page/section loader — consolidates the spinner pattern used across auth and profile pages. */
+/**
+ * Centered page/section loader.
+ *
+ * The reserved height is this component's own business, not a shared token: the
+ * error screen that sits beside it on the same routes wants a slightly taller
+ * box, and the two had drifted to `50vh` and `60vh` respectively. Putting both
+ * numbers in one place looked like a unification and was actually the opposite —
+ * it silently moved four Suspense fallbacks by 10vh. Two components, two
+ * intentions, two numbers.
+ */
 export function LoadingState({
   label = "Chargement",
   className,

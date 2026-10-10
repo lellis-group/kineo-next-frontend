@@ -3,39 +3,34 @@
 import type { FormEvent } from "react";
 import { useState } from "react";
 import { Button } from "@/components/atoms/button";
-import { Card } from "@/components/atoms/card";
-import { ArrowLeftIcon } from "@/components/atoms/icons";
-import { Spinner } from "@/components/atoms/spinner";
+import { UndoIcon } from "@/components/atoms/icons";
+import { DangerPanel } from "@/components/molecules/danger-panel";
 import { InlineAlert } from "@/components/molecules/inline-alert";
-import { ApiError } from "@/lib/api-client";
-import { type ApplicationEntry, withdrawApplication } from "@/lib/applications";
+import { PendingButton } from "@/components/molecules/pending-button";
+import { errorMessage } from "@/lib/api-errors";
 
 export interface ApplicationWithdrawProps {
-  application: ApplicationEntry;
-  /** Called after a successful withdrawal — updated entry when the API echoes one, null to refetch. */
-  onWithdrawn: (updated: ApplicationEntry | null) => void;
+  onWithdraw: (reason: string) => Promise<void>;
   className?: string;
 }
 
 /** Backend WithdrawApplicationDto — optional reason, 1-500 chars. */
 const MAX_REASON_LENGTH = 500;
 
-function errorMessage(error: unknown): string {
-  if (error instanceof ApiError) {
-    if (error.status === 400) {
-      return "Cette candidature ne peut plus être retirée dans son statut actuel.";
-    }
-    if (error.status === 401 || error.status === 403) {
-      return "Votre session a expiré. Veuillez vous reconnecter.";
-    }
-  }
-  return "Le retrait a échoué pour le moment. Veuillez réessayer.";
-}
+/**
+ * Withdrawing is refused once the practice has answered, so the 400 is a state
+ * the reader can act on (stop asking, accept the answer) rather than a fault.
+ */
+const WITHDRAW_COPY = {
+  conflict:
+    "Cette candidature ne peut plus être retirée dans son statut actuel.",
+  unavailable: "Le retrait a échoué pour le moment. Veuillez réessayer.",
+  "service-down":
+    "Le service est hors service : le retrait n'a pas été enregistré. Réessayez dans quelques minutes.",
+} as const;
 
-/** Withdraw panel: outline trigger, then optional reason + danger confirm. */
 export function ApplicationWithdraw({
-  application,
-  onWithdrawn,
+  onWithdraw,
   className,
 }: ApplicationWithdrawProps) {
   const [confirming, setConfirming] = useState(false);
@@ -48,10 +43,9 @@ export function ApplicationWithdraw({
     setError("");
     setSubmitting(true);
     try {
-      const updated = await withdrawApplication(application.id, reason);
-      onWithdrawn(updated);
+      await onWithdraw(reason);
     } catch (err) {
-      setError(errorMessage(err));
+      setError(errorMessage(err, WITHDRAW_COPY));
     } finally {
       setSubmitting(false);
     }
@@ -59,24 +53,16 @@ export function ApplicationWithdraw({
 
   return (
     <section aria-label="Retrait de la candidature" className={className}>
-      <Card className="border-danger/30 bg-danger/5 p-6">
-        <div className="flex items-start gap-3">
-          <span
-            aria-hidden="true"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-danger/15 text-danger"
-          >
-            <ArrowLeftIcon className="h-5 w-5" />
-          </span>
-          <div className="min-w-0">
-            <h2 className="text-base font-bold text-danger">
-              Retirer ma candidature
-            </h2>
-            <p className="mt-0.5 text-sm text-muted">
-              Votre candidature ne sera plus visible par le cabinet. Cette
-              action est définitive.
-            </p>
-          </div>
-        </div>
+      <DangerPanel
+        icon={<UndoIcon className="h-5 w-5" />}
+        title="Retirer ma candidature"
+        headingLevel="h2"
+        className="p-6"
+      >
+        <p className="mt-0.5 text-sm text-muted">
+          Votre candidature ne sera plus visible par le cabinet. Cette action
+          est définitive.
+        </p>
 
         {confirming ? (
           <form onSubmit={handleSubmit} className="mt-4">
@@ -106,12 +92,13 @@ export function ApplicationWithdraw({
             )}
 
             <div className="mt-4 flex flex-col gap-3 sm:flex-row">
-              <Button type="submit" variant="danger" disabled={submitting}>
-                {submitting && (
-                  <Spinner className="h-4 w-4 border-danger-foreground/30 border-t-danger-foreground" />
-                )}
-                {submitting ? "Retrait en cours…" : "Confirmer le retrait"}
-              </Button>
+              <PendingButton
+                type="submit"
+                variant="danger"
+                pending={submitting}
+                idleLabel="Confirmer le retrait"
+                pendingLabel="Retrait en cours…"
+              />
               <Button
                 variant="ghost"
                 disabled={submitting}
@@ -133,7 +120,7 @@ export function ApplicationWithdraw({
             Retirer ma candidature
           </Button>
         )}
-      </Card>
+      </DangerPanel>
     </section>
   );
 }

@@ -1,9 +1,3 @@
-/**
- * Editorial content of the public pages.
- * Kept separate from components so organisms stay presentational.
- * Structural navigation lives in `lib/navigation.ts`.
- */
-
 export const hero = {
   title: "Le remplacement médical,",
   titleAccent: "simplifié.",
@@ -11,7 +5,6 @@ export const hero = {
     "Kineo connecte médecins installés et remplaçants avec un suivi transparent et une gestion administrative automatisée.",
   primaryCta: { label: "Trouver un remplaçant", href: "/signup" },
   secondaryCta: { label: "Chercher un remplacement", href: "/signup" },
-  /** Live console preview panel (hero side visual). */
   livePreview: {
     caption: "kineo-live-console",
     contractTitle: "Contrat Généré #8012",
@@ -36,18 +29,6 @@ export const trustBar = {
       icon: "percent",
       label: "Gratuit en bêta",
     },
-  ] as const,
-};
-
-/**
- * PLACEHOLDER STATS — the proof bar was replaced by the testimonials section
- * (landing mockup). Kept for a future "numbers" block; unused by PublicHome.
- */
-export const proofStats = {
-  items: [
-    { value: 250, suffix: "+", label: "Professionnels de santé inscrits" },
-    { value: 42, suffix: "", label: "Départements couverts" },
-    { value: 900, suffix: "+", label: "Candidatures traitées chaque mois" },
   ] as const,
 };
 
@@ -122,7 +103,7 @@ export const testimonialsSection = {
 export const howItWorks = {
   title: "Comment ça marche",
   subtitle:
-    "Un parcours en trois étapes, pensé pour les deux côtés de la table — du besoin au remplacement finalisé.",
+    "Un parcours en trois étapes, pensé pour les deux côtés de la table : du besoin au remplacement finalisé.",
   steps: [
     {
       icon: "pencil",

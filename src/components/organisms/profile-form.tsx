@@ -6,9 +6,11 @@ import { Select } from "@/components/atoms/select";
 import { InlineAlert } from "@/components/molecules/inline-alert";
 import { SubmitButton } from "@/components/molecules/submit-button";
 import {
+  CITY_MAX_LENGTH,
   PROFILE_TYPE_LABELS,
   type ProfileFormData,
   type ProfileFormValues,
+  RPPS_DIGITS,
   SPECIALTY_LABELS,
   validateProfileForm,
 } from "@/lib/profile";
@@ -85,7 +87,7 @@ export function ProfileForm({
           {Object.entries(PROFILE_TYPE_LABELS).map(([value, label]) => (
             <label
               key={value}
-              className="flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-lg border border-border bg-surface-2 px-4 py-3 text-center text-sm text-muted hover:bg-surface-3 has-[:checked]:border-primary has-[:checked]:bg-primary/10 has-[:checked]:font-semibold has-[:checked]:text-primary"
+              className="flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-lg border border-border bg-surface-2 px-4 py-3 text-center text-sm text-muted hover:bg-surface-3 has-checked:border-primary has-checked:bg-primary/10 has-checked:font-semibold has-checked:text-primary"
             >
               <input
                 type="radio"
@@ -105,14 +107,16 @@ export function ProfileForm({
         <label className="flex min-w-0 flex-col gap-3">
           <span className="flex items-center justify-between gap-2">
             <span className="field-label">Numéro RPPS</span>
-            <span className="shrink-0 text-xs text-muted">11 chiffres</span>
+            <span className="shrink-0 text-xs text-muted">
+              {RPPS_DIGITS} chiffres
+            </span>
           </span>
           <input
             name="rppsNumber"
             type="text"
             inputMode="numeric"
-            pattern="\d{11}"
-            maxLength={11}
+            pattern={`d{${RPPS_DIGITS}}`}
+            maxLength={RPPS_DIGITS}
             placeholder="12345678901"
             defaultValue={initialValues.rppsNumber}
             className="field-input"
@@ -127,7 +131,7 @@ export function ProfileForm({
           <input
             name="city"
             type="text"
-            maxLength={100}
+            maxLength={CITY_MAX_LENGTH}
             placeholder="Paris"
             defaultValue={initialValues.city}
             className="field-input"

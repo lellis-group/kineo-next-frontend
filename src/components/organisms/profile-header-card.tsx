@@ -17,10 +17,17 @@ export function ProfileHeaderCard({
   user,
   profile,
   onEditProfile,
+  onUpdateInfo,
+  onChangeEmail,
 }: {
   user: ApiUser;
   profile: ApiProfile;
   onEditProfile: () => void;
+  onUpdateInfo: (values: {
+    name: string;
+    image: string | null;
+  }) => Promise<string>;
+  onChangeEmail: (email: string) => Promise<string>;
 }) {
   return (
     <Card className="p-5 sm:p-8">
@@ -75,7 +82,11 @@ export function ProfileHeaderCard({
 
       <div className="mt-5 border-t border-border pt-5">
         <h2 className="mb-3 text-sm font-bold">Informations du compte</h2>
-        <UserInfoFields user={user} />
+        <UserInfoFields
+          user={user}
+          onUpdateInfo={onUpdateInfo}
+          onChangeEmail={onChangeEmail}
+        />
       </div>
     </Card>
   );

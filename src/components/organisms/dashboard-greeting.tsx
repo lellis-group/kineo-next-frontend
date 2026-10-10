@@ -9,11 +9,6 @@ const ACTION_ICONS = {
   layers: LayersIcon,
 } as const;
 
-/**
- * Welcome banner: greeting + summary + primary actions.
- * Layout follows the member mockup — full-width card, actions in a
- * wrapping row (primary first), compact vertical rhythm on mobile.
- */
 export function DashboardGreeting({
   greeting,
   actions,
@@ -23,10 +18,20 @@ export function DashboardGreeting({
 }) {
   return (
     <Card className="p-5 sm:p-8">
-      <p className="text-xs font-bold tracking-widest text-muted uppercase">
-        {greeting.meta ?? "Console Live"}
-      </p>
-      <h1 className="mt-2 text-2xl font-bold tracking-tight text-balance sm:text-3xl">
+      {/* City · speciality, when there is a profile to read them from. The
+          previous fallback was the literal string "Console Live", which said
+          nothing and left the line reading differently depending on whether the
+          member had filled in their profile. No eyebrow beats a meaningless one. */}
+      {greeting.meta && (
+        <p className="text-xs font-bold tracking-widest text-muted uppercase">
+          {greeting.meta}
+        </p>
+      )}
+      <h1
+        className={`text-2xl font-bold tracking-tight text-balance sm:text-3xl ${
+          greeting.meta ? "mt-2" : ""
+        }`}
+      >
         Bonjour {greeting.name}
       </h1>
       <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted sm:text-base">

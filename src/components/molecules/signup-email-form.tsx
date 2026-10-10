@@ -1,7 +1,3 @@
-"use client";
-
-import { useRouter } from "next/navigation";
-import { useState } from "react";
 import { Button } from "@/components/atoms/button";
 import { EMAIL_MAX_LENGTH } from "@/lib/auth-validation";
 
@@ -10,20 +6,24 @@ export interface SignupEmailFormProps {
   submitLabel?: string;
 }
 
-/** Redirects to signup with pre-filled email (`?email=`). */
+/**
+ * Hands an address over to the signup form.
+ *
+ * A plain GET form, not a scripted one: the whole job is to navigate to
+ * `/signup?email=…`, which is exactly what the browser does natively — so the
+ * landing page needs no JavaScript for its call to action, and the field keeps
+ * working before hydration. It was a client component with `useState` and
+ * `useRouter` doing this by hand, which also meant the address it produced had
+ * to be re-read on the far side.
+ */
 export function SignupEmailForm({
   placeholder = "prenom.nom@exemple.fr",
   submitLabel = "Commencer",
 }: SignupEmailFormProps) {
-  const router = useRouter();
-  const [email, setEmail] = useState("");
-
   return (
     <form
-      onSubmit={(event) => {
-        event.preventDefault();
-        router.push(`/signup?email=${encodeURIComponent(email)}`);
-      }}
+      action="/signup"
+      method="get"
       className="flex w-full max-w-md flex-col gap-3 sm:flex-row"
     >
       <label className="flex-1">
@@ -34,8 +34,6 @@ export function SignupEmailForm({
           required
           autoComplete="email"
           maxLength={EMAIL_MAX_LENGTH}
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
           placeholder={placeholder}
           className="field-input"
         />

@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
-import { ProfileEditContainer } from "@/components/templates/profile-edit-container";
+import { Suspense } from "react";
+import { LoadingState } from "@/components/molecules/loading-state";
+import { ProfileFormContainer } from "@/components/templates/profile-form-container";
+import { passProfileGate } from "@/lib/profile-gate";
 
 export const metadata: Metadata = {
   title: "Modifier le profil — Kineo",
@@ -8,6 +11,22 @@ export const metadata: Metadata = {
   robots: { index: false },
 };
 
+/**
+ * Static shell; the session and profile reads are uncached and stream behind the
+ * boundary. An expired session goes to sign-in and a member without a profile
+ * goes to the create form — both decided before the form is rendered, instead of
+ * after a round trip from the browser.
+ */
 export default function ProfileEditPage() {
-  return <ProfileEditContainer />;
+  return (
+    <Suspense fallback={<LoadingState />}>
+      <ProfileEditGate />
+    </Suspense>
+  );
+}
+
+async function ProfileEditGate() {
+  const { profile } = await passProfileGate("edit");
+  // `passProfileGate` redirects rather than returning null on this route.
+  return <ProfileFormContainer mode="edit" profile={profile} />;
 }

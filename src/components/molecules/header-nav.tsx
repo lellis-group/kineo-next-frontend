@@ -24,7 +24,7 @@ export function HeaderNav({
       aria-label="Navigation principale"
       className={
         isHorizontal
-          ? "hidden items-center gap-1.5 lg:flex"
+          ? "hidden items-center gap-1.5 xl:flex"
           : "flex flex-col gap-1"
       }
     >
