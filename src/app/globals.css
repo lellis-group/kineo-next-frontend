@@ -1,11 +1,16 @@
 @import "tailwindcss";
 /*
  * Feuille de MapLibre GL, importée ici pour que le composant de la carte n'ait
- * aucun import CSS : dans l'App Router un import global est réservé à la racine,
- * et le contourner depuis un composant client est exactement le genre de raccourci
- * qui casse au premier `ssr: false`.
+ * aucun import CSS : dans l'App Router un import global est réservé à la racine.
+ *
+ * `layer(components)` n'est pas cosmétique. Tailwind range ses utilitaires dans
+ * des couches CSS, et une feuille importée sans couche arrive **hors couche** —
+ * où elle bat tout ce qui est dans `@layer components`, quelle que soit la
+ * spécificité. Sans ce `layer()`, les quelques règles `.maplibregl-*` plus bas
+ * ne s'appliquaient pas : le popup gardait son fond blanc et les contrôles de
+ * zoom leur thème clair.
  */
-@import "maplibre-gl/dist/maplibre-gl.css";
+@import "maplibre-gl/dist/maplibre-gl.css" layer(components);
 
 :root {
   color-scheme: dark;
@@ -556,23 +561,63 @@
     opacity: 1;
   }
 
-  .maplibregl-ctrl-attrib {
+  /*
+   * La pastille d'attribution.
+   *
+   * Le contrôle est créé en mode compact, et MapLibre écrit alors
+   * `.maplibregl-ctrl-attrib.maplibregl-compact` : deux classes contre une pour la
+   * règle d'ici, donc la sienne gagnait et la pastille restait blanche. On vise les
+   * deux formes plutôt que de jouer sur la spécificité.
+   */
+  .maplibregl-ctrl-attrib,
+  .maplibregl-ctrl-attrib.maplibregl-compact {
     background: var(--surface);
     color: var(--muted);
-    border-radius: 0.375rem 0 0 0;
+    border-radius: 0.375rem;
     font-size: 0.6875rem;
   }
 
-  .maplibregl-ctrl-attrib a {
+  .maplibregl-ctrl-attrib a,
+  .maplibregl-ctrl-attrib a:visited {
     color: var(--muted);
   }
 
+  /*
+   * Le popup de la carte.
+   *
+   * MapLibre peint la surface sur `.maplibregl-popup-content` et laisse le cadre
+   * transparent : son thème clair par défaut restait donc visible à l'intérieur —
+   * un rectangle blanc sur une page sombre — pendant que mes couleurs allaient sur
+   * le cadre qui l'entourait. La surface est ici remise sur la couche qui la
+   * dessine réellement, et son padding est le seul : la classe `p-4` du composant
+   * s'ajoutait à celui de MapLibre et doublait les marges.
+   *
+   * `z-index` au-dessus de la barre de filtres, qui est un frère de la carte et
+   * passe donc devant tout ce qu'elle contient. Un popup ouvert près du bord
+   * haut disparaissait sous la barre.
+   */
+  .maplibregl-popup {
+    z-index: 20;
+  }
+
+  .maplibregl-popup-content {
+    margin: 0;
+    padding: 0.875rem 1rem;
+    max-width: 20rem;
+    border-radius: 0.75rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-pop);
+    color: var(--foreground);
+  }
+
   .maplibregl-popup-close-button {
+    right: 0.375rem;
+    top: 0.375rem;
+    padding: 0 0.25rem;
+    font-size: 1rem;
+    line-height: 1;
     color: var(--muted);
-    font-size: 1.125rem;
-    padding: 0 0.5rem;
-    right: 0.125rem;
-    top: 0.125rem;
   }
 
   .maplibregl-popup-close-button:hover {
@@ -580,9 +625,14 @@
     color: var(--foreground);
   }
 
+  /* Un titre qui court sur deux lignes ne doit pas passer sous la croix. */
+  .maplibregl-popup-content :is(h3, p) {
+    padding-right: 1.125rem;
+  }
+
   /*
-   * La pointe du popup est une bordure orientée : sa couleur doit suivre celle
-   * du panneau, sinon un triangle clair se détache sur le fond de la carte.
+   * La pointe est une bordure orientée : sa couleur doit suivre celle du panneau,
+   * sinon un triangle clair se détache sur le fond de la carte.
    */
   .maplibregl-popup-anchor-bottom .maplibregl-popup-tip {
     border-top-color: var(--surface);

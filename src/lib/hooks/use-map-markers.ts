@@ -22,9 +22,6 @@ const MARKER_CLASS =
 /** A place with more than one posting: bigger, and it carries the count. */
 const MARKER_CLUSTER_CLASS = "!size-7 !bg-primary";
 
-export const POPUP_CLASS =
-  "!max-w-64 !rounded-xl !border !border-border !bg-surface !p-4 !text-foreground !shadow-[var(--shadow-pop)]";
-
 /**
  * The markers on the map, and the popup one of them opens.
  *
@@ -123,7 +120,6 @@ export function useMapMarkers({
           // one — not by the very click that opened it.
           closeOnClick: false,
           closeButton: true,
-          className: POPUP_CLASS,
         })
           .setLngLat([place.longitude, place.latitude])
           .setDOMContent(popupContent(place))
@@ -248,34 +244,80 @@ function paintActive(
  * does the same job by construction — no path through it turns a title into
  * markup, however creative the title is.
  *
- * The class names are the app's own, so the popup reads like the rest of the
- * product rather than a widget dropped onto the map.
+ * Colours, surfaces and shadows are not here. They were `!important` overrides
+ * on this hook once, aimed at `.maplibregl-popup` — which is not the element
+ * MapLibre paints a surface on. `.maplibregl-popup-content` is, so the popup came
+ * out as a dark frame around a white box: the overrides were landing on the wrong
+ * node all along. They now sit in `globals.css` with the rest of the theming.
+ *
+ * The single-listing case is not the group case with fewer rows. With one posting
+ * its title is the heading, and the list underneath used to repeat it — the same
+ * sentence twice in a 300px box. A lone posting therefore gets heading, place and
+ * period; several get a count, the place, and one entry each.
  */
 function popupContent(place: MapPlace): HTMLElement {
   const root = document.createElement("div");
-  root.className = "flex flex-col gap-1.5 text-left";
+  root.className = "flex flex-col gap-1 text-left";
 
-  const heading = document.createElement("p");
-  heading.className = "text-sm font-semibold text-foreground";
+  const [first] = place.listings;
+
+  const heading = document.createElement("h3");
+  heading.className = "text-sm leading-snug font-medium text-foreground";
   heading.textContent =
     place.listings.length === 1
-      ? place.listings[0].title
+      ? first.title
       : `${place.listings.length} annonces`;
   root.append(heading);
 
   const where = document.createElement("p");
   where.className = "text-xs text-muted";
-  where.textContent = `${place.listings[0].practiceName} · ${place.listings[0].city}`;
+  where.textContent = `${first.practiceName} · ${first.city}`;
   root.append(where);
 
-  // Every posting at this place is named, because the marker stands for all of
-  // them and a popup showing one would hide the rest.
-  for (const listing of place.listings) {
-    const row = document.createElement("p");
-    row.className = "text-xs text-muted";
-    row.textContent = `${listing.title} — ${listing.dateRange}`;
-    root.append(row);
+  if (place.listings.length === 1) {
+    const period = document.createElement("p");
+    period.className = "mt-0.5 text-xs text-muted";
+    period.textContent = first.dateRange;
+    root.append(period);
+    return root;
+  }
+
+  // A practice can publish a lot; a popup that grows past the map is a popup that
+  // has to be scrolled to read and closes on the way out of view.
+  const shown = place.listings.slice(0, MAX_POPUP_LISTINGS);
+  const list = document.createElement("ul");
+  list.className = "mt-1.5 flex flex-col gap-1.5 border-t border-border pt-1.5";
+
+  for (const listing of shown) {
+    const row = document.createElement("li");
+    row.className = "flex flex-col";
+
+    const title = document.createElement("span");
+    title.className = "text-xs leading-snug text-foreground";
+    title.textContent = listing.title;
+    row.append(title);
+
+    const meta = document.createElement("span");
+    meta.className = "text-[0.6875rem] text-muted";
+    meta.textContent = listing.dateRange;
+    row.append(meta);
+
+    list.append(row);
+  }
+
+  root.append(list);
+
+  if (place.listings.length > shown.length) {
+    const rest = document.createElement("p");
+    rest.className = "mt-1 text-[0.6875rem] text-muted";
+    rest.textContent = `+ ${place.listings.length - shown.length} autre${
+      place.listings.length - shown.length > 1 ? "s" : ""
+    }`;
+    root.append(rest);
   }
 
   return root;
 }
+
+/** Postings named in a group popup before it stops listing them. */
+const MAX_POPUP_LISTINGS = 4;
