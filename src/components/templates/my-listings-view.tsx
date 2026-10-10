@@ -4,6 +4,7 @@ import { FilterChips } from "@/components/molecules/filter-chips";
 import { Pagination } from "@/components/molecules/pagination";
 import { EmptyState } from "@/components/organisms/empty-state";
 import { MyListingCard } from "@/components/organisms/my-listing-card";
+import { cn } from "@/lib/cn";
 import { PAGE_CONTAINER } from "@/lib/layout";
 import type { ListingMessage } from "@/lib/listings";
 import {
@@ -96,7 +97,7 @@ export function MyListingsView({
           <div className="mt-4 flex flex-wrap items-center gap-3">
             <button
               type="button"
-              className="chip"
+              className={cn("chip", urgentOnly && "is-active")}
               aria-pressed={urgentOnly}
               onClick={onUrgentToggle}
             >

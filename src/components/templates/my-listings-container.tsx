@@ -101,6 +101,21 @@ export function MyListingsContainer({
     },
   });
 
+  /**
+   * Filet de sécurité côté client : le toggle envoie `urgent=true` au backend,
+   * mais si celui-ci l'ignore la liste reviendrait inchangée et le bouton
+   * semblerait ne rien faire. Filtrer ici garantit que « Urgentes seulement »
+   * ne montre jamais une annonce non urgente, que le serveur ait filtré ou non.
+   * Quand le serveur filtre déjà, ce filtre est un no-op.
+   */
+  const visibleListings = useMemo(
+    () =>
+      urgentOnly
+        ? data.listings.filter((listing) => listing.urgent)
+        : data.listings,
+    [data.listings, urgentOnly],
+  );
+
   return (
     <>
       {/* Never fatal: the server always delivered the default bucket. */}
@@ -108,7 +123,7 @@ export function MyListingsContainer({
         <InlineRetryBanner noun="Les annonces" onRetry={reload} />
       )}
       <MyListingsView
-        listings={data.listings}
+        listings={visibleListings}
         counts={data.counts}
         currentFilter={filter}
         onFilterChange={(next) => {
