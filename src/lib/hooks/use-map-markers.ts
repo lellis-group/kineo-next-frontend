@@ -116,9 +116,12 @@ export function useMapMarkers({
         popupRef.current?.remove();
         popupRef.current = new maplibregl.Popup({
           offset: 16,
-          // Dismissed by its own close button, by Escape, or by opening another
-          // one — not by the very click that opened it.
-          closeOnClick: false,
+          // The very click that opened it used to close it again: the marker
+          // sits inside the map, so the click bubbled up and MapLibre dismissed
+          // the popup on the same event. `stopPropagation` above is what makes
+          // this safe — without it, `true` would mean a popup that never stays
+          // open.
+          closeOnClick: true,
           closeButton: true,
         })
           .setLngLat([place.longitude, place.latitude])
