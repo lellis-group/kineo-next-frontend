@@ -12,7 +12,7 @@ function NotificationsButton() {
     <button
       type="button"
       aria-label="Notifications"
-      className="hidden h-10 w-10 items-center justify-center rounded-lg border border-border text-foreground/80 transition-colors hover:border-primary/50 hover:text-foreground sm:flex"
+      className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-border text-foreground/80 transition-colors hover:border-primary/50 hover:text-foreground xl:flex"
     >
       <BellIcon />
     </button>
@@ -65,10 +65,10 @@ export function SiteHeader({
                 type="button"
                 onClick={onSignOut}
                 aria-label="Se déconnecter"
-                className="inline-flex h-10 items-center justify-center gap-2 rounded-full border border-border px-3 text-sm font-medium text-muted transition-colors hover:border-primary/50 hover:text-foreground"
+                className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-full border border-border px-3 text-sm font-medium text-muted transition-colors hover:border-primary/50 hover:text-foreground"
               >
                 <LogOutIcon />
-                <span className="hidden sm:inline">Se déconnecter</span>
+                <span className="hidden xl:inline">Se déconnecter</span>
               </button>
             </>
           ) : (

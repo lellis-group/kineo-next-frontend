@@ -23,7 +23,7 @@ export function HeaderSkeleton() {
           <KineoLogo />
 
           <div
-            className="hidden items-center gap-1.5 lg:flex"
+            className="hidden items-center gap-1.5 xl:flex"
             aria-hidden="true"
           >
             {[64, 104, 56].map((width) => (

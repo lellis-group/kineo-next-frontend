@@ -86,7 +86,7 @@ export function MobileMenu({
   }, [open]);
 
   return (
-    <div ref={rootRef} className="relative self-stretch lg:hidden">
+    <div ref={rootRef} className="relative self-stretch xl:hidden">
       <div className="flex h-full items-center">
         <button
           ref={triggerRef}
