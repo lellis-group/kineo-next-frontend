@@ -482,6 +482,10 @@ function popupContent(
     row.className =
       "flex w-full cursor-pointer flex-col rounded-lg px-1.5 py-1 text-left transition-colors hover:bg-surface-hover focus-visible:bg-surface-hover";
     row.addEventListener("click", () => onPick(listing.id));
+    // Same handle as the table rows carry, so the two views of a posting can be
+    // matched from the outside — by the map's own tests, and by anything else that
+    // has to say which row a pin belongs to.
+    row.dataset.listingId = listing.id;
 
     const title = document.createElement("span");
     title.className = "text-xs leading-snug text-foreground";

@@ -1,4 +1,6 @@
 import { describe, expect, it } from "bun:test";
+import type { ApiReplacementListing } from "@/lib/types/api";
+import type { ApiTransport } from "../api-client";
 import { toIsoDayBound } from "../format";
 import { adaptFacets, groupByLocation } from "./browse-adapters";
 import type { BrowseListing } from "./browse-contracts";
@@ -10,6 +12,32 @@ import {
   listingBadge,
   toBrowseView,
 } from "./browse-contracts";
+import { BROWSE_MAP_LIMIT, fetchBrowseLocations } from "./browse-service";
+
+/** A posting as the API sends it, with only the fields these tests read. */
+function apiListing(over: Partial<ApiReplacementListing> = {}) {
+  return {
+    id: "l1",
+    practiceId: "p1",
+    practice: {
+      id: "p1",
+      name: "Cabinet",
+      city: "Lyon",
+      latitude: 45.764,
+      longitude: 4.8357,
+    },
+    title: "Remplacement",
+    startDate: "2026-10-01T08:00:00.000Z",
+    endDate: "2026-10-03T08:00:00.000Z",
+    status: "OPEN",
+    specialty: "GENERALIST",
+    urgent: false,
+    applicationsCount: 0,
+    createdAt: "2026-09-01T08:00:00.000Z",
+    updatedAt: "2026-09-01T08:00:00.000Z",
+    ...over,
+  } as ApiReplacementListing;
+}
 
 /** A posting, with only the fields these functions read. */
 function listing(over: Partial<BrowseListing> = {}): BrowseListing {
@@ -236,5 +264,92 @@ describe("listingBadge", () => {
       label: "Ouverte",
       tone: "info",
     });
+  });
+});
+
+describe("fetchBrowseLocations", () => {
+  /** A transport that records the path it was called with. */
+  function recorder(pages = 1) {
+    const paths: string[] = [];
+    const transport: ApiTransport = async (path) => {
+      paths.push(path);
+      return Response.json({
+        data: Array.from({ length: pages }, (_, i) =>
+          apiListing({ id: `l${i}` }),
+        ),
+        meta: { total: pages, page: 1, limit: BROWSE_MAP_LIMIT, pages: 1 },
+      });
+    };
+    return { paths, transport };
+  }
+
+  /**
+   * The map asks for a page of a hundred and never asks for a second one.
+   *
+   * These are the two halves of the same promise: not the page under the reader,
+   * and not a page at all. The first is what made the map redraw itself whenever
+   * the list paginated; the second would make it a list too.
+   */
+  it("asks for the whole collection, not for a page", async () => {
+    const { paths, transport } = recorder();
+
+    await fetchBrowseLocations({}, transport);
+
+    expect(paths).toHaveLength(1);
+    expect(paths[0]).toContain(`limit=${BROWSE_MAP_LIMIT}`);
+    expect(paths[0]).toContain("page=1");
+  });
+
+  it("carries the filters, so the map shows what the list shows", async () => {
+    const { paths, transport } = recorder();
+
+    await fetchBrowseLocations(
+      { specialty: "DENTIST", city: "Paris", urgentOnly: true },
+      transport,
+    );
+
+    expect(paths[0]).toContain("specialty=DENTIST");
+    expect(paths[0]).toContain("city=Paris");
+    expect(paths[0]).toContain("urgent=true");
+  });
+
+  it("adapts the rows, so the popup can name the post behind a pin", async () => {
+    const { transport } = recorder(2);
+
+    const listings = await fetchBrowseLocations({}, transport);
+
+    expect(listings).toHaveLength(2);
+    expect(listings[0]).toEqual({
+      id: "l0",
+      title: "Remplacement",
+      dateRange: "Du 1 au 3 oct.",
+      startDate: "2026-10-01T08:00:00.000Z",
+      endDate: "2026-10-03T08:00:00.000Z",
+      specialty: "GENERALIST",
+      urgent: false,
+      practiceName: "Cabinet",
+      city: "Lyon",
+      location: { latitude: 45.764, longitude: 4.8357 },
+      applicationsCount: 0,
+      createdAt: "2026-09-01T08:00:00.000Z",
+    });
+  });
+
+  /**
+   * A 404 is an empty collection; every other failure is left to the caller.
+   *
+   * The container catches and keeps the pins it already has, which is the only
+   * sensible response to a refresh that failed — a blank map is a louder lie than
+   * pins a few seconds old. That decision belongs to whoever has the pins to
+   * keep, not inside a function whose job is to report what the backend said.
+   */
+  it("reads a 404 as no locations, and lets other failures throw", async () => {
+    const gone: ApiTransport = () =>
+      Promise.resolve(new Response("", { status: 404 }));
+    const broken: ApiTransport = () =>
+      Promise.resolve(new Response("", { status: 500 }));
+
+    expect(await fetchBrowseLocations({}, gone)).toEqual([]);
+    expect(fetchBrowseLocations({}, broken)).rejects.toThrow();
   });
 });

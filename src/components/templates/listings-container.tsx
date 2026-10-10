@@ -1,17 +1,20 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { InlineRetryBanner } from "@/components/molecules/inline-retry-banner";
 import type { BrowseSort } from "@/components/molecules/listings-toolbar";
 import { ListingsView } from "@/components/templates/listings-view";
 import { usePaginatedResource } from "@/lib/hooks/use-paginated-resource";
 import {
+  BROWSE_PAGE_SIZE,
   type BrowseFormFilters,
+  type BrowseListing,
   type BrowseListingsData,
   type BrowseView,
   EMPTY_BROWSE_FILTERS,
   fetchBrowseListings,
+  fetchBrowseLocations,
   horizonForStart,
   horizonStart,
   isDefaultBrowseView,
@@ -40,6 +43,21 @@ const ListingsMap = dynamic(
 );
 
 /**
+ * The table row standing for a posting, or `null` when it is not on this page.
+ *
+ * Scoped to the table, and written once so the two callers cannot drift apart.
+ * Both the rows and the map's popup entries carry `data-listing-id` — the same
+ * posting seen two ways, which is the point of the screen — so an unscoped
+ * selector finds the popup's own button and reports a row on screen while the
+ * reader is three pages short of it.
+ */
+function rowFor(id: string): HTMLElement | null {
+  return document.querySelector<HTMLElement>(
+    `tbody tr[data-listing-id="${id}"]`,
+  );
+}
+
+/**
  * Owns the browse screen's state: which filters, which page, and how the rows
  * are ordered.
  *
@@ -54,11 +72,18 @@ const ListingsMap = dynamic(
  * returns to page 1" rule in one place instead of in each handler — which is
  * what it was for, since a filter that keeps page 4 hands the reader an empty
  * screen and a pager offering pages that no longer exist.
+ *
+ * `initialData` and `initialLocations` are two answers to two questions. The
+ * first is what the rows say; the second is where all of them are. They are
+ * fetched separately because they are fetched for separate reasons, and the map
+ * does not move when the page does.
  */
 export function ListingsContainer({
   initialData,
+  initialLocations,
 }: {
   initialData: BrowseListingsData;
+  initialLocations: BrowseListing[];
 }) {
   const [filters, setFilters] =
     useState<BrowseFormFilters>(EMPTY_BROWSE_FILTERS);
@@ -117,25 +142,6 @@ export function ListingsContainer({
    */
   const horizon = horizonForStart(filters.from || undefined);
 
-  /**
-   * Brings a posting picked on the map to the reader in the list.
-   *
-   * The two halves of this screen are one set of rows shown two ways, and the map
-   * used to be a dead end: a popup named a posting and offered no way to go to it.
-   * Selecting the entry scrolls its row into view and lights its marker.
-   *
-   * `block: "center"` rather than `"nearest"` because the list is usually taller
-   * than the viewport: the reader is looking at a map several hundred pixels above
-   * the list, and "nearest" would often scroll the row to an edge that is itself
-   * off screen.
-   */
-  const pickListing = useCallback((id: string) => {
-    setActiveListingId(id);
-    document
-      .querySelector(`[data-listing-id="${id}"]`)
-      ?.scrollIntoView({ behavior: "smooth", block: "center" });
-  }, []);
-
   const specialties = useMemo(
     () =>
       (Object.keys(SPECIALTY_LABELS) as Specialty[]).map((id) => ({
@@ -170,6 +176,106 @@ export function ListingsContainer({
     }
     return listings;
   }, [data.listings, sort]);
+
+  /**
+   * The postings the map draws, held apart from the page on screen.
+   *
+   * Two states with two lives. The list is paged and re-fetches whenever the
+   * reader pages; the map is the whole filtered collection and re-fetches only
+   * when the filters change. Sharing one state was the defect — paging used to
+   * redraw the map, so the same posts vanished from it and came back a page later.
+   *
+   * Seeded from the server's answer so the first paint already carries markers, and
+   * the first effect run is skipped: the server sent exactly this data for exactly
+   * these filters, and asking again would be the very request we avoided.
+   */
+  const [mapListings, setMapListings] = useState(initialLocations);
+  const seededFilters = useRef(filters);
+
+  useEffect(() => {
+    if (seededFilters.current === filters) {
+      return;
+    }
+    seededFilters.current = filters;
+    let cancelled = false;
+
+    fetchBrowseLocations(toBrowseView(filters))
+      .then((listings) => {
+        if (!cancelled) setMapListings(listings);
+      })
+      .catch(() => {
+        // The map keeps the markers it has rather than emptying itself over a
+        // failed refresh: stale pins are a smaller lie than a blank map.
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [filters]);
+
+  /** Set when a posting is picked on the map but is not on the current page. */
+  const [pendingScrollId, setPendingScrollId] = useState<string | null>(null);
+
+  /**
+   * Brings a posting picked on the map to the reader in the list.
+   *
+   * The two halves of this screen are one set of rows seen two ways, and the map
+   * used to be a dead end: a popup named a posting and offered no way to reach it.
+   *
+   * Now that the map covers the whole collection rather than the page, the posting
+   * picked may not be on screen — so this turns to the page that holds it first,
+   * and scrolls once those rows have landed, rather than scrolling to nothing.
+   *
+   * `block: "center"` because the list is taller than the viewport: the reader is
+   * looking at a map some hundreds of pixels above the list, and `"nearest"` would
+   * park the row on an edge that is itself off screen.
+   */
+  const pickListing = useCallback(
+    (id: string) => {
+      setActiveListingId(id);
+
+      const onScreen = rowFor(id);
+      if (onScreen) {
+        onScreen.scrollIntoView({ behavior: "smooth", block: "center" });
+        return;
+      }
+
+      // Which page of the server's ordering holds it. The map's rows come from the
+      // same query the list pages through, so the index decides the page — and
+      // when the reader has reordered the list, its position is wherever they put
+      // it, which no page number can answer.
+      const position = mapListings.findIndex((listing) => listing.id === id);
+      setPendingScrollId(id);
+      if (position >= 0 && sort === "recent") {
+        setPage(Math.floor(position / BROWSE_PAGE_SIZE) + 1);
+      }
+    },
+    [mapListings, sort],
+  );
+
+  /**
+   * Which rows are on screen, as the trigger for a pending scroll.
+   *
+   * Keyed on the ids rather than on `data`, which is what the effect actually
+   * depends on: the row it is looking for is in the DOM or it is not, and the ids
+   * are what say so. Watching the whole payload instead would re-run this on every
+   * count that happens to be fetched alongside the rows.
+   */
+  const onScreenIds = useMemo(
+    () => new Set(data.listings.map((listing) => listing.id)),
+    [data.listings],
+  );
+
+  useEffect(() => {
+    if (!pendingScrollId) return;
+    // Not on this page yet — the turn of the page is still in flight, and the
+    // effect runs again for the rows that land.
+    if (!onScreenIds.has(pendingScrollId)) return;
+    const row = rowFor(pendingScrollId);
+    if (!row) return;
+    row.scrollIntoView({ behavior: "smooth", block: "center" });
+    setPendingScrollId(null);
+  }, [onScreenIds, pendingScrollId]);
 
   return (
     <>
@@ -206,7 +312,7 @@ export function ListingsContainer({
         }}
         map={
           <ListingsMap
-            listings={sorted}
+            listings={mapListings}
             activeListingId={activeListingId}
             onActiveListingChange={setActiveListingId}
             onListingPick={pickListing}

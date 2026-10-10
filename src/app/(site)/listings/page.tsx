@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { ListSkeleton } from "@/components/molecules/list-skeleton";
 import { ListingsContainer } from "@/components/templates/listings-container";
 import { serverTransport } from "@/lib/api-transport.server";
-import { fetchBrowseListings } from "@/lib/listings";
+import { fetchBrowseListings, fetchBrowseLocations } from "@/lib/listings";
 
 export const metadata: Metadata = {
   title: "Annonces — Kineo",
@@ -23,6 +23,13 @@ export const metadata: Metadata = {
  * The default view is the one the server sends, so the route paints with content
  * rather than with the skeleton the `Suspense` boundary would otherwise hold for
  * the whole round trip.
+ *
+ * Two requests, not one, and the second is not redundancy. The page is the ten
+ * rows under the reader's eyes; the map is the collection they are part of. The
+ * server resolved both because seeding the map from the page — the obvious way to
+ * save a call — paints ten pins where there should be thirty-two, and correcting
+ * it only after the first filter change would mean the map lied on arrival and
+ * told the truth afterwards.
  */
 export default function ListingsPage() {
   return (
@@ -33,6 +40,9 @@ export default function ListingsPage() {
 }
 
 async function Listings() {
-  const data = await fetchBrowseListings({}, serverTransport);
-  return <ListingsContainer initialData={data} />;
+  const [data, locations] = await Promise.all([
+    fetchBrowseListings({}, serverTransport),
+    fetchBrowseLocations({}, serverTransport),
+  ]);
+  return <ListingsContainer initialData={data} initialLocations={locations} />;
 }

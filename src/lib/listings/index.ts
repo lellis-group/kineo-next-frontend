@@ -88,7 +88,9 @@ export {
   toBrowseView,
 } from "./browse-contracts";
 export {
+  BROWSE_MAP_LIMIT,
   BROWSE_PAGE_SIZE,
   fetchBrowseListings,
+  fetchBrowseLocations,
   fetchFacets,
 } from "./browse-service";
