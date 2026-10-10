@@ -29,10 +29,10 @@ const FALLBACK_CENTER: [number, number] = [46.603354, 2.373722];
  * and "the pins are stale" the same function to read, and the reason it grew to
  * the point where a change to either meant re-reading both.
  *
- * Knows nothing about markers or popups. It binds no key handler either: the
- * popup is not its state, and a hook that reached into another hook's to dismiss
- * it would make the two order-dependent — neither could be read, or tested,
- * without knowing the other exists.
+ * Knows nothing about markers, popups or the viewport: it owns the canvas and the
+ * context, and the layers above subscribe to the map themselves. Passing a
+ * viewport callback in here instead would make the two order-dependent — neither
+ * readable, nor testable, without knowing the other exists.
  */
 export function useMapInstance() {
   const containerRef = useRef<HTMLDivElement | null>(null);

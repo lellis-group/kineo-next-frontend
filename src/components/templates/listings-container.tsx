@@ -117,6 +117,25 @@ export function ListingsContainer({
    */
   const horizon = horizonForStart(filters.from || undefined);
 
+  /**
+   * Brings a posting picked on the map to the reader in the list.
+   *
+   * The two halves of this screen are one set of rows shown two ways, and the map
+   * used to be a dead end: a popup named a posting and offered no way to go to it.
+   * Selecting the entry scrolls its row into view and lights its marker.
+   *
+   * `block: "center"` rather than `"nearest"` because the list is usually taller
+   * than the viewport: the reader is looking at a map several hundred pixels above
+   * the list, and "nearest" would often scroll the row to an edge that is itself
+   * off screen.
+   */
+  const pickListing = useCallback((id: string) => {
+    setActiveListingId(id);
+    document
+      .querySelector(`[data-listing-id="${id}"]`)
+      ?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, []);
+
   const specialties = useMemo(
     () =>
       (Object.keys(SPECIALTY_LABELS) as Specialty[]).map((id) => ({
@@ -190,6 +209,7 @@ export function ListingsContainer({
             listings={sorted}
             activeListingId={activeListingId}
             onActiveListingChange={setActiveListingId}
+            onListingPick={pickListing}
           />
         }
       />

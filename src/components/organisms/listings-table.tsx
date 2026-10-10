@@ -54,6 +54,7 @@ export function ListingsTable({
             return (
               <tr
                 key={listing.id}
+                data-listing-id={listing.id}
                 className={cn(active && "bg-surface-2")}
                 onMouseEnter={() => onActiveListingChange?.(listing.id)}
                 onMouseLeave={() => onActiveListingChange?.(null)}

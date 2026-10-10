@@ -2,7 +2,7 @@
 
 import type { Map as MapLibreMap, Marker } from "maplibre-gl";
 import * as maplibregl from "maplibre-gl";
-import { type RefObject, useEffect, useRef } from "react";
+import { type RefObject, useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/cn";
 import type { MapPlace } from "@/lib/listings";
 
@@ -38,6 +38,7 @@ export function useMapMarkers({
   ready,
   activeListingId,
   onActiveListingChange,
+  onListingPick,
 }: {
   mapRef: RefObject<MapLibreMap | null>;
   places: MapPlace[];
@@ -45,6 +46,14 @@ export function useMapMarkers({
   ready: boolean;
   activeListingId?: string | null;
   onActiveListingChange?: (id: string | null) => void;
+  /**
+   * A posting chosen in a popup: the reader wants its row, not its marker.
+   *
+   * Kept apart from the hover callback because they must not be the same thing.
+   * One drives a highlight the other drives a scroll, and merging them would make
+   * the mouse moving across the table scroll the page under the reader.
+   */
+  onListingPick?: (id: string) => void;
 }) {
   const markersRef = useRef<Map<string, Marker>>(new Map());
   const popupRef = useRef<maplibregl.Popup | null>(null);
@@ -58,95 +67,74 @@ export function useMapMarkers({
   const onSelectRef = useRef(onActiveListingChange);
   onSelectRef.current = onActiveListingChange;
 
+  const onPickRef = useRef(onListingPick);
+  onPickRef.current = onListingPick;
+
   const activeIdRef = useRef(activeListingId);
   activeIdRef.current = activeListingId;
 
   /** The places the camera was last framed on, so a refit is not repeated. */
   const lastFramedRef = useRef<MapPlace[] | null>(null);
 
+  /** The cluster set on the map, so an unchanged one is not rebuilt. */
+  const lastSignatureRef = useRef<string | null>(null);
+
+  /**
+   * The viewport as last seen, and the trigger for re-clustering.
+   *
+   * Which markers touch depends on the zoom *and* on where the map is scrolled —
+   * panning two pins together merges them just as surely as zooming in does — so
+   * the state carries the centre as well as the level. Null until the map has
+   * settled once, which is also the signal that clustering can run at all.
+   *
+   * `zoomend`/`moveend` rather than `zoom` and `move`: the grouping only matters
+   * once the reader lets go, and re-projecting on every frame of a pinch is work
+   * spent on an answer nobody looks at until the gesture ends.
+   */
+  const [viewport, setViewport] = useState<Viewport | null>(null);
+
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !ready) {
       return;
     }
+    const onSettled = () => setViewport(viewportOf(map));
+    map.on("zoomend", onSettled);
+    map.on("moveend", onSettled);
+    onSettled();
+    return () => {
+      map.off("zoomend", onSettled);
+      map.off("moveend", onSettled);
+    };
+  }, [mapRef, ready]);
 
-    const active = markersRef.current;
-    const nextKeys = new Set(places.map((place) => place.key));
+  const clusters = useMemo(
+    () =>
+      viewport && mapRef.current ? clusterPlaces(mapRef.current, places) : [],
+    [viewport, places, mapRef],
+  );
 
-    for (const [key, marker] of active) {
-      if (!nextKeys.has(key)) {
-        marker.remove();
-        active.delete(key);
-      }
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready || clusters.length === 0) {
+      return;
     }
 
-    for (const place of places) {
-      // Rebuilt wholesale rather than repositioned: the button carries the count
-      // and the practice name, so a place that changed has to swap its node.
-      active.get(place.key)?.remove();
-
-      const node = document.createElement("button");
-      node.type = "button";
-      const isCluster = place.listings.length > 1;
-      // One `className` assignment rather than `classList.add` afterwards:
-      // `classList.add` takes a single token and throws on a space, so a
-      // two-class string built anywhere takes the whole map down.
-      node.className = cn(MARKER_CLASS, isCluster && MARKER_CLUSTER_CLASS);
-      node.dataset.ids = place.listings.map((l) => l.id).join(",");
-
-      if (isCluster) {
-        node.textContent = String(place.listings.length);
-        node.setAttribute(
-          "aria-label",
-          `${place.listings.length} annonces à ${place.listings[0].practiceName}`,
-        );
-      } else {
-        node.setAttribute(
-          "aria-label",
-          `${place.listings[0].title}, ${place.listings[0].practiceName}`,
-        );
-      }
-
-      node.addEventListener("click", (event) => {
-        // MapLibre closes any open popup when the map is clicked, and a marker
-        // sits *inside* the map: left alone this click opened the popup and then
-        // bubbled up and closed it again on the same event.
-        event.stopPropagation();
-
-        popupRef.current?.remove();
-        popupRef.current = new maplibregl.Popup({
-          offset: 16,
-          // The very click that opened it used to close it again: the marker
-          // sits inside the map, so the click bubbled up and MapLibre dismissed
-          // the popup on the same event. `stopPropagation` above is what makes
-          // this safe — without it, `true` would mean a popup that never stays
-          // open.
-          closeOnClick: true,
-          closeButton: true,
-        })
-          .setLngLat([place.longitude, place.latitude])
-          .setDOMContent(popupContent(place))
-          .addTo(map);
-
-        // A place highlights every row it covers; a lone posting selects itself,
-        // because with one posting there is nothing else to point at.
-        if (place.listings.length === 1) {
-          onSelectRef.current?.(place.listings[0].id);
-        }
-      });
-
-      active.set(
-        place.key,
-        new maplibregl.Marker({ element: node, anchor: "center" })
-          .setLngLat([place.longitude, place.latitude])
-          .addTo(map),
+    // A pan settles often without changing which markers touch, and rebuilding
+    // them is what costs: positions are MapLibre's job and it repositions existing
+    // markers on every frame. The signature is what says the *set* changed.
+    const signature = clusters
+      .map((place) => `${place.key}:${place.listings.length}`)
+      .join("|");
+    if (signature !== lastSignatureRef.current) {
+      lastSignatureRef.current = signature;
+      rebuildMarkers(map, clusters, markersRef.current, popupRef, (id) =>
+        onPickRef.current?.(id),
       );
     }
 
-    // Re-framing is gated on the places having actually changed. Without the
-    // guard the camera flies back to fit them every time this runs, and since the
-    // reader re-renders this panel on every hover, the map could not be panned
-    // for as long as it takes to pan it.
+    // Gated on the places themselves, not on the viewport: re-framing the camera
+    // every time the reader scrolls would make the map impossible to look at.
     if (places !== lastFramedRef.current) {
       lastFramedRef.current = places;
       fitToPlaces(map, places);
@@ -154,8 +142,8 @@ export function useMapMarkers({
 
     // Applied here too, so markers created after a selection was already made
     // come up highlighted rather than waiting for the next hover.
-    paintActive(active, activeIdRef.current);
-  }, [mapRef, places, ready]);
+    paintActive(markersRef.current, activeIdRef.current);
+  }, [mapRef, clusters, places, ready]);
 
   // The table's hover state has to reach the marker, not just the other way.
   useEffect(() => {
@@ -190,6 +178,190 @@ export function useMapMarkers({
     },
     [],
   );
+}
+
+/**
+ * Swaps the markers on the map for a new set of clusters.
+ *
+ * Module-level, taking its refs as arguments, so the effect that calls it has a
+ * stable dependency. Declared inside the hook it was a function identity that
+ * changed on every render — the kind of thing a dependency array cannot state
+ * honestly, and which sent the linter looking for a missing entry.
+ */
+function rebuildMarkers(
+  map: MapLibreMap,
+  clusters: readonly MapPlace[],
+  markers: Map<string, Marker>,
+  popupRef: RefObject<maplibregl.Popup | null>,
+  onSelect: (id: string) => void,
+) {
+  const active = markers;
+  const nextKeys = new Set(clusters.map((place) => place.key));
+
+  for (const [key, marker] of active) {
+    if (!nextKeys.has(key)) {
+      marker.remove();
+      active.delete(key);
+    }
+  }
+
+  for (const place of clusters) {
+    // Rebuilt wholesale rather than repositioned: the button carries the count
+    // and the practice name, so a place that changed has to swap its node.
+    active.get(place.key)?.remove();
+
+    const node = document.createElement("button");
+    node.type = "button";
+    const isCluster = place.listings.length > 1;
+    // One `className` assignment rather than `classList.add` afterwards:
+    // `classList.add` takes a single token and throws on a space, so a
+    // two-class string built anywhere takes the whole map down.
+    node.className = cn(MARKER_CLASS, isCluster && MARKER_CLUSTER_CLASS);
+    node.dataset.ids = place.listings.map((l) => l.id).join(",");
+
+    if (isCluster) {
+      node.textContent = String(place.listings.length);
+      node.setAttribute(
+        "aria-label",
+        `${place.listings.length} annonces à ${place.listings[0].practiceName}`,
+      );
+    } else {
+      node.setAttribute(
+        "aria-label",
+        `${place.listings[0].title}, ${place.listings[0].practiceName}`,
+      );
+    }
+
+    node.addEventListener("click", (event) => {
+      // MapLibre closes any open popup when the map is clicked, and a marker
+      // sits *inside* the map: left alone this click opened the popup and then
+      // bubbled up and closed it again on the same event.
+      event.stopPropagation();
+
+      popupRef.current?.remove();
+      popupRef.current = new maplibregl.Popup({
+        offset: 16,
+        // The very click that opened it used to close it again: the marker
+        // sits inside the map, so the click bubbled up and MapLibre dismissed
+        // the popup on the same event. `stopPropagation` above is what makes
+        // this safe — without it, `true` would mean a popup that never stays
+        // open.
+        closeOnClick: true,
+        closeButton: true,
+      })
+        .setLngLat([place.longitude, place.latitude])
+        .setDOMContent(popupContent(place, onSelect))
+        .addTo(map);
+
+      // A lone posting has no list to choose from, so it selects itself and
+      // scrolls to its row. A group waits: the reader picks the entry.
+      if (place.listings.length === 1) {
+        onSelect(place.listings[0].id);
+      }
+    });
+
+    active.set(
+      place.key,
+      new maplibregl.Marker({ element: node, anchor: "center" })
+        .setLngLat([place.longitude, place.latitude])
+        .addTo(map),
+    );
+  }
+}
+
+/** Where the reader is looking, as the clustering depends on it. */
+interface Viewport {
+  zoom: number;
+  center: [number, number];
+}
+
+/**
+ * The viewport, read at the moment a gesture settles.
+ *
+ * Carries the centre as well as the level because panning two pins together
+ * merges them exactly as surely as zooming in does, and a state holding only the
+ * zoom would leave a pan silently unreclustered.
+ */
+function viewportOf(map: MapLibreMap): Viewport {
+  const centre = map.getCenter();
+  return { zoom: map.getZoom(), center: [centre.lng, centre.lat] };
+}
+
+/**
+ * Merges the places that sit on top of each other *on screen*, right now.
+ *
+ * `groupByLocation` already merged postings sharing an address, but that is a
+ * fact about coordinates and says nothing about the current zoom: two cabinets
+ * 2.5km apart are one marker's distance apart at country scale and two markers
+ * apart once the reader is over the city. Measured at the zoom this map opens on,
+ * a pair was stacked on the same pixel — the upper one took every click and the
+ * lower one could not be opened at all.
+ *
+ * The test is therefore a distance in *pixels*, recomputed whenever the viewport
+ * settles. Zoom out and the pair merges again behind a count; zoom in over
+ * Bordeaux and they separate. No dependency: a greedy pass over a handful of
+ * places, whose only input is the reader's current zoom.
+ */
+function clusterPlaces(
+  map: MapLibreMap,
+  places: readonly MapPlace[],
+): MapPlace[] {
+  if (places.length < 2) {
+    return [...places];
+  }
+
+  const points = places.map((place) => ({
+    place,
+    point: map.project([place.longitude, place.latitude]),
+  }));
+
+  const merged = new Array(points.length).fill(false);
+  const clusters: MapPlace[] = [];
+
+  for (let i = 0; i < points.length; i++) {
+    if (merged[i]) continue;
+
+    const members = [points[i].place];
+    merged[i] = true;
+
+    for (let j = i + 1; j < points.length; j++) {
+      if (merged[j]) continue;
+      if (points[i].point.dist(points[j].point) < CLUSTER_RADIUS_PX) {
+        members.push(points[j].place);
+        merged[j] = true;
+      }
+    }
+
+    clusters.push(members.length === 1 ? members[0] : mergePlaces(members));
+  }
+
+  return clusters;
+}
+
+/**
+ * How close two markers have to be, in pixels, to count as one.
+ *
+ * A marker is around 28px across, so 44 leaves them touching but still told
+ * apart: close enough that a reader would call them one blob, far enough that
+ * neither looks as though it swallowed the other.
+ */
+const CLUSTER_RADIUS_PX = 44;
+
+/** One marker standing for several places: at their centre, holding all of them. */
+function mergePlaces(members: MapPlace[]): MapPlace {
+  const total = members.length;
+
+  return {
+    // Sorted, so the key does not depend on the order the places happened to
+    // arrive in: an unstable key rebuilds every marker for nothing.
+    key: members
+      .map((place) => place.key)
+      .sort()
+      .join("+"),
+    latitude: members.reduce((sum, place) => sum + place.latitude, 0) / total,
+    longitude: members.reduce((sum, place) => sum + place.longitude, 0) / total,
+    listings: members.flatMap((place) => place.listings),
+  };
 }
 
 /**
@@ -257,8 +429,16 @@ function paintActive(
  * its title is the heading, and the list underneath used to repeat it — the same
  * sentence twice in a 300px box. A lone posting therefore gets heading, place and
  * period; several get a count, the place, and one entry each.
+ *
+ * `onPick` is what makes the popup a way *out* of the map rather than a dead end:
+ * an entry selects its row and scrolls the list to it. Every listing named here is
+ * on the current page — the markers are built from the rows on screen — so the row
+ * it scrolls to is always there to be found.
  */
-function popupContent(place: MapPlace): HTMLElement {
+function popupContent(
+  place: MapPlace,
+  onPick: (id: string) => void,
+): HTMLElement {
   const root = document.createElement("div");
   root.className = "flex flex-col gap-1 text-left";
 
@@ -292,8 +472,16 @@ function popupContent(place: MapPlace): HTMLElement {
   list.className = "mt-1.5 flex flex-col gap-1.5 border-t border-border pt-1.5";
 
   for (const listing of shown) {
-    const row = document.createElement("li");
-    row.className = "flex flex-col";
+    const item = document.createElement("li");
+
+    // A button, not a span: the list and the map are two views of the same rows,
+    // and this is the only way back from one to the other. Without it a popup is
+    // a dead end — the reader reads what is at a place and has no way to go there.
+    const row = document.createElement("button");
+    row.type = "button";
+    row.className =
+      "flex w-full cursor-pointer flex-col rounded-lg px-1.5 py-1 text-left transition-colors hover:bg-surface-hover focus-visible:bg-surface-hover";
+    row.addEventListener("click", () => onPick(listing.id));
 
     const title = document.createElement("span");
     title.className = "text-xs leading-snug text-foreground";
@@ -305,7 +493,8 @@ function popupContent(place: MapPlace): HTMLElement {
     meta.textContent = listing.dateRange;
     row.append(meta);
 
-    list.append(row);
+    item.append(row);
+    list.append(item);
   }
 
   root.append(list);

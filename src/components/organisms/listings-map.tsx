@@ -12,6 +12,15 @@ interface ListingsMapProps {
   /** Id of the row the reader is pointing at, mirrored onto its markers. */
   activeListingId?: string | null;
   onActiveListingChange?: (id: string | null) => void;
+  /**
+   * A posting chosen in a popup — the reader wants its row, not its marker.
+   *
+   * Distinct from `onActiveListingChange` because the two must not share a
+   * handler: pointing at a row highlights a marker, but choosing a posting scrolls
+   * the list. Sharing one callback would make the mouse dragging across the table
+   * scroll the page under the reader.
+   */
+  onListingPick?: (id: string) => void;
   className?: string;
 }
 
@@ -40,6 +49,7 @@ export function ListingsMap({
   listings,
   activeListingId,
   onActiveListingChange,
+  onListingPick,
   className,
 }: ListingsMapProps) {
   const places = useMemo(() => groupByLocation(listings), [listings]);
@@ -52,6 +62,7 @@ export function ListingsMap({
     ready,
     activeListingId,
     onActiveListingChange,
+    onListingPick,
   });
 
   /** Postings the list shows and the map cannot — a practice never geocoded. */

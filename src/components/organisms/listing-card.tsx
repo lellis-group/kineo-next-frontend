@@ -24,7 +24,7 @@ export function ListingCard({ listing }: { listing: BrowseListing }) {
   const badge = listingBadge(listing);
 
   return (
-    <Card className="p-4">
+    <Card className="p-4" data-listing-id={listing.id}>
       <div className="flex items-start gap-3">
         <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
           <StethoscopeIcon className="size-4" />
