@@ -44,8 +44,34 @@ export function formatRelativeTime(dateStr: string): string {
   return `il y a ${Math.floor(diffDays / 7)} semaines`;
 }
 
+/**
+ * Widens a calendar date — what an `<input type="date">` gives — to the ISO
+ * instant an API validates.
+ *
+ * The input produces `YYYY-MM-DD`: no time, no zone. Reading that as midnight
+ * UTC is only right for the lower bound. For the upper bound it silently drops
+ * every posting published on the day the reader picked, so `endOfDay` lands on
+ * the last millisecond instead.
+ *
+ * Lives here rather than in a domain service because it is a date concern with
+ * no domain knowledge, and the browse contracts need it — which a contract
+ * importing a service to get it would be a dependency pointing the wrong way.
+ */
+export function toIsoDayBound(
+  date: string,
+  endOfDay = false,
+): string | undefined {
+  if (!date) {
+    return undefined;
+  }
+  const parsed = new Date(
+    `${date}${endOfDay ? "T23:59:59.999Z" : "T00:00:00.000Z"}`,
+  );
+  return Number.isNaN(parsed.getTime()) ? undefined : parsed.toISOString();
+}
+
 /** Absolute date in French — e.g. « 10 janv. 2026 ». */
-function formatDate(dateStr: string): string {
+export function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString("fr-FR", {
     day: "numeric",
     month: "short",

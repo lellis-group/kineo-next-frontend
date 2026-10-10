@@ -150,6 +150,68 @@ export function MapPinIcon(props: SVGProps<SVGSVGElement>) {
   );
 }
 
+/** Warning triangle — the urgent filter's mark. */
+export function AlertTriangleIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Svg {...props}>
+      <path d="M12 3 2.5 20h19L12 3Z" />
+      <path d="M12 10v4M12 17h.01" />
+    </Svg>
+  );
+}
+
+/** Magnifier. The toolbar's leading affordance and the search field's icon. */
+export function SearchIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Svg {...props}>
+      <circle cx="11" cy="11" r="7" />
+      <path d="m20 20-3.5-3.5" />
+    </Svg>
+  );
+}
+
+/** Sliders — "narrow these results". Pairs with `FilterChips`. */
+export function SlidersIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Svg {...props}>
+      <path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0" />
+      <circle cx="16" cy="6" r="2" />
+      <circle cx="10" cy="12" r="2" />
+      <circle cx="18" cy="18" r="2" />
+    </Svg>
+  );
+}
+
+/** Expand to fill the viewport — the map's fullscreen toggle. */
+export function ExpandIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Svg {...props}>
+      <path d="M9 3H3v6M15 3h6v6M15 21h6v-6M9 21H3v-6" />
+    </Svg>
+  );
+}
+
+/** Solid dot — a listing's marker. The only filled icon in the set. */
+export function DotIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Svg {...props}>
+      <circle cx="12" cy="12" r="5" fill="currentColor" stroke="none" />
+    </Svg>
+  );
+}
+
+/** Stethoscope-ish mark standing for a medical posting. */
+export function StethoscopeIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Svg {...props}>
+      <path d="M6 3v6a4 4 0 0 0 8 0V3" />
+      <path d="M6 3H4M14 3h-2" />
+      <path d="M10 13v2a5 5 0 0 0 10 0v-2" />
+      <circle cx="20" cy="11" r="2" />
+    </Svg>
+  );
+}
+
 export function PercentIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <Svg {...props}>

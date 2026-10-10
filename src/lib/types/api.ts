@@ -73,9 +73,27 @@ export const REPLACEMENT_LISTING_STATUSES = [
 export type ReplacementListingStatus =
   (typeof REPLACEMENT_LISTING_STATUSES)[number];
 
+/**
+ * The practice a listing is attached to, as the listings feed returns it.
+ *
+ * Reduced server-side to name, city and coordinates — enough to place the
+ * posting on a map and to say where it is, and nothing more. Both coordinates
+ * are nullable: they were nullable before the feed could reach them, so any
+ * listing published before the practice was geocoded sits at null and still has
+ * to render.
+ */
+export interface ApiListingPractice {
+  id: string;
+  name: string;
+  city: string;
+  latitude: number | null;
+  longitude: number | null;
+}
+
 export interface ApiReplacementListing {
   id: string;
   practiceId: string;
+  practice: ApiListingPractice;
   title: string;
   description?: string;
   startDate: string;
@@ -89,6 +107,24 @@ export interface ApiReplacementListing {
   applicationsCount: number;
   createdAt: string;
   updatedAt: string;
+}
+
+/**
+ * Per-specialty totals for the whole collection, as `GET
+ * /replacement-listings/facets` returns them.
+ *
+ * Every specialty is present, including the ones holding nothing: the summary
+ * panels draw one row per specialty in a fixed order, so a missing key would
+ * drop a row rather than empty it.
+ */
+export type ApiListingSpecialtyCounts = Record<Specialty, number>;
+
+export interface ApiListingFacets {
+  /** Open listings matching the filters, ignoring `specialty` itself. */
+  total: number;
+  /** Of those, the ones flagged urgent. */
+  urgent: number;
+  bySpecialty: ApiListingSpecialtyCounts;
 }
 
 /** Const array, not a bare union — see `REPLACEMENT_LISTING_STATUSES`. */

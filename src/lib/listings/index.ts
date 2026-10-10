@@ -47,3 +47,48 @@ export {
   listingReadErrorMessage,
   MY_LISTINGS_PAGE_SIZE,
 } from "./service";
+
+/*
+ * Browse feed — the replacement doctor's side (`/listings`).
+ *
+ * Kept in its own block below the practice side rather than mixed into it: the
+ * two screens share a backend and a status vocabulary, and interleaving their
+ * contracts is how a reader ends up passing a `MyListing` where a
+ * `BrowseListing` belongs.
+ */
+
+export {
+  adaptBrowseListing,
+  adaptBrowseListings,
+  adaptFacets,
+  emptyFacets,
+  groupByLocation,
+} from "./browse-adapters";
+export type {
+  BrowseFacets,
+  BrowseFilters,
+  BrowseFormFilters,
+  BrowseHorizon,
+  BrowseHorizonOption,
+  BrowseListing,
+  BrowseListingsData,
+  BrowseView,
+  ListingLocation,
+  MapPlace,
+  SpecialtyFacet,
+} from "./browse-contracts";
+export {
+  BROWSE_HORIZONS,
+  DEFAULT_BROWSE_VIEW,
+  EMPTY_BROWSE_FILTERS,
+  horizonForStart,
+  horizonStart,
+  isDefaultBrowseView,
+  listingBadge,
+  toBrowseView,
+} from "./browse-contracts";
+export {
+  BROWSE_PAGE_SIZE,
+  fetchBrowseListings,
+  fetchFacets,
+} from "./browse-service";

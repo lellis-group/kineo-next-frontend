@@ -19,8 +19,14 @@ export const config = {
     "/profile/:path*",
     "/applications",
     "/applications/:path*",
-    "/listings",
-    "/listings/:path*",
+    // `/listings` is deliberately absent, while `/listings/mine` stays guarded.
+    // The browse feed is the page a locum lands on to find a replacement, and
+    // `GET /replacement-listings` is anonymous on the backend: redirecting a
+    // signed-out reader away from it would hide the openings from the people who
+    // most need to see that there are any. The practice side of the same URL
+    // prefix is still a member screen and keeps the guard.
+    "/listings/mine",
+    "/listings/mine/:path*",
     "/practices",
     "/practices/:path*",
   ],

@@ -1,4 +1,11 @@
 @import "tailwindcss";
+/*
+ * Feuille de MapLibre GL, importée ici pour que le composant de la carte n'ait
+ * aucun import CSS : dans l'App Router un import global est réservé à la racine,
+ * et le contourner depuis un composant client est exactement le genre de raccourci
+ * qui casse au premier `ssr: false`.
+ */
+@import "maplibre-gl/dist/maplibre-gl.css";
 
 :root {
   color-scheme: dark;
@@ -463,6 +470,134 @@
   .reveal-init.reveal-visible {
     opacity: 1;
     transform: translateY(0);
+  }
+
+  /*
+   * MapLibre : le chrome des contrôles sur la palette du produit.
+   *
+   * MapLibre livre un thème clair — boîtes blanches, croix blanche — qu'il faut
+   * ramener sur une surface sombre, et il écrit ces règles sur ses propres
+   * éléments au moment où il les crée. Les mettre ici plutôt que dans une balise
+   * injectée par le composant, c'est deux choses de moins : plus de style qui
+   * n'existe qu'après le premier effet (donc un éclair de chrome blanc au
+   * chargement), et plus de garde `getElementById` pour ne pas l'injecter deux
+   * fois.
+   *
+   * Ces règles utilisent les variables de `:root`, ce qui n'est possible que
+   * parce qu'elles sont évaluées avec le reste de la feuille.
+   */
+  /*
+   * Les marqueurs de la carte.
+   *
+   * MapLibre centre un marqueur avec un `translate(-50%, -50%)` exprimé en
+   * pourcentage de sa propre boîte. Grossir le marqueur au survol — avec
+   * `scale`, qui change cette boîte — décale donc ce pourcentage : le bouton
+   * sautait de près de 50 px sous le curseur, alors que le lecteur n'avait rien
+   * fait d'autre que le regarder. `transform-origin` n'y change rien, il est posé
+   * une fois par MapLibre d'après la taille au repos.
+   *
+   * D'où la règle d'or ci-dessous : sur un marqueur, aucun changement de taille.
+   * L'emphase passe par une ombre portée et un contour, qui sont dessinés hors de
+   * la boîte et ne la mesurent pas.
+   */
+  .maplibregl-marker {
+    box-shadow: 0 2px 8px rgb(0 0 0 / 45%);
+    transition:
+      box-shadow 150ms ease,
+      outline-color 150ms ease;
+  }
+
+  .maplibregl-marker:hover,
+  .maplibregl-marker:focus-visible {
+    box-shadow:
+      0 0 0 3px color-mix(in srgb, var(--primary) 45%, transparent),
+      0 2px 8px rgb(0 0 0 / 45%);
+  }
+
+  /* Le focus clavier doit rester visible même quand le pointeur ne bouge pas. */
+  .maplibregl-marker:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+  }
+
+  /*
+   * La ligne survolée du tableau, et son marqueur.
+   *
+   * L'état était posé par le hook et n'avait aucun style : survoler une ligne
+   * surlignait un marqueur qu'on ne distinguait d'aucun autre. Le contour plein,
+   * sans la transparence du survol, dit « c'est bien celui-là ».
+   */
+  .maplibregl-marker.is-active {
+    box-shadow:
+      0 0 0 3px var(--primary),
+      0 2px 8px rgb(0 0 0 / 45%);
+  }
+
+  .maplibregl-ctrl-group {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    box-shadow: none;
+  }
+
+  .maplibregl-ctrl-group button + button {
+    border-top: 1px solid var(--border);
+  }
+
+  .maplibregl-ctrl-group button .maplibregl-ctrl-icon {
+    filter: invert(1);
+    opacity: 0.7;
+  }
+
+  .maplibregl-ctrl-group button:hover {
+    background: var(--surface-hover);
+  }
+
+  .maplibregl-ctrl-group button:hover .maplibregl-ctrl-icon {
+    opacity: 1;
+  }
+
+  .maplibregl-ctrl-attrib {
+    background: var(--surface);
+    color: var(--muted);
+    border-radius: 0.375rem 0 0 0;
+    font-size: 0.6875rem;
+  }
+
+  .maplibregl-ctrl-attrib a {
+    color: var(--muted);
+  }
+
+  .maplibregl-popup-close-button {
+    color: var(--muted);
+    font-size: 1.125rem;
+    padding: 0 0.5rem;
+    right: 0.125rem;
+    top: 0.125rem;
+  }
+
+  .maplibregl-popup-close-button:hover {
+    background: transparent;
+    color: var(--foreground);
+  }
+
+  /*
+   * La pointe du popup est une bordure orientée : sa couleur doit suivre celle
+   * du panneau, sinon un triangle clair se détache sur le fond de la carte.
+   */
+  .maplibregl-popup-anchor-bottom .maplibregl-popup-tip {
+    border-top-color: var(--surface);
+  }
+
+  .maplibregl-popup-anchor-top .maplibregl-popup-tip {
+    border-bottom-color: var(--surface);
+  }
+
+  .maplibregl-popup-anchor-left .maplibregl-popup-tip {
+    border-right-color: var(--surface);
+  }
+
+  .maplibregl-popup-anchor-right .maplibregl-popup-tip {
+    border-left-color: var(--surface);
   }
 }
 

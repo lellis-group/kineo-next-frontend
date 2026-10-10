@@ -2,8 +2,8 @@
 
 import Form from "next/form";
 import { useState } from "react";
-import { Select } from "@/components/atoms/select";
 import { InlineAlert } from "@/components/molecules/inline-alert";
+import { Select } from "@/components/molecules/select";
 import { SubmitButton } from "@/components/molecules/submit-button";
 import {
   CITY_MAX_LENGTH,
