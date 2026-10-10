@@ -42,6 +42,7 @@ the locum assignment — on both sides of the table.
 | Language | TypeScript 5          |
 | Runtime  | React 19              |
 | Styling  | Tailwind CSS 4        |
+| Map      | MapLibre GL (OSM raster) |
 | Auth     | Better-Auth (session) |
 | Tooling  | bun · Biome           |
 
@@ -61,6 +62,7 @@ bun run build      # production build (type-check + compile)
 bun run start      # serve the production build
 bun run lint       # lint & format check (Biome)
 bun run format     # auto-format code (Biome)
+bun run test       # unit tests for src/lib (bun test)
 ```
 
 ### Scripts
@@ -72,6 +74,7 @@ bun run format     # auto-format code (Biome)
 | `bun run start`   | Serve the production build              |
 | `bun run lint`    | Lint & format check (Biome)             |
 | `bun run format`  | Auto-format code (Biome)                |
+| `bun run test`    | Unit tests for `src/lib` (bun test)     |
 
 ---
 
@@ -85,16 +88,23 @@ bun run format     # auto-format code (Biome)
 | `/verify-email`       | Email verification                        |
 | `/profile` (`/create`, `/edit`) | Member profile management          |
 | `/applications` (+ `/{id}`) | Application tracking (locum side)    |
+| `/listings`          | Browse open postings — filters + map (public) |
 | `/listings/mine`     | Published listings + received candidates |
 | `/goodbye`           | Account-erasure confirmation (from the email link) |
 | `/terms` · `/privacy` | Legal documents                       |
 
 Protected routes are guarded by an optimistic session-cookie check in `src/proxy.ts`
 that redirects guests to `/signin`. The guard covers `/profile`, `/applications`,
-`/listings` and `/practices`; the first three exist, `/practices` does not yet. Every
-guarded page also resolves the session for real on the server and redirects an
+`/listings/mine` and `/practices`; the first three exist, `/practices` does not yet.
+Every guarded page also resolves the session for real on the server and redirects an
 `anonymous` state itself, so the cookie check is a fast path rather than the only
 barrier.
+
+`/listings` — the browse feed — is deliberately outside that guard, and is the one
+listing route that is public. It is the page a replacement doctor lands on to find
+work, and `GET /replacement-listings` is anonymous on the backend: redirecting a
+signed-out reader away would hide the openings from the people who most need to
+see that there are any. The practice side of the same URL prefix keeps the guard.
 
 ---
 
@@ -262,11 +272,15 @@ The platform is evolving beyond the core user journey. Priorities below, in roug
 
 ### Phase 1 — Core product experience
 - **Live listings** — publish & browse openings (`/listings`, `/practices`), with
-  filters by speciality, dates and location. Only `/listings/mine` (the practice's
-  own listings) exists today, so the member nav links to `/listings` and
-  `/practices` currently 404.
+  filters by speciality, dates and location. `/listings` now exists: the public
+  feed, with filters, a map and per-specialty counts from
+  `GET /replacement-listings/facets`. `/listings/mine` (the practice's own
+  listings) is in place; `/practices` does not yet, so that nav link still 404s.
+  - The feed's *sort* control orders the rows on screen only — the endpoint
+    exposes no sort parameter. Sorting the whole collection is backend work.
 - **Apply to a listing** — `/applications` tracks the applications already sent,
-  but there is no browse-and-apply flow yet.
+  but there is no browse-and-apply flow yet, and no public listing detail page
+  for a row to open.
 - **Pricing page** — fill the last placeholder link in the product navigation.
 
 ### Phase 2 — Trust & network effects
@@ -276,9 +290,12 @@ The platform is evolving beyond the core user journey. Priorities below, in roug
   encourage faster, more reliable matching.
 
 ### Phase 3 — Reliability & scale
-- **Tests and CI** — there is none today. The adapters, the API client's error
-  parsing and the GDPR erasure flow are all string- and status-coupled and
-  unverified; this is the prerequisite for changing them safely.
+- **Tests and CI** — `src/lib` has unit tests (`bun run test`, bun's runner, no
+  extra dependency) but there is no CI and the API client's error parsing and the
+  GDPR erasure flow are still unverified; the adapters the browse feed depends on
+  are now covered.
+- **Component tests** — the screen logic that is *not* in `src/lib` (the map's
+  WebGL lifecycle above all) is covered by nothing but manual exercise.
 - **A generated API contract** — derive the response types from the OpenAPI
   document rather than transcribing them, so a backend field change surfaces as a
   type error.
