@@ -166,7 +166,19 @@ export function ListingsToolbar({
           </Select>
         </div>
 
-        <div className="grid w-full min-w-0 grid-cols-2 gap-2 sm:w-auto sm:flex">
+        {/*
+          The date pair takes the room the row has left.
+
+          A fixed width was wrong in both directions: narrow enough to keep one
+          line at 1152px and the inputs clipped their own value; wide enough to
+          read comfortably and the row went to two lines at that same size.
+          `flex-1` with a floor instead — the pair grows into whatever the viewport
+          leaves over, and stops shrinking where a date still fits.
+
+          `min-w-[13.5rem]` is two inputs of roughly 6rem plus their gap; below
+          that, `jj/mm/aaaa` and the calendar button start cutting into each other.
+        */}
+        <div className="grid w-full min-w-0 grid-cols-2 gap-2 sm:flex sm:min-w-[13.5rem] sm:flex-1">
           <div className="min-w-0">
             <label className="sr-only" htmlFor="browse-from">
               Démarrant après le
@@ -175,7 +187,7 @@ export function ListingsToolbar({
               id="browse-from"
               type="date"
               aria-label="Démarrant après le"
-              className="field-input w-full min-w-0 py-2 sm:w-[6.5rem]"
+              className="field-input w-full min-w-0 py-2"
               value={filters.from}
               max={filters.to || undefined}
               onChange={(event) =>
@@ -191,7 +203,7 @@ export function ListingsToolbar({
               id="browse-to"
               type="date"
               aria-label="Démarrant avant le"
-              className="field-input w-full min-w-0 py-2 sm:w-[6.5rem]"
+              className="field-input w-full min-w-0 py-2"
               value={filters.to}
               min={filters.from || undefined}
               onChange={(event) => onFiltersChange({ to: event.target.value })}
