@@ -88,7 +88,7 @@ export function MyListingCard({
               also holds two disclosure-driven panels and two terminal actions,
               and nesting interactive elements inside a link is what makes
               keyboard users skip the whole thing. */}
-          <h2 className="text-[15px] leading-snug font-bold break-words text-foreground sm:text-lg">
+          <h2 className="text-[15px] leading-snug font-bold wrap-break-word text-foreground sm:text-lg">
             <Link
               href={`/listings/mine/${listing.id}`}
               className="transition-colors hover:text-primary"
