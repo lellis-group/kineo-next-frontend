@@ -79,6 +79,7 @@ export type {
 } from "./browse-contracts";
 export {
   BROWSE_HORIZONS,
+  type BrowseSort,
   DEFAULT_BROWSE_VIEW,
   EMPTY_BROWSE_FILTERS,
   horizonForStart,

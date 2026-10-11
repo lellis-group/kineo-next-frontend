@@ -178,6 +178,7 @@ describe("toBrowseView", () => {
 
     expect(view).toEqual({
       page: 1,
+      sort: "recent",
       specialty: undefined,
       city: undefined,
       urgentOnly: undefined,
@@ -225,6 +226,26 @@ describe("isDefaultBrowseView", () => {
     expect(isDefaultBrowseView(toBrowseView(EMPTY_BROWSE_FILTERS, 2))).toBe(
       false,
     );
+  });
+
+  /**
+   * The ordering is part of what the server answered for, like any filter.
+   *
+   * Omitting it here breaks nothing the eye can see: the reader picks
+   * « Urgentes d'abord », the view reads as the default one, and
+   * `usePaginatedResource` restores `initialData` instead of fetching — the rows
+   * stay in the old order under a control that has already moved.
+   */
+  it("is false for a reordering, which the server has not answered", () => {
+    expect(
+      isDefaultBrowseView(toBrowseView(EMPTY_BROWSE_FILTERS, 1, "urgent")),
+    ).toBe(false);
+    expect(
+      isDefaultBrowseView(toBrowseView(EMPTY_BROWSE_FILTERS, 1, "startDate")),
+    ).toBe(false);
+    expect(
+      isDefaultBrowseView(toBrowseView(EMPTY_BROWSE_FILTERS, 1, "recent")),
+    ).toBe(true);
   });
 });
 

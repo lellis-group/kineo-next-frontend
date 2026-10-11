@@ -69,9 +69,11 @@ export interface BrowseFilters {
   /** ISO date, inclusive upper bound on `startDate`. */
   startDateTo?: string;
   urgentOnly?: boolean;
+  /** How the rows are ordered. */
+  sort?: BrowseSort;
 }
 
-/** Filter + page, the two things that identify a view of the feed. */
+/** Filter + page + ordering, the three things that identify a view of the feed. */
 export interface BrowseView extends BrowseFilters {
   page: number;
 }
@@ -89,6 +91,15 @@ export interface BrowseView extends BrowseFilters {
  * and are widened to ISO instants in `toBrowseView`, once, in a place that can
  * be tested.
  */
+/**
+ * How the reader wants the rows ordered.
+ *
+ * A view, not a filter: it changes no result set, only which row comes first.
+ * That is why it sits with the contracts rather than beside the toolbar, and
+ * why the server takes it — the endpoint owns the ordering.
+ */
+export type BrowseSort = "recent" | "urgent" | "startDate";
+
 export interface BrowseFormFilters {
   specialty: Specialty | "";
   city: string;
@@ -116,9 +127,17 @@ export const EMPTY_BROWSE_FILTERS: BrowseFormFilters = {
  * calendar date with no time, and stopping at midnight would silently drop every
  * posting published on the day the reader picked.
  */
-export function toBrowseView(filters: BrowseFormFilters, page = 1): BrowseView {
+/** The view the server renders on arrival: no filter, first page, newest first. */
+export const DEFAULT_BROWSE_VIEW = { page: 1, sort: "recent" } as const;
+
+export function toBrowseView(
+  filters: BrowseFormFilters,
+  page = 1,
+  sort: BrowseSort = DEFAULT_BROWSE_VIEW.sort,
+): BrowseView {
   return {
     page,
+    sort,
     specialty: filters.specialty || undefined,
     city: filters.city.trim() || undefined,
     urgentOnly: filters.urgentOnly || undefined,
@@ -127,13 +146,11 @@ export function toBrowseView(filters: BrowseFormFilters, page = 1): BrowseView {
   };
 }
 
-/** The view the server renders on arrival: no filter, first page. */
-export const DEFAULT_BROWSE_VIEW: BrowseView = { page: 1 };
-
 /** True when a view is the one the server already answered for. */
 export function isDefaultBrowseView(view: BrowseView): boolean {
   return (
     view.page === DEFAULT_BROWSE_VIEW.page &&
+    view.sort === DEFAULT_BROWSE_VIEW.sort &&
     view.specialty === undefined &&
     view.city === undefined &&
     view.startDateFrom === undefined &&

@@ -3,7 +3,6 @@
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { InlineRetryBanner } from "@/components/molecules/inline-retry-banner";
-import type { BrowseSort } from "@/components/molecules/listings-toolbar";
 import { ListingsView } from "@/components/templates/listings-view";
 import { usePaginatedResource } from "@/lib/hooks/use-paginated-resource";
 import {
@@ -11,6 +10,7 @@ import {
   type BrowseFormFilters,
   type BrowseListing,
   type BrowseListingsData,
+  type BrowseSort,
   type BrowseView,
   EMPTY_BROWSE_FILTERS,
   fetchBrowseListings,
@@ -91,7 +91,10 @@ export function ListingsContainer({
   const [sort, setSort] = useState<BrowseSort>("recent");
   const [activeListingId, setActiveListingId] = useState<string | null>(null);
 
-  const view = useMemo(() => toBrowseView(filters, page), [filters, page]);
+  const view = useMemo(
+    () => toBrowseView(filters, page, sort),
+    [filters, page, sort],
+  );
 
   /**
    * Applies a filter change and returns to the first page.
@@ -105,6 +108,18 @@ export function ListingsContainer({
     setFilters((current) => ({ ...current, ...patch }));
     setPage(1);
     setActiveListingId(null);
+  }, []);
+
+  /**
+   * Applies a reordering and returns to the first page.
+   *
+   * Same rule as a filter: the reader changes how the rows are ordered, and
+   * page 4 of the old ordering says nothing about where to land in the new
+   * one.
+   */
+  const applySort = useCallback((next: BrowseSort) => {
+    setSort(next);
+    setPage(1);
   }, []);
 
   const resetFilters = useCallback(() => {
@@ -160,22 +175,6 @@ export function ListingsContainer({
    * nothing more, which is a real limit of the contract rather than something
    * this component papers over.
    */
-  const sorted = useMemo(() => {
-    if (sort === "recent") {
-      return data.listings;
-    }
-    const listings = [...data.listings];
-    if (sort === "urgent") {
-      listings.sort(
-        (a, b) =>
-          Number(b.urgent) - Number(a.urgent) ||
-          b.startDate.localeCompare(a.startDate),
-      );
-    } else {
-      listings.sort((a, b) => a.startDate.localeCompare(b.startDate));
-    }
-    return listings;
-  }, [data.listings, sort]);
 
   /**
    * The postings the map draws, held apart from the page on screen.
@@ -296,7 +295,7 @@ export function ListingsContainer({
           total: data.total,
         }}
         results={{
-          listings: sorted,
+          listings: data.listings,
           totalPages: data.totalPages,
           page: data.page,
           onPageChange: setPage,
@@ -306,7 +305,7 @@ export function ListingsContainer({
           onHorizonChange: (next) =>
             applyFilters({ from: horizonStart(next) ?? "" }),
           sort,
-          onSortChange: setSort,
+          onSortChange: applySort,
           activeListingId,
           onActiveListingChange: setActiveListingId,
         }}

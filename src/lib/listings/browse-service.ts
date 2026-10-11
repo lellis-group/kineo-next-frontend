@@ -74,6 +74,7 @@ export async function fetchBrowseListings(
     startDateFrom: filters.startDateFrom,
     startDateTo: filters.startDateTo,
     urgent: filters.urgentOnly ? "true" : undefined,
+    sort: filters.sort,
     page,
     limit,
   });
