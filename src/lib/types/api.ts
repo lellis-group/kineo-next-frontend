@@ -93,7 +93,8 @@ export interface ApiListingPractice {
 export interface ApiReplacementListing {
   id: string;
   practiceId: string;
-  practice: ApiListingPractice;
+  /** Absent on the reads that did not ask for it — a write answers without one. */
+  practice?: ApiListingPractice;
   title: string;
   description?: string;
   startDate: string;
