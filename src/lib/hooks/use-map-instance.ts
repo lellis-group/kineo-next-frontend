@@ -18,6 +18,15 @@ const OSM_TILE_URL = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
 const OSM_ATTRIBUTION =
   '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a>';
 
+/**
+ * The deepest zoom OSM actually serves.
+ *
+ * Measured against the live server rather than taken from the docs: z19 answers
+ * 200, z20 answers 400. The two facts the map depends on are that the server
+ * stops here and that MapLibre would otherwise carry on to 22.
+ */
+const OSM_MAX_ZOOM = 19;
+
 /** Where the map opens when nothing on it carries coordinates. */
 const FALLBACK_CENTER: [number, number] = [46.603354, 2.373722];
 
@@ -113,6 +122,14 @@ function buildStyle() {
         type: "raster" as const,
         tiles: [OSM_TILE_URL],
         tileSize: 256,
+        // OSM publishes z0-19 and answers z20+ with a 400. MapLibre's default
+        // for a raster source is z22, so without this the map asks for tiles that
+        // cannot exist and every one of them lands in the console as an
+        // `AJAXError: Failed to fetch`. Declaring the real ceiling makes
+        // MapLibre overzoom instead — it scales the deepest tile it does have up
+        // to the requested level, which is blurry past 19 and honest everywhere
+        // below it.
+        maxzoom: OSM_MAX_ZOOM,
         attribution: OSM_ATTRIBUTION,
       },
     },
