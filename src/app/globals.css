@@ -572,37 +572,107 @@
    * L'emphase passe par une ombre portée et un contour, qui sont dessinés hors de
    * la boîte et ne la mesurent pas.
    */
-  .maplibregl-marker {
-    box-shadow: 0 2px 8px rgb(0 0 0 / 45%);
-    transition:
-      box-shadow 150ms ease,
-      outline-color 150ms ease;
-  }
+  /*
+   * The marker's own box: sized by the hook, positioned by MapLibre, and never
+   * animated. See the golden rule above — the element MapLibre writes its
+   * `translate(-50%, -50%) translate(x, y)` onto is off limits for anything that
+   * changes what the box measures.
+   *
+   * Deliberately no `transition` rule here. MapLibre's own stylesheet puts
+   * `transition: opacity .2s` on this element for its marker fades, and a
+   * `transition` declaration of ours would replace that whole shorthand rather
+   * than add to it — silently costing a third-party behaviour to animate a
+   * property nothing here changes.
+   */
 
-  .maplibregl-marker:hover,
-  .maplibregl-marker:focus-visible {
-    box-shadow:
-      0 0 0 3px color-mix(in srgb, var(--primary) 45%, transparent),
-      0 2px 8px rgb(0 0 0 / 45%);
-  }
-
-  /* Le focus clavier doit rester visible même quand le pointeur ne bouge pas. */
+  /* Keyboard focus must stay visible even when the pointer does not move. */
   .maplibregl-marker:focus-visible {
     outline: 2px solid var(--primary);
     outline-offset: 2px;
   }
 
   /*
-   * La ligne survolée du tableau, et son marqueur.
+   * The dot drawn inside that box.
    *
-   * L'état était posé par le hook et n'avait aucun style : survoler une ligne
-   * surlignait un marqueur qu'on ne distinguait d'aucun autre. Le contour plein,
-   * sans la transparence du survol, dit « c'est bien celui-là ».
+   * The box keeps the size the hook gave it; the transformation happens here.
+   * That is what makes the entrance animation possible without breaking the
+   * golden rule: a `scale` on this child does not resize the box MapLibre
+   * centres, so the `translate`'s percentage keeps aiming at the same point of
+   * the marker while the round grows inside it.
+   *
+   * The shadow and the rings follow the dot rather than the box, which they
+   * already did: they are painted outside the box and do not measure it.
    */
-  .maplibregl-marker.is-active {
+  .maplibregl-marker .marker-dot {
+    box-shadow: 0 2px 8px rgb(0 0 0 / 45%);
+    transition: box-shadow 150ms ease;
+  }
+
+  .maplibregl-marker:hover .marker-dot,
+  .maplibregl-marker:focus-visible .marker-dot {
+    box-shadow:
+      0 0 0 3px color-mix(in srgb, var(--primary) 45%, transparent),
+      0 2px 8px rgb(0 0 0 / 45%);
+  }
+
+  /*
+   * The row being pointed at in the table, and its marker.
+   *
+   * The state was set by the hook and had no style at all: pointing at a row
+   * highlighted a marker indistinguishable from any other. The solid ring, with
+   * none of the hover's translucency, says "this is the one".
+   */
+  .maplibregl-marker.is-active .marker-dot {
     box-shadow:
       0 0 0 3px var(--primary),
       0 2px 8px rgb(0 0 0 / 45%);
+  }
+
+  /*
+   * The points gathering and splitting.
+   *
+   * A zoom recomputes the groups and the hook replaces the markers involved. The
+   * only honest animation is therefore a crossfade: the old dot contracts where
+   * it stood, the new one unfolds into place. Positions are not interpolated —
+   * MapLibre writes each marker's transform on every frame, so a CSS transition
+   * on the movement would be overwritten by the next frame of the same zoom.
+   *
+   * `scale(0.4)` and not a plain fade: a dot that merely disappears and reappears
+   * reads as two separate events, where one round contracting while another
+   * expands reads as a single group changing shape.
+   *
+   * Exit shorter than enter on purpose — the dot being replaced should clear out
+   * of the way before its replacement starts arriving, or the two overlap and the
+   * count appears to double on the way through.
+   */
+  @keyframes kineo-marker-exit {
+    from {
+      opacity: 1;
+      transform: scale(1);
+    }
+    to {
+      opacity: 0;
+      transform: scale(0.4);
+    }
+  }
+
+  @keyframes kineo-marker-enter {
+    from {
+      opacity: 0;
+      transform: scale(0.4);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .maplibregl-marker.is-entering .marker-dot {
+    animation: kineo-marker-enter 240ms cubic-bezier(0.22, 0.68, 0.28, 1) both;
+  }
+
+  .maplibregl-marker.is-leaving .marker-dot {
+    animation: kineo-marker-exit 180ms ease-in both;
   }
 
   .maplibregl-ctrl-group {

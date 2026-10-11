@@ -4,23 +4,43 @@ import type { Map as MapLibreMap, Marker } from "maplibre-gl";
 import * as maplibregl from "maplibre-gl";
 import { type RefObject, useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/cn";
-import type { MapPlace } from "@/lib/listings";
+import { cameraTargetFor, type MapPlace } from "@/lib/listings";
 
 /**
- * The marker's own geometry and colours. Its shadow, its hover emphasis and its
- * selected ring live in `globals.css`, next to the rest of the MapLibre theming.
+ * The marker's box: sized here, positioned by MapLibre, and never animated.
  *
  * No `hover:scale` here, and that is not a style choice. MapLibre centres a
  * marker with a `translate(-50%, -50%)` expressed as a percentage of its own
  * box, so growing the marker on hover moves it — measured at nearly 50px, on a
- * button the reader had merely pointed at. Anything that changes a marker's size
- * is off the table; the emphasis is a ring instead.
+ * button the reader had merely pointed at. Anything that changes the *box* is off
+ * the table; the emphasis is a ring instead.
+ *
+ * The dot is a child element, and that is what buys the entrance animation: a
+ * `scale` on the child leaves this box exactly as MapLibre sized it, so the
+ * transform it writes keeps aiming at the same point while the dot grows inside.
+ * See `.marker-dot` and `kineo-marker-enter` in `globals.css`.
  */
-const MARKER_CLASS =
-  "grid size-6 cursor-pointer place-items-center rounded-full border-2 border-background bg-foreground text-[0.625rem] font-semibold text-background";
+const MARKER_CLASS = "grid size-6 cursor-pointer place-items-center";
+
+/** The visible round, and everything that is allowed to move. */
+const MARKER_DOT_CLASS =
+  "marker-dot grid size-full place-items-center rounded-full border-2 border-background bg-foreground text-[0.625rem] font-semibold text-background";
 
 /** A place with more than one posting: bigger, and it carries the count. */
-const MARKER_CLUSTER_CLASS = "!size-7 !bg-primary";
+const MARKER_CLUSTER_CLASS = "!size-7";
+const MARKER_DOT_CLUSTER_CLASS = "!bg-primary";
+
+/**
+ * How close the camera comes to a place the reader asked to look at.
+ *
+ * Street-level without going to the tile limit: OSM only publishes up to z19 and
+ * `useMapInstance` caps the source there, so anything past this is MapLibre
+ * enlarging a raster tile until it is visibly soft.
+ */
+const PLACE_ZOOM = 16;
+
+/** Long enough to read as a camera move, short enough not to lose the reader. */
+const FLY_DURATION = 600;
 
 /**
  * The markers on the map, and the popup one of them opens.
@@ -57,6 +77,23 @@ export function useMapMarkers({
 }) {
   const markersRef = useRef<Map<string, Marker>>(new Map());
   const popupRef = useRef<maplibregl.Popup | null>(null);
+
+  /**
+   * Dots mid-exit: MapLibre has let go of them, we have not.
+   *
+   * Not owned by any MapLibre object any more, so nothing else will ever remove
+   * them. Cleared with the rest in the teardown below.
+   */
+  const leavingRef = useRef<HTMLElement[]>([]);
+
+  /**
+   * The place each marker currently stands for, by key.
+   *
+   * A marker outlives the data it was built from, so its handlers cannot close
+   * over a place — they read this instead. One entry per marker, dropped with
+   * the marker it belongs to.
+   */
+  const livePlacesRef = useRef<Map<string, MapPlace>>(new Map());
 
   /**
    * Handlers and the current selection are read through refs rather than being
@@ -128,8 +165,14 @@ export function useMapMarkers({
       .join("|");
     if (signature !== lastSignatureRef.current) {
       lastSignatureRef.current = signature;
-      rebuildMarkers(map, clusters, markersRef.current, popupRef, (id) =>
-        onPickRef.current?.(id),
+      rebuildMarkers(
+        map,
+        clusters,
+        markersRef.current,
+        livePlacesRef.current,
+        popupRef,
+        (id) => onPickRef.current?.(id),
+        leavingRef.current,
       );
     }
 
@@ -174,7 +217,10 @@ export function useMapMarkers({
     () => () => {
       for (const marker of markersRef.current.values()) marker.remove();
       markersRef.current.clear();
+      livePlacesRef.current.clear();
       popupRef.current?.remove();
+      for (const node of leavingRef.current) node.remove();
+      leavingRef.current = [];
     },
     [],
   );
@@ -192,51 +238,79 @@ function rebuildMarkers(
   map: MapLibreMap,
   clusters: readonly MapPlace[],
   markers: Map<string, Marker>,
+  livePlaces: Map<string, MapPlace>,
   popupRef: RefObject<maplibregl.Popup | null>,
   onSelect: (id: string) => void,
+  leaving: HTMLElement[],
 ) {
   const active = markers;
   const nextKeys = new Set(clusters.map((place) => place.key));
 
   for (const [key, marker] of active) {
     if (!nextKeys.has(key)) {
-      marker.remove();
       active.delete(key);
+      livePlaces.delete(key);
+      startLeaving(marker, leaving);
     }
   }
 
   for (const place of clusters) {
-    // Rebuilt wholesale rather than repositioned: the button carries the count
-    // and the practice name, so a place that changed has to swap its node.
-    active.get(place.key)?.remove();
+    const isCluster = place.listings.length > 1;
+    const key = place.key;
+    const existing = active.get(key);
+
+    /**
+     * Reused rather than rebuilt, and this is what makes the animation legible.
+     *
+     * A key is built from the places it covers, so the same key means the same
+     * group — the only thing that can have changed is its count. Rebuilding it
+     * anyway (which is what this did) meant that panning one pin across another
+     * tore down and recreated *every* marker on the map: unaffected dots blinked
+     * out and in for no reason, and the ones that had nothing to do with the
+     * gesture were the most noticeable.
+     */
+    if (existing) {
+      existing.setLngLat([place.longitude, place.latitude]);
+      relabel(existing.getElement(), place, isCluster);
+      livePlaces.set(key, place);
+      continue;
+    }
 
     const node = document.createElement("button");
     node.type = "button";
-    const isCluster = place.listings.length > 1;
     // One `className` assignment rather than `classList.add` afterwards:
     // `classList.add` takes a single token and throws on a space, so a
     // two-class string built anywhere takes the whole map down.
     node.className = cn(MARKER_CLASS, isCluster && MARKER_CLUSTER_CLASS);
     node.dataset.ids = place.listings.map((l) => l.id).join(",");
+    node.append(document.createElement("span"));
 
-    if (isCluster) {
-      node.textContent = String(place.listings.length);
-      node.setAttribute(
-        "aria-label",
-        `${place.listings.length} annonces à ${place.listings[0].practiceName}`,
-      );
-    } else {
-      node.setAttribute(
-        "aria-label",
-        `${place.listings[0].title}, ${place.listings[0].practiceName}`,
-      );
-    }
+    const dot = node.firstElementChild as HTMLElement;
+    dot.className = cn(MARKER_DOT_CLASS, isCluster && MARKER_DOT_CLUSTER_CLASS);
+
+    relabel(node, place, isCluster);
+    livePlaces.set(key, place);
+
+    /**
+     * Every handler below reads the place out of `livePlaces` rather than
+     * closing over the one this marker was built with.
+     *
+     * The two used to be the same object, back when each marker was rebuilt on
+     * every pass and nothing survived a rebuild. Now that a marker outlives the
+     * data it was made from, a captured place goes stale the moment a posting is
+     * added to a practice that already had a key — and the popup opens listing
+     * openings the practice no longer has, with no way to tell it is stale.
+     */
+    const current = () => livePlaces.get(key);
 
     node.addEventListener("click", (event) => {
       // MapLibre closes any open popup when the map is clicked, and a marker
       // sits *inside* the map: left alone this click opened the popup and then
       // bubbled up and closed it again on the same event.
       event.stopPropagation();
+
+      const live = current();
+      if (!live) return;
 
       popupRef.current?.remove();
       popupRef.current = new maplibregl.Popup({
@@ -249,24 +323,149 @@ function rebuildMarkers(
         closeOnClick: true,
         closeButton: true,
       })
-        .setLngLat([place.longitude, place.latitude])
-        .setDOMContent(popupContent(place, onSelect))
+        .setLngLat([live.longitude, live.latitude])
+        /**
+         * The popup dismissing itself is a read of the ref rather than a
+         * captured instance: the content is built before the popup exists, and
+         * the two are chained in one expression. The closure resolves it on the
+         * click, by which time it is set.
+         */
+        .setDOMContent(
+          popupContent(live, map, () => popupRef.current?.remove(), onSelect),
+        )
         .addTo(map);
 
       // A lone posting has no list to choose from, so it selects itself and
       // scrolls to its row. A group waits: the reader picks the entry.
-      if (place.listings.length === 1) {
-        onSelect(place.listings[0].id);
+      if (live.listings.length === 1) {
+        onSelect(live.listings[0].id);
       }
     });
 
-    active.set(
-      place.key,
-      new maplibregl.Marker({ element: node, anchor: "center" })
-        .setLngLat([place.longitude, place.latitude])
-        .addTo(map),
+    /**
+     * Double-click takes the camera to the place.
+     *
+     * `stopPropagation` is not tidiness. MapLibre binds its own double-click
+     * zoom on the canvas container — the very element markers are appended to —
+     * so an event left to bubble runs both: this handler, then MapLibre's, which
+     * zooms a further step past the offer and is no longer looking at it.
+     *
+     * A shortcut, not the only way in: a double-click cannot be pressed from a
+     * keyboard, which is why the popup carries the same move as a button.
+     */
+    node.addEventListener("dblclick", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const live = current();
+      if (live) zoomToPlace(map, live);
+    });
+
+    const marker = new maplibregl.Marker({ element: node, anchor: "center" })
+      .setLngLat([place.longitude, place.latitude])
+      .addTo(map);
+
+    /**
+     * The entrance plays once, then the class is dropped.
+     *
+     * Left on, the marker would still match `.is-entering` later — including
+     * while `.is-leaving` is animating the same dot, where the two keyframes
+     * fight over the same property and the dot freezes halfway at whatever scale
+     * won. `animationend` rather than a timeout, so the class never outlives the
+     * animation it exists for. The global reduced-motion switch sets the
+     * duration to 0s, and the event still fires.
+     */
+    node.classList.add("is-entering");
+    dot.addEventListener(
+      "animationend",
+      () => node.classList.remove("is-entering"),
+      { once: true },
     );
+
+    active.set(key, marker);
   }
+}
+
+/**
+ * Takes the camera to one place.
+ *
+ * The arithmetic lives in `cameraTargetFor`; this is only the camera call, kept
+ * here so the hook stays the one place that knows what a map object is.
+ *
+ * Framing a group rather than centring it is the point of the whole gesture: a
+ * cluster's coordinates are the mean of the practices it covers, so flying to
+ * that mean reproduces the cluster — the reader zooms and the same dot is still
+ * there. Framing its members is what makes them separate, and the re-clustering
+ * the zoom triggers is what spreads them back out.
+ */
+function zoomToPlace(map: MapLibreMap, place: MapPlace) {
+  const target = cameraTargetFor(place);
+
+  if (target.kind === "point") {
+    map.flyTo({
+      center: target.center,
+      zoom: PLACE_ZOOM,
+      duration: FLY_DURATION,
+    });
+    return;
+  }
+
+  const bounds = new maplibregl.LngLatBounds();
+  for (const [longitude, latitude] of target.points) {
+    bounds.extend([longitude, latitude]);
+  }
+  map.fitBounds(bounds, {
+    padding: 80,
+    maxZoom: PLACE_ZOOM,
+    duration: FLY_DURATION,
+  });
+}
+
+/** What a dot says: the count on a group, and what the button announces. */ function relabel(
+  node: HTMLElement,
+  place: MapPlace,
+  isCluster: boolean,
+) {
+  const dot = node.firstElementChild;
+  const text = isCluster ? String(place.listings.length) : "";
+  if (dot && dot.textContent !== text) {
+    dot.textContent = text;
+  }
+  node.setAttribute(
+    "aria-label",
+    isCluster
+      ? `${place.listings.length} annonces à ${place.listings[0].practiceName}`
+      : `${place.listings[0].title}, ${place.listings[0].practiceName}`,
+  );
+}
+
+/**
+ * Animates a marker out, then drops it.
+ *
+ * `marker.remove()` unmounts the element immediately, so there is nothing left to
+ * animate. The node is therefore detached *and re-attached to the parent it was
+ * already in* — re-appending the same element keeps the transform MapLibre last
+ * wrote on it, so the dot contracts where it stood rather than jumping somewhere
+ * else on its way out.
+ *
+ * The re-attached node is no longer MapLibre's to clean up, which is why the
+ * caller keeps it in a list and the hook's teardown clears it: a zoom gesture
+ * that unmounts the map mid-fade would otherwise leave dots behind on a canvas
+ * that is being torn down.
+ */
+function startLeaving(marker: Marker, leaving: HTMLElement[]) {
+  const node = marker.getElement();
+  const parent = node.parentNode;
+  marker.remove();
+  if (!parent) return;
+
+  parent.appendChild(node);
+  node.classList.add("is-leaving");
+  node.firstElementChild?.addEventListener(
+    "animationend",
+    () => node.remove(),
+    { once: true },
+  );
+  leaving.push(node);
 }
 
 /** Where the reader is looking, as the clustering depends on it. */
@@ -437,6 +636,8 @@ function paintActive(
  */
 function popupContent(
   place: MapPlace,
+  map: MapLibreMap,
+  dismiss: () => void,
   onPick: (id: string) => void,
 ): HTMLElement {
   const root = document.createElement("div");
@@ -462,6 +663,7 @@ function popupContent(
     period.className = "mt-0.5 text-xs text-muted";
     period.textContent = first.dateRange;
     root.append(period);
+    root.append(zoomButton(place, map, dismiss));
     return root;
   }
 
@@ -512,7 +714,55 @@ function popupContent(
     root.append(rest);
   }
 
+  root.append(zoomButton(place, map, dismiss));
+
   return root;
+}
+
+/**
+ * The popup's "go there" button.
+ *
+ * A button, and the reason the popup is not a dead end in the other direction
+ * either: the marker's double-click is a mouse shortcut nobody can reach from a
+ * keyboard, so without this the camera move exists only for readers using a
+ * pointer. It sits last in the box because it is what a reader reaches for once
+ * they have read what the place holds, not before.
+ *
+ * Taking the move dismisses the whole popup, and the popup is the thing that has
+ * to go rather than the button. It is anchored to this place's coordinates —
+ * for a group, the mean of the practices it covers — which is exactly where the
+ * markers it describes are about to separate into. Left open, the box lands on
+ * top of the markers the reader just asked to see, and what they wanted revealed
+ * is the one thing now hidden.
+ *
+ * Dismissed before the camera moves rather than after. A popup still in the DOM
+ * is repositioned on every `move` frame, so one left to the end of the flight
+ * would be carried across the viewport by it.
+ */
+function zoomButton(
+  place: MapPlace,
+  map: MapLibreMap,
+  dismiss: () => void,
+): HTMLElement {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className =
+    "mt-1.5 flex w-full cursor-pointer items-center justify-center rounded-lg border border-border px-3 py-2 text-xs font-medium text-muted transition-colors hover:bg-surface-hover hover:text-foreground focus-visible:bg-surface-hover";
+
+  const isCluster = place.listings.length > 1;
+  button.textContent = isCluster
+    ? `Centrer sur ces ${place.listings.length} cabinets`
+    : "Centrer sur cette annonce";
+
+  button.addEventListener("click", (event) => {
+    // The popup lives inside the map container, so this click is a map click as
+    // far as MapLibre is concerned and would dismiss the popup it lives in.
+    event.stopPropagation();
+    dismiss();
+    zoomToPlace(map, place);
+  });
+
+  return button;
 }
 
 /** Postings named in a group popup before it stops listing them. */
