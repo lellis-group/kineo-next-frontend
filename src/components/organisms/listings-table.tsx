@@ -8,6 +8,7 @@ import {
 import { cn } from "@/lib/cn";
 import { type BrowseListing, listingBadge } from "@/lib/listings";
 import { SPECIALTY_LABELS } from "@/lib/profile";
+import { rowEnterStyle } from "@/lib/row-enter";
 
 interface ListingsTableProps {
   listings: BrowseListing[];
@@ -36,7 +37,7 @@ export function ListingsTable({
 }: ListingsTableProps) {
   return (
     <div className="hidden overflow-x-auto sm:block">
-      <table className="table">
+      <table className="table listings-table">
         <thead>
           <tr>
             <th scope="col">Annonce</th>
@@ -48,14 +49,15 @@ export function ListingsTable({
           </tr>
         </thead>
         <tbody>
-          {listings.map((listing) => {
+          {listings.map((listing, index) => {
             const active = listing.id === activeListingId;
             const badge = listingBadge(listing);
             return (
               <tr
                 key={listing.id}
                 data-listing-id={listing.id}
-                className={cn(active && "bg-surface-2")}
+                style={rowEnterStyle(index)}
+                className={cn("row-enter", active && "bg-surface-2")}
                 onMouseEnter={() => onActiveListingChange?.(listing.id)}
                 onMouseLeave={() => onActiveListingChange?.(null)}
               >

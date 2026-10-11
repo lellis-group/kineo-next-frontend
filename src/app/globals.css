@@ -478,6 +478,73 @@
   }
 
   /*
+   * The browse screen's results arriving.
+   *
+   * The same family as `.hero-enter`, played on rows rather than page blocks:
+   * this screen has no above-the-fold to unfold, it has a list replaced all at
+   * once on every page, filter or sort change — and that replacement is the
+   * thing worth signalling, or the list simply changes with nothing saying so.
+   *
+   * The delay steps by rank, capped in the component (`rowEnterStyle`) rather
+   * than here: a twenty-row page would hold its last row back by close to half a
+   * second, and the reader then watches the top of the table arrive first.
+   *
+   * `translateY(8px)` and not the hero's 14-16 px: on a 60px-tall table row a
+   * wider travel reads as the page scrolling rather than as an arrival.
+   */
+  @property --row-delay {
+    syntax: "<time>";
+    initial-value: 0ms;
+    inherits: false;
+  }
+
+  @keyframes kineo-row-enter {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .row-enter {
+    animation: kineo-row-enter 420ms cubic-bezier(0.22, 0.68, 0.28, 1) both;
+    animation-delay: var(--row-delay);
+  }
+
+  /*
+   * The hovered row of the listings table, and the bar that says so.
+   *
+   * Carried by `box-shadow` rather than a `border-left` or a positioned
+   * `::before`: both of those reserve room — the row would change height on
+   * hover and the cell's content would shift by a hair on every pass of the
+   * mouse. An inset shadow reserves nothing, and it is the only one of the
+   * three that survives the table's `border-collapse` without an edge-merging
+   * artefact.
+   *
+   * The two states do not share a geometry: at rest the bar is zero spread and
+   * zero offset, on hover it is 2px. That difference is what makes the
+   * transition visible — at a constant thickness the shadow interpolates only
+   * its colour, and a 150ms fade on an element that exists only under the cursor
+   * goes unnoticed. Growing from the middle of the cell, the bar stretches along
+   * the row, which reads as movement rather than as a change of tint.
+   *
+   * Hence 200 ms: longer than the row background's 150 ms, so the bar lands
+   * after the background has begun to rise — the other way round reads as an
+   * outline trailing behind the hover.
+   */
+  .listings-table tbody td:first-child {
+    box-shadow: inset 0 0 0 transparent;
+    transition: box-shadow 200ms ease;
+  }
+
+  .listings-table tbody tr:hover td:first-child {
+    box-shadow: inset 2px 0 0 var(--primary);
+  }
+
+  /*
    * MapLibre : le chrome des contrôles sur la palette du produit.
    *
    * MapLibre livre un thème clair — boîtes blanches, croix blanche — qu'il faut
@@ -600,7 +667,34 @@
     z-index: 20;
   }
 
+  /*
+   * The popup opening.
+   *
+   * On `.maplibregl-popup-content`, never on `.maplibregl-popup`: the wrapper is
+   * what carries the positioning transform MapLibre recomputes on every map
+   * move. Animating that node fights it — the popup drifts off its tip while it
+   * appears, or worse, freezes at the old spot.
+   *
+   * `scale` and not `translateY`: the wrapper has already placed the popup to
+   * the pixel, and a vertical offset on top of that makes it slide across its
+   * marker instead of settling onto it.
+   *
+   * 180 ms: long enough to be seen, too short to be waited for.
+   */
+  @keyframes kineo-popup-enter {
+    from {
+      opacity: 0;
+      transform: scale(0.96);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
   .maplibregl-popup-content {
+    animation: kineo-popup-enter 180ms cubic-bezier(0.22, 0.68, 0.28, 1) both;
+    transform-origin: center;
     margin: 0;
     padding: 0.875rem 1rem;
     max-width: 20rem;

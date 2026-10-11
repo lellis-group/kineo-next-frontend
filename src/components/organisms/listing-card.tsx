@@ -8,6 +8,7 @@ import {
 } from "@/components/atoms/icons";
 import { type BrowseListing, listingBadge } from "@/lib/listings";
 import { SPECIALTY_LABELS } from "@/lib/profile";
+import { rowEnterStyle } from "@/lib/row-enter";
 
 /**
  * One posting, for a narrow screen.
@@ -20,13 +21,24 @@ import { SPECIALTY_LABELS } from "@/lib/profile";
  *
  * Shown below `sm:` only; above it the table takes over.
  */
-export function ListingCard({ listing }: { listing: BrowseListing }) {
+export function ListingCard({
+  listing,
+  index,
+}: {
+  listing: BrowseListing;
+  /** Rank in the results list — drives the entrance stagger. */
+  index?: number;
+}) {
   const badge = listingBadge(listing);
 
   return (
-    <Card className="p-4" data-listing-id={listing.id}>
+    <Card
+      className="card-lift row-enter p-4"
+      style={rowEnterStyle(index ?? 0)}
+      data-listing-id={listing.id}
+    >
       <div className="flex items-start gap-3">
-        <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
+        <span className="icon-tilt grid size-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
           <StethoscopeIcon className="size-4" />
         </span>
         <div className="min-w-0 flex-1">

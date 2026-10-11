@@ -10,6 +10,7 @@ import { Select } from "@/components/molecules/select";
 import { EmptyState } from "@/components/organisms/empty-state";
 import { ListingCard } from "@/components/organisms/listing-card";
 import { ListingsTable } from "@/components/organisms/listings-table";
+import { cn } from "@/lib/cn";
 import type { BrowseHorizon, BrowseListing } from "@/lib/listings";
 import { BROWSE_HORIZONS } from "@/lib/listings";
 
@@ -115,12 +116,24 @@ export function ListingsResultsPanel({
           }
         />
       ) : (
-        <div className={loading ? "opacity-60 transition-opacity" : undefined}>
+        <div
+          /*
+           * The transition is declared unconditionally, not on the loading
+           * branch only: a `transition-*` class added at the same moment as the
+           * opacity it animates has nothing to transition *from*, so the list
+           * would go dim instantly and then fade back in on its own. Both
+           * states need the class for the pair to interpolate.
+           */
+          className={cn(
+            "transition-opacity duration-200 ease-out",
+            loading && "opacity-60",
+          )}
+        >
           <div className="sm:hidden">
             <ul className="flex flex-col gap-3">
-              {listings.map((listing) => (
+              {listings.map((listing, index) => (
                 <li key={listing.id}>
-                  <ListingCard listing={listing} />
+                  <ListingCard listing={listing} index={index} />
                 </li>
               ))}
             </ul>
