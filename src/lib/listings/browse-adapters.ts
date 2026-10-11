@@ -106,9 +106,16 @@ export function groupByLocation(listings: BrowseListing[]): MapPlace[] {
     const existing = byPlace.get(key);
 
     if (existing) {
+      existing.count += 1;
       existing.listings.push(listing);
     } else {
-      byPlace.set(key, { key, latitude, longitude, listings: [listing] });
+      byPlace.set(key, {
+        key,
+        latitude,
+        longitude,
+        count: 1,
+        listings: [listing],
+      });
     }
   }
 

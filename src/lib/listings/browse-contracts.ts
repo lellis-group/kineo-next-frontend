@@ -193,6 +193,8 @@ export interface MapPlace {
   key: string;
   latitude: number;
   longitude: number;
+  /** How many postings sit here, whatever the preview list holds. */
+  count: number;
   listings: BrowseListing[];
 }
 

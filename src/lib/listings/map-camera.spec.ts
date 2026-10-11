@@ -33,6 +33,7 @@ function placeWith(listings: BrowseListing[]): MapPlace {
     key: "place",
     latitude: listings[0]?.location?.latitude ?? 0,
     longitude: listings[0]?.location?.longitude ?? 0,
+    count: listings.length,
     listings,
   };
 }
@@ -120,6 +121,7 @@ describe("cameraTargetFor", () => {
       key: "place",
       latitude: 44.84,
       longitude: -0.58,
+      count: 1,
       listings: [{ ...listingAt("a", 0, 0), location: null }],
     };
 

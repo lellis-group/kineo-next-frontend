@@ -161,7 +161,7 @@ export function useMapMarkers({
     // them is what costs: positions are MapLibre's job and it repositions existing
     // markers on every frame. The signature is what says the *set* changed.
     const signature = clusters
-      .map((place) => `${place.key}:${place.listings.length}`)
+      .map((place) => `${place.key}:${place.count}`)
       .join("|");
     if (signature !== lastSignatureRef.current) {
       lastSignatureRef.current = signature;
@@ -255,7 +255,7 @@ function rebuildMarkers(
   }
 
   for (const place of clusters) {
-    const isCluster = place.listings.length > 1;
+    const isCluster = place.count > 1;
     const key = place.key;
     const existing = active.get(key);
 
@@ -426,14 +426,14 @@ function zoomToPlace(map: MapLibreMap, place: MapPlace) {
   isCluster: boolean,
 ) {
   const dot = node.firstElementChild;
-  const text = isCluster ? String(place.listings.length) : "";
+  const text = isCluster ? String(place.count) : "";
   if (dot && dot.textContent !== text) {
     dot.textContent = text;
   }
   node.setAttribute(
     "aria-label",
     isCluster
-      ? `${place.listings.length} annonces à ${place.listings[0].practiceName}`
+      ? `${place.count} annonces à ${place.listings[0].practiceName}`
       : `${place.listings[0].title}, ${place.listings[0].practiceName}`,
   );
 }
@@ -551,6 +551,9 @@ function mergePlaces(members: MapPlace[]): MapPlace {
   const total = members.length;
 
   return {
+    // The sum of what the members hold, never `flatMap(listings).length`: the
+    // count of postings at a merged place is not the number of previews.
+    count: members.reduce((sum, place) => sum + place.count, 0),
     // Sorted, so the key does not depend on the order the places happened to
     // arrive in: an unstable key rebuilds every marker for nothing.
     key: members
@@ -648,9 +651,7 @@ function popupContent(
   const heading = document.createElement("h3");
   heading.className = "text-sm leading-snug font-medium text-foreground";
   heading.textContent =
-    place.listings.length === 1
-      ? first.title
-      : `${place.listings.length} annonces`;
+    place.count === 1 ? first.title : `${place.count} annonces`;
   root.append(heading);
 
   const where = document.createElement("p");
@@ -658,7 +659,7 @@ function popupContent(
   where.textContent = `${first.practiceName} · ${first.city}`;
   root.append(where);
 
-  if (place.listings.length === 1) {
+  if (place.count === 1) {
     const period = document.createElement("p");
     period.className = "mt-0.5 text-xs text-muted";
     period.textContent = first.dateRange;
@@ -705,11 +706,11 @@ function popupContent(
 
   root.append(list);
 
-  if (place.listings.length > shown.length) {
+  if (place.count > shown.length) {
     const rest = document.createElement("p");
     rest.className = "mt-1 text-[0.6875rem] text-muted";
-    rest.textContent = `+ ${place.listings.length - shown.length} autre${
-      place.listings.length - shown.length > 1 ? "s" : ""
+    rest.textContent = `+ ${place.count - shown.length} autre${
+      place.count - shown.length > 1 ? "s" : ""
     }`;
     root.append(rest);
   }
@@ -749,9 +750,9 @@ function zoomButton(
   button.className =
     "mt-1.5 flex w-full cursor-pointer items-center justify-center rounded-lg border border-border px-3 py-2 text-xs font-medium text-muted transition-colors hover:bg-surface-hover hover:text-foreground focus-visible:bg-surface-hover";
 
-  const isCluster = place.listings.length > 1;
+  const isCluster = place.count > 1;
   button.textContent = isCluster
-    ? `Centrer sur ces ${place.listings.length} cabinets`
+    ? `Centrer sur ces ${place.count} cabinets`
     : "Centrer sur cette annonce";
 
   button.addEventListener("click", (event) => {
