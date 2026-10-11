@@ -3,6 +3,7 @@ import { PageHeader } from "@/components/atoms/page-header";
 import { ListingsFacetsRail } from "@/components/organisms/listings-facets-rail";
 import { ListingsResultsPanel } from "@/components/organisms/listings-results-panel";
 import { ListingsToolbarCard } from "@/components/organisms/listings-toolbar-card";
+import { PAGE_CONTAINER } from "@/lib/layout";
 import type { BrowseFacets } from "@/lib/listings";
 
 /**
@@ -58,7 +59,7 @@ export function ListingsView({
   onResetFilters,
 }: ListingsViewProps) {
   return (
-    <div className="mx-auto w-full max-w-[100rem] px-4 py-6 sm:px-6 sm:py-8">
+    <div className={PAGE_CONTAINER}>
       <PageHeader
         title="Annonces"
         subtitle="Parcourez les remplacements ouverts, filtrez par spécialité, période ou urgence, et situez chaque cabinet sur la carte."
