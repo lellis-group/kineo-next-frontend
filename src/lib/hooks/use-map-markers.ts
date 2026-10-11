@@ -489,12 +489,12 @@ function viewportOf(map: MapLibreMap): Viewport {
 /**
  * Merges the places that sit on top of each other *on screen*, right now.
  *
- * `groupByLocation` already merged postings sharing an address, but that is a
- * fact about coordinates and says nothing about the current zoom: two cabinets
- * 2.5km apart are one marker's distance apart at country scale and two markers
- * apart once the reader is over the city. Measured at the zoom this map opens on,
- * a pair was stacked on the same pixel — the upper one took every click and the
- * lower one could not be opened at all.
+ * `/places` already grouped by practice, and exactly — by `practiceId`, not by
+ * rounded coordinates. But that is a fact about the practices and says nothing
+ * about the current zoom: two cabinets 2.5km apart are one marker's distance
+ * apart at country scale and two markers apart once the reader is over the city.
+ * Measured at the zoom this map opens on, a pair was stacked on the same pixel —
+ * the upper one took every click and the lower one could not be opened at all.
  *
  * The test is therefore a distance in *pixels*, recomputed whenever the viewport
  * settles. Zoom out and the pair merges again behind a count; zoom in over
@@ -633,9 +633,14 @@ function paintActive(
  * period; several get a count, the place, and one entry each.
  *
  * `onPick` is what makes the popup a way *out* of the map rather than a dead end:
- * an entry selects its row and scrolls the list to it. Every listing named here is
- * on the current page — the markers are built from the rows on screen — so the row
- * it scrolls to is always there to be found.
+ * an entry selects its row and scrolls the list to it.
+ *
+ * The entry may name a posting that is not on the page in front of the reader.
+ * The markers are built from the whole filtered collection (`/places`), not from
+ * the rows on screen — that is the point of the map, and it is also why an entry
+ * here is no guarantee the row exists. It is not this hook's problem to solve:
+ * `pickListing` in the container turns to the page holding the id and scrolls
+ * once those rows land, and the popup here only has to name the posting.
  */
 function popupContent(
   place: MapPlace,

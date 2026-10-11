@@ -1,10 +1,6 @@
 "use client";
 
-import {
-  AlertTriangleIcon,
-  SearchIcon,
-  SlidersIcon,
-} from "@/components/atoms/icons";
+import { AlertTriangleIcon, SearchIcon } from "@/components/atoms/icons";
 import { Select } from "@/components/molecules/select";
 import { cn } from "@/lib/cn";
 import { useCommittedInput } from "@/lib/hooks/use-committed-input";
@@ -98,13 +94,25 @@ export function ListingsToolbar({
 
   return (
     /*
-     * Two siblings, not one row with a full-width child.
+     * One row, and the count sits in it rather than under it.
      *
-     * The count used to sit inside the flex row with `w-full`, which reads as
-     * "take the whole line" — and does so *during* the parent's intrinsic width
-     * calculation too, so the card asking to hug its content measured itself as
-     * full width and stretched across the map. As a sibling it no longer
-     * participates, and the count still gets its own line under the controls.
+     * The count was a second line of its own. That is a whole row — its height
+     * plus its margin — spent on a number that belongs to the search it describes,
+     * and it is what made the bar a block over the map rather than a strip across
+     * it. In the row it costs width, which the bar now has to spare, instead of
+     * height, which it does not.
+     *
+     * Packed against the chip rather than pushed to the far end with `ml-auto`.
+     * The bar is wide now, and a count stranded at the far right of a full-width
+     * strip is 1000px away from the filters that produced it; against the same
+     * rule that keeps the controls packed left — the empty space belongs at the
+     * end, where it reads as the end of the row.
+     *
+     * Its `SlidersIcon` went with the row, and so did the word « disponibles ».
+     * Both were width: the icon was a glyph meaning "these are filters" on a row
+     * that is nothing but filters, and the word restates what the panel to the
+     * left already says in full ("Annonces ouvertes"). Between them they were
+     * ~105px of the row's budget, and the row is what has to stay on one line.
      */
     <div>
       {/* Controls are packed left with no `ml-auto` on any of them.
@@ -115,11 +123,11 @@ export function ListingsToolbar({
           controls belongs together, and the empty space belongs at the end, where
           it reads as the end of the row.
 
-          `items-end` rather than `items-center`: the controls are the same height,
-          but a search field with a leading icon sits a pixel off a centred row and
-          that pixel is visible on a dark background. */}
-      <div className={cn("flex flex-wrap items-end gap-2", className)}>
-        <div className="min-w-[8rem] flex-1 sm:max-w-[13rem]">
+          `items-center` rather than `items-end`: the controls are now the same
+          height by construction (`py-1.5` on the inputs, `min-h-[2.375rem]` on the
+          chip), so there is no baseline to correct for. */}
+      <div className={cn("flex flex-wrap items-center gap-2", className)}>
+        <div className="min-w-[8rem] flex-1 sm:max-w-[15rem]">
           <label className="sr-only" htmlFor="browse-city">
             Rechercher une ville
           </label>
@@ -128,7 +136,7 @@ export function ListingsToolbar({
             <input
               id="browse-city"
               type="search"
-              className="field-input py-2 pl-9"
+              className="field-input py-1.5 pl-9"
               placeholder="Ville ou code postal"
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
@@ -143,13 +151,13 @@ export function ListingsToolbar({
           </div>
         </div>
 
-        <div className="min-w-[8rem]">
+        <div className="min-w-[8rem] shrink-0">
           <label className="sr-only" htmlFor="browse-specialty">
             Spécialité
           </label>
           <Select
             id="browse-specialty"
-            className="py-2"
+            className="py-1.5"
             value={filters.specialty}
             onChange={(event) =>
               onFiltersChange({
@@ -167,19 +175,33 @@ export function ListingsToolbar({
         </div>
 
         {/*
-          The date pair takes the room the row has left.
+          The pair grows, but within a ceiling, and its two fields grow with it.
 
-          A fixed width was wrong in both directions: narrow enough to keep one
-          line at 1152px and the inputs clipped their own value; wide enough to
-          read comfortably and the row went to two lines at that same size.
-          `flex-1` with a floor instead — the pair grows into whatever the viewport
-          leaves over, and stops shrinking where a date still fits.
+          Both halves of that are load-bearing.
 
-          `min-w-[13.5rem]` is two inputs of roughly 6rem plus their gap; below
-          that, `jj/mm/aaaa` and the calendar button start cutting into each other.
+          `flex-1` alone — with no `flex-1` on the fields — is the shape that put a
+          hole in the row: the box absorbed the free width while the date inputs
+          inside it stayed at their intrinsic size, and the space opened *after*
+          the second date, before the chip. The `sm:flex-1` on each child is what
+          closes it, because now the box that grows is filled.
+
+          Without any `flex-1` at all, it is worse: the pair can no longer shrink
+          below what two `type="date"` inputs ask for (~150px each), so on a
+          narrow map the row wraps — and a bar that folds to two or three floors is
+          the thing this layout was rebuilt to stop doing.
+
+          `max-w-[22rem]` keeps the growth bounded. Uncapped, a wide map would
+          hand the pair the whole slack and leave each field ~275px to hold
+          `jj/mm/aaaa` and a calendar glyph; bounded, they settle around 170px,
+          which is as wide as a date field needs to look like one. Past that
+          ceiling the leftover goes to the end of the row, where a row of controls
+          ends instead of splitting into islands.
+
+          `min-w-[13.5rem]` is the floor: below it, the values and the calendar
+          buttons start cutting into each other.
         */}
-        <div className="grid w-full min-w-0 grid-cols-2 gap-2 sm:flex sm:min-w-[13.5rem] sm:flex-1">
-          <div className="min-w-0">
+        <div className="grid w-full min-w-0 grid-cols-2 gap-2 sm:flex sm:min-w-[13.5rem] sm:max-w-[22rem] sm:flex-1">
+          <div className="min-w-0 sm:flex-1">
             <label className="sr-only" htmlFor="browse-from">
               Démarrant après le
             </label>
@@ -187,7 +209,7 @@ export function ListingsToolbar({
               id="browse-from"
               type="date"
               aria-label="Démarrant après le"
-              className="field-input w-full min-w-0 py-2"
+              className="field-input w-full min-w-0 py-1.5"
               value={filters.from}
               max={filters.to || undefined}
               onChange={(event) =>
@@ -195,7 +217,7 @@ export function ListingsToolbar({
               }
             />
           </div>
-          <div className="min-w-0">
+          <div className="min-w-0 sm:flex-1">
             <label className="sr-only" htmlFor="browse-to">
               Démarrant avant le
             </label>
@@ -203,7 +225,7 @@ export function ListingsToolbar({
               id="browse-to"
               type="date"
               aria-label="Démarrant avant le"
-              className="field-input w-full min-w-0 py-2"
+              className="field-input w-full min-w-0 py-1.5"
               value={filters.to}
               min={filters.from || undefined}
               onChange={(event) => onFiltersChange({ to: event.target.value })}
@@ -217,23 +239,29 @@ export function ListingsToolbar({
 
         - `min-h-0` — `.chip` reserves a 3rem touch target, which is right when
           chips are the whole control (`/listings/mine`) and wrong beside inputs
-          that are 43px tall. Left in, this button measured 59px against 43px for
-          every neighbour and dragged the row taller than the map it sits on.
-        - `py-2 px-3` — the class's `0.75rem 1.125rem` is sized for a bare chip.
+          of this height. Left in, this button measured 59px against its neighbours
+          and dragged the row taller than the map it sits on.
+        - `py-1.5 px-3` — the class's `0.75rem 1.125rem` is sized for a bare chip.
         - `whitespace-nowrap` — the button is a flex item and can be squeezed; at
           99px wide its icon and label stopped fitting and wrapped onto two lines,
           which is the "two floors" of content.
         - `shrink-0` — never squeezed at all, which is what makes the previous
           line a guarantee rather than a hope.
-        - `min-h-[2.6875rem]` — the one value here that is not a preference: it is
-          the height of the `.field-input` beside it, set so the row aligns. A
-          button and an input are sized by different rules, and padding alone left
-          this one 3px short of its neighbours.
+        - `min-h-[2.375rem]` — the height of the `.field-input` beside it, so the
+          row aligns. A button and an input are sized by different rules, and
+          padding alone left this one short of its neighbours.
+
+          It is the one value here that is arithmetic rather than taste: the inputs
+          above are `py-1.5` over a 0.925rem font, which measures 38px, and the
+          button is a flex item whose height is this floor and nothing else. Note
+          what is given up — 38px is below the 44px a finger is comfortable with,
+          though comfortably over the 24px WCAG 2.5.8 sets as the minimum target.
+          `py-2` is one line away if that trade is not worth the height.
       */}
         <button
           type="button"
           className={cn(
-            "chip min-h-0 min-h-[2.6875rem] shrink-0 whitespace-nowrap px-3 py-2",
+            "chip min-h-0 min-h-[2.375rem] shrink-0 whitespace-nowrap px-3 py-1.5",
             filters.urgentOnly && "is-active",
           )}
           aria-pressed={filters.urgentOnly}
@@ -242,13 +270,14 @@ export function ListingsToolbar({
           <AlertTriangleIcon className="mr-1 inline-block align-[-0.15em] size-3.5" />
           Urgentes
         </button>
-      </div>
 
-      <p className="mt-2 text-xs text-muted tabular-nums" aria-live="polite">
-        <SlidersIcon className="mr-1 inline-block align-[-0.125em]" />
-        {total} annonce{total > 1 ? "s" : ""} disponible
-        {total > 1 ? "s" : ""}
-      </p>
+        <p
+          className="text-xs whitespace-nowrap text-muted tabular-nums"
+          aria-live="polite"
+        >
+          {total} annonce{total > 1 ? "s" : ""}
+        </p>
+      </div>
     </div>
   );
 }

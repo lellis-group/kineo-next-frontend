@@ -131,9 +131,8 @@ export function ListingsContainer({
   /**
    * Fetches one view.
    *
-   * Sorting is deliberately absent: the endpoint takes no ordering parameter, so
-   * whatever comes back is newest-first by the server's own rule. Reordering
-   * happens once, on the rows already in hand, below.
+   * `BrowseView` already carries the ordering, so this has nothing to add: the
+   * view is what the server is asked for, filters and page and sort alike.
    */
   const load = useCallback(
     (target: BrowseView) => fetchBrowseListings(target),
@@ -165,16 +164,6 @@ export function ListingsContainer({
       })),
     [],
   );
-
-  /**
-   * The rows as the reader asked for them.
-   *
-   * This sorts the page in hand, and only the page in hand — the feed endpoint
-   * exposes no sort parameter, so there is no honest way to order the whole
-   * collection from here. The control therefore orders what is on screen and
-   * nothing more, which is a real limit of the contract rather than something
-   * this component papers over.
-   */
 
   /**
    * The postings the map draws, held apart from the page on screen.

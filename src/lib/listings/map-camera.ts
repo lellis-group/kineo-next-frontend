@@ -51,8 +51,8 @@ export function cameraTargetFor(place: MapPlace): CameraTarget {
 
   if (points.length < 2) {
     // The place's own coordinate rather than the first member's: for a lone
-    // practice they are the same value, and for a group whose postings were
-    // never geocoded it is the only one that exists.
+    // practice they are the same value, and it is the one that exists even if a
+    // place ever arrives with no listings to frame.
     return { kind: "point", center: [place.longitude, place.latitude] };
   }
 
