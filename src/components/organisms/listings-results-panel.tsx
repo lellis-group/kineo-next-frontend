@@ -1,18 +1,60 @@
+import type { Ref } from "react";
 import { FileTextIcon } from "@/components/atoms/icons";
-import {
-  BROWSE_SORTS,
-  type BrowseSort,
-} from "@/components/molecules/listings-toolbar";
 import { Pagination } from "@/components/molecules/pagination";
 import { Panel } from "@/components/molecules/panel";
 import { SegmentedControl } from "@/components/molecules/segmented-control";
 import { Select } from "@/components/molecules/select";
 import { EmptyState } from "@/components/organisms/empty-state";
 import { ListingCard } from "@/components/organisms/listing-card";
-import { ListingsTable } from "@/components/organisms/listings-table";
+import {
+  ListingsTable,
+  type ListingsTableHandle,
+} from "@/components/organisms/listings-table";
 import { cn } from "@/lib/cn";
-import type { BrowseHorizon, BrowseListing } from "@/lib/listings";
-import { BROWSE_HORIZONS } from "@/lib/listings";
+import type { BrowseHorizon, BrowseListing, BrowseSort } from "@/lib/listings";
+
+/**
+ * How the reader wants the rows ordered — the labels for the sort picker.
+ *
+ * The `BrowseSort` union itself lives in the domain (`lib/listings`): ordering is
+ * a real parameter the endpoint takes, so the set of values belongs with the
+ * contracts, not with a component. What stays here is the French copy, which is
+ * presentation and belongs beside the `<Select>` that renders it.
+ *
+ * It sits with the results rather than with the filter bar because sorting is not
+ * a narrowing: it changes no result set, only which row comes first. A reader who
+ * changes it expects the list below to rearrange, not the set of results to shrink.
+ */
+interface BrowseSortOption {
+  id: BrowseSort;
+  label: string;
+}
+
+const BROWSE_SORTS: readonly BrowseSortOption[] = [
+  { id: "recent", label: "Plus récentes" },
+  { id: "urgent", label: "Urgentes d'abord" },
+  { id: "startDate", label: "Date de début" },
+];
+
+/**
+ * How soon a posting has to start — the labels for the period row.
+ *
+ * Same split as the sort picker above: `BrowseHorizon` and the `horizonStart` /
+ * `horizonForStart` mapping stay in the domain, because a horizon is a real
+ * narrowing the date fields also write. Only the French copy lives here, beside
+ * the `SegmentedControl` that renders it.
+ */
+interface BrowseHorizonOption {
+  id: BrowseHorizon;
+  label: string;
+}
+
+const BROWSE_HORIZONS: readonly BrowseHorizonOption[] = [
+  { id: "ALL", label: "Toutes" },
+  { id: "WEEK", label: "Cette semaine" },
+  { id: "MONTH", label: "Ce mois" },
+  { id: "LATER", label: "Plus tard" },
+];
 
 interface ListingsResultsPanelProps {
   listings: BrowseListing[];
@@ -41,6 +83,12 @@ interface ListingsResultsPanelProps {
    * search that matched nothing.
    */
   onResetFilters: () => void;
+  /**
+   * A handle onto the table, so the screen can scroll a picked posting into
+   * view. Passed down rather than reached for: the table owns the row markup,
+   * so it — not the container — is what knows how to find a row by id.
+   */
+  tableRef?: Ref<ListingsTableHandle>;
 }
 
 /**
@@ -69,6 +117,7 @@ export function ListingsResultsPanel({
   activeListingId,
   onActiveListingChange,
   onResetFilters,
+  tableRef,
 }: ListingsResultsPanelProps) {
   return (
     <Panel
@@ -151,6 +200,7 @@ export function ListingsResultsPanel({
           </div>
           <div className="hidden sm:block">
             <ListingsTable
+              ref={tableRef}
               listings={listings}
               activeListingId={activeListingId}
               onActiveListingChange={onActiveListingChange}

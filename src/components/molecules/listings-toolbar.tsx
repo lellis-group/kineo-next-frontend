@@ -7,28 +7,6 @@ import { useCommittedInput } from "@/lib/hooks/use-committed-input";
 import type { BrowseFormFilters } from "@/lib/listings";
 import type { Specialty } from "@/lib/types/api";
 
-/**
- * How the reader wants the results ordered. Client-side: the endpoint takes none.
- *
- * Lives with the results rather than with the filters, and the control that sets
- * it is rendered by `ListingsResultsPanel`. Sorting is not a narrowing — it does
- * not change which postings are on screen — and the endpoint that could order the
- * whole collection has no parameter for it, so it belongs next to the list it
- * orders rather than in a row of controls that narrow it.
- */
-export type BrowseSort = "recent" | "urgent" | "startDate";
-
-export interface BrowseSortOption {
-  id: BrowseSort;
-  label: string;
-}
-
-export const BROWSE_SORTS: readonly BrowseSortOption[] = [
-  { id: "recent", label: "Plus récentes" },
-  { id: "urgent", label: "Urgentes d'abord" },
-  { id: "startDate", label: "Date de début" },
-];
-
 export interface SpecialtyOption {
   id: Specialty;
   label: string;
@@ -127,7 +105,7 @@ export function ListingsToolbar({
           height by construction (`py-1.5` on the inputs, `min-h-[2.375rem]` on the
           chip), so there is no baseline to correct for. */}
       <div className={cn("flex flex-wrap items-center gap-2", className)}>
-        <div className="min-w-[8rem] flex-1 sm:max-w-[15rem]">
+        <div className="min-w-[8rem] flex-1 sm:max-w-50">
           <label className="sr-only" htmlFor="browse-city">
             Rechercher une ville
           </label>
@@ -200,7 +178,7 @@ export function ListingsToolbar({
           `min-w-[13.5rem]` is the floor: below it, the values and the calendar
           buttons start cutting into each other.
         */}
-        <div className="grid w-full min-w-0 grid-cols-2 gap-2 sm:flex sm:min-w-[13.5rem] sm:max-w-[22rem] sm:flex-1">
+        <div className="grid w-full min-w-0 grid-cols-2 gap-2 sm:flex sm:min-w-45 sm:max-w-[22rem] sm:flex-1">
           <div className="min-w-0 sm:flex-1">
             <label className="sr-only" htmlFor="browse-from">
               Démarrant après le
@@ -261,7 +239,7 @@ export function ListingsToolbar({
         <button
           type="button"
           className={cn(
-            "chip min-h-0 min-h-[2.375rem] shrink-0 whitespace-nowrap px-3 py-1.5",
+            "chip min-h-[2.375rem] shrink-0 whitespace-nowrap px-3 py-1.5",
             filters.urgentOnly && "is-active",
           )}
           aria-pressed={filters.urgentOnly}

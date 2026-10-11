@@ -249,18 +249,6 @@ export interface BrowseListingsData {
  */
 export type BrowseHorizon = "ALL" | "WEEK" | "MONTH" | "LATER";
 
-export interface BrowseHorizonOption {
-  id: BrowseHorizon;
-  label: string;
-}
-
-export const BROWSE_HORIZONS: readonly BrowseHorizonOption[] = [
-  { id: "ALL", label: "Toutes" },
-  { id: "WEEK", label: "Cette semaine" },
-  { id: "MONTH", label: "Ce mois" },
-  { id: "LATER", label: "Plus tard" },
-] as const;
-
 /** ISO date (no time) the horizon narrows `startDateFrom` to. */
 export function horizonStart(horizon: BrowseHorizon): string | undefined {
   const now = new Date();

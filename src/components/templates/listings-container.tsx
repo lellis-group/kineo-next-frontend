@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { InlineRetryBanner } from "@/components/molecules/inline-retry-banner";
+import type { ListingsTableHandle } from "@/components/organisms/listings-table";
 import { ListingsView } from "@/components/templates/listings-view";
 import { usePaginatedResource } from "@/lib/hooks/use-paginated-resource";
 import {
@@ -41,21 +42,6 @@ const ListingsMap = dynamic(
     ),
   },
 );
-
-/**
- * The table row standing for a posting, or `null` when it is not on this page.
- *
- * Scoped to the table, and written once so the two callers cannot drift apart.
- * Both the rows and the map's popup entries carry `data-listing-id` — the same
- * posting seen two ways, which is the point of the screen — so an unscoped
- * selector finds the popup's own button and reports a row on screen while the
- * reader is three pages short of it.
- */
-function rowFor(id: string): HTMLElement | null {
-  return document.querySelector<HTMLElement>(
-    `tbody tr[data-listing-id="${id}"]`,
-  );
-}
 
 /**
  * Owns the browse screen's state: which filters, which page, and how the rows
@@ -205,6 +191,15 @@ export function ListingsContainer({
   const [pendingScrollId, setPendingScrollId] = useState<string | null>(null);
 
   /**
+   * A handle onto the results table, so a picked posting can be scrolled to.
+   *
+   * The container asks the table to scroll rather than querying the document
+   * itself: a row is the table's markup, and only the table should know how to
+   * find one. See `ListingsTableHandle`.
+   */
+  const tableRef = useRef<ListingsTableHandle>(null);
+
+  /**
    * Brings a posting picked on the map to the reader in the list.
    *
    * The two halves of this screen are one set of rows seen two ways, and the map
@@ -222,9 +217,9 @@ export function ListingsContainer({
     (id: string) => {
       setActiveListingId(id);
 
-      const onScreen = rowFor(id);
-      if (onScreen) {
-        onScreen.scrollIntoView({ behavior: "smooth", block: "center" });
+      // On this page already: the table scrolls the row itself and reports it
+      // was found, so there is nothing to page to.
+      if (tableRef.current?.scrollToId(id)) {
         return;
       }
 
@@ -259,10 +254,11 @@ export function ListingsContainer({
     // Not on this page yet — the turn of the page is still in flight, and the
     // effect runs again for the rows that land.
     if (!onScreenIds.has(pendingScrollId)) return;
-    const row = rowFor(pendingScrollId);
-    if (!row) return;
-    row.scrollIntoView({ behavior: "smooth", block: "center" });
-    setPendingScrollId(null);
+    // Cleared only once the row is actually found, so a turn of the page whose
+    // rows have not painted yet is retried on the next run rather than dropped.
+    if (tableRef.current?.scrollToId(pendingScrollId)) {
+      setPendingScrollId(null);
+    }
   }, [onScreenIds, pendingScrollId]);
 
   return (
@@ -298,6 +294,7 @@ export function ListingsContainer({
           activeListingId,
           onActiveListingChange: setActiveListingId,
           onResetFilters: resetFilters,
+          tableRef,
         }}
         map={
           <ListingsMap

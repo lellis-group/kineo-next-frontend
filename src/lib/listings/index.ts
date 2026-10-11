@@ -69,7 +69,6 @@ export type {
   BrowseFilters,
   BrowseFormFilters,
   BrowseHorizon,
-  BrowseHorizonOption,
   BrowseListing,
   BrowseListingsData,
   BrowseView,
@@ -79,7 +78,6 @@ export type {
   SpecialtyFacet,
 } from "./browse-contracts";
 export {
-  BROWSE_HORIZONS,
   type BrowsePlacesData,
   type BrowseSort,
   DEFAULT_BROWSE_VIEW,

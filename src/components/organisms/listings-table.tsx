@@ -1,3 +1,4 @@
+import { forwardRef, useImperativeHandle, useRef } from "react";
 import { Badge } from "@/components/atoms/badge";
 import { CalendarIcon, MapPinIcon, UsersIcon } from "@/components/atoms/icons";
 import { SpecialtyIcon } from "@/components/molecules/specialty-icon";
@@ -5,6 +6,25 @@ import { cn } from "@/lib/cn";
 import { type BrowseListing, listingBadge } from "@/lib/listings";
 import { SPECIALTY_LABELS } from "@/lib/profile";
 import { rowEnterStyle } from "@/lib/row-enter";
+
+/**
+ * What the table lets the screen do to its rows.
+ *
+ * The container scrolls a picked posting into view, but a row is the table's
+ * own markup, not the container's business. It used to be reached with a
+ * `document.querySelector("tbody tr[data-listing-id=…]")` living in the
+ * container, which meant the container knew the shape of a section it only
+ * arranges — and would break the day the table's structure changed. The lookup
+ * now lives here, beside the markup it reads, and the container just asks.
+ */
+export interface ListingsTableHandle {
+  /**
+   * Centers the row for `id`, when it is rendered. Returns whether the row was
+   * found, so the caller can tell "scrolled" from "not on this page" without
+   * reaching into the DOM itself.
+   */
+  scrollToId: (id: string) => boolean;
+}
 
 interface ListingsTableProps {
   listings: BrowseListing[];
@@ -26,14 +46,36 @@ interface ListingsTableProps {
  * phone either scrolls sideways or squeezes every column into an unreadable
  * few pixels, and both are worse than showing the same rows as cards.
  */
-export function ListingsTable({
-  listings,
-  activeListingId,
-  onActiveListingChange,
-}: ListingsTableProps) {
+export const ListingsTable = forwardRef<
+  ListingsTableHandle,
+  ListingsTableProps
+>(function ListingsTable(
+  { listings, activeListingId, onActiveListingChange },
+  ref,
+) {
+  const tableRef = useRef<HTMLTableElement>(null);
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      scrollToId: (id: string) => {
+        // Scoped to this table: the map's popup button carries the same
+        // `data-listing-id`, and a document-wide query would find that button
+        // and report a row on screen while the reader is pages short of it.
+        const row = tableRef.current?.querySelector<HTMLElement>(
+          `tbody tr[data-listing-id="${id}"]`,
+        );
+        if (!row) return false;
+        row.scrollIntoView({ behavior: "smooth", block: "center" });
+        return true;
+      },
+    }),
+    [],
+  );
+
   return (
     <div className="hidden overflow-x-auto sm:block">
-      <table className="table listings-table">
+      <table ref={tableRef} className="table listings-table">
         <thead>
           <tr>
             <th scope="col">Annonce</th>
@@ -105,4 +147,4 @@ export function ListingsTable({
       </table>
     </div>
   );
-}
+});
