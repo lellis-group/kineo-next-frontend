@@ -94,17 +94,18 @@ bun run test       # unit tests for src/lib (bun test)
 | `/terms` · `/privacy` | Legal documents                       |
 
 Protected routes are guarded by an optimistic session-cookie check in `src/proxy.ts`
-that redirects guests to `/signin`. The guard covers `/profile`, `/applications`,
-`/listings/mine` and `/practices`; the first three exist, `/practices` does not yet.
-Every guarded page also resolves the session for real on the server and redirects an
-`anonymous` state itself, so the cookie check is a fast path rather than the only
-barrier.
+that redirects guests to `/signin`. The guard covers `/profile`, `/applications`, the
+whole `/listings` prefix and `/practices`; the first three exist, `/practices` does
+not yet. Every guarded page also resolves the session for real on the server and
+redirects an `anonymous` state itself, so the cookie check is a fast path rather than
+the only barrier.
 
-`/listings` — the browse feed — is deliberately outside that guard, and is the one
-listing route that is public. It is the page a replacement doctor lands on to find
-work, and `GET /replacement-listings` is anonymous on the backend: redirecting a
-signed-out reader away would hide the openings from the people who most need to
-see that there are any. The practice side of the same URL prefix keeps the guard.
+`/listings` — the browse feed — is member-only, behind the same two layers. Its
+endpoints stay anonymous on the backend (`GET /replacement-listings` answers a
+signed-out caller with a 200, never a 401), so the page resolves the session state
+with `fetchServerAuth` and redirects when it is `anonymous` — a `requireMember` guard,
+which only acts on a 401, would sail straight past. The practice side of the same URL
+prefix (`/listings/mine`) is covered by the same prefix guard.
 
 ---
 

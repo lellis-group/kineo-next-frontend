@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { ListSkeleton } from "@/components/molecules/list-skeleton";
 import { ListingsContainer } from "@/components/templates/listings-container";
 import { serverTransport } from "@/lib/api-transport.server";
 import { fetchBrowseListings, fetchBrowsePlaces } from "@/lib/listings";
+import { fetchServerAuth } from "@/lib/server-auth";
 
 export const metadata: Metadata = {
   title: "Annonces — Kineo",
@@ -12,13 +14,17 @@ export const metadata: Metadata = {
 };
 
 /**
- * The public feed, resolved on the server.
+ * The member-only feed, resolved on the server.
  *
- * No `requireMember`: this is the page a locum lands on to find work, and the
- * endpoint behind it is anonymous on the backend. A signed-out reader is exactly
- * the reader who most needs to see that openings exist — the guard that keeps the
- * other member routes protected does not apply here, and `src/proxy.ts` has been
- * narrowed accordingly.
+ * Guarded like every other member route, on two layers: `src/proxy.ts` bounces a
+ * signed-out reader before the route runs, and the session is resolved for real
+ * here so an expired cookie still lands on `/signin`.
+ *
+ * `fetchServerAuth` rather than `requireMember`, and that is not a preference.
+ * `requireMember` redirects only on a 401, and the browse endpoints are anonymous
+ * on the backend — a signed-out reader gets a 200 with the openings, never a 401,
+ * so `requireMember` would sail straight past. Reading the session state is the
+ * only check that actually answers "is this reader signed in".
  *
  * The default view is the one the server sends, so the route paints with content
  * rather than with the skeleton the `Suspense` boundary would otherwise hold for
@@ -40,6 +46,13 @@ export default function ListingsPage() {
 }
 
 async function Listings() {
+  // The authoritative check: a cookie the backend refuses reads as anonymous,
+  // which is exactly the reader the proxy's fast path was there to catch early.
+  const auth = await fetchServerAuth();
+  if (auth.status !== "member") {
+    redirect("/signin");
+  }
+
   const [data, places] = await Promise.all([
     fetchBrowseListings({}, serverTransport),
     fetchBrowsePlaces({}, serverTransport),
