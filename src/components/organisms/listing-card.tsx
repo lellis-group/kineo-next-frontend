@@ -1,11 +1,7 @@
 import { Badge } from "@/components/atoms/badge";
 import { Card } from "@/components/atoms/card";
-import {
-  CalendarIcon,
-  MapPinIcon,
-  StethoscopeIcon,
-  UsersIcon,
-} from "@/components/atoms/icons";
+import { CalendarIcon, MapPinIcon, UsersIcon } from "@/components/atoms/icons";
+import { SpecialtyIcon } from "@/components/molecules/specialty-icon";
 import { type BrowseListing, listingBadge } from "@/lib/listings";
 import { SPECIALTY_LABELS } from "@/lib/profile";
 import { rowEnterStyle } from "@/lib/row-enter";
@@ -39,7 +35,7 @@ export function ListingCard({
     >
       <div className="flex items-start gap-3">
         <span className="icon-tilt grid size-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
-          <StethoscopeIcon className="size-4" />
+          <SpecialtyIcon specialty={listing.specialty} className="size-4" />
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">

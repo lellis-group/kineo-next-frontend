@@ -9,12 +9,21 @@ export function EmptyState({
   description,
   actionLabel,
   actionHref,
+  onAction,
 }: {
   icon?: ReactNode;
   title: string;
   description: string;
   actionLabel?: string;
   actionHref?: string;
+  /**
+   * Action handler for an action that is not a link — clearing filters, for one.
+   *
+   * Beside `actionHref` rather than replacing it: `Button` renders as a link when
+   * given an `href` and as a button when given an `onClick`, so an empty state can
+   * offer either without the component knowing which kind of action it is.
+   */
+  onAction?: () => void;
 }) {
   return (
     <Card className="mt-8 flex flex-col items-center p-8 text-center sm:p-10">
@@ -23,8 +32,13 @@ export function EmptyState({
       <p className="mt-2 max-w-md text-sm leading-relaxed text-muted">
         {description}
       </p>
-      {actionLabel && actionHref && (
-        <Button href={actionHref} className="mt-6">
+      {actionLabel && (actionHref || onAction) && (
+        <Button
+          href={actionHref}
+          onClick={onAction}
+          className="mt-6"
+          type="button"
+        >
           {actionLabel}
         </Button>
       )}

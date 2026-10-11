@@ -297,6 +297,7 @@ export function ListingsContainer({
           onSortChange: applySort,
           activeListingId,
           onActiveListingChange: setActiveListingId,
+          onResetFilters: resetFilters,
         }}
         map={
           <ListingsMap

@@ -216,14 +216,79 @@ export function DotIcon(props: SVGProps<SVGSVGElement>) {
   );
 }
 
-/** Stethoscope-ish mark standing for a medical posting. */
+/**
+ * Stethoscope — the generalist's mark. Lucide's own path, so every specialty
+ * icon shares one geometry and stroke weight.
+ */
 export function StethoscopeIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <Svg {...props}>
-      <path d="M6 3v6a4 4 0 0 0 8 0V3" />
-      <path d="M6 3H4M14 3h-2" />
-      <path d="M10 13v2a5 5 0 0 0 10 0v-2" />
-      <circle cx="20" cy="11" r="2" />
+      <path d="M11 2v2" />
+      <path d="M5 2v2" />
+      <path d="M5 3H4a2 2 0 0 0-2 2v4a6 6 0 0 0 12 0V5a2 2 0 0 0-2-2h-1" />
+      <path d="M8 15a6 6 0 0 0 12 0v-3" />
+      <circle cx="20" cy="10" r="2" />
+    </Svg>
+  );
+}
+
+/**
+ * Tooth — the dentist's mark. MDI's silhouette (Lucide ships no tooth), drawn
+ * as stroke like every other icon here: the shared `Svg` wrapper sets
+ * `fill="none" stroke="currentColor"`, so the filled original reads as a clean
+ * line-art tooth. The shape is a crown over two roots with the notch between
+ * them left open — that gap is what makes it read as a tooth, not a pebble.
+ */
+export function ToothIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Svg {...props}>
+      <path d="M7 2C4 2 2 5 2 8c0 2.11 1 5 2 6s2 8 4 8c4.54 0 2-7 4-7s-.54 7 4 7c2 0 3-7 4-8s2-3.89 2-6c0-3-2-6-5-6s-3 1-5 1-2-1-5-1Z" />
+    </Svg>
+  );
+}
+
+/**
+ * Sparkles — dermatology, read as skin's radiance rather than a body part.
+ * Lucide's mark: one large four-point star with a smaller cross and dot.
+ */
+export function SparkleIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Svg {...props}>
+      <path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z" />
+      <path d="M20 2v4" />
+      <path d="M22 4h-4" />
+      <circle cx="4" cy="20" r="2" />
+    </Svg>
+  );
+}
+
+/**
+ * Brain — psychiatry. Lucide's two-lobe outline with the central fold.
+ */
+export function BrainIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Svg {...props}>
+      <path d="M12 18V5" />
+      <path d="M15 13a4.17 4.17 0 0 1-3-4 4.17 4.17 0 0 1-3 4" />
+      <path d="M17.598 6.5A3 3 0 1 0 12 5a3 3 0 1 0-5.598 1.5" />
+      <path d="M17.997 5.125a4 4 0 0 1 2.526 5.77" />
+      <path d="M18 18a4 4 0 0 0 2-7.464" />
+      <path d="M19.967 17.483A4 4 0 1 1 12 18a4 4 0 1 1-7.967-.517" />
+      <path d="M6 18a4 4 0 0 1-2-7.464" />
+      <path d="M6.003 5.125a4 4 0 0 0-2.526 5.77" />
+    </Svg>
+  );
+}
+
+/**
+ * Activity — the generic medical mark, standing in for "Autre spécialité".
+ * Lucide's ECG trace: the idiom every reader recognises as "medicine", with no
+ * single discipline attached to it.
+ */
+export function ActivityIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Svg {...props}>
+      <path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2" />
     </Svg>
   );
 }

@@ -1,4 +1,5 @@
 import type { ComponentProps, ReactNode } from "react";
+import { SlidersIcon } from "@/components/atoms/icons";
 import { PageHeader } from "@/components/atoms/page-header";
 import { ListingsFacetsRail } from "@/components/organisms/listings-facets-rail";
 import { ListingsResultsPanel } from "@/components/organisms/listings-results-panel";
@@ -76,15 +77,24 @@ export function ListingsView({
       </div>
 
       {filtered && (
-        <div className="mt-3 flex items-center gap-3">
+        <div className="mt-3 flex flex-wrap items-center gap-3">
           <p className="text-xs text-muted">
             Filtres appliqués à cette recherche.
           </p>
+          {/*
+           * A chip rather than a bare underlined word, so the reset reads as the
+           * control it is and gets a real hit area — the same treatment as the
+           * « Urgentes » toggle in the filter bar. Compact overrides mirror that
+           * button's, minus the `min-h` floor: this row is not aligning against
+           * inputs, so the chip's own 3rem is one more button than it needs, and
+           * `py-1.5` keeps it the height of the line it sits beside.
+           */}
           <button
             type="button"
-            className="cursor-pointer text-xs font-medium text-primary underline underline-offset-4 hover:opacity-80"
+            className="chip min-h-0 shrink-0 whitespace-nowrap px-3 py-1.5"
             onClick={onResetFilters}
           >
+            <SlidersIcon className="mr-1 inline-block size-3.5 align-[-0.15em]" />
             Réinitialiser
           </button>
         </div>

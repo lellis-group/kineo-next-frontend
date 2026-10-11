@@ -36,6 +36,11 @@ interface ListingsResultsPanelProps {
   /** Row the reader is pointing at; mirrored onto its map marker. */
   activeListingId: string | null;
   onActiveListingChange: (id: string | null) => void;
+  /**
+   * Clears every filter — offered on the filtered empty state as the way out of a
+   * search that matched nothing.
+   */
+  onResetFilters: () => void;
 }
 
 /**
@@ -63,6 +68,7 @@ export function ListingsResultsPanel({
   onSortChange,
   activeListingId,
   onActiveListingChange,
+  onResetFilters,
 }: ListingsResultsPanelProps) {
   return (
     <Panel
@@ -76,8 +82,11 @@ export function ListingsResultsPanel({
             </span>
           )}
 
-          <label className="sr-only" htmlFor="browse-sort">
-            Trier les annonces par
+          <label
+            className="text-xs whitespace-nowrap text-muted"
+            htmlFor="browse-sort"
+          >
+            Trier par
           </label>
           <Select
             id="browse-sort"
@@ -114,6 +123,8 @@ export function ListingsResultsPanel({
               ? "Élargissez votre recherche en retirant un filtre ou une période."
               : "Revenez d'ici peu : les cabinets publient leurs remplacements au fil de l'eau."
           }
+          actionLabel={filtered ? "Réinitialiser les filtres" : undefined}
+          onAction={filtered ? onResetFilters : undefined}
         />
       ) : (
         <div

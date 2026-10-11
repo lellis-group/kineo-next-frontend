@@ -1,10 +1,6 @@
 import { Badge } from "@/components/atoms/badge";
-import {
-  CalendarIcon,
-  MapPinIcon,
-  StethoscopeIcon,
-  UsersIcon,
-} from "@/components/atoms/icons";
+import { CalendarIcon, MapPinIcon, UsersIcon } from "@/components/atoms/icons";
+import { SpecialtyIcon } from "@/components/molecules/specialty-icon";
 import { cn } from "@/lib/cn";
 import { type BrowseListing, listingBadge } from "@/lib/listings";
 import { SPECIALTY_LABELS } from "@/lib/profile";
@@ -63,7 +59,10 @@ export function ListingsTable({
               >
                 <td>
                   <div className="flex items-start gap-2.5">
-                    <StethoscopeIcon className="mt-0.5 size-4 shrink-0 text-primary" />
+                    <SpecialtyIcon
+                      specialty={listing.specialty}
+                      className="mt-0.5 size-4 shrink-0 text-primary"
+                    />
                     <div className="min-w-0">
                       <p className="font-medium text-foreground">
                         {listing.title}
