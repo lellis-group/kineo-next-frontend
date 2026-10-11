@@ -302,6 +302,8 @@ export function ListingsContainer({
           <ListingsMap
             places={placesData.places}
             unlocated={placesData.unlocated}
+            totalPlaces={placesData.totalPlaces}
+            truncated={placesData.truncated}
             activeListingId={activeListingId}
             onActiveListingChange={setActiveListingId}
             onListingPick={pickListing}

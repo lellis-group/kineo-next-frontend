@@ -348,6 +348,9 @@ export interface ApiListingPlaces {
   /** Matching postings whose practice was never geocoded. */
   unlocated: number;
 
+  /** How many places the filters matched, before the ceiling. */
+  totalPlaces: number;
+
   /** True when places were cut at the ceiling. */
   truncated: boolean;
 }

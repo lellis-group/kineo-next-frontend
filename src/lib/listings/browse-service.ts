@@ -143,6 +143,7 @@ export async function fetchBrowsePlaces(
       places: [],
       listingIds: [],
       unlocated: 0,
+      totalPlaces: 0,
       truncated: false,
     }));
 }

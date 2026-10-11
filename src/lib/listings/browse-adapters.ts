@@ -99,7 +99,13 @@ export function adaptBrowsePlaces(
   raw: ApiListingPlaces | undefined,
 ): BrowsePlacesData {
   if (!raw) {
-    return { places: [], listingIds: [], unlocated: 0, truncated: false };
+    return {
+      places: [],
+      listingIds: [],
+      unlocated: 0,
+      totalPlaces: 0,
+      truncated: false,
+    };
   }
 
   const places: MapPlace[] = [];
@@ -135,6 +141,7 @@ export function adaptBrowsePlaces(
     places,
     listingIds: raw.listingIds,
     unlocated: raw.unlocated,
+    totalPlaces: raw.totalPlaces,
     truncated: raw.truncated,
   };
 }

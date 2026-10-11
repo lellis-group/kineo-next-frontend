@@ -227,6 +227,7 @@ describe("fetchBrowsePlaces", () => {
         places,
         listingIds: ["p1-l1"],
         unlocated: 2,
+        totalPlaces: places.length,
         truncated: false,
       });
     };
@@ -299,6 +300,7 @@ describe("fetchBrowsePlaces", () => {
       places: [],
       listingIds: [],
       unlocated: 0,
+      totalPlaces: 0,
       truncated: false,
     });
   });

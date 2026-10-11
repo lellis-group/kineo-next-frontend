@@ -221,6 +221,8 @@ export interface BrowsePlacesData {
   listingIds: string[];
   /** Matching postings whose practice was never geocoded. */
   unlocated: number;
+  /** How many practices the filters matched, before the ceiling. */
+  totalPlaces: number;
   /** True when practices were cut at the ceiling. */
   truncated: boolean;
 }

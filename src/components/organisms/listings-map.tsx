@@ -10,6 +10,9 @@ import type { MapPlace } from "@/lib/listings";
 interface ListingsMapProps {
   places: MapPlace[];
   unlocated: number;
+  /** Practices the filters matched, before the ceiling. */
+  totalPlaces: number;
+  truncated: boolean;
   /** Id of the row the reader is pointing at, mirrored onto its markers. */
   activeListingId?: string | null;
   onActiveListingChange?: (id: string | null) => void;
@@ -49,6 +52,8 @@ interface ListingsMapProps {
 export function ListingsMap({
   places,
   unlocated,
+  totalPlaces,
+  truncated,
   activeListingId,
   onActiveListingChange,
   onListingPick,
@@ -100,6 +105,15 @@ export function ListingsMap({
         <p className="absolute bottom-3 left-3 rounded-full bg-surface/90 px-3 py-1.5 text-[0.6875rem] text-muted backdrop-blur-sm">
           {unlocated} annonce{unlocated > 1 ? "s" : ""} sans coordonnées,
           visible{unlocated > 1 ? "s" : ""} dans la liste seulement
+        </p>
+      )}
+
+      {/* The ceiling, stated with a count. A flag with no figure behind it
+          invites the reader to hunt for what is missing. */}
+      {truncated && (
+        <p className="absolute bottom-12 left-3 rounded-full bg-surface/90 px-3 py-1.5 text-[0.6875rem] text-muted backdrop-blur-sm">
+          {places.length} cabinets sur {totalPlaces} représentés — les plus
+          제공하고
         </p>
       )}
     </div>
