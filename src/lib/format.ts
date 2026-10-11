@@ -3,7 +3,7 @@
  * pluralization. Kept free of React/Next imports so any module can rely on them.
  */
 
-/** Pluralise un suffixe français selon le nombre. */
+/** Appends a French plural suffix according to the count. */
 export function plural(count: number, suffix = "s"): string {
   return count > 1 ? suffix : "";
 }

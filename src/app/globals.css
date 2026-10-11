@@ -1,14 +1,14 @@
 @import "tailwindcss";
 /*
- * Feuille de MapLibre GL, importée ici pour que le composant de la carte n'ait
- * aucun import CSS : dans l'App Router un import global est réservé à la racine.
+ * MapLibre GL's stylesheet, imported here so the map component carries no CSS
+ * import of its own: in the App Router a global import is reserved for the root.
  *
- * `layer(components)` n'est pas cosmétique. Tailwind range ses utilitaires dans
- * des couches CSS, et une feuille importée sans couche arrive **hors couche** —
- * où elle bat tout ce qui est dans `@layer components`, quelle que soit la
- * spécificité. Sans ce `layer()`, les quelques règles `.maplibregl-*` plus bas
- * ne s'appliquaient pas : le popup gardait son fond blanc et les contrôles de
- * zoom leur thème clair.
+ * `layer(components)` is not cosmetic. Tailwind ranges its utilities across CSS
+ * layers, and a sheet imported without one arrives **outside** every layer —
+ * where it beats anything inside `@layer components`, whatever the specificity.
+ * Without this `layer()`, the handful of `.maplibregl-*` rules further down did
+ * not apply: the popup kept its white background and the zoom controls their
+ * light theme.
  */
 @import "maplibre-gl/dist/maplibre-gl.css" layer(components);
 
@@ -71,26 +71,23 @@
   --radius-control: var(--radius-control);
 
   /*
-   * Unité d'espacement de base.
+   * The base spacing unit.
    *
-   * Tailwind vaut 0.25rem par cran, et l'interface.data d'origine était écrite
-   * avec cette échelle : `gap-2` (8px), `mt-3` (12px), `p-4` (16px). Sur une
-   * pagemarketing avec de grandes images ça passe ; sur les écrans métier —
-   * listes de candidatures, fiches annonces, tableaux de bord — ça empile les
-   * blocs les uns sur les autres et il n'y a plus de respiration entre deux
-   * sous-composants.
+   * Tailwind steps by 0.25rem, and the original design system was written against
+   * that scale: `gap-2` (8px), `mt-3` (12px), `p-4` (16px). On a marketing page
+   * with large images that is fine; on the working screens — application lists,
+   * listing details, dashboards — it stacks the blocks on top of one another and
+   * leaves no breathing room between two sub-components.
    *
-   * Remonter l'unité ici plutôt que dans chaque composant est la seule façon
-   * que le changement soit cohérent : toutes les classes d'espacement
-   * existent déjà dans le code, elles sont simplement calculées à partir de ce
-   * token. Passer de 0.25rem à 0.3rem multiplie chaque espacement par 1.2 sans
-   * toucher une seule classe utilitaire — `gap-3` vaut 14.4px, `p-6` 28.8px,
-   * `space-y-5` 30px.
+   * Raising the unit here rather than in each component is the only way the change
+   * can be coherent: every spacing class already exists in the code, it is simply
+   * computed from this token. Going from 0.25rem to 0.3rem multiplies every
+   * spacing by 1.2 without touching a single utility class — `gap-3` is 14.4px,
+   * `p-6` 28.8px, `space-y-5` 30px.
    *
-   * Les valeurs en `rem` écrites à la main (`.chip`, `.badge`, `.field-input`,
-   * les rayons) ne suivent pas : elles sont ajustées dans le bloc
-   * `@layer components` ci-dessous, sinon les contrôles rétréciraient
-   * relativement à la mise en page qui les contient.
+   * Hand-written `rem` values (`.chip`, `.badge`, `.field-input`, the radii) do
+   * not follow: they are adjusted in the `@layer components` block below, or the
+   * controls would shrink relative to the layout holding them.
    */
   --spacing: 0.3rem;
 
@@ -114,8 +111,8 @@
       sans-serif;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
-    /* Garde-fou : aucun enfant ne doit créer de scroll horizontal de page.
-       Le scroll interne (ex. chips) reste géré par overflow-x-auto local. */
+    /* Guard rail: no child should create horizontal page scroll.
+       Local scrolling (chips, for one) stays handled by its own overflow-x-auto. */
     overflow-x: clip;
   }
 
@@ -545,32 +542,31 @@
   }
 
   /*
-   * MapLibre : le chrome des contrôles sur la palette du produit.
+   * MapLibre: the controls' chrome, on the product's palette.
    *
-   * MapLibre livre un thème clair — boîtes blanches, croix blanche — qu'il faut
-   * ramener sur une surface sombre, et il écrit ces règles sur ses propres
-   * éléments au moment où il les crée. Les mettre ici plutôt que dans une balise
-   * injectée par le composant, c'est deux choses de moins : plus de style qui
-   * n'existe qu'après le premier effet (donc un éclair de chrome blanc au
-   * chargement), et plus de garde `getElementById` pour ne pas l'injecter deux
-   * fois.
+   * MapLibre ships a light theme — white boxes, white crosses — that has to be
+   * brought back onto a dark surface, and it writes these rules on its own
+   * elements as it creates them. Putting them here rather than in a tag injected
+   * by the component is two things fewer: no style that exists only after the
+   * first effect (so no flash of white chrome on load), and no `getElementById`
+   * guard to keep it from being injected twice.
    *
-   * Ces règles utilisent les variables de `:root`, ce qui n'est possible que
-   * parce qu'elles sont évaluées avec le reste de la feuille.
+   * These rules use the `:root` variables, which is only possible because they
+   * are evaluated with the rest of the sheet.
    */
   /*
-   * Les marqueurs de la carte.
+   * The map's markers.
    *
-   * MapLibre centre un marqueur avec un `translate(-50%, -50%)` exprimé en
-   * pourcentage de sa propre boîte. Grossir le marqueur au survol — avec
-   * `scale`, qui change cette boîte — décale donc ce pourcentage : le bouton
-   * sautait de près de 50 px sous le curseur, alors que le lecteur n'avait rien
-   * fait d'autre que le regarder. `transform-origin` n'y change rien, il est posé
-   * une fois par MapLibre d'après la taille au repos.
+   * MapLibre centres a marker with a `translate(-50%, -50%)` expressed as a
+   * percentage of its own box. Growing the marker on hover — with `scale`, which
+   * changes that box — shifts the percentage accordingly: the button used to jump
+   * nearly 50px under the cursor, when the reader had done nothing but look at
+   * it. `transform-origin` does not help; MapLibre sets it once, from the resting
+   * size.
    *
-   * D'où la règle d'or ci-dessous : sur un marqueur, aucun changement de taille.
-   * L'emphase passe par une ombre portée et un contour, qui sont dessinés hors de
-   * la boîte et ne la mesurent pas.
+   * Hence the golden rule below: on a marker, no size change. Emphasis goes
+   * through a drop shadow and an outline, both painted outside the box and
+   * neither measuring it.
    */
   /*
    * The marker's own box: sized by the hook, positioned by MapLibre, and never
@@ -699,12 +695,12 @@
   }
 
   /*
-   * La pastille d'attribution.
+   * The attribution pill.
    *
-   * Le contrôle est créé en mode compact, et MapLibre écrit alors
-   * `.maplibregl-ctrl-attrib.maplibregl-compact` : deux classes contre une pour la
-   * règle d'ici, donc la sienne gagnait et la pastille restait blanche. On vise les
-   * deux formes plutôt que de jouer sur la spécificité.
+   * The control is created in compact mode, and MapLibre then writes
+   * `.maplibregl-ctrl-attrib.maplibregl-compact`: two classes against one for the
+   * rule here, so its own won and the pill stayed white. Both forms are targeted
+   * rather than playing on specificity.
    */
   .maplibregl-ctrl-attrib,
   .maplibregl-ctrl-attrib.maplibregl-compact {
@@ -720,18 +716,18 @@
   }
 
   /*
-   * Le popup de la carte.
+   * The map's popup.
    *
-   * MapLibre peint la surface sur `.maplibregl-popup-content` et laisse le cadre
-   * transparent : son thème clair par défaut restait donc visible à l'intérieur —
-   * un rectangle blanc sur une page sombre — pendant que mes couleurs allaient sur
-   * le cadre qui l'entourait. La surface est ici remise sur la couche qui la
-   * dessine réellement, et son padding est le seul : la classe `p-4` du composant
-   * s'ajoutait à celui de MapLibre et doublait les marges.
+   * MapLibre paints the surface on `.maplibregl-popup-content` and leaves the
+   * frame transparent, so its default light theme stayed visible inside — a white
+   * rectangle on a dark page — while our colours went onto the frame around it.
+   * The surface is put back on the layer that actually paints it, and its padding
+   * is the only one: the component's `p-4` class was added to MapLibre's own and
+   * doubled the margins.
    *
-   * `z-index` au-dessus de la barre de filtres, qui est un frère de la carte et
-   * passe donc devant tout ce qu'elle contient. Un popup ouvert près du bord
-   * haut disparaissait sous la barre.
+   * `z-index` above the filter bar, which is a sibling of the map and therefore
+   * passes in front of everything the map contains. A popup opened near the top
+   * edge disappeared under the bar.
    */
   .maplibregl-popup {
     z-index: 20;
@@ -766,8 +762,8 @@
     animation: kineo-popup-enter 180ms cubic-bezier(0.22, 0.68, 0.28, 1) both;
     transform-origin: center;
     margin: 0;
-    padding: 0.875rem 1rem;
-    max-width: 20rem;
+    padding: 0.75rem 0.875rem;
+    max-width: 17rem;
     border-radius: 0.75rem;
     background: var(--surface);
     border: 1px solid var(--border);
@@ -789,14 +785,29 @@
     color: var(--foreground);
   }
 
-  /* Un titre qui court sur deux lignes ne doit pas passer sous la croix. */
+  /* A heading running onto two lines must not slide under the close cross. */
   .maplibregl-popup-content :is(h3, p) {
     padding-right: 1.125rem;
   }
 
   /*
-   * La pointe est une bordure orientée : sa couleur doit suivre celle du panneau,
-   * sinon un triangle clair se détache sur le fond de la carte.
+   * The postings inside a popup, and the focus ring they should not wear.
+   *
+   * The global `:focus-visible` paints every focusable element a 2px primary
+   * outline. On a posting entry that reads as a gold box drawn around one row of
+   * a small panel — heavy, and at odds with the rest of the popup. The outline is
+   * dropped, but the entries keep a focus affordance all the same: a faint
+   * surface, the very one the "centre" button below them already uses, so
+   * keyboard focus stays visible even where the gold ring does not.
+   */
+  .maplibregl-popup-content ul > li > button:focus-visible {
+    outline: none;
+    background: var(--surface-hover);
+  }
+
+  /*
+   * The tip is a directional border: its colour has to follow the panel's, or a
+   * light triangle detaches against the map's background.
    */
   .maplibregl-popup-anchor-bottom .maplibregl-popup-tip {
     border-top-color: var(--surface);

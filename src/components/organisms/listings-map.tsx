@@ -109,11 +109,15 @@ export function ListingsMap({
       )}
 
       {/* The ceiling, stated with a count. A flag with no figure behind it
-          invites the reader to hunt for what is missing. */}
+          invites the reader to hunt for what is missing.
+
+          "Les plus actives" is what `/places` does: it ranks practices by open
+          listing count and keeps the top `maxPlaces`, so the ones left off are
+          the quietest, not the oldest or the furthest. */}
       {truncated && (
         <p className="absolute bottom-12 left-3 rounded-full bg-surface/90 px-3 py-1.5 text-[0.6875rem] text-muted backdrop-blur-sm">
           {places.length} cabinets sur {totalPlaces} représentés — les plus
-          제공하고
+          actives
         </p>
       )}
     </div>

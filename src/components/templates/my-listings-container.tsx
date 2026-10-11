@@ -102,11 +102,11 @@ export function MyListingsContainer({
   });
 
   /**
-   * Filet de sécurité côté client : le toggle envoie `urgent=true` au backend,
-   * mais si celui-ci l'ignore la liste reviendrait inchangée et le bouton
-   * semblerait ne rien faire. Filtrer ici garantit que « Urgentes seulement »
-   * ne montre jamais une annonce non urgente, que le serveur ait filtré ou non.
-   * Quand le serveur filtre déjà, ce filtre est un no-op.
+   * Client-side safety net: the toggle sends `urgent=true` to the backend, but if
+   * the backend ignores it the list would come back unchanged and the button
+   * would look like it does nothing. Filtering here guarantees « Urgentes
+   * seulement » never shows a non-urgent posting, whatever the server did.
+   * When the server already filters, this one is a no-op.
    */
   const visibleListings = useMemo(
     () =>

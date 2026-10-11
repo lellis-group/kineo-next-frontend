@@ -673,11 +673,14 @@ function popupContent(
     return root;
   }
 
-  // A practice can publish a lot; a popup that grows past the map is a popup that
-  // has to be scrolled to read and closes on the way out of view.
+  // A place can hold a lot of postings, and a cluster merges several practices —
+  // so the list here can be long. It is capped at a handful and scrolls past that
+  // rather than letting the popup grow down the map. The count line and the button
+  // sit outside the scroll, so what frames the list never leaves the popup.
   const shown = place.listings.slice(0, MAX_POPUP_LISTINGS);
   const list = document.createElement("ul");
-  list.className = "mt-1.5 flex flex-col gap-1.5 border-t border-border pt-1.5";
+  list.className =
+    "mt-1 flex max-h-52 flex-col gap-1 overflow-y-auto overscroll-contain border-t border-border pt-1.5";
 
   for (const listing of shown) {
     const item = document.createElement("li");
@@ -688,7 +691,7 @@ function popupContent(
     const row = document.createElement("button");
     row.type = "button";
     row.className =
-      "flex w-full cursor-pointer flex-col rounded-lg px-1.5 py-1 text-left transition-colors hover:bg-surface-hover focus-visible:bg-surface-hover";
+      "flex w-full cursor-pointer flex-col rounded-lg px-1.5 py-0.5 text-left";
     row.addEventListener("click", () => onPick(listing.id));
     // Same handle as the table rows carry, so the two views of a posting can be
     // matched from the outside — by the map's own tests, and by anything else that
@@ -711,12 +714,14 @@ function popupContent(
 
   root.append(list);
 
-  if (place.count > shown.length) {
+  // `count` is the whole place; `shown` is only the first few previews. The gap is
+  // named rather than hidden, so the reader knows the scroll is not the end of what
+  // sits here.
+  const hidden = place.count - shown.length;
+  if (hidden > 0) {
     const rest = document.createElement("p");
     rest.className = "mt-1 text-[0.6875rem] text-muted";
-    rest.textContent = `+ ${place.count - shown.length} autre${
-      place.count - shown.length > 1 ? "s" : ""
-    }`;
+    rest.textContent = `+ ${hidden} autre${hidden > 1 ? "s" : ""}`;
     root.append(rest);
   }
 
@@ -771,5 +776,12 @@ function zoomButton(
   return button;
 }
 
-/** Postings named in a group popup before it stops listing them. */
-const MAX_POPUP_LISTINGS = 4;
+/**
+ * How many postings a group popup lists before it scrolls.
+ *
+ * A practice can publish many openings, and a cluster merges several practices,
+ * so the list here can be arbitrarily long. Past this many the list scrolls
+ * inside itself rather than growing the popup down the map, where it would cover
+ * the very pins it is describing and drift out of view.
+ */
+const MAX_POPUP_LISTINGS = 3;

@@ -13,11 +13,11 @@ function formatSpecialty(specialty: ApiProfile["specialty"]): string {
 }
 
 /**
- * Sous-titre de bienvenue : dit où en est le membre, sans répéter les chiffres.
+ * The welcome subtitle: says where the member stands, without repeating figures.
  *
- * Un tableau de bord n'a besoin qu'une fois de chaque nombre. Le greeting dit
- * maintenant ce qui mérite l'attention ; les chiffres restent une ligne plus
- * bas, et il n'y a qu'une version.
+ * A dashboard needs each number once. The greeting now says what deserves
+ * attention; the figures stay one line lower down, and there is one version of
+ * them.
  */
 export function adaptGreeting(
   profile: ApiProfile | null,
