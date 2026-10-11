@@ -23,15 +23,20 @@ import {
 } from "../api-client";
 import type {
   ApiListingFacets,
+  ApiListingPlaces,
   ApiPaginated,
   ApiReplacementListing,
 } from "../types/api";
-import { adaptBrowseListings, adaptFacets } from "./browse-adapters";
+import {
+  adaptBrowseListings,
+  adaptBrowsePlaces,
+  adaptFacets,
+} from "./browse-adapters";
 import type {
   BrowseFacets,
   BrowseFilters,
-  BrowseListing,
   BrowseListingsData,
+  BrowsePlacesData,
 } from "./browse-contracts";
 
 /**
@@ -101,54 +106,45 @@ export async function fetchBrowseListings(
 }
 
 /**
- * How many postings the map is drawn from, whatever page is on screen.
+ * GET /replacement-listings/places — the places the map is drawn from.
  *
- * The endpoint's own ceiling. A map is not a list: it is the whole filtered
- * collection seen from above, and tying it to `BROWSE_PAGE_SIZE` meant it redrew
- * itself on every page change — a reader paging through results watched the same
- * posts appear and vanish from the map, which is the one thing a map is not
- * supposed to do.
+ * Separate from `fetchBrowseListings` because the map is not a page: that one
+ * is coupled to the pager and refetches whenever the reader pages, which is
+ * exactly what a map must not do. Same filters, no page.
  *
- * A hundred is also where this stops being honest: past it, what the map shows
- * and what the reader was offered have little to do with each other, and that gap
- * has to be stated rather than hidden.
+ * Places rather than postings, and that is the point. The map draws a pin per
+ * practice; reading postings and grouping them client-side drew N pins out of a
+ * hundred postings, and past that the rest of the collection left the map
+ * silently — with no "page 5 of 40" to say so, because a map has no pages.
+ *
+ * Never throws. A map that fails to refresh keeps the places it had: stale pins
+ * are a smaller lie than a blank one.
  */
-export const BROWSE_MAP_LIMIT = 100;
-
-/**
- * The postings the map draws, for a set of filters and no page in particular.
- *
- * Separate from `fetchBrowseListings` on purpose. That one is coupled to the page —
- * the hook refetches it when the reader pages — which is exactly what a map must
- * not be. Same endpoint, same filters, first hundred rows: the difference is in
- * what it ignores.
- *
- * Returning full postings rather than bare coordinates is what keeps the popups
- * worth opening. A cheaper endpoint carrying only practice positions would have
- * left the marker with a count and a city, and nothing to say about the posts
- * behind it.
- */
-export async function fetchBrowseLocations(
+export async function fetchBrowsePlaces(
   filters: BrowseFilters = {},
   transport?: ApiTransport,
-): Promise<BrowseListing[]> {
+): Promise<BrowsePlacesData> {
   const query = buildQuery({
     specialty: filters.specialty,
     city: filters.city,
     startDateFrom: filters.startDateFrom,
     startDateTo: filters.startDateTo,
     urgent: filters.urgentOnly ? "true" : undefined,
-    page: 1,
-    limit: BROWSE_MAP_LIMIT,
+    sort: filters.sort,
   });
 
-  const raw = await apiFetch<ApiPaginated<ApiReplacementListing>>(
-    `/replacement-listings?${query}`,
+  return apiFetch<ApiListingPlaces>(
+    `/replacement-listings/places${query ? `?${query}` : ""}`,
     undefined,
     transport,
-  ).catch(notFoundAs(null));
-
-  return adaptBrowseListings(raw?.data ?? []);
+  )
+    .then((raw) => adaptBrowsePlaces(raw))
+    .catch(() => ({
+      places: [],
+      listingIds: [],
+      unlocated: 0,
+      truncated: false,
+    }));
 }
 
 /**

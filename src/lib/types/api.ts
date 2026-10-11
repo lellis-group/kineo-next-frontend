@@ -317,3 +317,37 @@ export interface ApiApplicationPage<T> extends ApiPaginated<T> {
     bucketCounts?: Partial<ApiApplicationBucketCounts>;
   };
 }
+
+/** One posting at a place, as the map's popup previews it. */
+export interface ApiPlaceListing {
+  id: string;
+  title: string;
+  /** ISO instants, formatted by the client: it knows the reader's locale. */
+  startDate: string;
+  endDate: string;
+}
+
+/** A place the map is drawn from, with the postings that sit on it. */
+export interface ApiListingPlace {
+  practiceId: string;
+  name: string;
+  city: string;
+  latitude: number | null;
+  longitude: number | null;
+  /** How many postings sit here, whatever the preview list holds. */
+  count: number;
+  listings: ApiPlaceListing[];
+}
+
+export interface ApiListingPlaces {
+  places: ApiListingPlace[];
+
+  /** Every matching posting's id, in the ordering the reader asked for. */
+  listingIds: string[];
+
+  /** Matching postings whose practice was never geocoded. */
+  unlocated: number;
+
+  /** True when places were cut at the ceiling. */
+  truncated: boolean;
+}

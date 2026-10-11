@@ -8,13 +8,13 @@ import { usePaginatedResource } from "@/lib/hooks/use-paginated-resource";
 import {
   BROWSE_PAGE_SIZE,
   type BrowseFormFilters,
-  type BrowseListing,
   type BrowseListingsData,
+  type BrowsePlacesData,
   type BrowseSort,
   type BrowseView,
   EMPTY_BROWSE_FILTERS,
   fetchBrowseListings,
-  fetchBrowseLocations,
+  fetchBrowsePlaces,
   horizonForStart,
   horizonStart,
   isDefaultBrowseView,
@@ -80,10 +80,10 @@ function rowFor(id: string): HTMLElement | null {
  */
 export function ListingsContainer({
   initialData,
-  initialLocations,
+  initialPlaces,
 }: {
   initialData: BrowseListingsData;
-  initialLocations: BrowseListing[];
+  initialPlaces: BrowsePlacesData;
 }) {
   const [filters, setFilters] =
     useState<BrowseFormFilters>(EMPTY_BROWSE_FILTERS);
@@ -188,19 +188,19 @@ export function ListingsContainer({
    * the first effect run is skipped: the server sent exactly this data for exactly
    * these filters, and asking again would be the very request we avoided.
    */
-  const [mapListings, setMapListings] = useState(initialLocations);
-  const seededFilters = useRef(filters);
+  const [placesData, setPlacesData] = useState(initialPlaces);
+  const seeded = useRef({ filters, sort });
 
   useEffect(() => {
-    if (seededFilters.current === filters) {
+    if (seeded.current.filters === filters && seeded.current.sort === sort) {
       return;
     }
-    seededFilters.current = filters;
+    seeded.current = { filters, sort };
     let cancelled = false;
 
-    fetchBrowseLocations(toBrowseView(filters))
-      .then((listings) => {
-        if (!cancelled) setMapListings(listings);
+    fetchBrowsePlaces(toBrowseView(filters, 1, sort))
+      .then((data) => {
+        if (!cancelled) setPlacesData(data);
       })
       .catch(() => {
         // The map keeps the markers it has rather than emptying itself over a
@@ -210,7 +210,7 @@ export function ListingsContainer({
     return () => {
       cancelled = true;
     };
-  }, [filters]);
+  }, [filters, sort]);
 
   /** Set when a posting is picked on the map but is not on the current page. */
   const [pendingScrollId, setPendingScrollId] = useState<string | null>(null);
@@ -243,13 +243,13 @@ export function ListingsContainer({
       // same query the list pages through, so the index decides the page — and
       // when the reader has reordered the list, its position is wherever they put
       // it, which no page number can answer.
-      const position = mapListings.findIndex((listing) => listing.id === id);
+      const position = placesData.listingIds.indexOf(id);
       setPendingScrollId(id);
-      if (position >= 0 && sort === "recent") {
+      if (position >= 0) {
         setPage(Math.floor(position / BROWSE_PAGE_SIZE) + 1);
       }
     },
-    [mapListings, sort],
+    [placesData.listingIds],
   );
 
   /**
@@ -311,7 +311,8 @@ export function ListingsContainer({
         }}
         map={
           <ListingsMap
-            listings={mapListings}
+            places={placesData.places}
+            unlocated={placesData.unlocated}
             activeListingId={activeListingId}
             onActiveListingChange={setActiveListingId}
             onListingPick={pickListing}

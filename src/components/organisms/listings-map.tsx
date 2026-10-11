@@ -1,14 +1,15 @@
 "use client";
 
-import { type RefObject, useMemo } from "react";
+import type { RefObject } from "react";
 import { ExpandIcon } from "@/components/atoms/icons";
 import { cn } from "@/lib/cn";
 import { useMapInstance } from "@/lib/hooks/use-map-instance";
 import { useMapMarkers } from "@/lib/hooks/use-map-markers";
-import { type BrowseListing, groupByLocation } from "@/lib/listings";
+import type { MapPlace } from "@/lib/listings";
 
 interface ListingsMapProps {
-  listings: BrowseListing[];
+  places: MapPlace[];
+  unlocated: number;
   /** Id of the row the reader is pointing at, mirrored onto its markers. */
   activeListingId?: string | null;
   onActiveListingChange?: (id: string | null) => void;
@@ -46,14 +47,13 @@ interface ListingsMapProps {
  * context and a `window`, neither of which exist during a server render.
  */
 export function ListingsMap({
-  listings,
+  places,
+  unlocated,
   activeListingId,
   onActiveListingChange,
   onListingPick,
   className,
 }: ListingsMapProps) {
-  const places = useMemo(() => groupByLocation(listings), [listings]);
-
   const { containerRef, mapRef, ready, failed } = useMapInstance();
 
   useMapMarkers({
@@ -64,11 +64,6 @@ export function ListingsMap({
     onActiveListingChange,
     onListingPick,
   });
-
-  /** Postings the list shows and the map cannot — a practice never geocoded. */
-  const unlocatedCount =
-    listings.length -
-    places.reduce((sum, place) => sum + place.listings.length, 0);
 
   if (failed) {
     return (
@@ -101,11 +96,10 @@ export function ListingsMap({
 
       <FullscreenToggle containerRef={containerRef} />
 
-      {unlocatedCount > 0 && (
+      {unlocated > 0 && (
         <p className="absolute bottom-3 left-3 rounded-full bg-surface/90 px-3 py-1.5 text-[0.6875rem] text-muted backdrop-blur-sm">
-          {unlocatedCount} annonce{unlocatedCount > 1 ? "s" : ""} sans
-          coordonnées, visible{unlocatedCount > 1 ? "s" : ""} dans la liste
-          seulement
+          {unlocated} annonce{unlocated > 1 ? "s" : ""} sans coordonnées,
+          visible{unlocated > 1 ? "s" : ""} dans la liste seulement
         </p>
       )}
     </div>

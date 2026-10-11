@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { ListSkeleton } from "@/components/molecules/list-skeleton";
 import { ListingsContainer } from "@/components/templates/listings-container";
 import { serverTransport } from "@/lib/api-transport.server";
-import { fetchBrowseListings, fetchBrowseLocations } from "@/lib/listings";
+import { fetchBrowseListings, fetchBrowsePlaces } from "@/lib/listings";
 
 export const metadata: Metadata = {
   title: "Annonces — Kineo",
@@ -40,9 +40,9 @@ export default function ListingsPage() {
 }
 
 async function Listings() {
-  const [data, locations] = await Promise.all([
+  const [data, places] = await Promise.all([
     fetchBrowseListings({}, serverTransport),
-    fetchBrowseLocations({}, serverTransport),
+    fetchBrowsePlaces({}, serverTransport),
   ]);
-  return <ListingsContainer initialData={data} initialLocations={locations} />;
+  return <ListingsContainer initialData={data} initialPlaces={places} />;
 }

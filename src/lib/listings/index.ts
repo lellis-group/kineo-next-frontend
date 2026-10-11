@@ -60,9 +60,9 @@ export {
 export {
   adaptBrowseListing,
   adaptBrowseListings,
+  adaptBrowsePlaces,
   adaptFacets,
   emptyFacets,
-  groupByLocation,
 } from "./browse-adapters";
 export type {
   BrowseFacets,
@@ -75,10 +75,12 @@ export type {
   BrowseView,
   ListingLocation,
   MapPlace,
+  MapPlaceListing,
   SpecialtyFacet,
 } from "./browse-contracts";
 export {
   BROWSE_HORIZONS,
+  type BrowsePlacesData,
   type BrowseSort,
   DEFAULT_BROWSE_VIEW,
   EMPTY_BROWSE_FILTERS,
@@ -89,10 +91,9 @@ export {
   toBrowseView,
 } from "./browse-contracts";
 export {
-  BROWSE_MAP_LIMIT,
   BROWSE_PAGE_SIZE,
   fetchBrowseListings,
-  fetchBrowseLocations,
+  fetchBrowsePlaces,
   fetchFacets,
 } from "./browse-service";
 export type { CameraTarget } from "./map-camera";

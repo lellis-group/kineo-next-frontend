@@ -1,9 +1,8 @@
 import { describe, expect, it } from "bun:test";
-import type { ApiReplacementListing } from "@/lib/types/api";
+import type { ApiListingPlace } from "@/lib/types/api";
 import type { ApiTransport } from "../api-client";
 import { toIsoDayBound } from "../format";
-import { adaptFacets, groupByLocation } from "./browse-adapters";
-import type { BrowseListing } from "./browse-contracts";
+import { adaptFacets } from "./browse-adapters";
 import {
   EMPTY_BROWSE_FILTERS,
   horizonForStart,
@@ -12,51 +11,7 @@ import {
   listingBadge,
   toBrowseView,
 } from "./browse-contracts";
-import { BROWSE_MAP_LIMIT, fetchBrowseLocations } from "./browse-service";
-
-/** A posting as the API sends it, with only the fields these tests read. */
-function apiListing(over: Partial<ApiReplacementListing> = {}) {
-  return {
-    id: "l1",
-    practiceId: "p1",
-    practice: {
-      id: "p1",
-      name: "Cabinet",
-      city: "Lyon",
-      latitude: 45.764,
-      longitude: 4.8357,
-    },
-    title: "Remplacement",
-    startDate: "2026-10-01T08:00:00.000Z",
-    endDate: "2026-10-03T08:00:00.000Z",
-    status: "OPEN",
-    specialty: "GENERALIST",
-    urgent: false,
-    applicationsCount: 0,
-    createdAt: "2026-09-01T08:00:00.000Z",
-    updatedAt: "2026-09-01T08:00:00.000Z",
-    ...over,
-  } as ApiReplacementListing;
-}
-
-/** A posting, with only the fields these functions read. */
-function listing(over: Partial<BrowseListing> = {}): BrowseListing {
-  return {
-    id: "l1",
-    title: "Remplacement",
-    dateRange: "Du 1 au 3 oct.",
-    startDate: "2026-10-01T08:00:00.000Z",
-    endDate: "2026-10-03T08:00:00.000Z",
-    specialty: "GENERALIST",
-    urgent: false,
-    practiceName: "Cabinet",
-    city: "Lyon",
-    location: { latitude: 45.764, longitude: 4.8357 },
-    applicationsCount: 0,
-    createdAt: "2026-09-01T08:00:00.000Z",
-    ...over,
-  };
-}
+import { fetchBrowsePlaces } from "./browse-service";
 
 describe("adaptFacets", () => {
   it("gives every specialty a row, including those holding nothing", () => {
@@ -106,51 +61,6 @@ describe("adaptFacets", () => {
     expect(facets.total).toBe(0);
     expect(facets.urgent).toBe(0);
     expect(facets.bySpecialty.every((row) => row.count === 0)).toBe(true);
-  });
-});
-
-describe("groupByLocation", () => {
-  it("drops postings with no coordinates", () => {
-    const places = groupByLocation([
-      listing({ id: "a" }),
-      listing({ id: "b", location: null }),
-    ]);
-
-    expect(places).toHaveLength(1);
-    expect(places[0].listings.map((l) => l.id)).toEqual(["a"]);
-  });
-
-  /**
-   * The reason this function exists: one practice publishing several openings
-   * would otherwise stack several buttons on one pixel, and only the topmost
-   * could be clicked.
-   */
-  it("gathers the postings that share a place", () => {
-    const places = groupByLocation([
-      listing({ id: "a" }),
-      listing({ id: "b" }),
-      listing({ id: "c", location: { latitude: 48.85, longitude: 2.35 } }),
-    ]);
-
-    expect(places).toHaveLength(2);
-    expect(places[0].listings).toHaveLength(2);
-    expect(places[0].listings.map((l) => l.id)).toEqual(["a", "b"]);
-  });
-
-  /**
-   * Grid bucketing, so the guarantee is "the same hundred-metre cell", not "any
-   * two nearby points". Two points eighty metres apart can still straddle a cell
-   * boundary and get a pin each — which is why the key rounds rather than
-   * comparing exactly, and why two spellings of the same address merge.
-   */
-  it("merges two spellings of one address", () => {
-    const places = groupByLocation([
-      listing({ id: "a", location: { latitude: 45.7641, longitude: 4.8357 } }),
-      listing({ id: "b", location: { latitude: 45.7642, longitude: 4.8357 } }),
-    ]);
-
-    expect(places).toHaveLength(1);
-    expect(places[0].listings).toHaveLength(2);
   });
 });
 
@@ -288,89 +198,108 @@ describe("listingBadge", () => {
   });
 });
 
-describe("fetchBrowseLocations", () => {
-  /** A transport that records the path it was called with. */
-  function recorder(pages = 1) {
+describe("fetchBrowsePlaces", () => {
+  const place = (practiceId: string, count: number): ApiListingPlace => ({
+    practiceId,
+    name: `Cabinet ${practiceId}`,
+    city: "Lyon",
+    latitude: 45.76,
+    longitude: 4.83,
+    count,
+    listings: [
+      {
+        id: `${practiceId}-l1`,
+        title: "Remplacement",
+        startDate: "2026-10-01T08:00:00.000Z",
+        endDate: "2026-10-03T08:00:00.000Z",
+      },
+    ],
+  });
+
+  /** A transport that records the path, and answers one places payload. */
+  function recorder(
+    places: Array<ReturnType<typeof place>> = [place("p1", 3)],
+  ) {
     const paths: string[] = [];
     const transport: ApiTransport = async (path) => {
       paths.push(path);
       return Response.json({
-        data: Array.from({ length: pages }, (_, i) =>
-          apiListing({ id: `l${i}` }),
-        ),
-        meta: { total: pages, page: 1, limit: BROWSE_MAP_LIMIT, pages: 1 },
+        places,
+        listingIds: ["p1-l1"],
+        unlocated: 2,
+        truncated: false,
       });
     };
     return { paths, transport };
   }
 
-  /**
-   * The map asks for a page of a hundred and never asks for a second one.
-   *
-   * These are the two halves of the same promise: not the page under the reader,
-   * and not a page at all. The first is what made the map redraw itself whenever
-   * the list paginated; the second would make it a list too.
-   */
-  it("asks for the whole collection, not for a page", async () => {
+  it("asks for places, never for a page", async () => {
     const { paths, transport } = recorder();
 
-    await fetchBrowseLocations({}, transport);
+    await fetchBrowsePlaces({}, transport);
 
     expect(paths).toHaveLength(1);
-    expect(paths[0]).toContain(`limit=${BROWSE_MAP_LIMIT}`);
-    expect(paths[0]).toContain("page=1");
+    expect(paths[0]).toBe("/replacement-listings/places");
   });
 
   it("carries the filters, so the map shows what the list shows", async () => {
     const { paths, transport } = recorder();
 
-    await fetchBrowseLocations(
-      { specialty: "DENTIST", city: "Paris", urgentOnly: true },
+    await fetchBrowsePlaces(
+      {
+        specialty: "DENTIST",
+        city: "Paris",
+        urgentOnly: true,
+        startDateFrom: "2026-10-01",
+      },
       transport,
     );
 
     expect(paths[0]).toContain("specialty=DENTIST");
     expect(paths[0]).toContain("city=Paris");
     expect(paths[0]).toContain("urgent=true");
+    expect(paths[0]).toContain("startDateFrom=2026-10-01");
   });
 
-  it("adapts the rows, so the popup can name the post behind a pin", async () => {
-    const { transport } = recorder(2);
+  it("carries the ordering, so the preview follows the list", async () => {
+    const { paths, transport } = recorder();
 
-    const listings = await fetchBrowseLocations({}, transport);
+    await fetchBrowsePlaces({ sort: "urgent" }, transport);
 
-    expect(listings).toHaveLength(2);
-    expect(listings[0]).toEqual({
-      id: "l0",
-      title: "Remplacement",
-      dateRange: "Du 1 au 3 oct.",
-      startDate: "2026-10-01T08:00:00.000Z",
-      endDate: "2026-10-03T08:00:00.000Z",
-      specialty: "GENERALIST",
-      urgent: false,
-      practiceName: "Cabinet",
-      city: "Lyon",
-      location: { latitude: 45.764, longitude: 4.8357 },
-      applicationsCount: 0,
-      createdAt: "2026-09-01T08:00:00.000Z",
-    });
+    expect(paths[0]).toContain("sort=urgent");
   });
 
-  /**
-   * A 404 is an empty collection; every other failure is left to the caller.
-   *
-   * The container catches and keeps the pins it already has, which is the only
-   * sensible response to a refresh that failed — a blank map is a louder lie than
-   * pins a few seconds old. That decision belongs to whoever has the pins to
-   * keep, not inside a function whose job is to report what the backend said.
-   */
-  it("reads a 404 as no locations, and lets other failures throw", async () => {
-    const gone: ApiTransport = () =>
-      Promise.resolve(new Response("", { status: 404 }));
-    const broken: ApiTransport = () =>
+  it("keeps the population in `count` while previewing few", async () => {
+    const { transport } = recorder();
+
+    const data = await fetchBrowsePlaces({}, transport);
+
+    expect(data.places[0].count).toBe(3);
+    expect(data.places[0].listings).toHaveLength(1);
+  });
+
+  it("drops a practice with no coordinates, rather than pinning it at 0,0", async () => {
+    const { transport } = recorder([
+      { ...place("p1", 2), latitude: null, longitude: null },
+    ]);
+
+    const data = await fetchBrowsePlaces({}, transport);
+
+    expect(data.places).toHaveLength(0);
+    expect(data.unlocated).toBe(2);
+  });
+
+  it("reads a failure as an empty map, for the caller to keep the old one", async () => {
+    const transport: ApiTransport = () =>
       Promise.resolve(new Response("", { status: 500 }));
 
-    expect(await fetchBrowseLocations({}, gone)).toEqual([]);
-    expect(fetchBrowseLocations({}, broken)).rejects.toThrow();
+    const data = await fetchBrowsePlaces({}, transport);
+
+    expect(data).toEqual({
+      places: [],
+      listingIds: [],
+      unlocated: 0,
+      truncated: false,
+    });
   });
 });

@@ -188,14 +188,41 @@ export interface BrowseFacets {
  * carry its coordinates, so one pin per posting stacks identical buttons on the
  * same pixel — the top one takes every click and the rest cannot be reached.
  */
+export interface MapPlaceListing {
+  id: string;
+  title: string;
+  dateRange: string;
+  practiceName: string;
+  city: string;
+  location: { latitude: number; longitude: number };
+}
+
 export interface MapPlace {
-  /** Stable key for the coordinates this place was grouped under. */
+  /** Stable key — the practice the read grouped under. */
   key: string;
   latitude: number;
   longitude: number;
   /** How many postings sit here, whatever the preview list holds. */
   count: number;
-  listings: BrowseListing[];
+  listings: MapPlaceListing[];
+}
+
+/**
+ * Everything the map needs, in one answer.
+ *
+ * `listingIds` travels with the places because the popup can name a posting the
+ * list is not showing, and the list is paged: getting to the row that holds it
+ * needs the position of the posting in the filtered collection, which the
+ * previews cannot answer — the places are ordered by population and each holds
+ * four of its own.
+ */
+export interface BrowsePlacesData {
+  places: MapPlace[];
+  listingIds: string[];
+  /** Matching postings whose practice was never geocoded. */
+  unlocated: number;
+  /** True when practices were cut at the ceiling. */
+  truncated: boolean;
 }
 
 /** One feed page, plus the counts behind the panels. */

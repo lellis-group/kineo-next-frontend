@@ -25,13 +25,7 @@ export function distinctPoints(place: MapPlace): Array<[number, number]> {
   const points: Array<[number, number]> = [];
 
   for (const listing of place.listings) {
-    const location = listing.location;
-    // `groupByLocation` skips ungeocoded postings, so this cannot happen on the
-    // data the map is built from — but the type admits null and a cluster whose
-    // bounds silently lost one member would be a bug nobody could see.
-    if (!location) continue;
-
-    const { latitude, longitude } = location;
+    const { latitude, longitude } = listing.location;
     const key = `${latitude.toFixed(3)},${longitude.toFixed(3)}`;
     if (seen.has(key)) continue;
     seen.add(key);

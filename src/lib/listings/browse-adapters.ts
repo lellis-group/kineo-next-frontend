@@ -10,13 +10,17 @@ import { formatDateRange } from "@/lib/format";
 import { SPECIALTY_LABELS, SPECIALTY_SHORT_LABELS } from "@/lib/profile";
 import type {
   ApiListingFacets,
+  ApiListingPlaces,
+  ApiPlaceListing,
   ApiReplacementListing,
   Specialty,
 } from "@/lib/types/api";
 import type {
   BrowseFacets,
   BrowseListing,
+  BrowsePlacesData,
   MapPlace,
+  MapPlaceListing,
   SpecialtyFacet,
 } from "./browse-contracts";
 
@@ -79,47 +83,60 @@ export function adaptBrowseListings(
 }
 
 /**
- * The postings a map can pin, one entry per place.
+ * The map's places, as one entry per practice.
  *
- * Two things happen here and both are load-bearing. Postings with no coordinates
- * are dropped — a pin at 0,0 is in the Gulf of Guinea, and a practice that was
- * never geocoded is a normal row rather than an error, so it belongs in the list
- * and nowhere on the map. The rest are grouped by coordinate, because a practice
- * with three openings would otherwise stack three buttons on one pixel and only
- * the topmost would be clickable.
+ * The endpoint already grouped them, so there is nothing to group here. The
+ * client used to round coordinates to three decimals — about a hundred metres —
+ * and two openings written for the same address rounded apart drew as two pins
+ * stacked on one pixel. `practiceId` is exact.
  *
- * The grouping key rounds to three decimals — roughly a hundred metres. Exact
- * coordinates would split two listings written for the same practice address;
- * rounding to two would merge genuinely different practices in the same street.
- * At the zoom this map opens at, a hundred metres is well under a pixel either
- * way.
+ * A place with no coordinates is dropped rather than drawn at 0,0, which is in
+ * the Gulf of Guinea. The endpoint counts those postings and the map says how
+ * many could not be placed, so a practice that was never geocoded is a row in
+ * the list and a number under the map — not a pin in the Atlantic.
  */
-export function groupByLocation(listings: BrowseListing[]): MapPlace[] {
-  const byPlace = new Map<string, MapPlace>();
-
-  for (const listing of listings) {
-    if (!listing.location) {
-      continue;
-    }
-    const { latitude, longitude } = listing.location;
-    const key = `${latitude.toFixed(3)},${longitude.toFixed(3)}`;
-    const existing = byPlace.get(key);
-
-    if (existing) {
-      existing.count += 1;
-      existing.listings.push(listing);
-    } else {
-      byPlace.set(key, {
-        key,
-        latitude,
-        longitude,
-        count: 1,
-        listings: [listing],
-      });
-    }
+export function adaptBrowsePlaces(
+  raw: ApiListingPlaces | undefined,
+): BrowsePlacesData {
+  if (!raw) {
+    return { places: [], listingIds: [], unlocated: 0, truncated: false };
   }
 
-  return [...byPlace.values()];
+  const places: MapPlace[] = [];
+
+  for (const place of raw.places) {
+    const { latitude, longitude } = place;
+    if (latitude == null || longitude == null) {
+      continue;
+    }
+
+    // Only what a popup reads. Filling the rest of `BrowseListing` would mean
+    // inventing a specialty, an application count and a createdAt for a posting
+    // the endpoint never sent.
+    const previewOf = (listing: ApiPlaceListing): MapPlaceListing => ({
+      id: listing.id,
+      title: listing.title,
+      dateRange: formatDateRange(listing.startDate, listing.endDate),
+      practiceName: place.name,
+      city: place.city,
+      location: { latitude, longitude },
+    });
+
+    places.push({
+      key: place.practiceId,
+      latitude,
+      longitude,
+      count: place.count,
+      listings: place.listings.map(previewOf),
+    });
+  }
+
+  return {
+    places,
+    listingIds: raw.listingIds,
+    unlocated: raw.unlocated,
+    truncated: raw.truncated,
+  };
 }
 
 /**
