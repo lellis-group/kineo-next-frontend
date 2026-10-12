@@ -36,19 +36,12 @@ const BROWSE_SORTS: readonly BrowseSortOption[] = [
   { id: "startDate", label: "Date de début" },
 ];
 
-/**
- * How soon a posting has to start — the labels for the period row.
- *
- * Same split as the sort picker above: `BrowseHorizon` and the `horizonStart` /
- * `horizonForStart` mapping stay in the domain, because a horizon is a real
- * narrowing the date fields also write. Only the French copy lives here, beside
- * the `SegmentedControl` that renders it.
- */
 interface BrowseHorizonOption {
   id: BrowseHorizon;
   label: string;
 }
 
+/** Period row labels, beside the `SegmentedControl` that renders them. */
 const BROWSE_HORIZONS: readonly BrowseHorizonOption[] = [
   { id: "ALL", label: "Toutes" },
   { id: "WEEK", label: "Cette semaine" },
