@@ -192,31 +192,6 @@ export function ExpandIcon(props: SVGProps<SVGSVGElement>) {
 }
 
 /**
- * Crosshair with corner ticks — "move the camera here".
- *
- * Deliberately not a magnifier: a plus would read as "open", which is what the
- * marker click already does. This one has to look like a camera move, which is
- * what the marker cannot do on its own.
- */
-export function CrosshairIcon(props: SVGProps<SVGSVGElement>) {
-  return (
-    <Svg {...props}>
-      <circle cx="12" cy="12" r="3" />
-      <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
-    </Svg>
-  );
-}
-
-/** Solid dot — a listing's marker. The only filled icon in the set. */
-export function DotIcon(props: SVGProps<SVGSVGElement>) {
-  return (
-    <Svg {...props}>
-      <circle cx="12" cy="12" r="5" fill="currentColor" stroke="none" />
-    </Svg>
-  );
-}
-
-/**
  * Stethoscope — the generalist's mark. Lucide's own path, so every specialty
  * icon shares one geometry and stroke weight.
  */

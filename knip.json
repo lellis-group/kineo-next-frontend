@@ -1,0 +1,13 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "workspaces": {
+    ".": {
+      "entry": [
+        "src/app/**/{page,layout,error,not-found,loading,default,route}.tsx"
+      ],
+      "project": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.css"]
+    }
+  },
+  "ignoreExportsUsedInFile": true,
+  "ignore": ["src/lib/**/index.ts"]
+}

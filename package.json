@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "biome check",
     "format": "biome format --write",
+    "knip": "knip",
     "test": "bun test src/lib"
   },
   "dependencies": {
@@ -26,6 +27,7 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "babel-plugin-react-compiler": "1.0.0",
+    "knip": "^6.41.0",
     "tailwindcss": "^4.3.3",
     "typescript": "^5.9.3"
   },
