@@ -25,6 +25,10 @@ export async function proxyToBackend(
   const headers = new Headers(request.headers);
   headers.set("x-forwarded-host", request.nextUrl.host);
   headers.set("x-forwarded-proto", request.nextUrl.protocol.replace(":", ""));
+  // `x-forwarded-for` is deliberately left as it arrived, by copying every
+  // incoming header and rewriting only the two above. It is what the backend
+  // keys its rate limiter on, so rewriting or dropping it here would fold every
+  // reader behind this app into one bucket. Do not "tidy" it away with the rest.
 
   let body: BodyInit | undefined;
   if (request.method !== "GET" && request.method !== "HEAD") {

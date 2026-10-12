@@ -117,13 +117,15 @@ export async function fetchBrowseListings(
  * hundred postings, and past that the rest of the collection left the map
  * silently — with no "page 5 of 40" to say so, because a map has no pages.
  *
- * Never throws. A map that fails to refresh keeps the places it had: stale pins
- * are a smaller lie than a blank one.
+ * `null` on failure, never an empty set. A reader who filters down to nothing is
+ * a result; a reader whose refresh failed is not, and handing back `[]` for both
+ * meant a failed refresh wiped the map and said nothing. The caller keeps the
+ * pins it has, which is the smaller lie.
  */
 export async function fetchBrowsePlaces(
   filters: BrowseFilters = {},
   transport?: ApiTransport,
-): Promise<BrowsePlacesData> {
+): Promise<BrowsePlacesData | null> {
   const query = buildQuery({
     specialty: filters.specialty,
     city: filters.city,
@@ -133,19 +135,16 @@ export async function fetchBrowsePlaces(
     sort: filters.sort,
   });
 
-  return apiFetch<ApiListingPlaces>(
-    `/replacement-listings/places${query ? `?${query}` : ""}`,
-    undefined,
-    transport,
-  )
-    .then((raw) => adaptBrowsePlaces(raw))
-    .catch(() => ({
-      places: [],
-      listingIds: [],
-      unlocated: 0,
-      totalPlaces: 0,
-      truncated: false,
-    }));
+  try {
+    const raw = await apiFetch<ApiListingPlaces>(
+      `/replacement-listings/places${query ? `?${query}` : ""}`,
+      undefined,
+      transport,
+    );
+    return adaptBrowsePlaces(raw);
+  } catch {
+    return null;
+  }
 }
 
 /**

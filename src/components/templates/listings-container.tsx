@@ -175,11 +175,15 @@ export function ListingsContainer({
 
     fetchBrowsePlaces(toBrowseView(filters, 1, sort))
       .then((data) => {
-        if (!cancelled) setPlacesData(data);
+        // `null` is the failure signal; the map keeps the markers it has rather
+        // than emptying itself over a failed refresh, because stale pins are a
+        // smaller lie than a blank map.
+        if (!cancelled && data) setPlacesData(data);
       })
       .catch(() => {
-        // The map keeps the markers it has rather than emptying itself over a
-        // failed refresh: stale pins are a smaller lie than a blank map.
+        // Unreachable while `fetchBrowsePlaces` catches its own failures, and
+        // left in place only because a rejected promise here would otherwise be
+        // an unhandled rejection.
       });
 
     return () => {

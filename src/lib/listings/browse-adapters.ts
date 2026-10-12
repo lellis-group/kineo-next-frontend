@@ -95,17 +95,27 @@ export function adaptBrowseListings(
  * many could not be placed, so a practice that was never geocoded is a row in
  * the list and a number under the map — not a pin in the Atlantic.
  */
+/**
+ * The places a first render starts from when the endpoint gave nothing back.
+ *
+ * A function rather than a shared constant so no caller can mutate the one
+ * object every other caller is holding.
+ */
+export function emptyBrowsePlaces(): BrowsePlacesData {
+  return {
+    places: [],
+    listingIds: [],
+    unlocated: 0,
+    totalPlaces: 0,
+    truncated: false,
+  };
+}
+
 export function adaptBrowsePlaces(
   raw: ApiListingPlaces | undefined,
 ): BrowsePlacesData {
   if (!raw) {
-    return {
-      places: [],
-      listingIds: [],
-      unlocated: 0,
-      totalPlaces: 0,
-      truncated: false,
-    };
+    return emptyBrowsePlaces();
   }
 
   const places: MapPlace[] = [];

@@ -62,6 +62,7 @@ export {
   adaptBrowseListings,
   adaptBrowsePlaces,
   adaptFacets,
+  emptyBrowsePlaces,
   emptyFacets,
 } from "./browse-adapters";
 export type {

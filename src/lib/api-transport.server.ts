@@ -49,7 +49,26 @@ export async function serverRequestTarget(): Promise<{
  * Server-only, by way of `serverRequestTarget` above.
  */
 export const serverTransport: ApiTransport = async (path, init) => {
-  const { origin, cookie } = await serverRequestTarget();
+  const {
+    origin,
+    cookie,
+    headers: requestHeaders,
+  } = await serverRequestTarget();
+
+  // The reader's address, forwarded when whoever fronts this app declared one.
+  //
+  // Without it the backend counts every server-rendered request under this
+  // server's own address: the self-request below is a fresh `fetch` carrying no
+  // headers of its own, so the one identifying the reader was dropped exactly
+  // where it mattered. Rate limits then apply platform-wide instead of per
+  // reader — and since the browse page resolves two endpoints per render, a few
+  // simultaneous readers are enough to trip a per-address limit and blank every
+  // map at once.
+  //
+  // Nothing is invented when it is absent: a bare deployment behind no proxy
+  // genuinely has one address, and forging a value would only make the backend's
+  // trust chain lie.
+  const forwardedFor = requestHeaders.get("x-forwarded-for");
 
   return fetch(`${origin}/api${path}`, {
     // Member data must never be cached across requests: the response is scoped
@@ -59,6 +78,7 @@ export const serverTransport: ApiTransport = async (path, init) => {
     headers: {
       ...init?.headers,
       cookie,
+      ...(forwardedFor ? { "x-forwarded-for": forwardedFor } : {}),
     },
   });
 };

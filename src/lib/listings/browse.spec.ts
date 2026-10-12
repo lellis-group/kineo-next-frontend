@@ -275,8 +275,8 @@ describe("fetchBrowsePlaces", () => {
 
     const data = await fetchBrowsePlaces({}, transport);
 
-    expect(data.places[0].count).toBe(3);
-    expect(data.places[0].listings).toHaveLength(1);
+    expect(data?.places[0].count).toBe(3);
+    expect(data?.places[0].listings).toHaveLength(1);
   });
 
   it("drops a practice with no coordinates, rather than pinning it at 0,0", async () => {
@@ -286,22 +286,30 @@ describe("fetchBrowsePlaces", () => {
 
     const data = await fetchBrowsePlaces({}, transport);
 
-    expect(data.places).toHaveLength(0);
-    expect(data.unlocated).toBe(2);
+    expect(data?.places).toHaveLength(0);
+    expect(data?.unlocated).toBe(2);
   });
 
-  it("reads a failure as an empty map, for the caller to keep the old one", async () => {
+  it("reads a failure as null, so the caller keeps the pins it had", async () => {
     const transport: ApiTransport = () =>
       Promise.resolve(new Response("", { status: 500 }));
 
     const data = await fetchBrowsePlaces({}, transport);
 
-    expect(data).toEqual({
-      places: [],
-      listingIds: [],
-      unlocated: 0,
-      totalPlaces: 0,
-      truncated: false,
-    });
+    // Not an empty set. An empty set is what "the filters matched nothing" looks
+    // like, and returning it for a failed refresh meant a 429 or a dropped
+    // connection blanked the map while the reader was told nothing.
+    expect(data).toBeNull();
+  });
+
+  it("reads an empty collection as an empty set, not as a failure", async () => {
+    const { transport } = recorder([]);
+
+    const data = await fetchBrowsePlaces({}, transport);
+
+    // The distinction the caller acts on: an empty collection is a result to
+    // apply, a failed read is null and leaves the pins alone.
+    expect(data).not.toBeNull();
+    expect(data?.places).toEqual([]);
   });
 });

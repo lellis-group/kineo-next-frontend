@@ -4,7 +4,11 @@ import { Suspense } from "react";
 import { ListSkeleton } from "@/components/molecules/list-skeleton";
 import { ListingsContainer } from "@/components/templates/listings-container";
 import { serverTransport } from "@/lib/api-transport.server";
-import { fetchBrowseListings, fetchBrowsePlaces } from "@/lib/listings";
+import {
+  emptyBrowsePlaces,
+  fetchBrowseListings,
+  fetchBrowsePlaces,
+} from "@/lib/listings";
 import { fetchServerAuth } from "@/lib/server-auth";
 
 export const metadata: Metadata = {
@@ -57,5 +61,12 @@ async function Listings() {
     fetchBrowseListings({}, serverTransport),
     fetchBrowsePlaces({}, serverTransport),
   ]);
-  return <ListingsContainer initialData={data} initialPlaces={places} />;
+  // No previous pins to keep on a first render, so a failed places read starts
+  // the map empty rather than taking the whole page down over it.
+  return (
+    <ListingsContainer
+      initialData={data}
+      initialPlaces={places ?? emptyBrowsePlaces()}
+    />
+  );
 }
