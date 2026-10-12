@@ -78,11 +78,24 @@ export const ListingsTable = forwardRef<
       <table ref={tableRef} className="table listings-table">
         <thead>
           <tr>
-            <th scope="col">Annonce</th>
+            {/*
+              `has-gutter` on exactly the columns whose cells open with an icon.
+              The padding comes from `globals.css`, from the same variable the
+              icon is sized from — see `.listings-table`.
+            */}
+            <th scope="col" className="has-gutter">
+              Annonce
+            </th>
             <th scope="col">Cabinet</th>
-            <th scope="col">Lieu</th>
-            <th scope="col">Période</th>
-            <th scope="col">Candidats</th>
+            <th scope="col" className="has-gutter">
+              Lieu
+            </th>
+            <th scope="col" className="has-gutter">
+              Période
+            </th>
+            <th scope="col" className="has-gutter">
+              Candidats
+            </th>
             <th scope="col">Statut</th>
           </tr>
         </thead>
@@ -100,13 +113,19 @@ export const ListingsTable = forwardRef<
                 onMouseLeave={() => onActiveListingChange?.(null)}
               >
                 <td>
-                  <div className="flex items-start gap-2.5">
+                  <div className="flex items-start gap-[var(--cell-gap)]">
                     <SpecialtyIcon
                       specialty={listing.specialty}
-                      className="mt-0.5 size-4 shrink-0 text-primary"
+                      className="mt-0.5 size-[var(--cell-icon)] shrink-0 text-primary"
                     />
                     <div className="min-w-0">
-                      <p className="font-medium text-foreground">
+                      {/*
+                        Clamped, so a long title cannot make one row taller than
+                        the rest and lift its own column out of line with the
+                        others. `min-w-0` on the wrapper is what lets the clamp
+                        engage instead of the text overflowing the cell.
+                      */}
+                      <p className="line-clamp-2 font-medium text-foreground">
                         {listing.title}
                       </p>
                       <p className="text-xs text-muted">
@@ -117,20 +136,20 @@ export const ListingsTable = forwardRef<
                 </td>
                 <td className="text-muted">{listing.practiceName}</td>
                 <td>
-                  <span className="inline-flex items-center gap-1.5 text-muted">
-                    <MapPinIcon className="size-3.5 shrink-0" />
+                  <span className="inline-flex items-center gap-[var(--cell-gap)] text-muted">
+                    <MapPinIcon className="size-[var(--cell-icon)] shrink-0" />
                     {listing.city || "—"}
                   </span>
                 </td>
                 <td>
-                  <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-muted">
-                    <CalendarIcon className="size-3.5 shrink-0" />
+                  <span className="inline-flex items-center gap-[var(--cell-gap)] whitespace-nowrap text-muted">
+                    <CalendarIcon className="size-[var(--cell-icon)] shrink-0" />
                     {listing.dateRange}
                   </span>
                 </td>
                 <td>
-                  <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-muted tabular-nums">
-                    <UsersIcon className="size-3.5 shrink-0" />
+                  <span className="inline-flex items-center gap-[var(--cell-gap)] whitespace-nowrap text-muted tabular-nums">
+                    <UsersIcon className="size-[var(--cell-icon)] shrink-0" />
                     {listing.applicationsCount}
                     {listing.maxApplications
                       ? ` / ${listing.maxApplications}`

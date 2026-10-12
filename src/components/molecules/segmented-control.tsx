@@ -55,7 +55,12 @@ export function SegmentedControl<T extends string>({
             aria-selected={active}
             onClick={() => onChange(option.id)}
             className={cn(
-              "shrink-0 rounded-full px-3.5 py-1.5 text-[0.8125rem] font-medium whitespace-nowrap transition-colors",
+              // `py-1` rather than `py-1.5`: with `p-1` on the track this control
+              // measures 38.7px, which is what the `Select` beside it in the
+              // results header comes to. The two sit on one row and are centred
+              // against each other, so a difference of a few pixels reads as
+              // neither of them being aligned.
+              "shrink-0 rounded-full px-3.5 py-1 text-[0.8125rem] font-medium whitespace-nowrap transition-colors",
               active
                 ? "bg-primary text-primary-foreground"
                 : "text-muted hover:bg-surface-hover hover:text-foreground",

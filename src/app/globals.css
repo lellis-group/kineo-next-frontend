@@ -512,6 +512,41 @@
   }
 
   /*
+   * The browse table's columns: a header has to label the text, not the gutter.
+   *
+   * A cell whose value carries a leading icon starts that text one gutter in, and
+   * the header above it has to start there too. Measured on this table, both sides
+   * were set from the same padding and disagreed by 31px on the first column and
+   * 24px on the three icon columns carrying one — the header was labelling the
+   * gutter, and the reader was measuring the column against the wrong edge.
+   *
+   * The gutter is a variable that the cells' own icon and gap are sized from, so
+   * the two sides cannot drift. They have: with the padding and the icon each
+   * hard-coded to their own number, nothing failed until one icon changed size.
+   */
+  .listings-table {
+    --cell-icon: 1.2rem;
+    --cell-gap: 0.45rem;
+    --cell-gutter: calc(var(--cell-icon) + var(--cell-gap));
+  }
+
+  .listings-table thead th.has-gutter {
+    padding-left: calc(1rem + var(--cell-gutter));
+  }
+
+  /*
+   * Top-aligned, where the shared rule centres its cells.
+   *
+   * The first cell carries a two-line block, so centring it in a tall row lifted
+   * it away from every other column's single line: about 8px on a short title and
+   * 28px on one that wrapped. Aligning on the first line puts every column's
+   * opening text on the same row, which is what a table of rows is read as.
+   */
+  .listings-table tbody td {
+    vertical-align: top;
+  }
+
+  /*
    * The hovered row of the listings table, and the bar that says so.
    *
    * Carried by `box-shadow` rather than a `border-left` or a positioned
