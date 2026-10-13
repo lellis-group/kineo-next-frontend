@@ -14,6 +14,7 @@ import {
 import { InlineRetryBanner } from "@/components/molecules/inline-retry-banner";
 import type { ListingsTableHandle } from "@/components/organisms/listings-table";
 import { ListingsView } from "@/components/templates/listings-view";
+import { isInView } from "@/lib/dom";
 import type { ListingsMapHandle } from "@/lib/hooks/use-map-markers";
 import { usePaginatedResource } from "@/lib/hooks/use-paginated-resource";
 import {
@@ -48,12 +49,6 @@ import type { Specialty } from "@/lib/types/api";
  * of; the id is the one thing that crosses it.
  */
 const BROWSE_MAP_ID = "browse-map";
-
-/** Whether an element is at all inside the viewport. */
-function isInView(element: HTMLElement): boolean {
-  const box = element.getBoundingClientRect();
-  return box.bottom > 0 && box.top < window.innerHeight;
-}
 
 /**
  * The map, loaded only in the browser.
@@ -533,20 +528,6 @@ export function ListingsContainer({
   );
 }
 
-/**
- * The map, and the promise its first read arrived in.
- *
- * The seed for this map is not awaited in the page: `/places` is the heaviest
- * read on this screen and the biggest payload in the response, and holding the
- * rows behind it meant the list a reader actually reads waited on a map that is
- * drawn by a chunk that has not loaded yet. So the read stays a promise until
- * here, inside its own boundary, and the rows paint without it.
- *
- * `use()` suspends this component — not the container — which is what puts the
- * boundary in the right place. It is called on a promise either way, whether the
- * data is the server's seed or one a filter change has since resolved, so the
- * order of the hook never changes.
- */
 /**
  * The map, and the promise its first read arrived in.
  *
