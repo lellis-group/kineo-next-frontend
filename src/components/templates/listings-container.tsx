@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import {
+  forwardRef,
   Suspense,
   use,
   useCallback,
@@ -13,11 +14,13 @@ import {
 import { InlineRetryBanner } from "@/components/molecules/inline-retry-banner";
 import type { ListingsTableHandle } from "@/components/organisms/listings-table";
 import { ListingsView } from "@/components/templates/listings-view";
+import type { ListingsMapHandle } from "@/lib/hooks/use-map-markers";
 import { usePaginatedResource } from "@/lib/hooks/use-paginated-resource";
 import {
   BROWSE_PAGE_SIZE,
   type BrowseFacets,
   type BrowseFormFilters,
+  type BrowseListing,
   type BrowseListingsData,
   type BrowsePlacesData,
   type BrowseSort,
@@ -34,6 +37,23 @@ import {
 } from "@/lib/listings";
 import { SPECIALTY_LABELS } from "@/lib/profile";
 import type { Specialty } from "@/lib/types/api";
+
+/**
+ * The map card's id, so a choice made in the list can bring it back into view.
+ *
+ * On a phone the map sits a screen above the results, and the reciprocal gesture
+ * — the row's title flies the camera — is invisible unless the camera is on
+ * screen. Looked up by id rather than held in a ref because the map is rendered
+ * through a `Suspense` boundary by a component this file does not own the markup
+ * of; the id is the one thing that crosses it.
+ */
+const BROWSE_MAP_ID = "browse-map";
+
+/** Whether an element is at all inside the viewport. */
+function isInView(element: HTMLElement): boolean {
+  const box = element.getBoundingClientRect();
+  return box.bottom > 0 && box.top < window.innerHeight;
+}
 
 /**
  * The map, loaded only in the browser.
@@ -99,7 +119,22 @@ export function ListingsContainer({
     useState<BrowseFormFilters>(EMPTY_BROWSE_FILTERS);
   const [page, setPage] = useState(1);
   const [sort, setSort] = useState<BrowseSort>("recent");
-  const [activeListingId, setActiveListingId] = useState<string | null>(null);
+
+  /**
+   * The two halves of pointing at something.
+   *
+   * Two states, because two durations: the hover is a preview that lasts as long
+   * as the pointer, and the choice is a selection that lasts until it is
+   * dismissed. They were one value here, which meant a posting chosen in the
+   * table went dark the moment the mouse left its row — the map's card closed
+   * with it, and the reader was back to wondering where they were.
+   */
+  const [hoveredListingId, setHoveredListingId] = useState<string | null>(null);
+  const [selectedListing, setSelectedListing] = useState<{
+    id: string;
+    latitude: number;
+    longitude: number;
+  } | null>(null);
 
   const view = useMemo(
     () => toBrowseView(filters, page, sort),
@@ -117,7 +152,8 @@ export function ListingsContainer({
   const applyFilters = useCallback((patch: Partial<BrowseFormFilters>) => {
     setFilters((current) => ({ ...current, ...patch }));
     setPage(1);
-    setActiveListingId(null);
+    setHoveredListingId(null);
+    setSelectedListing(null);
   }, []);
 
   /**
@@ -130,12 +166,15 @@ export function ListingsContainer({
   const applySort = useCallback((next: BrowseSort) => {
     setSort(next);
     setPage(1);
+    setHoveredListingId(null);
+    setSelectedListing(null);
   }, []);
 
   const resetFilters = useCallback(() => {
     setFilters(EMPTY_BROWSE_FILTERS);
     setPage(1);
-    setActiveListingId(null);
+    setHoveredListingId(null);
+    setSelectedListing(null);
   }, []);
 
   /**
@@ -283,6 +322,28 @@ export function ListingsContainer({
   const tableRef = useRef<ListingsTableHandle>(null);
 
   /**
+   * A handle onto the map, so a posting picked in the list can be brought to it.
+   *
+   * The same shape of contract as the table's, and for the same reason: the two
+   * halves of this screen are one set of rows seen two ways, and the screen's job
+   * is to pass a choice from one to the other. See `ListingsMapHandle`.
+   */
+  const mapRef = useRef<ListingsMapHandle>(null);
+
+  /**
+   * Which rows are on screen, as the trigger for a pending scroll.
+   *
+   * Keyed on the ids rather than on `data`, which is what the effect actually
+   * depends on: the row it is looking for is in the DOM or it is not, and the ids
+   * are what say so. Watching the whole payload instead would re-run this on every
+   * count that happens to be fetched alongside the rows.
+   */
+  const onScreenIds = useMemo(
+    () => new Set(data.listings.map((listing) => listing.id)),
+    [data.listings],
+  );
+
+  /**
    * Brings a posting picked on the map to the reader in the list.
    *
    * The two halves of this screen are one set of rows seen two ways, and the map
@@ -295,10 +356,22 @@ export function ListingsContainer({
    * `block: "center"` because the list is taller than the viewport: the reader is
    * looking at a map some hundreds of pixels above the list, and `"nearest"` would
    * park the row on an edge that is itself off screen.
+   *
+   * It also *chooses* the posting. Both doors into this screen — a marker and a
+   * row — must land on the same state, or the reader learns that clicking a pin
+   * and clicking a title do different things to the same posting.
    */
   const pickListing = useCallback(
     (id: string) => {
-      setActiveListingId(id);
+      const listing = data.listings.find((row) => row.id === id);
+      if (listing?.location) {
+        setSelectedListing({
+          id: listing.id,
+          latitude: listing.location.latitude,
+          longitude: listing.location.longitude,
+        });
+      }
+      setHoveredListingId(id);
 
       // On this page already: the table scrolls the row itself and reports it
       // was found, so there is nothing to page to — and nothing to ask.
@@ -322,20 +395,64 @@ export function ListingsContainer({
         },
       );
     },
-    [view],
+    [data.listings, view],
   );
 
   /**
-   * Which rows are on screen, as the trigger for a pending scroll.
+   * The other direction: a posting chosen in the list comes to the map.
    *
-   * Keyed on the ids rather than on `data`, which is what the effect actually
-   * depends on: the row it is looking for is in the DOM or it is not, and the ids
-   * are what say so. Watching the whole payload instead would re-run this on every
-   * count that happens to be fetched alongside the rows.
+   * This is the reciprocal the screen never had — the row's title is a button,
+   * and the map flies to the posting and opens its card, which is exactly what
+   * clicking a marker does to the list.
+   *
+   * The camera flies whatever page the row is on: the map is the same map. The
+   * row then scrolls into view, by way of the same page-turning read `pickListing`
+   * uses — a posting chosen in the list is frequently on another page of the same
+   * ordering, and a choice the reader cannot see on either half is half a choice.
+   *
+   * A posting with no coordinates simply selects: its practice was never
+   * geocoded, so there is nothing to fly to, and the row lights up on its own.
    */
-  const onScreenIds = useMemo(
-    () => new Set(data.listings.map((listing) => listing.id)),
-    [data.listings],
+  const selectListing = useCallback(
+    (listing: BrowseListing) => {
+      setHoveredListingId(listing.id);
+
+      if (!listing.location) {
+        setSelectedListing(null);
+        return;
+      }
+
+      setSelectedListing({
+        id: listing.id,
+        latitude: listing.location.latitude,
+        longitude: listing.location.longitude,
+      });
+
+      mapRef.current?.focusOn(listing.location);
+
+      // On a phone the map is a screen away *above* the list, and a camera move
+      // nobody can see is a camera that did not move. Brought back only when it
+      // is out of view: on a desktop the two halves are side by side and the call
+      // would be a no-op that scrolls nothing.
+      const card = document.getElementById(BROWSE_MAP_ID);
+      if (card && !isInView(card)) {
+        card.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
+
+      if (!onScreenIds.has(listing.id)) {
+        setPendingScrollId(listing.id);
+        fetchListingPageOf(listing.id, {
+          ...view,
+          limit: BROWSE_PAGE_SIZE,
+        }).then((target) => {
+          if (target !== null) setPage(target);
+        });
+        return;
+      }
+
+      tableRef.current?.scrollToId(listing.id);
+    },
+    [onScreenIds, view],
   );
 
   useEffect(() => {
@@ -384,8 +501,9 @@ export function ListingsContainer({
           horizon,
           onHorizonChange: (next) =>
             applyFilters({ from: horizonStart(next) ?? "" }),
-          activeListingId,
-          onActiveListingChange: setActiveListingId,
+          onHoveredChange: setHoveredListingId,
+          selectedListingId: selectedListing?.id ?? null,
+          onListingSelect: selectListing,
           onResetFilters: resetFilters,
           tableRef,
         }}
@@ -399,9 +517,13 @@ export function ListingsContainer({
             }
           >
             <ListingsMapSlot
+              ref={mapRef}
               places={placesSource}
-              activeListingId={activeListingId}
-              onActiveListingChange={setActiveListingId}
+              hoveredListingId={hoveredListingId}
+              onHoveredChange={setHoveredListingId}
+              selectedListing={selectedListing}
+              onSelectionClear={() => setSelectedListing(null)}
+              onMarkerSelect={setSelectedListing}
               onListingPick={pickListing}
             />
           </Suspense>
@@ -425,24 +547,43 @@ export function ListingsContainer({
  * data is the server's seed or one a filter change has since resolved, so the
  * order of the hook never changes.
  */
-function ListingsMapSlot({
-  places,
-  ...rest
-}: {
-  places: Promise<BrowsePlacesData | null>;
-} & Omit<
+/**
+ * The map, and the promise its first read arrived in.
+ *
+ * The seed for this map is not awaited in the page: `/places` is the heaviest
+ * read on this screen and the biggest payload in the response, and holding the
+ * rows behind it meant the list a reader actually reads waited on a map that is
+ * drawn by a chunk that has not loaded yet. So the read stays a promise until
+ * here, inside its own boundary, and the rows paint without it.
+ *
+ * `use()` suspends this component — not the container — which is what puts the
+ * boundary in the right place. It is called on a promise either way, whether the
+ * data is the server's seed or one a filter change has since resolved, so the
+ * order of the hook never changes.
+ *
+ * The `ref` passes straight through: a handle is a prop, and the component that
+ * owns it is the one that forwards it. Holding it here instead would mean the
+ * container reached *through* a `Suspense` boundary to a node this component
+ * renders, which is the one thing a boundary exists to prevent.
+ */
+type MapSlotProps = Omit<
   React.ComponentProps<typeof ListingsMap>,
   "places" | "unlocated" | "totalPlaces" | "truncated"
->) {
-  const resolved = use(places);
+> & { places: Promise<BrowsePlacesData | null> };
 
-  return (
-    <ListingsMap
-      places={resolved?.places ?? []}
-      unlocated={resolved?.unlocated ?? 0}
-      totalPlaces={resolved?.totalPlaces ?? 0}
-      truncated={resolved?.truncated ?? false}
-      {...rest}
-    />
-  );
-}
+const ListingsMapSlot = forwardRef<ListingsMapHandle, MapSlotProps>(
+  function ListingsMapSlot({ places, ...rest }, ref) {
+    const resolved = use(places);
+
+    return (
+      <ListingsMap
+        ref={ref}
+        places={resolved?.places ?? []}
+        unlocated={resolved?.unlocated ?? 0}
+        totalPlaces={resolved?.totalPlaces ?? 0}
+        truncated={resolved?.truncated ?? false}
+        {...rest}
+      />
+    );
+  },
+);

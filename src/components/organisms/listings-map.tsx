@@ -1,9 +1,10 @@
 "use client";
 
-import type { RefObject } from "react";
-import { ExpandIcon } from "@/components/atoms/icons";
+import { forwardRef, type RefObject, useImperativeHandle } from "react";
+import { CrosshairIcon, ExpandIcon } from "@/components/atoms/icons";
 import { cn } from "@/lib/cn";
 import { useMapInstance } from "@/lib/hooks/use-map-instance";
+import type { ListingsMapHandle } from "@/lib/hooks/use-map-markers";
 import { useMapMarkers } from "@/lib/hooks/use-map-markers";
 import type { MapPlace } from "@/lib/listings";
 
@@ -13,13 +14,36 @@ interface ListingsMapProps {
   /** Practices the filters matched, before the ceiling. */
   totalPlaces: number;
   truncated: boolean;
-  /** Id of the row the reader is pointing at, mirrored onto its markers. */
-  activeListingId?: string | null;
-  onActiveListingChange?: (id: string | null) => void;
+  /** Row the reader is pointing at — the preview state. */
+  hoveredListingId?: string | null;
+  onHoveredChange?: (id: string | null) => void;
+  /**
+   * The posting the reader has chosen, with the coordinates it was chosen at.
+   *
+   * Coordinates and all: the marker to open its card on is only the right one once
+   * it stands at that point, which is how a merged cluster is told from the
+   * practice it covers. The camera is still flying when the choice is made, so the
+   * two travel together and the map decides it has arrived.
+   */
+  selectedListing?: { id: string; latitude: number; longitude: number } | null;
+  /** Called when the reader drops the choice — Escape, or a click on the map. */
+  onSelectionClear?: () => void;
+  /**
+   * Called when a marker is chosen — the mirror of the table's title button.
+   *
+   * A click on a pin is a *choice*, not a preview: its cream ring and its card
+   * have to survive the pointer leaving, or the map's half of the screen could
+   * never make a selection the way the table's now can.
+   */
+  onMarkerSelect?: (point: {
+    id: string;
+    latitude: number;
+    longitude: number;
+  }) => void;
   /**
    * A posting chosen in a popup — the reader wants its row, not its marker.
    *
-   * Distinct from `onActiveListingChange` because the two must not share a
+   * Distinct from `onHoveredChange` because the two must not share a
    * handler: pointing at a row highlights a marker, but choosing a posting scrolls
    * the list. Sharing one callback would make the mouse dragging across the table
    * scroll the page under the reader.
@@ -33,7 +57,8 @@ interface ListingsMapProps {
  *
  * An organism, and a deliberately thin one: the canvas, the two states the map
  * itself cannot express (loading, and no WebGL at all), the fullscreen control,
- * and the count of postings that could not be pinned.
+ * the « frame this page » control beside it, and the count of postings that could
+ * not be pinned.
  *
  * The two behaviours live in `useMapInstance` — the WebGL context, the style, the
  * lifecycle — and `useMapMarkers`, which owns what sits on top. They are split
@@ -48,84 +73,130 @@ interface ListingsMapProps {
  *
  * Client-only, and dynamically imported by its caller: MapLibre needs a WebGL
  * context and a `window`, neither of which exist during a server render.
+ *
+ * It exposes the handful of things the table half of the screen needs done to it
+ * — fly to a posting, frame a page — through a handle, for the same reason the
+ * table exposes `scrollToId`: the two halves are one set of rows seen two ways.
  */
-export function ListingsMap({
-  places,
-  unlocated,
-  totalPlaces,
-  truncated,
-  activeListingId,
-  onActiveListingChange,
-  onListingPick,
-  className,
-}: ListingsMapProps) {
-  const { containerRef, mapRef, ready, failed } = useMapInstance();
+export const ListingsMap = forwardRef<ListingsMapHandle, ListingsMapProps>(
+  function ListingsMap(
+    {
+      places,
+      unlocated,
+      totalPlaces,
+      truncated,
+      hoveredListingId,
+      onHoveredChange,
+      selectedListing,
+      onSelectionClear,
+      onMarkerSelect,
+      onListingPick,
+      className,
+    },
+    ref,
+  ) {
+    const { containerRef, mapRef, ready, failed } = useMapInstance();
 
-  useMapMarkers({
-    mapRef,
-    places,
-    ready,
-    activeListingId,
-    onActiveListingChange,
-    onListingPick,
-  });
+    const map = useMapMarkers({
+      mapRef,
+      places,
+      ready,
+      hoveredListingId,
+      onHoveredChange,
+      selectedListing,
+      onSelectionClear,
+      onMarkerSelect,
+      onListingPick,
+    });
 
-  if (failed) {
+    // The screen's way in from the other side: the table asks the map to come to a
+    // posting, or to frame the page it is showing. Exposed here rather than in the
+    // hook's return because a handle is the component's contract, not the hook's.
+    useImperativeHandle(ref, () => map, [map]);
+
+    if (failed) {
+      return (
+        <div
+          className={cn(
+            // The map's own paper, not the page's: this state stands in for the
+            // map, so it has to sit in the same place and the same light the tiles
+            // would have filled.
+            "flex size-full items-center justify-center rounded-card border border-border bg-map-base p-8 text-center text-sm text-map-ink",
+            className,
+          )}
+        >
+          La carte n&apos;a pas pu être chargée. Les annonces restent
+          consultables dans la liste.
+        </div>
+      );
+    }
+
     return (
       <div
         className={cn(
-          // The map's own paper, not the page's: this state stands in for the
-          // map, so it has to sit in the same place and the same light the tiles
-          // would have filled.
-          "flex size-full items-center justify-center rounded-card border border-border bg-map-base p-8 text-center text-sm text-map-ink",
+          "relative size-full overflow-hidden rounded-card",
           className,
         )}
       >
-        La carte n&apos;a pas pu être chargée. Les annonces restent consultables
-        dans la liste.
-      </div>
-    );
-  }
+        <div ref={containerRef} className="size-full" />
 
-  return (
-    <div
-      className={cn(
-        "relative size-full overflow-hidden rounded-card",
-        className,
-      )}
-    >
-      <div ref={containerRef} className="size-full" />
+        {!ready && (
+          <div className="absolute inset-0 flex items-center justify-center bg-map-base text-sm text-black/55">
+            Chargement de la carte…
+          </div>
+        )}
 
-      {!ready && (
-        <div className="absolute inset-0 flex items-center justify-center bg-map-base text-sm text-black/55">
-          Chargement de la carte…
+        {/*
+        The two chrome controls the reference puts over its map's top-right
+        corner: the frame-this-page move, and the fullscreen toggle under it.
+
+        The frame button is a *choice*, never an automatic one. Turning a page
+        changes the rows on screen and the map covers the whole filtered
+        collection, so re-framing on every page turn would drag the camera away
+        from wherever the reader had just put it. Offered, it answers the one
+        question the layout otherwise leaves open: where are *these* ten?
+      */}
+        <div className="absolute top-3 right-3 flex flex-col gap-2">
+          <button
+            type="button"
+            aria-label="Cadrer les annonces de cette page"
+            title="Cadrer les annonces de cette page"
+            // Disabled with nothing to frame: one page of ten postings all
+            // unpublished-as-place is possible, and a button that flies to France
+            // is worse than no button.
+            disabled={places.length === 0}
+            onClick={() => map.framePlaces(places)}
+            className="grid size-9 cursor-pointer place-items-center rounded-full bg-white/90 text-map-ink shadow-[0_2px_10px_rgb(22_21_15/0.2)] backdrop-blur-sm transition-colors hover:bg-white disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
+          >
+            <CrosshairIcon className="size-4" />
+          </button>
+
+          <FullscreenToggle containerRef={containerRef} />
         </div>
-      )}
 
-      <FullscreenToggle containerRef={containerRef} />
+        {unlocated > 0 && (
+          <p className="absolute bottom-3 left-3 rounded-full bg-white/90 px-3 py-1.5 text-[0.6875rem] text-map-ink shadow-[0_2px_10px_rgb(22_21_15/0.12)] backdrop-blur-sm">
+            {unlocated} annonce{unlocated > 1 ? "s" : ""} sans coordonnées,
+            visible{unlocated > 1 ? "s" : ""} dans la liste seulement
+          </p>
+        )}
 
-      {unlocated > 0 && (
-        <p className="absolute bottom-3 left-3 rounded-full bg-white/90 px-3 py-1.5 text-[0.6875rem] text-map-ink shadow-[0_2px_10px_rgb(22_21_15/0.12)] backdrop-blur-sm">
-          {unlocated} annonce{unlocated > 1 ? "s" : ""} sans coordonnées,
-          visible{unlocated > 1 ? "s" : ""} dans la liste seulement
-        </p>
-      )}
-
-      {/* The ceiling, stated with a count. A flag with no figure behind it
+        {/* The ceiling, stated with a count. A flag with no figure behind it
           invites the reader to hunt for what is missing.
 
           "Les plus actives" is what `/places` does: it ranks practices by open
           listing count and keeps the top `maxPlaces`, so the ones left off are
           the quietest, not the oldest or the furthest. */}
-      {truncated && (
-        <p className="absolute bottom-12 left-3 rounded-full bg-white/90 px-3 py-1.5 text-[0.6875rem] text-map-ink shadow-[0_2px_10px_rgb(22_21_15/0.12)] backdrop-blur-sm">
-          {places.length} cabinets sur {totalPlaces} représentés — les plus
-          actives
-        </p>
-      )}
-    </div>
-  );
-}
+        {truncated && (
+          <p className="absolute bottom-12 left-3 rounded-full bg-white/90 px-3 py-1.5 text-[0.6875rem] text-map-ink shadow-[0_2px_10px_rgb(22_21_15/0.12)] backdrop-blur-sm">
+            {places.length} cabinets sur {totalPlaces} représentés — les plus
+            actives
+          </p>
+        )}
+      </div>
+    );
+  },
+);
 
 /**
  * Expands the map to the viewport.

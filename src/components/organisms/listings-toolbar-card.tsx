@@ -6,6 +6,9 @@ import {
 import { cn } from "@/lib/cn";
 import type { BrowseFormFilters, BrowseSort } from "@/lib/listings";
 
+/** Shared with the container, which scrolls this card back into view. */
+const BROWSE_MAP_ID = "browse-map";
+
 interface ListingsToolbarCardProps {
   filters: BrowseFormFilters;
   onFiltersChange: (patch: Partial<BrowseFormFilters>) => void;
@@ -61,7 +64,13 @@ export function ListingsToolbarCard({
   className,
 }: ListingsToolbarCardProps) {
   return (
+    /*
+      The `id` is the one thing the container and this card agree on: a posting
+      chosen in the list flies the camera, and on a phone that is only worth
+      doing if the map comes back into view. See `BROWSE_MAP_ID`.
+    */
     <div
+      id={BROWSE_MAP_ID}
       className={cn(
         "relative flex min-h-[20rem] flex-1 flex-col sm:min-h-[24rem] lg:min-h-0",
         className,

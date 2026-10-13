@@ -2,7 +2,14 @@
 
 import type { Map as MapLibreMap, Marker } from "maplibre-gl";
 import * as maplibregl from "maplibre-gl";
-import { type RefObject, useEffect, useMemo, useRef, useState } from "react";
+import {
+  type RefObject,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { cn } from "@/lib/cn";
 import { cameraTargetFor, type MapPlace } from "@/lib/listings";
 
@@ -61,6 +68,31 @@ const PLACE_ZOOM = 16;
 const FLY_DURATION = 600;
 
 /**
+ * How far a card is kept from the map's edges, in pixels.
+ *
+ * Used twice, and that is the point: MapLibre's own anchor choice and the nudge
+ * that finishes the job have to agree on the margin or they move the same card
+ * in two directions.
+ */
+const POPUP_EDGE_MARGIN = 12;
+
+/**
+ * Everything the screen can ask of the map from outside it.
+ *
+ * The same shape of contract as `ListingsTableHandle`, and for the same reason:
+ * the browse screen's two halves are one set of rows seen two ways, so each half
+ * exposes the handful of things the other needs done to it. The table is asked to
+ * scroll to a row; the map is asked to fly to a point, to frame a set of places,
+ * and (through `selectedListing`) to hold a posting open.
+ */
+export interface ListingsMapHandle {
+  /** Flies the camera to one posting's coordinates, street level. */
+  focusOn: (point: { latitude: number; longitude: number }) => void;
+  /** Frames every place given — a page of results, typically. */
+  framePlaces: (places: readonly MapPlace[]) => void;
+}
+
+/**
  * The markers on the map, and the popup one of them opens.
  *
  * Everything here changes with the data; the map instance it draws on does not.
@@ -68,22 +100,67 @@ const FLY_DURATION = 600;
  * "the pins are wrong" should not mean reading how the WebGL context was made.
  *
  * The popup is rendered here rather than in the component because opening one is
- * a consequence of clicking a marker, and a marker is a node this hook owns.
+ * a consequence of clicking a marker, and a marker is a node this hook owns. It
+ * is also opened from the table — a posting picked in the list comes with its own
+ * card on the map, the reference's arrangement — so opening is a function this
+ * hook exposes rather than a branch inside one listener.
+ *
+ * Two states, not one, and the difference is the whole point of the screen's
+ * interactivity: `hoveredListingId` is what the reader is *pointing at*, an
+ * ephemeral preview; `selectedListing` is what the reader has *chosen*, and it
+ * survives the pointer leaving. They must never be the same value — merging
+ * them is what this screen did, and it meant a selection lasted exactly as long
+ * as the mouse stayed on the row.
  */
 export function useMapMarkers({
   mapRef,
   places,
   ready,
-  activeListingId,
-  onActiveListingChange,
+  hoveredListingId,
+  onHoveredChange,
+  selectedListing,
+  onSelectionClear,
+  onMarkerSelect,
   onListingPick,
 }: {
   mapRef: RefObject<MapLibreMap | null>;
   places: MapPlace[];
   /** The map reports its style loaded; nothing is added before then. */
   ready: boolean;
-  activeListingId?: string | null;
-  onActiveListingChange?: (id: string | null) => void;
+  /** Row the reader is pointing at — the preview state. */
+  hoveredListingId?: string | null;
+  onHoveredChange?: (id: string | null) => void;
+  /**
+   * The posting the reader has chosen, with its coordinates.
+   *
+   * The coordinates travel with it rather than being looked up: the marker to
+   * open is only the right one once it stands *at that point*, which is how a
+   * merged cluster is told apart from the practice it was merged from. A record
+   * of the two means the popup waits for the camera rather than opening at
+   * wherever the pin happened to be.
+   */
+  selectedListing?: {
+    id: string;
+    latitude: number;
+    longitude: number;
+  } | null;
+  /** Called when the reader dismisses the selection (Escape, or the map itself). */
+  onSelectionClear?: () => void;
+  /**
+   * Called when a marker is chosen — a click on a pin, the mirror of the table's
+   * title button.
+   *
+   * The coordinates travel with the id for the same reason they do in
+   * `selectedListing`: the marker that has to be marked is the one standing *at*
+   * that point. Without it, clicking a pin would only preview — the cream ring
+   * would leave with the pointer, and a reader who clicked a marker would have
+   * made no choice at all.
+   */
+  onMarkerSelect?: (point: {
+    id: string;
+    latitude: number;
+    longitude: number;
+  }) => void;
   /**
    * A posting chosen in a popup: the reader wants its row, not its marker.
    *
@@ -119,14 +196,23 @@ export function useMapMarkers({
    * and listing them would tear down and rebuild every marker on every row
    * hover — which is the one thing this screen does most.
    */
-  const onSelectRef = useRef(onActiveListingChange);
-  onSelectRef.current = onActiveListingChange;
+  const onHoverRef = useRef(onHoveredChange);
+  onHoverRef.current = onHoveredChange;
 
   const onPickRef = useRef(onListingPick);
   onPickRef.current = onListingPick;
 
-  const activeIdRef = useRef(activeListingId);
-  activeIdRef.current = activeListingId;
+  const hoveredIdRef = useRef(hoveredListingId);
+  hoveredIdRef.current = hoveredListingId;
+
+  const selectedRef = useRef(selectedListing);
+  selectedRef.current = selectedListing;
+
+  const onSelectionClearRef = useRef(onSelectionClear);
+  onSelectionClearRef.current = onSelectionClear;
+
+  const onMarkerSelectRef = useRef(onMarkerSelect);
+  onMarkerSelectRef.current = onMarkerSelect;
 
   /** The places the camera was last framed on, so a refit is not repeated. */
   const lastFramedRef = useRef<MapPlace[] | null>(null);
@@ -189,8 +275,12 @@ export function useMapMarkers({
         markersRef.current,
         livePlacesRef.current,
         popupRef,
-        (id) => onPickRef.current?.(id),
         leavingRef.current,
+        {
+          onPick: onPickRef,
+          onHover: onHoverRef,
+          onMarkerSelect: onMarkerSelectRef,
+        },
       );
     }
 
@@ -203,33 +293,92 @@ export function useMapMarkers({
 
     // Applied here too, so markers created after a selection was already made
     // come up highlighted rather than waiting for the next hover.
-    paintActive(markersRef.current, activeIdRef.current);
+    paintStates(markersRef.current, hoveredIdRef.current, selectedRef.current);
+
+    // And the chosen posting's card: it opens the moment a marker stands at its
+    // own coordinates, which is not the moment the row was clicked — the camera
+    // is still flying, and the marker that covered the posting a frame ago may
+    // have been a merged cluster. Waiting for the coordinates rather than for a
+    // timer is what makes this both correct and stateless.
+    openCardForSelected(
+      markersRef.current,
+      livePlacesRef.current,
+      popupRef,
+      map,
+      selectedRef.current,
+      onPickRef.current,
+    );
   }, [mapRef, clusters, places, ready]);
 
   // The table's hover state has to reach the marker, not just the other way.
   useEffect(() => {
-    paintActive(markersRef.current, activeListingId);
-  }, [activeListingId]);
+    paintStates(markersRef.current, hoveredListingId, selectedRef.current);
+  }, [hoveredListingId]);
 
+  // A choice made in the list: the popup follows it as soon as the map can.
   useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready) return;
+    paintStates(markersRef.current, hoveredIdRef.current, selectedListing);
+    openCardForSelected(
+      markersRef.current,
+      livePlacesRef.current,
+      popupRef,
+      map,
+      selectedListing,
+      onPickRef.current,
+    );
+  }, [mapRef, ready, selectedListing]);
+
+  /**
+   * Escape, and the map's own background: the two ways a choice is dropped.
+   *
+   * MapLibre binds no Escape handler of its own, so a keyboard user could open a
+   * popup and have no way to dismiss it. Bound here rather than by the component
+   * because the popup is this hook's state: whoever opens a thing closes it. On
+   * the document, because focus never moves into the popup — it is not a focus
+   * trap and should not become one.
+   *
+   * It clears the *selection* too, not just the card: the two were one value
+   * here, and a popup closed by Escape used to leave the row lit with nothing on
+   * the map to explain it. The click on the map's background does the same — a
+   * second click on the marker re-opens, since markers stop their propagation.
+   */
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready) return undefined;
+
     const dismiss = () => {
       popupRef.current?.remove();
       popupRef.current = null;
+      onSelectionClearRef.current?.();
     };
 
-    // MapLibre binds no Escape handler of its own, so a keyboard user could open
-    // a popup and have no way to dismiss it. Bound here rather than by the
-    // component because the popup is this hook's state: whoever opens a thing
-    // closes it. On the document, because focus never moves into the popup — it
-    // is not a focus trap and should not become one.
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        dismiss();
-      }
+    /**
+     * A click on the map's background — not on the card it is showing.
+     *
+     * The guard matters because the card lives *inside* the map container, so a
+     * click on one of its entries bubbles here: the entry sets a choice and this
+     * would clear it in the same event, which is how a popup used to be the one
+     * door that could not make a selection.
+     */
+    const onMapClick = (event: maplibregl.MapMouseEvent) => {
+      const target = event.originalEvent?.target as HTMLElement | null;
+      if (target?.closest(".maplibregl-popup")) return;
+      dismiss();
     };
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") dismiss();
+    };
+
+    map.on("click", onMapClick);
     document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
-  }, []);
+    return () => {
+      map.off("click", onMapClick);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [mapRef, ready]);
 
   useEffect(
     () => () => {
@@ -242,6 +391,229 @@ export function useMapMarkers({
     },
     [],
   );
+
+  /**
+   * The camera, from outside the hook.
+   *
+   * `useCallback` over a ref, so the identity is stable and the map component can
+   * expose it through an imperative handle without rebuilding that handle on
+   * every render. The camera call itself is the same one the popup's own « Centrer »
+   * makes: `PLACE_ZOOM` is street level without going to the tile limit, and the
+   * fly duration is the one the reference dashboard would use — long enough to
+   * read as a move, short enough not to wait out.
+   */
+  const focusOn = useCallback(
+    (point: { latitude: number; longitude: number }) => {
+      mapRef.current?.flyTo({
+        center: [point.longitude, point.latitude],
+        zoom: PLACE_ZOOM,
+        duration: FLY_DURATION,
+      });
+    },
+    [mapRef],
+  );
+
+  /**
+   * Frames the places given — a page of results, typically.
+   *
+   * Not the same as `focusOn`, and not a zoom to the first of them: a practice
+   * turning pages wants to see where *this page's* open postings are, all of them
+   * at once, and the collection is larger than the page by construction.
+   */
+  const framePlaces = useCallback(
+    (frame: readonly MapPlace[]) => {
+      const map = mapRef.current;
+      if (!map) return;
+      if (frame.length === 1) {
+        map.flyTo({
+          center: [frame[0].longitude, frame[0].latitude],
+          zoom: 12,
+          duration: FLY_DURATION,
+        });
+        return;
+      }
+      if (frame.length === 0) return;
+      const bounds = new maplibregl.LngLatBounds();
+      for (const place of frame) {
+        bounds.extend([place.longitude, place.latitude]);
+      }
+      map.fitBounds(bounds, {
+        padding: 64,
+        maxZoom: 14,
+        duration: FLY_DURATION,
+      });
+    },
+    [mapRef],
+  );
+
+  return useMemo(() => ({ focusOn, framePlaces }), [focusOn, framePlaces]);
+}
+
+/**
+ * Opens the card for one marker, whichever door the reader came through.
+ *
+ * Extracted out of the marker's click handler because the same thing now happens
+ * from the list: a posting chosen in the table comes with its card on the map,
+ * which is the reference's arrangement and the only way the two halves ever read
+ * as one screen. Two doors, one body — the alternative is a second copy of the
+ * popup's construction, and the two would drift the first time a field moved.
+ *
+ * A lone posting picks itself: it has no list to choose from, so the choice the
+ * reader just made is propagated outward so the row can light up (and scroll into
+ * view if it is not on the page). A group waits — the reader picks the entry,
+ * because « three annonces » is not a choice of any one of them.
+ */
+function openPopupForKey(
+  key: string,
+  livePlaces: Map<string, MapPlace>,
+  popupRef: RefObject<maplibregl.Popup | null>,
+  map: MapLibreMap,
+  handlers: {
+    onPick?: (id: string) => void;
+    onHover?: (id: string | null) => void;
+    onMarkerSelect?: (point: {
+      id: string;
+      latitude: number;
+      longitude: number;
+    }) => void;
+  },
+) {
+  const live = livePlaces.get(key);
+  if (!live) return;
+
+  popupRef.current?.remove();
+  popupRef.current = new maplibregl.Popup({
+    offset: 16,
+    // The very click that opened it used to close it again: the marker
+    // sits inside the map, so the click bubbled up and MapLibre dismissed
+    // the popup on the same event. `stopPropagation` at the click site is what
+    // makes this safe — without it, `true` would mean a popup that never stays
+    // open.
+    closeOnClick: true,
+    closeButton: true,
+    /*
+      MapLibre picks the card's anchor itself when none is given — above or below
+      the marker, and to one side — but it does so against a padding of **zero**:
+      it only moves once the card is already at the edge. Handing it the same
+      margin `keepPopupInView` works with makes that decision happen a step
+      earlier, so the flip and the nudge stop fighting over the same pixel and
+      the card lands with air around it from the start.
+    */
+    padding: {
+      top: POPUP_EDGE_MARGIN,
+      bottom: POPUP_EDGE_MARGIN,
+      left: POPUP_EDGE_MARGIN,
+      right: POPUP_EDGE_MARGIN,
+    },
+  })
+    .setLngLat([live.longitude, live.latitude])
+    /**
+     * The popup dismissing itself is a read of the ref rather than a
+     * captured instance: the content is built before the popup exists, and
+     * the two are chained in one expression. The closure resolves it on the
+     * click, by which time it is set.
+     */
+    .setDOMContent(
+      popupContent(
+        live,
+        map,
+        () => popupRef.current?.remove(),
+        (id) => handlers.onPick?.(id),
+      ),
+    )
+    .addTo(map);
+
+  // A card that arrives cropped is a card the reader cannot read, and the map's
+  // box is small by design — it shares the screen with the table. MapLibre has no
+  // collision detection for popups, so the camera makes room instead.
+  keepPopupInView(map, popupRef.current);
+
+  // A lone posting has no list to choose from, so it selects itself: a click on
+  // its pin is a choice, and a choice has to outlive the pointer that made it.
+  // A group waits — the reader picks the entry.
+  if (live.listings.length === 1) {
+    const [only] = live.listings;
+    handlers.onHover?.(only.id);
+    handlers.onMarkerSelect?.({
+      id: only.id,
+      latitude: only.location.latitude,
+      longitude: only.location.longitude,
+    });
+  }
+}
+
+/**
+ * Nudges the camera so a card that just opened is entirely inside the map.
+ *
+ * MapLibre positions a popup from its marker and clips whatever falls outside the
+ * container — it has no collision detection of its own. What it *does* have is
+ * anchor choice: with no `anchor` given, it flips the card above or below the
+ * marker and to one side, which already covers most of the frame's edges (it is
+ * why four markers fitted to the bounds of a 384px map all opened inside it).
+ *
+ * What that cannot do is two things, and both are the nudge's job:
+ *
+ * - a card near a corner can be anchored correctly and still sit off the frame,
+ *   because the anchor is chosen from the marker's half of the map and not from
+ *   the card's box;
+ * - a card taller than the frame fits nowhere, and there the two mechanisms have
+ *   to agree on losing: this one declines, and MapLibre's flip — which at least
+ *   compares the room above and below the marker — decides.
+ *
+ * The nudge is measured, not guessed: the card's box is read after it exists in
+ * the DOM, the overflow against the container's edges is the distance to move,
+ * and only the axes that actually overflow move. `panBy` rather than `panTo`
+ * because the offset is in screen pixels — it is the difference between two
+ * rectangles, and translating that into a centre would need a projection the map
+ * already does for us.
+ *
+ * It re-runs harmlessly on the `moveend` it causes: a re-cluster opens nothing
+ * new, because the card is already at the place it was opened for.
+ */
+function keepPopupInView(map: MapLibreMap, popup: maplibregl.Popup | null) {
+  if (!popup) return;
+
+  const frame = map.getContainer().getBoundingClientRect();
+  const card = popup.getElement().getBoundingClientRect();
+  if (frame.width === 0 || frame.height === 0) return;
+
+  // Too big to place: MapLibre's own anchor choice is the better guess, because it
+  // knows which side of the marker has the room, and a nudge here would fight the
+  // flip it makes — the card jumping from one side of its marker to the other.
+  if (
+    card.height > frame.height - 2 * POPUP_EDGE_MARGIN ||
+    card.width > frame.width - 2 * POPUP_EDGE_MARGIN
+  ) {
+    return;
+  }
+
+  let dx = 0;
+  let dy = 0;
+
+  /*
+    Signs, and they are the trap in this arithmetic.
+    `panBy(offset)` moves the *camera* by that offset, so the card — which is
+    content — travels the other way: measured in the browser, `panBy([0, -100])`
+    pushes a card 100px **down** the screen. Both deltas below are therefore the
+    overflow with its sign flipped, which reads backwards and is why it is written
+    out rather than left to be intuited.
+  */
+  const outsideLeft = frame.left + POPUP_EDGE_MARGIN - card.left;
+  const outsideRight = card.right - (frame.right - POPUP_EDGE_MARGIN);
+  if (outsideLeft > 0) dx = -outsideLeft;
+  else if (outsideRight > 0) dx = outsideRight;
+
+  const outsideTop = frame.top + POPUP_EDGE_MARGIN - card.top;
+  const outsideBottom = card.bottom - (frame.bottom - POPUP_EDGE_MARGIN);
+  if (outsideTop > 0) dy = -outsideTop;
+  else if (outsideBottom > 0) dy = outsideBottom;
+
+  if (dx !== 0 || dy !== 0) {
+    /* Instantaneous: a keep-in-view nudge arriving via ease left 28px of
+       residual clipping behind. The popup entrance carries the movement, so a
+       snappy camera is fine. */
+    map.panBy([dx, dy], { duration: 0 });
+  }
 }
 
 /**
@@ -258,8 +630,23 @@ function rebuildMarkers(
   markers: Map<string, Marker>,
   livePlaces: Map<string, MapPlace>,
   popupRef: RefObject<maplibregl.Popup | null>,
-  onSelect: (id: string) => void,
   leaving: HTMLElement[],
+  /**
+   * The two callbacks, through refs rather than as values.
+   *
+   * Refs because a marker outlives the data it was built from and its handlers
+   * must read the *current* callback, not the one that was current when the pin
+   * was placed: the pick handler reaches the container, which rebuilds on every
+   * page turn.
+   */
+  handlers: {
+    onPick: RefObject<((id: string) => void) | undefined>;
+    onHover: RefObject<((id: string | null) => void) | undefined>;
+    onMarkerSelect: RefObject<
+      | ((point: { id: string; latitude: number; longitude: number }) => void)
+      | undefined
+    >;
+  },
 ) {
   const active = markers;
   const nextKeys = new Set(clusters.map((place) => place.key));
@@ -327,37 +714,11 @@ function rebuildMarkers(
       // bubbled up and closed it again on the same event.
       event.stopPropagation();
 
-      const live = current();
-      if (!live) return;
-
-      popupRef.current?.remove();
-      popupRef.current = new maplibregl.Popup({
-        offset: 16,
-        // The very click that opened it used to close it again: the marker
-        // sits inside the map, so the click bubbled up and MapLibre dismissed
-        // the popup on the same event. `stopPropagation` above is what makes
-        // this safe — without it, `true` would mean a popup that never stays
-        // open.
-        closeOnClick: true,
-        closeButton: true,
-      })
-        .setLngLat([live.longitude, live.latitude])
-        /**
-         * The popup dismissing itself is a read of the ref rather than a
-         * captured instance: the content is built before the popup exists, and
-         * the two are chained in one expression. The closure resolves it on the
-         * click, by which time it is set.
-         */
-        .setDOMContent(
-          popupContent(live, map, () => popupRef.current?.remove(), onSelect),
-        )
-        .addTo(map);
-
-      // A lone posting has no list to choose from, so it selects itself and
-      // scrolls to its row. A group waits: the reader picks the entry.
-      if (live.listings.length === 1) {
-        onSelect(live.listings[0].id);
-      }
+      openPopupForKey(key, livePlaces, popupRef, map, {
+        onPick: handlers.onPick.current,
+        onHover: handlers.onHover.current,
+        onMarkerSelect: handlers.onMarkerSelect.current,
+      });
     });
 
     /**
@@ -666,23 +1027,107 @@ function fitToPlaces(map: MapLibreMap, places: readonly MapPlace[]) {
 }
 
 /**
- * Marks the marker covering the row the reader is pointing at.
+ * Marks the marker covering the row the reader is pointing at, and the one they
+ * have chosen.
  *
- * Module-level rather than a closure in the hook: two effects call it, and
- * keeping it outside means neither lists it as a dependency of its own.
+ * Two marks, because the two states are two marks: hovering is a *preview* — a
+ * soft ink ring that says « this pin is that row » — and the choice is the
+ * reference's own solid cream ring, which says « this one ». They were one value
+ * before, so a selection lasted exactly as long as the mouse did, and the row a
+ * reader had clicked went dark the moment they moved.
+ *
+ * The selection outranks the preview on the same marker rather than replacing
+ * it: pointing at the row you already chose keeps the cream ring, because the
+ * marker is still the chosen one.
  */
-function paintActive(
+/** Where a marker stands, read rather than assumed. */
+function markerPoint(marker: Marker) {
+  const at = marker.getLngLat();
+  return { lng: at.lng, lat: at.lat };
+}
+
+function paintStates(
   markers: Map<string, Marker>,
-  activeId: string | null | undefined,
+  hoveredId: string | null | undefined,
+  selected:
+    | { id: string; latitude: number; longitude: number }
+    | null
+    | undefined,
 ) {
   for (const marker of markers.values()) {
-    // The rows are the selection and the pins are one per place among them, so a
-    // place lights up when any of the rows it covers is pointed at.
-    const covers = marker
-      .getElement()
-      .dataset.ids?.split(",")
-      .includes(activeId ?? " ");
-    marker.getElement().classList.toggle("is-active", Boolean(covers));
+    const ids = marker.getElement().dataset.ids?.split(",") ?? [];
+    // Read once per marker rather than twice: the class toggles below both need
+    // the same point, and MapLibre hands it back in degrees either way.
+    const point = markerPoint(marker);
+    // The preview: any id this marker covers is being pointed at.
+    const coversHovered = hoveredId != null && ids.includes(hoveredId);
+    // The choice: the id it covers *and* the marker standing at the coordinates
+    // that were chosen, which is what tells a merged cluster from the practice it
+    // covers. A cluster marker that still holds the posting is not the marker the
+    // choice is about — the camera has not arrived yet.
+    const coversSelected =
+      selected != null &&
+      ids.includes(selected.id) &&
+      point.lng === selected.longitude &&
+      point.lat === selected.latitude;
+
+    marker.getElement().classList.toggle("is-preview", coversHovered);
+    marker.getElement().classList.toggle("is-active", coversSelected);
+  }
+}
+
+/**
+ * Opens the chosen posting's card, once the map can honestly show it.
+ *
+ * The condition is the same one `paintStates` uses — the marker covers the id and
+ * stands at its coordinates — so the card opens exactly when the cream ring
+ * appears. That is the point of writing both off the same test: a posting picked
+ * in the list comes with its card on the map, the reference's arrangement, but
+ * only once the camera has landed. Opening at the pre-flight position would
+ * anchor the card to a merged cluster the reader is no longer looking at.
+ *
+ * A no-op while the marker has not arrived, so the reopen after a re-cluster is
+ * free rather than a thing to schedule.
+ */
+function openCardForSelected(
+  markers: Map<string, Marker>,
+  livePlaces: Map<string, MapPlace>,
+  popupRef: RefObject<maplibregl.Popup | null>,
+  map: MapLibreMap,
+  selected:
+    | { id: string; latitude: number; longitude: number }
+    | null
+    | undefined,
+  onPick: ((id: string) => void) | undefined,
+) {
+  if (!selected) return;
+
+  for (const [key, marker] of markers) {
+    const ids = marker.getElement().dataset.ids?.split(",") ?? [];
+    if (!ids.includes(selected.id)) continue;
+    if (
+      marker.getLngLat().lng !== selected.longitude ||
+      marker.getLngLat().lat !== selected.latitude
+    ) {
+      continue;
+    }
+    const place = livePlaces.get(key);
+    if (!place) continue;
+
+    // Already open on this very place: a re-cluster must not re-render a card
+    // the reader is reading.
+    const current = popupRef.current;
+    const at = current?.getLngLat();
+    if (at && at.lng === place.longitude && at.lat === place.latitude) {
+      return;
+    }
+
+    openPopupForKey(key, livePlaces, popupRef, map, {
+      onPick,
+      onHover: undefined,
+      onMarkerSelect: undefined,
+    });
+    return;
   }
 }
 
@@ -774,12 +1219,15 @@ function popupContent(
 
   // A place can hold a lot of postings, and a cluster merges several practices —
   // so the list here can be long. It is capped at a handful and scrolls past that
-  // rather than letting the popup grow down the map. The count line and the button
-  // sit outside the scroll, so what frames the list never leaves the popup.
+  // rather than letting the popup grow down the map. The cap is 8rem and not
+  // 13: the card has to fit the map, and the map is half a screen tall at best —
+  // a list that fills the whole card makes a card taller than the map on a short
+  // window, which no amount of anchoring can rescue. Three rows of preview reach
+  // it anyway, so the scroll is a safety net rather than a routine.
   const shown = place.listings.slice(0, MAX_POPUP_LISTINGS);
   const list = document.createElement("ul");
   list.className =
-    "mt-1 flex max-h-52 flex-col gap-1 overflow-y-auto overscroll-contain border-t border-black/10 pt-1.5";
+    "mt-1 flex max-h-32 flex-col gap-1 overflow-y-auto overscroll-contain border-t border-black/10 pt-1.5";
 
   for (const listing of shown) {
     const item = document.createElement("li");

@@ -192,6 +192,22 @@ export function ExpandIcon(props: SVGProps<SVGSVGElement>) {
 }
 
 /**
+ * Crosshair — "come to me". The map's frame-this-page control.
+ *
+ * Lucide's own geometry, like every other mark in this set, so the two controls
+ * the reference puts in its map's corner share one stroke weight and one visual
+ * density instead of being drawn twice by two hands.
+ */
+export function CrosshairIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Svg {...props}>
+      <circle cx="12" cy="12" r="10" />
+      <path d="M22 12h-4M6 12H2M12 6V2M12 22v-4" />
+    </Svg>
+  );
+}
+
+/**
  * Stethoscope — the generalist's mark. Lucide's own path, so every specialty
  * icon shares one geometry and stroke weight.
  */

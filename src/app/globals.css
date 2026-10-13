@@ -653,25 +653,19 @@
   }
 
   /*
-   * The hovered row of the listings table, and the bar that says so.
+   * The chosen row of the listings table, and the bar that says so.
    *
    * Carried by `box-shadow` rather than a `border-left` or a positioned
    * `::before`: both of those reserve room — the row would change height on
-   * hover and the cell's content would shift by a hair on every pass of the
-   * mouse. An inset shadow reserves nothing, and it is the only one of the
-   * three that survives the table's `border-collapse` without an edge-merging
-   * artefact.
+   * selection and the cell's content would shift by a hair. An inset shadow
+   * reserves nothing, and it is the only one of the three that survives the
+   * table's `border-collapse` without an edge-merging artefact.
    *
-   * The two states do not share a geometry: at rest the bar is zero spread and
-   * zero offset, on hover it is 2px. That difference is what makes the
-   * transition visible — at a constant thickness the shadow interpolates only
-   * its colour, and a 150ms fade on an element that exists only under the cursor
-   * goes unnoticed. Growing from the middle of the cell, the bar stretches along
-   * the row, which reads as movement rather than as a change of tint.
-   *
-   * Hence 200 ms: longer than the row background's 150 ms, so the bar lands
-   * after the background has begun to rise — the other way round reads as an
-   * outline trailing behind the hover.
+   * It reads `is-selected`, not `:hover`: the bar now marks a *choice* made in
+   * the list, which has to outlive the pointer that made it. Hover still washes
+   * the row lightly, because a reader sweeping the table needs to know which row
+   * the pointer is on — but the wash is a wash and the bar is the bar, and the
+   * two must never be the same thing.
    */
   .listings-table tbody td:first-child {
     box-shadow: inset 0 0 0 transparent;
@@ -679,7 +673,15 @@
   }
 
   .listings-table tbody tr:hover td:first-child {
+    box-shadow: inset 2px 0 0 var(--border-strong);
+  }
+
+  .listings-table tbody tr.is-selected td:first-child {
     box-shadow: inset 2px 0 0 var(--primary);
+  }
+
+  .listings-table tbody tr.is-selected {
+    background: var(--surface-2);
   }
 
   /*
@@ -734,9 +736,16 @@
   }
 
   .maplibregl-marker:hover .marker-dot,
-  .maplibregl-marker:focus-visible .marker-dot {
+  .maplibregl-marker:focus-visible .marker-dot,
+  .maplibregl-marker.is-preview .marker-dot {
+    /*
+      * The preview — a row being pointed at. A wash of ink rather than a ring of
+      * it, because it is the state that appears and vanishes with the pointer:
+      * a strong ring here would make the map flicker as the mouse crosses the
+      * table, which is the most repeated gesture on this screen.
+      */
     box-shadow:
-      0 0 0 3px rgb(22 21 15 / 30%),
+      0 0 0 3px rgb(22 21 15 / 22%),
       0 2px 6px rgb(0 0 0 / 35%);
   }
 
@@ -745,9 +754,14 @@
    *
    * The state was set by the hook and had no style at all: pointing at a row
    * highlighted a marker indistinguishable from any other. The solid ring, with
-   * none of the hover's translucency, says "this is the one" — cream here rather
+   * none of the preview's translucency, says "this is the one" — cream here rather
    * than ink, because a cream ring on a dark disc over light streets is a claim
    * about the *marker*, while a dark ring would only restate the disc.
+   *
+   * It is the *selection*'s ring now, not the hover's. The two were one state
+   * here, so the cream ring meant "the mouse is on this row" and left the moment
+   * it moved — and a choice made in the table now has to outlive the pointer that
+   * made it.
    */
   .maplibregl-marker.is-active .marker-dot {
     box-shadow:

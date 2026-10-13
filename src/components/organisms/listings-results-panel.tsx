@@ -56,9 +56,16 @@ interface ListingsResultsPanelProps {
    * search that matched nothing.
    */
   onResetFilters: () => void;
-  /** Row the reader is pointing at; mirrored onto its map marker. */
-  activeListingId: string | null;
-  onActiveListingChange: (id: string | null) => void;
+  /** Reports the row under the pointer to the map's preview state. */
+  onHoveredChange?: (id: string | null) => void;
+  /**
+   * The posting the reader has chosen, and the way to choose another.
+   *
+   * Passed straight through to the table, which owns the row markup: a choice is
+   * made by the title button, and the map half of the screen acts on it.
+   */
+  selectedListingId?: string | null;
+  onListingSelect?: (listing: BrowseListing) => void;
   /**
    * A handle onto the table, so the screen can scroll a picked posting into
    * view. Passed down rather than reached for: the table owns the row markup,
@@ -88,9 +95,10 @@ export function ListingsResultsPanel({
   filtered,
   horizon,
   onHorizonChange,
+  onHoveredChange,
+  selectedListingId,
+  onListingSelect,
   onResetFilters,
-  activeListingId,
-  onActiveListingChange,
   tableRef,
 }: ListingsResultsPanelProps) {
   return (
@@ -186,7 +194,12 @@ export function ListingsResultsPanel({
               <ul className="flex flex-col gap-3">
                 {listings.map((listing, index) => (
                   <li key={listing.id}>
-                    <ListingCard listing={listing} index={index} />
+                    <ListingCard
+                      listing={listing}
+                      index={index}
+                      selectedListingId={selectedListingId}
+                      onListingSelect={onListingSelect}
+                    />
                   </li>
                 ))}
               </ul>
@@ -195,8 +208,9 @@ export function ListingsResultsPanel({
               <ListingsTable
                 ref={tableRef}
                 listings={listings}
-                activeListingId={activeListingId}
-                onActiveListingChange={onActiveListingChange}
+                onHoveredChange={onHoveredChange}
+                selectedListingId={selectedListingId}
+                onListingSelect={onListingSelect}
               />
             </div>
           </div>

@@ -29,8 +29,24 @@ export interface ListingsTableHandle {
 
 interface ListingsTableProps {
   listings: BrowseListing[];
-  /** Row the reader is pointing at; mirrored onto its map marker. */
-  activeListingId?: string | null;
+  /**
+   * Reports the row under the pointer, so the map can preview its marker.
+   *
+   * A handler and not a value: the table does not need to be told what it is
+   * already hovering, and reading the current state back into the rows would
+   * make the two halves of one gesture share a state for nothing.
+   */
+  onHoveredChange?: (id: string | null) => void;
+  /**
+   * The posting the reader has chosen, and the way to choose another.
+   *
+   * Two props rather than one value plus one handler, because the choice is not
+   * symmetric with the hover: the hover is a value the table reports, the choice
+   * is a posting the table offers and the screen acts on — it needs the whole
+   * row, coordinates included, because acting on it means flying the camera.
+   */
+  selectedListingId?: string | null;
+  onListingSelect?: (listing: BrowseListing) => void;
   onActiveListingChange?: (id: string | null) => void;
 }
 
@@ -43,6 +59,13 @@ interface ListingsTableProps {
  * count to make room for something prettier would lose the column that most
  * changes what a reader does.
  *
+ * Two states on a row, and neither is the other: pointing at one is a *preview*
+ * that lights its marker on the map for as long as the pointer is there, and
+ * choosing one is a *selection* that stays until it is dismissed. The choice is
+ * made by the title button, which is also the keyboard path into the map — the
+ * row itself carries no link, so without it a keyboard reader could reach the
+ * map's markers and nothing else on this half of the screen.
+ *
  * Hidden below `sm:`, where `ListingCard` takes over — a six-column table on a
  * phone either scrolls sideways or squeezes every column into an unreadable
  * few pixels, and both are worse than showing the same rows as cards.
@@ -51,7 +74,7 @@ export const ListingsTable = forwardRef<
   ListingsTableHandle,
   ListingsTableProps
 >(function ListingsTable(
-  { listings, activeListingId, onActiveListingChange },
+  { listings, onHoveredChange, selectedListingId, onListingSelect },
   ref,
 ) {
   const tableRef = useRef<HTMLTableElement>(null);
@@ -144,16 +167,20 @@ export const ListingsTable = forwardRef<
         </thead>
         <tbody>
           {listings.map((listing, index) => {
-            const active = listing.id === activeListingId;
+            const selected = listing.id === selectedListingId;
             const badge = listingBadge(listing);
+            // A posting whose practice was never geocoded has nothing to fly to:
+            // the button would be a control that cannot act, so it is not drawn.
+            const locatable = listing.location !== null;
             return (
               <tr
                 key={listing.id}
                 data-listing-id={listing.id}
+                data-selected={selected ? "" : undefined}
                 style={rowEnterStyle(index)}
-                className={cn("row-enter", active && "bg-surface-2")}
-                onMouseEnter={() => onActiveListingChange?.(listing.id)}
-                onMouseLeave={() => onActiveListingChange?.(null)}
+                className={cn("row-enter", selected && "is-selected")}
+                onMouseEnter={() => onHoveredChange?.(listing.id)}
+                onMouseLeave={() => onHoveredChange?.(null)}
               >
                 <td>
                   <div className="flex items-start gap-[var(--cell-gap)]">
@@ -181,9 +208,33 @@ export const ListingsTable = forwardRef<
                         first line: they all share one box height, so their text
                         sits at the same y across the whole row.
                       */}
-                      <p className="line-clamp-2 font-medium leading-[var(--cell-icon)] text-foreground">
-                        {listing.title}
-                      </p>
+                      {locatable ? (
+                        /*
+                          A button, not a paragraph: this is the one affordance
+                          that makes the table half of the screen do something,
+                          and the only one a keyboard can reach. Enter or Space
+                          bring the map to the posting and open its card — the
+                          exact mirror of what clicking a marker does to the list.
+
+                          Styled as text so the column stays a column of titles
+                          rather than a column of buttons; the affordance is the
+                          colour on hover and the focus ring, both of which the
+                          table's own rows already answer to.
+                        */
+                        <button
+                          type="button"
+                          aria-label={`Voir ${listing.title} sur la carte`}
+                          aria-pressed={selected}
+                          onClick={() => onListingSelect?.(listing)}
+                          className="line-clamp-2 w-full cursor-pointer text-left font-medium leading-[var(--cell-icon)] text-foreground transition-colors hover:text-primary focus-visible:text-primary"
+                        >
+                          {listing.title}
+                        </button>
+                      ) : (
+                        <p className="line-clamp-2 font-medium leading-[var(--cell-icon)] text-foreground">
+                          {listing.title}
+                        </p>
+                      )}
                       <p className="text-xs text-muted">
                         {SPECIALTY_LABELS[listing.specialty]}
                       </p>
