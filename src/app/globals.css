@@ -15,11 +15,28 @@
 :root {
   color-scheme: dark;
 
-  --background: #11100f;
-  --surface: #201f1e;
-  --surface-2: #262523;
-  --surface-3: #2d2b28;
-  --surface-hover: #2a2826;
+  /*
+   * The page is lighter than the cards that sit on it.
+   *
+   * This is inverted from what this sheet used to carry — surface lighter than
+   * background — because the reference dashboard this product's console screens
+   * are built against draws it the other way round: the page is a warm dark
+   * grey and every card on it is a near-black box sitting *proud* of that grey,
+   * read from its own edge rather than from a border.
+   *
+   * With the old arrangement the cards were the lightest thing on the screen and
+   * the page read as a hole behind them, which is the reverse of the reference:
+   * there, the page is the surface and the cards are the objects.
+   *
+   * Warmth follows the palette rather than the previous neutral greys — the
+   * brand's cream (`--primary`) pulls its opposite, a brown-black, so the greys
+   * lean into it instead of sitting neutral beside it.
+   */
+  --background: #1c1a16;
+  --surface: #131211;
+  --surface-2: #1d1b18;
+  --surface-3: #252320;
+  --surface-hover: #201e1a;
 
   --foreground: #ffffff;
   --muted: #a6a29a;
@@ -27,11 +44,24 @@
 
   --primary: #d7d1b0;
   --primary-hover: #e3ddc4;
-  --primary-foreground: #11100f;
+  --primary-foreground: #131211;
 
   --border: rgb(255 255 255 / 7%);
   --border-strong: rgb(255 255 255 / 13%);
   --ring: rgb(215 209 176 / 35%);
+
+  /*
+   * The map's own paper.
+   *
+   * The console is dark and the reference map is not: it is a light warm sheet
+   * of streets, which is what makes it the one bright plane on the screen in the
+   * reference too. This is the colour behind the raster tiles and under the
+   * loading and failure states, so the map never flashes a dark rectangle
+   * before its tiles arrive — the surface token would be wrong here precisely
+   * because the map is not a surface.
+   */
+  --map-base: #e9e5d9;
+  --map-ink: #16150f;
 
   --danger: #f87171;
   --danger-hover: #f55757;
@@ -44,6 +74,22 @@
   --shadow-pop: 0 16px 40px rgb(0 0 0 / 45%);
 
   --radius-control: 0.75rem;
+
+  /*
+   * The radius every card-shaped box is drawn at.
+   *
+   * One token because the console's panels, the results table's frame, the map
+   * and the marketing cards are one family: the reference's cards are rounded far
+   * more generously than the `1rem` this used to be, and a single value is what
+   * keeps a panel and the map beside it reading as one screen rather than as
+   * boxes assembled from a scale.
+   *
+   * Larger than `--radius-control` on purpose. A control is a control at either
+   * size; a card is read as a card by how little of its corner the reader has to
+   * imagine, and at 20px on a 300px panel that is already a third of the half
+   * corner.
+   */
+  --radius-card: 1.25rem;
 }
 
 @theme inline {
@@ -61,6 +107,8 @@
   --color-border: var(--border);
   --color-border-strong: var(--border-strong);
   --color-ring: var(--ring);
+  --color-map-base: var(--map-base);
+  --color-map-ink: var(--map-ink);
   --color-danger: var(--danger);
   --color-danger-hover: var(--danger-hover);
   --color-danger-foreground: var(--danger-foreground);
@@ -69,6 +117,7 @@
   --color-info: var(--info);
 
   --radius-control: var(--radius-control);
+  --radius-card: var(--radius-card);
 
   /*
    * The base spacing unit.
@@ -198,10 +247,19 @@
     display: inline-flex;
     align-items: center;
     gap: 0.375rem;
-    /* Same corner radius as the Button atom (rounded-[0.625rem]). */
-    border-radius: 0.625rem;
-    padding: 0.3125rem 0.75rem;
-    font-size: 0.8125rem;
+    /*
+     * A pill, not a button-shaped chip.
+     *
+     * Status reads off its shape before its colour: on the reference every badge
+     * in the results table is a full round end, so the eye picks the column out
+     * as a column of pills and the row is legible even at the 11px its text is
+     * drawn at. `0.625rem` was sized for a control with a border; this badge
+     * carries a tint instead, and a tinted badge with 10px corners reads as a
+     * button that goes somewhere.
+     */
+    border-radius: 9999px;
+    padding: 0.25rem 0.625rem;
+    font-size: 0.75rem;
     font-weight: 500;
     line-height: 1.2;
     white-space: normal;
@@ -249,15 +307,30 @@
   .table thead th {
     text-align: left;
     font-weight: 500;
-    font-size: 0.8125rem;
+    /*
+     * 12px, and muted. The reference's column labels sit well under the row
+     * text and at the edge of legibility: they are there to name the column for
+     * a reader who is already looking at it, not to be read first.
+     */
+    font-size: 0.75rem;
     color: var(--muted);
-    padding: 0.75rem 1rem;
+    padding: 0.875rem 1rem;
     border-bottom: 1px solid var(--border);
     white-space: nowrap;
   }
 
   .table tbody td {
-    padding: 0.875rem 1rem;
+    /*
+     * The row height is the reference's: a two-line cell (title over specialty)
+     * with this much air above and below is what makes the rows read as rows
+     * rather than as a dense list.
+     *
+     * A literal `rem`, not a spacing step — this block is hand-written CSS and the
+     * theme's `--spacing` does not reach it. At this scale the pair is 14px of
+     * air on the header and 16px on a row, which is roughly the reference's own
+     * 12-to-18px.
+     */
+    padding: 1rem;
     border-bottom: 1px solid var(--border);
     vertical-align: middle;
   }
@@ -610,32 +683,18 @@
   }
 
   /*
-   * MapLibre: the controls' chrome, on the product's palette.
+   * MapLibre's own chrome, on the map's own paper.
    *
-   * MapLibre ships a light theme — white boxes, white crosses — that has to be
-   * brought back onto a dark surface, and it writes these rules on its own
-   * elements as it creates them. Putting them here rather than in a tag injected
-   * by the component is two things fewer: no style that exists only after the
-   * first effect (so no flash of white chrome on load), and no `getElementById`
-   * guard to keep it from being injected twice.
+   * The map is a light plane now, so these controls follow it rather than the
+   * page: MapLibre's light theme is close to what the reference draws, and the
+   * rules below are about matching that sheet — a white pill, dark glyphs, one
+   * hairline between the two buttons — rather than repainting a dark one.
    *
-   * These rules use the `:root` variables, which is only possible because they
-   * are evaluated with the rest of the sheet.
+   * They live here rather than in a tag injected by the component: no style that
+   * exists only after the first effect (so no flash of unstyled chrome on load),
+   * and no `getElementById` guard to keep it from being injected twice.
    */
-  /*
-   * The map's markers.
-   *
-   * MapLibre centres a marker with a `translate(-50%, -50%)` expressed as a
-   * percentage of its own box. Growing the marker on hover — with `scale`, which
-   * changes that box — shifts the percentage accordingly: the button used to jump
-   * nearly 50px under the cursor, when the reader had done nothing but look at
-   * it. `transform-origin` does not help; MapLibre sets it once, from the resting
-   * size.
-   *
-   * Hence the golden rule below: on a marker, no size change. Emphasis goes
-   * through a drop shadow and an outline, both painted outside the box and
-   * neither measuring it.
-   */
+
   /*
    * The marker's own box: sized by the hook, positioned by MapLibre, and never
    * animated. See the golden rule above — the element MapLibre writes its
@@ -651,7 +710,7 @@
 
   /* Keyboard focus must stay visible even when the pointer does not move. */
   .maplibregl-marker:focus-visible {
-    outline: 2px solid var(--primary);
+    outline: 2px solid var(--map-ink);
     outline-offset: 2px;
   }
 
@@ -662,21 +721,23 @@
    * That is what makes the entrance animation possible without breaking the
    * golden rule: a `scale` on this child does not resize the box MapLibre
    * centres, so the `translate`'s percentage keeps aiming at the same point of
-   * the marker while the round grows inside it.
+   * the marker while the disc grows inside it.
    *
-   * The shadow and the rings follow the dot rather than the box, which they
-   * already did: they are painted outside the box and do not measure it.
+   * A near-black disc on the map's light paper, which is the reference's marker
+   * exactly. The shadow carries it off the streets: on a light map a dark disc
+   * separates by contrast alone, and the shadow is what keeps it from looking
+   * printed onto the tiles rather than laid over them.
    */
   .maplibregl-marker .marker-dot {
-    box-shadow: 0 2px 8px rgb(0 0 0 / 45%);
+    box-shadow: 0 2px 6px rgb(0 0 0 / 35%);
     transition: box-shadow 150ms ease;
   }
 
   .maplibregl-marker:hover .marker-dot,
   .maplibregl-marker:focus-visible .marker-dot {
     box-shadow:
-      0 0 0 3px color-mix(in srgb, var(--primary) 45%, transparent),
-      0 2px 8px rgb(0 0 0 / 45%);
+      0 0 0 3px rgb(22 21 15 / 30%),
+      0 2px 6px rgb(0 0 0 / 35%);
   }
 
   /*
@@ -684,12 +745,14 @@
    *
    * The state was set by the hook and had no style at all: pointing at a row
    * highlighted a marker indistinguishable from any other. The solid ring, with
-   * none of the hover's translucency, says "this is the one".
+   * none of the hover's translucency, says "this is the one" — cream here rather
+   * than ink, because a cream ring on a dark disc over light streets is a claim
+   * about the *marker*, while a dark ring would only restate the disc.
    */
   .maplibregl-marker.is-active .marker-dot {
     box-shadow:
       0 0 0 3px var(--primary),
-      0 2px 8px rgb(0 0 0 / 45%);
+      0 2px 6px rgb(0 0 0 / 35%);
   }
 
   /*
@@ -739,27 +802,34 @@
     animation: kineo-marker-exit 180ms ease-in both;
   }
 
+  /*
+   * The zoom pill: white, round, one hairline between its two halves.
+   *
+   * `overflow: hidden` is what turns the group's own square box into the pill —
+   * MapLibre puts the radius on the buttons, not on the group, so the group's
+   * corners are only rounded once its own corners are clipped. Buttons are
+   * widened past the 29px MapLibre ships so the pill reads as a control at the
+   * scale the rest of the console draws its controls.
+   */
   .maplibregl-ctrl-group {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    box-shadow: none;
+    background: #ffffff;
+    border: none;
+    border-radius: 9999px;
+    box-shadow: 0 2px 10px rgb(22 21 15 / 20%);
+    overflow: hidden;
+  }
+
+  .maplibregl-ctrl-group button {
+    width: 2.25rem;
+    height: 2.25rem;
   }
 
   .maplibregl-ctrl-group button + button {
-    border-top: 1px solid var(--border);
-  }
-
-  .maplibregl-ctrl-group button .maplibregl-ctrl-icon {
-    filter: invert(1);
-    opacity: 0.7;
+    border-top: 1px solid rgb(22 21 15 / 12%);
   }
 
   .maplibregl-ctrl-group button:hover {
-    background: var(--surface-hover);
-  }
-
-  .maplibregl-ctrl-group button:hover .maplibregl-ctrl-icon {
-    opacity: 1;
+    background: #f0eee6;
   }
 
   /*
@@ -767,31 +837,36 @@
    *
    * The control is created in compact mode, and MapLibre then writes
    * `.maplibregl-ctrl-attrib.maplibregl-compact`: two classes against one for the
-   * rule here, so its own won and the pill stayed white. Both forms are targeted
-   * rather than playing on specificity.
+   * rule here, so its own won and the pill kept MapLibre's default. Both forms are
+   * targeted rather than playing on specificity. Light to match the map it credits.
    */
   .maplibregl-ctrl-attrib,
   .maplibregl-ctrl-attrib.maplibregl-compact {
-    background: var(--surface);
-    color: var(--muted);
-    border-radius: 0.375rem;
+    background: #ffffff;
+    color: #6b675e;
+    border-radius: 9999px;
     font-size: 0.6875rem;
+    box-shadow: 0 2px 10px rgb(22 21 15 / 12%);
   }
 
   .maplibregl-ctrl-attrib a,
   .maplibregl-ctrl-attrib a:visited {
-    color: var(--muted);
+    color: #6b675e;
   }
 
   /*
-   * The map's popup.
+   * The popup: the reference's marker card.
+   *
+   * A white card with dark ink, sitting on the light map — which is what the
+   * reference draws for the place it has selected, and the one element on the
+   * screen allowed to be as bright as the streets. That is the whole reason it
+   * is light: on this map, a near-black card would be the darkest thing on the
+   * plane rather than a note pinned to it.
    *
    * MapLibre paints the surface on `.maplibregl-popup-content` and leaves the
-   * frame transparent, so its default light theme stayed visible inside — a white
-   * rectangle on a dark page — while our colours went onto the frame around it.
-   * The surface is put back on the layer that actually paints it, and its padding
-   * is the only one: the component's `p-4` class was added to MapLibre's own and
-   * doubled the margins.
+   * frame transparent, so its default theme has to be brought back to the
+   * product's here. Its padding is the only one: the component adds no `p-4` of
+   * its own, which used to double MapLibre's margins.
    *
    * `z-index` above the filter bar, which is a sibling of the map and therefore
    * passes in front of everything the map contains. A popup opened near the top
@@ -832,11 +907,11 @@
     margin: 0;
     padding: 0.75rem 0.875rem;
     max-width: 17rem;
-    border-radius: 0.75rem;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    box-shadow: var(--shadow-pop);
-    color: var(--foreground);
+    border-radius: var(--radius-card);
+    background: #ffffff;
+    border: 1px solid rgb(22 21 15 / 10%);
+    box-shadow: 0 12px 32px rgb(22 21 15 / 18%);
+    color: var(--map-ink);
   }
 
   .maplibregl-popup-close-button {
@@ -845,12 +920,12 @@
     padding: 0 0.25rem;
     font-size: 1rem;
     line-height: 1;
-    color: var(--muted);
+    color: rgb(22 21 15 / 45%);
   }
 
   .maplibregl-popup-close-button:hover {
     background: transparent;
-    color: var(--foreground);
+    color: var(--map-ink);
   }
 
   /* A heading running onto two lines must not slide under the close cross. */
@@ -862,35 +937,35 @@
    * The postings inside a popup, and the focus ring they should not wear.
    *
    * The global `:focus-visible` paints every focusable element a 2px primary
-   * outline. On a posting entry that reads as a gold box drawn around one row of
-   * a small panel — heavy, and at odds with the rest of the popup. The outline is
-   * dropped, but the entries keep a focus affordance all the same: a faint
-   * surface, the very one the "centre" button below them already uses, so
-   * keyboard focus stays visible even where the gold ring does not.
+   * outline. On a posting entry inside a white card that reads as a gold box
+   * drawn around one row of a small panel — heavy, and at odds with the rest of
+   * the card. The outline is dropped, but the entries keep a focus affordance all
+   * the same: a faint ink wash, so keyboard focus stays visible even where the
+   * gold ring does not.
    */
   .maplibregl-popup-content ul > li > button:focus-visible {
     outline: none;
-    background: var(--surface-hover);
+    background: rgb(22 21 15 / 6%);
   }
 
   /*
-   * The tip is a directional border: its colour has to follow the panel's, or a
+   * The tip is a directional border: its colour has to follow the card's, or a
    * light triangle detaches against the map's background.
    */
   .maplibregl-popup-anchor-bottom .maplibregl-popup-tip {
-    border-top-color: var(--surface);
+    border-top-color: #ffffff;
   }
 
   .maplibregl-popup-anchor-top .maplibregl-popup-tip {
-    border-bottom-color: var(--surface);
+    border-bottom-color: #ffffff;
   }
 
   .maplibregl-popup-anchor-left .maplibregl-popup-tip {
-    border-right-color: var(--surface);
+    border-right-color: #ffffff;
   }
 
   .maplibregl-popup-anchor-right .maplibregl-popup-tip {
-    border-left-color: var(--surface);
+    border-left-color: #ffffff;
   }
 }
 

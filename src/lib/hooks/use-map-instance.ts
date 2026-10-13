@@ -19,6 +19,17 @@ const OSM_ATTRIBUTION =
   '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a>';
 
 /**
+ * The paper the map is drawn on, before any tile arrives.
+ *
+ * The literal counterpart of `--map-base` in `globals.css`, which the loading
+ * and failure states use for the same purpose. It is written out rather than
+ * read from the computed style because MapLibre wants a colour value it can hand
+ * to its own renderer, and the one place this is not a duplicate is the theme —
+ * where a change to the token has to change this too.
+ */
+const MAP_BASE_COLOR = "#e9e5d9";
+
+/**
  * The deepest zoom OSM actually serves.
  *
  * Measured against the live server rather than taken from the docs: z19 answers
@@ -109,10 +120,23 @@ export function useMapInstance() {
 /**
  * The map's style document.
  *
- * A dark base under the tiles. The product is a dark surface and OSM raster
- * tiles are light, so without it the map is the one white rectangle on the page;
- * dropping the raster's opacity lets the base come through and pulls the whole
- * map back into the palette.
+ * A light sheet under the tiles, and the tiles at full strength.
+ *
+ * The product's chrome is dark and the reference map is not — it is a pale warm
+ * plan of the streets, and it is the one bright plane on that screen. The tiles
+ * were previously pulled down to 86% over a near-black background to fit the
+ * dark palette; that was the map being made to match its surroundings rather
+ * than the other way round, and it cost the reader the only thing a map is for.
+ *
+ * `raster-opacity: 1` follows from it. The 86% was a blend towards the dark
+ * base showing through; over a light base there is nothing to blend with, and
+ * anything less than full leaves the map a shade of mud.
+ *
+ * `raster-saturation` and `raster-contrast` take a little of the colour out of
+ * OSM's cartography. A raster style with no tuning is drawn for a white page:
+ * greens and reds that are legible on paper become the loudest thing on a dark
+ * screen, and the markers — which carry the data — stop being the darkest marks
+ * on it. Pulled back, the streets read as a base layer.
  */
 function buildStyle() {
   return {
@@ -137,13 +161,17 @@ function buildStyle() {
       {
         id: "background",
         type: "background" as const,
-        paint: { "background-color": "#11100f" },
+        paint: { "background-color": MAP_BASE_COLOR },
       },
       {
         id: "osm",
         type: "raster" as const,
         source: "osm",
-        paint: { "raster-opacity": 0.86 },
+        paint: {
+          "raster-opacity": 1,
+          "raster-saturation": -0.35,
+          "raster-contrast": -0.05,
+        },
       },
     ],
   };

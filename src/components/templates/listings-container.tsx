@@ -49,7 +49,7 @@ const ListingsMap = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="size-full rounded-2xl bg-surface" aria-hidden="true" />
+      <div className="size-full rounded-card bg-map-base" aria-hidden="true" />
     ),
   },
 );
@@ -393,7 +393,7 @@ export function ListingsContainer({
           <Suspense
             fallback={
               <div
-                className="size-full rounded-2xl bg-surface"
+                className="size-full rounded-card bg-map-base"
                 aria-hidden="true"
               />
             }

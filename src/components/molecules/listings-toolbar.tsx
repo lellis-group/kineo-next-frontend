@@ -31,12 +31,17 @@ interface ListingsToolbarProps {
 }
 
 /**
- * The filter bar, floating over the map's top edge.
+ * The filter bar, sitting on its own band above the map.
  *
  * It draws the filters and reports changes; it does not own them. Returning to
  * page 1 on every filter change is the container's rule and lives there — a
  * filter change that kept page 3 would land the reader on an empty page whenever
  * the new result set is shorter than the old one.
+ *
+ * Every control in the row is a pill, which is the reference's own control
+ * language on this screen: a round-ended search field, a round-ended sort and a
+ * round chip beside them all sit on one line at one height, so the row reads as
+ * one thing rather than as four boxes.
  *
  * The city field is text rather than a picker because the backend matches it as
  * a substring (`contains`, case-insensitive): a select would have to enumerate
@@ -114,7 +119,7 @@ export function ListingsToolbar({
             <input
               id="browse-city"
               type="search"
-              className="field-input py-1.5 pl-9"
+              className="field-input rounded-full py-1.5 pl-9"
               placeholder="Ville ou code postal"
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
@@ -135,7 +140,7 @@ export function ListingsToolbar({
           </label>
           <Select
             id="browse-specialty"
-            className="py-1.5"
+            className="rounded-full py-1.5"
             value={filters.specialty}
             onChange={(event) =>
               onFiltersChange({
@@ -187,7 +192,7 @@ export function ListingsToolbar({
               id="browse-from"
               type="date"
               aria-label="Démarrant après le"
-              className="field-input w-full min-w-0 py-1.5"
+              className="field-input w-full min-w-0 rounded-full py-1.5"
               value={filters.from}
               max={filters.to || undefined}
               onChange={(event) =>
@@ -203,7 +208,7 @@ export function ListingsToolbar({
               id="browse-to"
               type="date"
               aria-label="Démarrant avant le"
-              className="field-input w-full min-w-0 py-1.5"
+              className="field-input w-full min-w-0 rounded-full py-1.5"
               value={filters.to}
               min={filters.from || undefined}
               onChange={(event) => onFiltersChange({ to: event.target.value })}

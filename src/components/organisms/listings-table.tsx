@@ -3,6 +3,7 @@ import { Badge } from "@/components/atoms/badge";
 import { CalendarIcon, MapPinIcon, UsersIcon } from "@/components/atoms/icons";
 import { SpecialtyIcon } from "@/components/molecules/specialty-icon";
 import { cn } from "@/lib/cn";
+import { formatDayMonth } from "@/lib/format";
 import { type BrowseListing, listingBadge } from "@/lib/listings";
 import { SPECIALTY_LABELS } from "@/lib/profile";
 import { rowEnterStyle } from "@/lib/row-enter";
@@ -199,9 +200,32 @@ export const ListingsTable = forwardRef<
                   </span>
                 </td>
                 <td>
-                  <span className="inline-flex items-center gap-[var(--cell-gap)] whitespace-nowrap leading-[var(--cell-icon)] text-muted">
-                    <CalendarIcon className="size-[var(--cell-icon)] shrink-0" />
-                    {listing.dateRange}
+                  {/*
+                    The period as two lines, which is how the reference draws a
+                    route: a start above, an end below, the arrow doing what
+                    « Du … au … » had to do with words — and with less of them.
+
+                    It matters here for the same reason it matters there: the cell
+                    next to it is a single line, and a range worded out is the one
+                    column whose text wraps to three lines and makes the row the
+                    tall one. Two lines keep every row the same height.
+
+                    `title` carries the full `dateRange` the adapter built, year
+                    and all, for the reader who wants the exact wording.
+                  */}
+                  <span
+                    className="inline-flex items-start gap-[var(--cell-gap)] whitespace-nowrap text-muted"
+                    title={listing.dateRange}
+                  >
+                    <CalendarIcon className="mt-[0.125rem] size-[var(--cell-icon)] shrink-0" />
+                    <span className="flex flex-col">
+                      <span className="leading-[var(--cell-icon)]">
+                        {formatDayMonth(listing.startDate)}
+                      </span>
+                      <span className="text-xs leading-tight text-faint">
+                        → {formatDayMonth(listing.endDate)}
+                      </span>
+                    </span>
                   </span>
                 </td>
                 <td>

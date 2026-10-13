@@ -16,15 +16,10 @@ import { cn } from "@/lib/cn";
  * the percentage is of, and the marker is drawn at the position that sentence
  * describes.
  *
- * The curve is stroked in a left-to-right scale gradient — `--danger` through
- * `--warning` to `--success`, the way the template’s own progress arc reads —
- * over a muted track. The gradient is positional, not semantic: it spans the
- * whole scale whatever the value is, and the marker plus the caption say where
- * on it the collection sits. Painting the fill fixed (rather than tinting it by
- * the current value) means a small move of the number does not re-dye the
- * whole curve. The sweep itself is tweened (see `useAnimatedPercent`): one
- * eased value drives marker, dot, fill and number, and reduced-motion readers
- * snap straight to the number.
+ * The curve is stroked in the brand cream over a faint track — the reference's
+ * gauge, one bright band growing along a quiet one. The sweep is tweened (see
+ * `useAnimatedPercent`): one eased value drives marker, dot, fill and number,
+ * and reduced-motion readers snap straight to the number.
  */
 
 /**
@@ -83,7 +78,17 @@ const SVG_TOP = BOX - SVG_HEIGHT;
 
 const DOT = 10;
 const TAIL = 5;
-const BADGE = 23;
+const BADGE = 25;
+
+/**
+ * The stroke the curve is drawn at.
+ *
+ * Five pixels, which is what turns a scale from a hairline into an arc. On the
+ * reference the gauge is a thick band with the figure riding on it, and a 2px
+ * stroke reads as a graph rather than as the gauge on a card — the curve was
+ * legible but it was not the object the panel is about.
+ */
+const STROKE = 5;
 
 /** Half a badge, the most the callout ever overhangs its marker's position. */
 const BADGE_HALF = 26;
@@ -153,10 +158,9 @@ export function ProgressCurve({
   const target = Math.min(100, Math.max(0, percent));
   const animated = useAnimatedPercent(target);
   const rounded = Math.round(animated);
-  // Unique per instance: several of these sit on one page, and shared ids would
-  // have the first panel's width and gradient painted onto every curve on screen.
+  // Unique per instance: several of these sit on one page, and a shared id would
+  // have the first panel's clip painted onto every curve on screen.
   const clipId = useId();
-  const gradientId = useId();
 
   // Where the curve is under the marker, in screen pixels. Everything else — the
   // dot, and the badge above it — is placed relative to this one number.
@@ -181,7 +185,7 @@ export function ProgressCurve({
             top: curveY - DOT / 2 - TAIL - BADGE,
           }}
         >
-          <span className="relative block rounded-md bg-primary px-1.5 py-0.5 text-[0.6875rem] leading-tight font-semibold text-primary-foreground tabular-nums after:absolute after:top-full after:left-1/2 after:-translate-x-1/2 after:border-x-4 after:border-t-[5px] after:border-x-transparent after:border-t-primary after:content-['']">
+          <span className="relative block rounded-md bg-primary px-2 py-0.5 text-[0.75rem] leading-tight font-semibold text-primary-foreground tabular-nums after:absolute after:top-full after:left-1/2 after:-translate-x-1/2 after:border-x-4 after:border-t-[5px] after:border-x-transparent after:border-t-primary after:content-['']">
             {rounded} %
           </span>
         </div>
@@ -211,25 +215,6 @@ export function ProgressCurve({
             <clipPath id={clipId}>
               <rect x="0" y="0" width={animated} height="40" />
             </clipPath>
-            {/* Positional, not value-driven: pinned to x in user space, red always
-                means "few" and green always "most", whatever the marker says. An
-                object-bounding-box gradient would squeeze the same three stops
-                into whatever slice of the curve the clip is currently revealing.
-
-                The middle stop is the brand cream rather than the amber: that is
-                the reference gauge's own gradient — red into cream into green. */}
-            <linearGradient
-              id={gradientId}
-              gradientUnits="userSpaceOnUse"
-              x1="0"
-              y1="0"
-              x2="100"
-              y2="0"
-            >
-              <stop offset="0%" stopColor="var(--danger)" />
-              <stop offset="45%" stopColor="var(--primary)" />
-              <stop offset="100%" stopColor="var(--success)" />
-            </linearGradient>
           </defs>
           {/* A symmetric circular arc (R 102 puts the apex at y 12 for a 96-wide
               chord at y 24): the old quadratic peaked left of centre, which put
@@ -238,17 +223,25 @@ export function ProgressCurve({
           <path
             d={`M ${ARC.x0} ${ARC.chordY} A ${ARC.radius} ${ARC.radius} 0 0 1 ${ARC.x1} ${ARC.chordY}`}
             fill="none"
-            stroke="var(--muted)"
-            strokeOpacity={0.4}
-            strokeWidth={2}
+            stroke="var(--foreground)"
+            strokeOpacity={0.12}
+            strokeWidth={STROKE}
             strokeLinecap="round"
             vectorEffect="non-scaling-stroke"
           />
+          {/*
+            Cream on a faint track, which is the reference's gauge: one bright
+            band growing along a quiet one, with the brand colour doing the work
+            a three-stop red-to-green scale was doing here before. That scale said
+            "few is bad, most is good" about a curve whose value is a share of a
+            collection — and on a panel counting urgent postings, painting 4% in
+            red announced a judgement the caption then had to contradict.
+          */}
           <path
             d={`M ${ARC.x0} ${ARC.chordY} A ${ARC.radius} ${ARC.radius} 0 0 1 ${ARC.x1} ${ARC.chordY}`}
             fill="none"
-            stroke={`url(#${gradientId})`}
-            strokeWidth={2}
+            stroke="var(--primary)"
+            strokeWidth={STROKE}
             strokeLinecap="round"
             vectorEffect="non-scaling-stroke"
             clipPath={`url(#${clipId})`}
@@ -264,13 +257,13 @@ export function ProgressCurve({
           marker reaches 0% or 100%, and there it sat straight through the label.
           Both readings are exact, so one of them has to give.
 
-          `+ 4` rather than a rounder number: the stroke is 2px with round caps,
-          so it reaches one unit past the chord, and anything less than this puts
-          the line back through the text.
+          `+ 7` rather than a rounder number: the stroke is 5px with round caps,
+          so it reaches two and a half pixels past the chord, and anything less
+          than this puts the line back through the text.
         */}
         <div
           className="pointer-events-none absolute inset-x-0 flex justify-between text-[0.6875rem] leading-none text-faint tabular-nums"
-          style={{ top: SVG_TOP + ARC.chordY + 4 }}
+          style={{ top: SVG_TOP + ARC.chordY + 7 }}
         >
           <span>{leftLabel}</span>
           <span>{rightLabel}</span>

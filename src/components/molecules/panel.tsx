@@ -42,7 +42,7 @@ export function Panel({
   return (
     <section
       className={cn(
-        "rounded-2xl border border-border bg-surface",
+        "rounded-card border border-border bg-surface",
         "shadow-[var(--shadow-card)]",
         fill && "lg:flex lg:min-h-0 lg:flex-col",
         className,
@@ -53,8 +53,12 @@ export function Panel({
         is usually a control wider than the heading, and a `justify-between` row
         would let it set the panel's min-content width and push the whole page
         sideways on a phone. `min-w-0` lets it shrink to its own overflow instead.
+
+        `pb-4` rather than `pb-3`: the reference's card headers carry a full step
+        more air under the title than this did, and the title is what the eye
+        lands on first on a column of stacked cards.
       */}
-      <header className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2 px-4 pt-4 pb-3 sm:px-5">
+      <header className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 px-5 pt-5 pb-4 sm:px-6">
         <h2 className="text-[0.9375rem] leading-tight font-medium text-foreground">
           {title}
         </h2>
@@ -64,7 +68,7 @@ export function Panel({
       </header>
       <div
         className={cn(
-          flush ? undefined : "px-4 pb-4 sm:px-5 sm:pb-5",
+          flush ? undefined : "px-5 pb-5 sm:px-6",
           fill && "lg:flex lg:min-h-0 lg:flex-1 lg:flex-col",
         )}
       >

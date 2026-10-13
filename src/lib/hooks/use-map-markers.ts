@@ -22,13 +22,20 @@ import { cameraTargetFor, type MapPlace } from "@/lib/listings";
  */
 const MARKER_CLASS = "grid size-6 cursor-pointer place-items-center";
 
-/** The visible round, and everything that is allowed to move. */
+/**
+ * The visible disc, and everything that is allowed to move.
+ *
+ * A near-black disc carrying a white mark, which is the reference's marker on a
+ * light map: the data is the darkest thing on the streets, so a reader finds it
+ * without hunting. It was a white dot before the map went light, which made it
+ * the one mark on the plane that had to be looked for.
+ */
 const MARKER_DOT_CLASS =
-  "marker-dot grid size-full place-items-center rounded-full border-2 border-background bg-foreground text-[0.625rem] font-semibold text-background";
+  "marker-dot grid size-full place-items-center rounded-full bg-surface text-foreground";
 
 /** A place with more than one posting: bigger, and it carries the count. */
 const MARKER_CLUSTER_CLASS = "!size-7";
-const MARKER_DOT_CLUSTER_CLASS = "!bg-primary";
+const MARKER_DOT_CLUSTER_CLASS = "!text-[0.6875rem] !font-bold";
 
 /**
  * How close the camera comes to a place the reader asked to look at.
@@ -426,16 +433,70 @@ function zoomToPlace(map: MapLibreMap, place: MapPlace) {
   isCluster: boolean,
 ) {
   const dot = node.firstElementChild;
-  const text = isCluster ? String(place.count) : "";
-  if (dot && dot.textContent !== text) {
-    dot.textContent = text;
+
+  if (dot) {
+    /*
+     * The two states hold different elements — a glyph on a lone posting, a
+     * number on a group — and one place can be both across two passes: pan a
+     * pair apart and a cluster becomes two single markers again.
+     *
+     * `textContent` is what clears the other state, because setting it drops
+     * every child: the count is set outright and the glyph is re-appended after
+     * the clear. The `svg` check keeps a glyph that is already there rather than
+     * rebuilding it on every re-label of an untouched marker.
+     */
+    if (isCluster) {
+      const count = String(place.count);
+      if (dot.textContent !== count) dot.textContent = count;
+    } else if (dot.firstElementChild?.tagName !== "svg") {
+      dot.textContent = "";
+      dot.append(markerGlyph());
+    }
   }
+
   node.setAttribute(
     "aria-label",
     isCluster
       ? `${place.count} annonces à ${place.listings[0].practiceName}`
       : `${place.listings[0].title}, ${place.listings[0].practiceName}`,
   );
+}
+
+/**
+ * The mark inside a lone posting's disc: an opened box, in the reference's hand.
+ *
+ * Built as DOM rather than imported: this hook creates its own nodes and has no
+ * React root, so a component would have to be mounted into the marker. `svg` is
+ * created in the SVG namespace — `createElement` on an `<svg>` tag yields an
+ * HTML element, which renders nothing at all.
+ *
+ * Decorative by construction: the button carries the posting's name in its
+ * `aria-label` (see `relabel`), and a glyph a screen reader would announce with
+ * no name attached would be noise.
+ */
+function markerGlyph(): SVGElement {
+  const NS = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(NS, "svg");
+  svg.setAttribute("viewBox", "0 0 24 24");
+  // Set in pixels rather than in a `size-*` class: the theme's spacing unit is
+  // 0.3rem, so `size-3` is not the 12px its name suggests.
+  svg.setAttribute("width", "13");
+  svg.setAttribute("height", "13");
+  svg.setAttribute("fill", "none");
+  svg.setAttribute("aria-hidden", "true");
+
+  const path = document.createElementNS(NS, "path");
+  path.setAttribute(
+    "d",
+    "M12 3 3 7.5v9L12 21l9-4.5v-9L12 3Zm-9 4.5 9 4.75 9-4.75M12 12.25V21",
+  );
+  path.setAttribute("stroke", "currentColor");
+  path.setAttribute("stroke-width", "2");
+  path.setAttribute("stroke-linecap", "round");
+  path.setAttribute("stroke-linejoin", "round");
+  svg.append(path);
+
+  return svg;
 }
 
 /**
@@ -627,6 +688,12 @@ function paintActive(
  * out as a dark frame around a white box: the overrides were landing on the wrong
  * node all along. They now sit in `globals.css` with the rest of the theming.
  *
+ * What *is* here is the ink: the card the popup content sits on is white — the
+ * reference's marker card, and the one element on this map allowed to be as
+ * bright as the streets — so the text drawn into it is dark. Those classes are
+ * here rather than in the stylesheet because they are drawn one node at a time,
+ * with no class on a container to inherit from.
+ *
  * The single-listing case is not the group case with fewer rows. With one posting
  * its title is the heading, and the list underneath used to repeat it — the same
  * sentence twice in a 300px box. A lone posting therefore gets heading, place and
@@ -654,19 +721,19 @@ function popupContent(
   const [first] = place.listings;
 
   const heading = document.createElement("h3");
-  heading.className = "text-sm leading-snug font-medium text-foreground";
+  heading.className = "text-sm leading-snug font-medium text-map-ink";
   heading.textContent =
     place.count === 1 ? first.title : `${place.count} annonces`;
   root.append(heading);
 
   const where = document.createElement("p");
-  where.className = "text-xs text-muted";
+  where.className = "text-xs text-black/55";
   where.textContent = `${first.practiceName} · ${first.city}`;
   root.append(where);
 
   if (place.count === 1) {
     const period = document.createElement("p");
-    period.className = "mt-0.5 text-xs text-muted";
+    period.className = "mt-0.5 text-xs text-black/55";
     period.textContent = first.dateRange;
     root.append(period);
     root.append(zoomButton(place, map, dismiss));
@@ -680,7 +747,7 @@ function popupContent(
   const shown = place.listings.slice(0, MAX_POPUP_LISTINGS);
   const list = document.createElement("ul");
   list.className =
-    "mt-1 flex max-h-52 flex-col gap-1 overflow-y-auto overscroll-contain border-t border-border pt-1.5";
+    "mt-1 flex max-h-52 flex-col gap-1 overflow-y-auto overscroll-contain border-t border-black/10 pt-1.5";
 
   for (const listing of shown) {
     const item = document.createElement("li");
@@ -691,7 +758,7 @@ function popupContent(
     const row = document.createElement("button");
     row.type = "button";
     row.className =
-      "flex w-full cursor-pointer flex-col rounded-lg px-1.5 py-0.5 text-left";
+      "flex w-full cursor-pointer flex-col rounded-lg px-1.5 py-0.5 text-left transition-colors hover:bg-black/5";
     row.addEventListener("click", () => onPick(listing.id));
     // Same handle as the table rows carry, so the two views of a posting can be
     // matched from the outside — by the map's own tests, and by anything else that
@@ -699,12 +766,12 @@ function popupContent(
     row.dataset.listingId = listing.id;
 
     const title = document.createElement("span");
-    title.className = "text-xs leading-snug text-foreground";
+    title.className = "text-xs leading-snug text-map-ink";
     title.textContent = listing.title;
     row.append(title);
 
     const meta = document.createElement("span");
-    meta.className = "text-[0.6875rem] text-muted";
+    meta.className = "text-[0.6875rem] text-black/50";
     meta.textContent = listing.dateRange;
     row.append(meta);
 
@@ -720,7 +787,7 @@ function popupContent(
   const hidden = place.count - shown.length;
   if (hidden > 0) {
     const rest = document.createElement("p");
-    rest.className = "mt-1 text-[0.6875rem] text-muted";
+    rest.className = "mt-1 text-[0.6875rem] text-black/50";
     rest.textContent = `+ ${hidden} autre${hidden > 1 ? "s" : ""}`;
     root.append(rest);
   }
@@ -758,7 +825,7 @@ function zoomButton(
   const button = document.createElement("button");
   button.type = "button";
   button.className =
-    "mt-1.5 flex w-full cursor-pointer items-center justify-center rounded-lg border border-border px-3 py-2 text-xs font-medium text-muted transition-colors hover:bg-surface-hover hover:text-foreground focus-visible:bg-surface-hover";
+    "mt-1.5 flex w-full cursor-pointer items-center justify-center rounded-lg border border-black/10 px-3 py-2 text-xs font-medium text-black/70 transition-colors hover:bg-black/5 focus-visible:bg-black/5";
 
   const isCluster = place.count > 1;
   button.textContent = isCluster

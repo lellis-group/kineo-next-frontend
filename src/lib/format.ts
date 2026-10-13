@@ -45,6 +45,23 @@ export function formatRelativeTime(dateStr: string): string {
 }
 
 /**
+ * A single day in French, without the year — « 15 sept. ».
+ *
+ * For the places that carry a period across two lines: a start day on the first
+ * and an end day under it reads as a range without the two halves having to be
+ * worded (« Du … au … » wraps, and a wrapped range is three lines where the
+ * reference has two). The year is dropped because every date in a listing that is
+ * open for taking now falls in the current or the coming year — and where it did
+ * not, the full date is one `title` away.
+ */
+export function formatDayMonth(dateStr: string): string {
+  return new Date(dateStr).toLocaleDateString("fr-FR", {
+    day: "numeric",
+    month: "short",
+  });
+}
+
+/**
  * Widens a calendar date — what an `<input type="date">` gives — to the ISO
  * instant an API validates.
  *

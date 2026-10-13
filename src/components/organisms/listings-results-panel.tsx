@@ -132,9 +132,20 @@ export function ListingsResultsPanel({
     <Panel
       fill
       className="lg:flex-1"
-      title="Annonces disponibles"
+      title="Annonces"
       action={
-        <div className="flex flex-wrap items-center justify-end gap-3">
+        /*
+          `min-w-0`, and it is what keeps the row inside the panel.
+          `Panel` gives this wrapper `min-w-0` so it can shrink, but that only
+          holds if *this* div does too: as a flex item its default minimum is its
+          content's own, and the four-option segmented row beside the sort is
+          394px of it. On a phone the panel's content box is 307, so the row ran
+          87px past the card's edge and the sort's right edge sat over the page
+          margin. Letting it shrink hands the overflow to the segmented control,
+          which scrolls its own track — the one control here that can lose an
+          option without losing a function.
+        */
+        <div className="flex min-w-0 flex-wrap items-center justify-end gap-3">
           {/*
             Rendered whether or not a fetch is in flight, and hidden with
             `invisible` rather than absent when idle — `invisible` reserves the

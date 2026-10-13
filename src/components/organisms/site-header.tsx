@@ -1,22 +1,49 @@
 import Link from "next/link";
-import { BellIcon, LogOutIcon } from "@/components/atoms/icons";
+import type { ReactNode } from "react";
+import { BellIcon, SearchIcon } from "@/components/atoms/icons";
 import { KineoLogo } from "@/components/atoms/kineo-logo";
 import { HeaderNav } from "@/components/molecules/header-nav";
 import { MobileMenu } from "@/components/molecules/mobile-menu";
-import { UserIdentity } from "@/components/molecules/user-identity";
+import { UserMenu } from "@/components/molecules/user-menu";
 import { cn } from "@/lib/cn";
 import type { UserSummary } from "@/lib/dashboard";
 import { SITE_SHELL } from "@/lib/layout";
 import type { HeaderLink } from "@/lib/navigation";
 
-function NotificationsButton() {
+/**
+ * The two icon buttons the reference puts between the nav and the account plate.
+ *
+ * Round, outlined and out of the way at every width above `lg` — the same
+ * geometry as the plate they sit beside. The notifications button is still the
+ * placeholder it has always been (nothing in the product emits one yet), and
+ * `hidden` below `lg` because at that width the plate is already avatar-only and
+ * a row of three icon buttons ahead of the mobile menu is more chrome than the
+ * bar can carry.
+ */
+function HeaderIconButton({
+  href,
+  label,
+  children,
+}: {
+  /** Omitted for a button with no destination yet. */
+  href?: string;
+  label: string;
+  children: ReactNode;
+}) {
+  const className =
+    "hidden size-10 shrink-0 items-center justify-center rounded-full border border-border text-muted transition-colors hover:border-border-strong hover:text-foreground lg:flex";
+
+  if (href) {
+    return (
+      <Link href={href} aria-label={label} className={className}>
+        {children}
+      </Link>
+    );
+  }
+
   return (
-    <button
-      type="button"
-      aria-label="Notifications"
-      className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-border text-foreground/80 transition-colors hover:border-primary/50 hover:text-foreground xl:flex"
-    >
-      <BellIcon />
+    <button type="button" aria-label={label} className={className}>
+      {children}
     </button>
   );
 }
@@ -42,7 +69,10 @@ export function SiteHeader({
       <div
         className={cn(
           SITE_SHELL,
-          "flex h-[calc(4rem+env(safe-area-inset-top))] items-center justify-between gap-2 pt-[env(safe-area-inset-top)] sm:h-[calc(4.75rem+env(safe-area-inset-top))] sm:gap-6",
+          // Slimmer than the 4.75rem this was: the reference's bar is one line of
+          // content in a band of little over 4rem, and on the console screens
+          // every pixel of height here is a pixel off the workspace below it.
+          "flex h-[calc(3.75rem+env(safe-area-inset-top))] items-center justify-between gap-2 pt-[env(safe-area-inset-top)] sm:h-[calc(4rem+env(safe-area-inset-top))] sm:gap-6",
         )}
       >
         <div className="flex min-w-0 items-center gap-6 lg:gap-10">
@@ -60,23 +90,28 @@ export function SiteHeader({
         <div className="flex self-stretch items-center gap-2 sm:gap-3">
           {user ? (
             <>
-              <NotificationsButton />
-              <UserIdentity
+              {/* To the browse feed, which is where the product's only search
+                  lives — a city field over a map, not a site-wide index. */}
+              <HeaderIconButton href="/listings" label="Rechercher">
+                <SearchIcon className="size-4" />
+              </HeaderIconButton>
+
+              <HeaderIconButton label="Notifications">
+                <BellIcon className="size-4" />
+              </HeaderIconButton>
+
+              {/*
+                Name, role and every account action behind one plate. This is
+                where the separate sign-out button used to sit: the reference's
+                bar carries an avatar, a name, a role and a chevron, and no
+                other control — which is only possible if leaving is one click
+                away rather than one row across.
+              */}
+              <UserMenu
                 name={user.name}
                 subtitle={user.subtitle}
-                showText={false}
-                href="/profile"
+                onSignOut={onSignOut}
               />
-
-              <button
-                type="button"
-                onClick={onSignOut}
-                aria-label="Se déconnecter"
-                className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-full border border-border px-3 text-sm font-medium text-muted transition-colors hover:border-primary/50 hover:text-foreground"
-              >
-                <LogOutIcon />
-                <span className="hidden xl:inline">Se déconnecter</span>
-              </button>
             </>
           ) : (
             <>

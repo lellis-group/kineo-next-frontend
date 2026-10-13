@@ -65,7 +65,10 @@ export function ListSkeleton({
       )}
 
       {mapFirst && (
-        <div className="mt-6 h-[22rem] animate-pulse rounded-2xl bg-surface sm:h-[26rem]" />
+        // The map's paper, not a card's surface: the map is a light plane, and a
+        // placeholder drawn in the surface colour would read as a panel that
+        // then got swapped for something much brighter.
+        <div className="mt-6 h-[22rem] animate-pulse rounded-card bg-map-base sm:h-[26rem]" />
       )}
 
       <div className={cn(mapFirst ? "mt-4" : "mt-8", "space-y-5")}>

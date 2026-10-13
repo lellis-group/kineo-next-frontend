@@ -74,7 +74,10 @@ export function ListingsMap({
     return (
       <div
         className={cn(
-          "flex size-full items-center justify-center rounded-2xl border border-border bg-surface p-8 text-center text-sm text-muted",
+          // The map's own paper, not the page's: this state stands in for the
+          // map, so it has to sit in the same place and the same light the tiles
+          // would have filled.
+          "flex size-full items-center justify-center rounded-card border border-border bg-map-base p-8 text-center text-sm text-map-ink",
           className,
         )}
       >
@@ -87,14 +90,14 @@ export function ListingsMap({
   return (
     <div
       className={cn(
-        "relative size-full overflow-hidden rounded-2xl",
+        "relative size-full overflow-hidden rounded-card",
         className,
       )}
     >
       <div ref={containerRef} className="size-full" />
 
       {!ready && (
-        <div className="absolute inset-0 flex items-center justify-center bg-surface text-sm text-muted">
+        <div className="absolute inset-0 flex items-center justify-center bg-map-base text-sm text-black/55">
           Chargement de la carte…
         </div>
       )}
@@ -102,7 +105,7 @@ export function ListingsMap({
       <FullscreenToggle containerRef={containerRef} />
 
       {unlocated > 0 && (
-        <p className="absolute bottom-3 left-3 rounded-full bg-surface/90 px-3 py-1.5 text-[0.6875rem] text-muted backdrop-blur-sm">
+        <p className="absolute bottom-3 left-3 rounded-full bg-white/90 px-3 py-1.5 text-[0.6875rem] text-map-ink shadow-[0_2px_10px_rgb(22_21_15/0.12)] backdrop-blur-sm">
           {unlocated} annonce{unlocated > 1 ? "s" : ""} sans coordonnées,
           visible{unlocated > 1 ? "s" : ""} dans la liste seulement
         </p>
@@ -115,7 +118,7 @@ export function ListingsMap({
           listing count and keeps the top `maxPlaces`, so the ones left off are
           the quietest, not the oldest or the furthest. */}
       {truncated && (
-        <p className="absolute bottom-12 left-3 rounded-full bg-surface/90 px-3 py-1.5 text-[0.6875rem] text-muted backdrop-blur-sm">
+        <p className="absolute bottom-12 left-3 rounded-full bg-white/90 px-3 py-1.5 text-[0.6875rem] text-map-ink shadow-[0_2px_10px_rgb(22_21_15/0.12)] backdrop-blur-sm">
           {places.length} cabinets sur {totalPlaces} représentés — les plus
           actives
         </p>
@@ -130,6 +133,11 @@ export function ListingsMap({
  * Toggles rather than only expands: `requestFullscreen` on a map that is already
  * full screen throws, and a button that can get into a state it cannot leave is
  * a dead end.
+ *
+ * White on a light map, which is where the reference draws its own expand mark:
+ * the glyph is ink on paper, and the plate under it is there to give the target an
+ * edge rather than to colour it. The shadow is what separates it from a street
+ * the same shade of white.
  */
 function FullscreenToggle({
   containerRef,
@@ -140,7 +148,7 @@ function FullscreenToggle({
     <button
       type="button"
       aria-label="Plein écran"
-      className="absolute top-3 right-3 grid size-9 cursor-pointer place-items-center rounded-full border border-border bg-surface/90 text-foreground backdrop-blur-sm transition-colors hover:bg-surface-hover"
+      className="absolute top-3 right-3 grid size-9 cursor-pointer place-items-center rounded-full bg-white/90 text-map-ink shadow-[0_2px_10px_rgb(22_21_15/0.2)] backdrop-blur-sm transition-colors hover:bg-white"
       onClick={() => {
         const node = containerRef.current?.parentElement;
         if (!node) return;
