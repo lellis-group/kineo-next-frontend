@@ -20,22 +20,33 @@ import { cameraTargetFor, type MapPlace } from "@/lib/listings";
  * transform it writes keeps aiming at the same point while the dot grows inside.
  * See `.marker-dot` and `kineo-marker-enter` in `globals.css`.
  */
-const MARKER_CLASS = "grid size-6 cursor-pointer place-items-center";
-
 /**
- * The visible disc, and everything that is allowed to move.
+ * The marker's box: sized here, positioned by MapLibre, and never animated.
  *
- * A near-black disc carrying a white mark, which is the reference's marker on a
- * light map: the data is the darkest thing on the streets, so a reader finds it
- * without hunting. It was a white dot before the map went light, which made it
- * the one mark on the plane that had to be looked for.
+ * No `hover:scale` here, and that is not a style choice. MapLibre centres a
+ * marker with a `translate(-50%, -50%)` expressed as a percentage of its own
+ * box, so growing the marker on hover moves it — measured at nearly 50px, on a
+ * marker the reader had merely pointed at. Anything that changes the *box* is
+ * off the table; the emphasis is a ring instead.
+ *
+ * `size-5`, which on the theme's 0.3rem unit is 24px: the reference's discs are
+ * a little smaller than this screen used to draw them, and at 28px a map of
+ * cabinets starts to look crowded before there are more than a dozen pins.
+ *
+ * The disc is a child element, and that is what buys the entrance animation: a
+ * `scale` on the child leaves this box exactly as MapLibre sized it, so the
+ * transform it writes keeps aiming at the same point while the round grows
+ * inside. See `.marker-dot` and `kineo-marker-enter` in `globals.css`.
  */
+const MARKER_CLASS = "grid size-5 cursor-pointer place-items-center";
+
+/** The mark inside a lone posting's disc — the reference's own. */
 const MARKER_DOT_CLASS =
   "marker-dot grid size-full place-items-center rounded-full bg-surface text-foreground";
 
 /** A place with more than one posting: bigger, and it carries the count. */
-const MARKER_CLUSTER_CLASS = "!size-7";
-const MARKER_DOT_CLUSTER_CLASS = "!text-[0.6875rem] !font-bold";
+const MARKER_CLUSTER_CLASS = "!size-6";
+const MARKER_DOT_CLUSTER_CLASS = "!text-[0.625rem] !font-bold";
 
 /**
  * How close the camera comes to a place the reader asked to look at.
@@ -463,25 +474,28 @@ function zoomToPlace(map: MapLibreMap, place: MapPlace) {
 }
 
 /**
- * The mark inside a lone posting's disc: an opened box, in the reference's hand.
+ * The glyph inside a lone posting's disc, and the number inside a group's.
  *
- * Built as DOM rather than imported: this hook creates its own nodes and has no
- * React root, so a component would have to be mounted into the marker. `svg` is
- * created in the SVG namespace — `createElement` on an `<svg>` tag yields an
- * HTML element, which renders nothing at all.
+ * Both are set in pixels rather than `size-*` classes: the theme's spacing unit
+ * is 0.3rem, so `size-3` is not the 12px its name suggests. Built as DOM rather
+ * than imported — this hook creates its own nodes and has no React root, so a
+ * component would have to be mounted into the marker.
+ *
+ * `svg` is created in the SVG namespace: `createElement` on an `<svg>` tag
+ * yields an HTML element, which renders nothing at all.
  *
  * Decorative by construction: the button carries the posting's name in its
  * `aria-label` (see `relabel`), and a glyph a screen reader would announce with
  * no name attached would be noise.
  */
+const MARKER_GLYPH_SIZE = 11;
+
 function markerGlyph(): SVGElement {
   const NS = "http://www.w3.org/2000/svg";
   const svg = document.createElementNS(NS, "svg");
   svg.setAttribute("viewBox", "0 0 24 24");
-  // Set in pixels rather than in a `size-*` class: the theme's spacing unit is
-  // 0.3rem, so `size-3` is not the 12px its name suggests.
-  svg.setAttribute("width", "13");
-  svg.setAttribute("height", "13");
+  svg.setAttribute("width", String(MARKER_GLYPH_SIZE));
+  svg.setAttribute("height", String(MARKER_GLYPH_SIZE));
   svg.setAttribute("fill", "none");
   svg.setAttribute("aria-hidden", "true");
 
@@ -719,6 +733,24 @@ function popupContent(
   root.className = "flex flex-col gap-1 text-left";
 
   const [first] = place.listings;
+
+  /*
+   * The short reference on the first line — `#A1B2C3D4` — exactly as the
+   * reference's marker card leads with `#AB045861` under « Electronics 25kg ».
+   *
+   * Eight characters of the listing id, upper-cased: enough to be quoted in a
+   * phone call (« l'annonce #A1B2C3D4 ») and short enough to fit above a title
+   * in a card this size. A group has no single id, so it states its count
+   * instead.
+   */
+  const reference = document.createElement("p");
+  reference.className =
+    "text-[0.6875rem] leading-none font-semibold tracking-wide text-black/50 tabular-nums";
+  reference.textContent =
+    place.count === 1 ? `#${first.id.slice(0, 8).toUpperCase()}` : "";
+  if (reference.textContent) {
+    root.append(reference);
+  }
 
   const heading = document.createElement("h3");
   heading.className = "text-sm leading-snug font-medium text-map-ink";

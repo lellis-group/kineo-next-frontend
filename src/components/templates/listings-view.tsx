@@ -1,5 +1,4 @@
 import type { ComponentProps, ReactNode } from "react";
-import { SlidersIcon } from "@/components/atoms/icons";
 import { ListingsFacetsRail } from "@/components/organisms/listings-facets-rail";
 import { ListingsResultsPanel } from "@/components/organisms/listings-results-panel";
 import { ListingsToolbarCard } from "@/components/organisms/listings-toolbar-card";
@@ -55,15 +54,12 @@ export interface ListingsViewProps {
   toolbar: ToolbarProps;
   /** The map. A slot because it can only be rendered in a browser. */
   map: ReactNode;
-  /** True on any filtered, non-default view — drives the reset affordance. */
-  filtered: boolean;
-  onResetFilters: () => void;
 }
 
 /**
  * The browse screen's layout, and nothing else.
  *
- * A template: it positions four sections and owns no behaviour. Its props are
+ * A template: it positions three sections and owns no behaviour. Its props are
  * sections, not a flat list of everything the page shows — a layout told about
  * date ranges and pager state is a layout that breaks the first time a section
  * changes. Each section takes its own narrow props instead.
@@ -77,8 +73,6 @@ export function ListingsView({
   results,
   toolbar,
   map,
-  filtered,
-  onResetFilters,
 }: ListingsViewProps) {
   return (
     <div className={SHELL}>
@@ -89,7 +83,7 @@ export function ListingsView({
         off the bottom of the window. Below `lg` it collapses to a single column
         in reading order (rail, then map + table) and scrolls as a page.
       */}
-      <div className="grid gap-4 lg:min-h-0 lg:flex-1 lg:grid-cols-[21rem_minmax(0,1fr)] lg:gap-3">
+      <div className="grid gap-3 lg:min-h-0 lg:flex-1 lg:grid-cols-[21rem_minmax(0,1fr)] lg:gap-3">
         <div className="order-2 lg:order-1 lg:flex lg:min-h-0 lg:flex-col lg:overflow-y-auto lg:pr-1">
           <ListingsFacetsRail facets={facets} />
         </div>
@@ -103,32 +97,13 @@ export function ListingsView({
             shrink), so they split the space ~50/50 and the table scrolls inside
             its own region. A fixed height here would pin the map small and hand
             the rest to the table, which is the opposite of the reference.
+
+            The reset row that used to sit between the two is gone, and on the
+            reference's own evidence: its screen has no line of chrome under the
+            map. The reset now lives where the filters it clears are — inside
+            « Filtres », which also says how many of them are applied.
           */}
           <ListingsToolbarCard {...toolbar}>{map}</ListingsToolbarCard>
-
-          {filtered && (
-            <div className="flex shrink-0 flex-wrap items-center gap-3">
-              <p className="text-xs text-muted">
-                Filtres appliqués à cette recherche.
-              </p>
-              {/*
-               * A chip rather than a bare underlined word, so the reset reads as the
-               * control it is and gets a real hit area — the same treatment as the
-               * « Urgentes » toggle in the filter bar. Compact overrides mirror that
-               * button's, minus the `min-h` floor: this row is not aligning against
-               * inputs, so the chip's own 3rem is one more button than it needs, and
-               * `py-1.5` keeps it the height of the line it sits beside.
-               */}
-              <button
-                type="button"
-                className="chip min-h-0 shrink-0 whitespace-nowrap px-3 py-1.5"
-                onClick={onResetFilters}
-              >
-                <SlidersIcon className="mr-1 inline-block size-3.5 align-[-0.15em]" />
-                Réinitialiser
-              </button>
-            </div>
-          )}
 
           <ListingsResultsPanel {...results} />
         </div>

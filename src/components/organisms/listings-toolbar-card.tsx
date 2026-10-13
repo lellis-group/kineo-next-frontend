@@ -4,7 +4,7 @@ import {
   type SpecialtyOption,
 } from "@/components/molecules/listings-toolbar";
 import { cn } from "@/lib/cn";
-import type { BrowseFormFilters } from "@/lib/listings";
+import type { BrowseFormFilters, BrowseSort } from "@/lib/listings";
 
 interface ListingsToolbarCardProps {
   filters: BrowseFormFilters;
@@ -12,7 +12,13 @@ interface ListingsToolbarCardProps {
   specialties: readonly SpecialtyOption[];
   /** Result count under the active filters, for the summary line. */
   total: number;
-  /** The map the bar belongs to. Kept as a slot: it can only render in a browser. */
+  /** True on any filtered, non-default view — drives the reset affordance. */
+  filtered: boolean;
+  onResetFilters: () => void;
+  /** Ordering, and its change handler. */
+  sort: BrowseSort;
+  onSortChange: (sort: BrowseSort) => void;
+  /** The map the row belongs to. Kept as a slot: it can only render in a browser. */
   children: ReactNode;
   /**
    * Height and width the layout hands the card.
@@ -47,6 +53,10 @@ export function ListingsToolbarCard({
   onFiltersChange,
   specialties,
   total,
+  filtered,
+  onResetFilters,
+  sort,
+  onSortChange,
   children,
   className,
 }: ListingsToolbarCardProps) {
@@ -63,6 +73,10 @@ export function ListingsToolbarCard({
           onFiltersChange={onFiltersChange}
           specialties={specialties}
           total={total}
+          filtered={filtered}
+          onResetFilters={onResetFilters}
+          sort={sort}
+          onSortChange={onSortChange}
         />
       </div>
 

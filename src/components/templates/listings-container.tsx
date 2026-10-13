@@ -364,13 +364,15 @@ export function ListingsContainer({
 
       <ListingsView
         facets={facets}
-        filtered={!isDefaultBrowseView(view)}
-        onResetFilters={resetFilters}
         toolbar={{
           filters,
           onFiltersChange: applyFilters,
           specialties,
+          filtered: !isDefaultBrowseView(view),
+          onResetFilters: resetFilters,
           total: data.total,
+          sort,
+          onSortChange: applySort,
         }}
         results={{
           listings: data.listings,
@@ -382,8 +384,6 @@ export function ListingsContainer({
           horizon,
           onHorizonChange: (next) =>
             applyFilters({ from: horizonStart(next) ?? "" }),
-          sort,
-          onSortChange: applySort,
           activeListingId,
           onActiveListingChange: setActiveListingId,
           onResetFilters: resetFilters,

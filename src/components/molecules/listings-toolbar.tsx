@@ -1,16 +1,28 @@
 "use client";
 
-import { AlertTriangleIcon, SearchIcon } from "@/components/atoms/icons";
+import { useEffect, useRef, useState } from "react";
+import {
+  AlertTriangleIcon,
+  SearchIcon,
+  SlidersIcon,
+} from "@/components/atoms/icons";
 import { Select } from "@/components/molecules/select";
 import { cn } from "@/lib/cn";
 import { useCommittedInput } from "@/lib/hooks/use-committed-input";
-import type { BrowseFormFilters } from "@/lib/listings";
+import type { BrowseFormFilters, BrowseSort } from "@/lib/listings";
 import type { Specialty } from "@/lib/types/api";
 
 export interface SpecialtyOption {
   id: Specialty;
   label: string;
 }
+
+/** How the rows are ordered — the labels for the sort picker. */
+const BROWSE_SORTS: readonly { id: BrowseSort; label: string }[] = [
+  { id: "recent", label: "Plus récentes" },
+  { id: "urgent", label: "Urgentes d'abord" },
+  { id: "startDate", label: "Date de début" },
+];
 
 interface ListingsToolbarProps {
   /**
@@ -27,21 +39,27 @@ interface ListingsToolbarProps {
   specialties: readonly SpecialtyOption[];
   /** Result count under the active filters, for the summary line. */
   total: number;
+  /** True on any filtered, non-default view — drives the reset affordance. */
+  filtered: boolean;
+  onResetFilters: () => void;
+  /** Ordering, and its change handler. */
+  sort: BrowseSort;
+  onSortChange: (sort: BrowseSort) => void;
   className?: string;
 }
 
 /**
- * The filter bar, sitting on its own band above the map.
+ * The map's own control row: a search, a sort, and the rest one click away.
  *
- * It draws the filters and reports changes; it does not own them. Returning to
- * page 1 on every filter change is the container's rule and lives there — a
- * filter change that kept page 3 would land the reader on an empty page whenever
- * the new result set is shorter than the old one.
+ * Two controls on the line, which is what the reference draws — a round-ended
+ * search field and a sort beside it — and everything else behind « Filtres ». The
+ * five controls this used to be would not fit the reference's row at any width,
+ * and a row that cannot fit its controls is a row that wraps, which is what this
+ * bar spent its last revision fighting.
  *
- * Every control in the row is a pill, which is the reference's own control
- * language on this screen: a round-ended search field, a round-ended sort and a
- * round chip beside them all sit on one line at one height, so the row reads as
- * one thing rather than as four boxes.
+ * The panel is a popover rather than an expansion below the row: it must not
+ * resize the map, which is the one element on this screen whose height is worth
+ * protecting. It closes on Escape, on a click outside, and after a choice.
  *
  * The city field is text rather than a picker because the backend matches it as
  * a substring (`contains`, case-insensitive): a select would have to enumerate
@@ -54,6 +72,10 @@ export function ListingsToolbar({
   onFiltersChange,
   specialties,
   total,
+  filtered,
+  onResetFilters,
+  sort,
+  onSortChange,
   className,
 }: ListingsToolbarProps) {
   /**
@@ -75,191 +97,241 @@ export function ListingsToolbar({
     }
   };
 
+  // How many of the four narrowing controls are applied. It is what the « Filtres »
+  // button carries: a panel that hides applied filters without saying so would
+  // leave the reader reading a narrowed map with no clue what narrowed it.
+  const appliedFilters = [
+    filters.specialty !== "",
+    filters.from !== "",
+    filters.to !== "",
+    filters.urgentOnly,
+  ].filter(Boolean).length;
+
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const dismiss = () => setOpen(false);
+
+    const onPointerDown = (event: MouseEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) dismiss();
+    };
+
+    // Escape, without the focus trap a menu would need: the panel holds inputs,
+    // and closing on the way out has to return the reader to the button.
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") dismiss();
+    };
+
+    document.addEventListener("mousedown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open]);
+
   return (
     /*
-     * One row, and the count sits in it rather than under it.
-     *
-     * The count was a second line of its own. That is a whole row — its height
-     * plus its margin — spent on a number that belongs to the search it describes,
-     * and it is what made the bar a block over the map rather than a strip across
-     * it. In the row it costs width, which the bar now has to spare, instead of
-     * height, which it does not.
-     *
-     * Packed against the chip rather than pushed to the far end with `ml-auto`.
-     * The bar is wide now, and a count stranded at the far right of a full-width
-     * strip is 1000px away from the filters that produced it; against the same
-     * rule that keeps the controls packed left — the empty space belongs at the
-     * end, where it reads as the end of the row.
-     *
-     * Its `SlidersIcon` went with the row, and so did the word « disponibles ».
-     * Both were width: the icon was a glyph meaning "these are filters" on a row
-     * that is nothing but filters, and the word restates what the panel to the
-     * left already says in full ("Annonces ouvertes"). Between them they were
-     * ~105px of the row's budget, and the row is what has to stay on one line.
-     */
-    <div>
-      {/* Controls are packed left with no `ml-auto` on any of them.
-
-          Pushing one control to the far right was meant to balance the row and did
-          the opposite: the gap it opened grew with the viewport — 138px at 1600 and
-          still growing — reading as a control dragged out of line. A row of related
-          controls belongs together, and the empty space belongs at the end, where
-          it reads as the end of the row.
-
-          `items-center` rather than `items-end`: the controls are now the same
-          height by construction (`py-1.5` on the inputs, `min-h-[2.375rem]` on the
-          chip), so there is no baseline to correct for. */}
-      <div className={cn("flex flex-wrap items-center gap-2", className)}>
-        <div className="min-w-[8rem] flex-1 sm:max-w-50">
-          <label className="sr-only" htmlFor="browse-city">
-            Rechercher une ville
-          </label>
-          <div className="relative">
-            <SearchIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted" />
-            <input
-              id="browse-city"
-              type="search"
-              className="field-input rounded-full py-1.5 pl-9"
-              placeholder="Ville ou code postal"
-              value={draft}
-              onChange={(event) => setDraft(event.target.value)}
-              onBlur={commitCity}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") {
-                  event.preventDefault();
-                  commitCity();
-                }
-              }}
-            />
-          </div>
-        </div>
-
-        <div className="min-w-[8rem] shrink-0">
-          <label className="sr-only" htmlFor="browse-specialty">
-            Spécialité
-          </label>
-          <Select
-            id="browse-specialty"
-            className="rounded-full py-1.5"
-            value={filters.specialty}
-            onChange={(event) =>
-              onFiltersChange({
-                specialty: event.target.value as Specialty | "",
-              })
-            }
-          >
-            <option value="">Toutes spécialités</option>
-            {specialties.map((option) => (
-              <option key={option.id} value={option.id}>
-                {option.label}
-              </option>
-            ))}
-          </Select>
-        </div>
-
-        {/*
-          The pair grows, but within a ceiling, and its two fields grow with it.
-
-          Both halves of that are load-bearing.
-
-          `flex-1` alone — with no `flex-1` on the fields — is the shape that put a
-          hole in the row: the box absorbed the free width while the date inputs
-          inside it stayed at their intrinsic size, and the space opened *after*
-          the second date, before the chip. The `sm:flex-1` on each child is what
-          closes it, because now the box that grows is filled.
-
-          Without any `flex-1` at all, it is worse: the pair can no longer shrink
-          below what two `type="date"` inputs ask for (~150px each), so on a
-          narrow map the row wraps — and a bar that folds to two or three floors is
-          the thing this layout was rebuilt to stop doing.
-
-          `max-w-[22rem]` keeps the growth bounded. Uncapped, a wide map would
-          hand the pair the whole slack and leave each field ~275px to hold
-          `jj/mm/aaaa` and a calendar glyph; bounded, they settle around 170px,
-          which is as wide as a date field needs to look like one. Past that
-          ceiling the leftover goes to the end of the row, where a row of controls
-          ends instead of splitting into islands.
-
-          `min-w-[13.5rem]` is the floor: below it, the values and the calendar
-          buttons start cutting into each other.
-        */}
-        <div className="grid w-full min-w-0 grid-cols-2 gap-2 sm:flex sm:min-w-45 sm:max-w-[22rem] sm:flex-1">
-          <div className="min-w-0 sm:flex-1">
-            <label className="sr-only" htmlFor="browse-from">
-              Démarrant après le
-            </label>
-            <input
-              id="browse-from"
-              type="date"
-              aria-label="Démarrant après le"
-              className="field-input w-full min-w-0 rounded-full py-1.5"
-              value={filters.from}
-              max={filters.to || undefined}
-              onChange={(event) =>
-                onFiltersChange({ from: event.target.value })
+      One row, packed left, with the empty space at the end where a row of
+      controls ends — the rule the browse screen's other rows already follow. The
+      count sits against the controls that produced it rather than stranded at
+      the far edge of a full-width bar.
+    */
+    <div className={cn("flex flex-wrap items-center gap-2", className)}>
+      <div className="min-w-[10rem] flex-1">
+        <label className="sr-only" htmlFor="browse-city">
+          Rechercher une ville
+        </label>
+        <div className="relative">
+          <SearchIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted" />
+          <input
+            id="browse-city"
+            type="search"
+            className="field-input rounded-full py-1.5 pl-9"
+            placeholder="Ville ou code postal"
+            value={draft}
+            onChange={(event) => setDraft(event.target.value)}
+            onBlur={commitCity}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                commitCity();
               }
-            />
-          </div>
-          <div className="min-w-0 sm:flex-1">
-            <label className="sr-only" htmlFor="browse-to">
-              Démarrant avant le
-            </label>
-            <input
-              id="browse-to"
-              type="date"
-              aria-label="Démarrant avant le"
-              className="field-input w-full min-w-0 rounded-full py-1.5"
-              value={filters.to}
-              min={filters.from || undefined}
-              onChange={(event) => onFiltersChange({ to: event.target.value })}
-            />
-          </div>
+            }}
+          />
         </div>
+      </div>
 
+      <div className="flex shrink-0 items-center gap-2">
         {/*
-        Compact overrides on the shared `.chip`, and each one is here because the
-        class's defaults belong to a different placement:
+          « Trier par », visible, as the reference writes it. The label is not
+          redundant with the select: it names the control the select *is*, where
+          an unlabelled dropdown at this size is a box of whatever happens to be
+          selected.
+        */}
+        <span className="hidden text-xs whitespace-nowrap text-muted lg:inline">
+          Trier par
+        </span>
+        <label className="sr-only" htmlFor="browse-sort">
+          Trier par
+        </label>
+        <Select
+          id="browse-sort"
+          className="w-44 rounded-full py-1.5"
+          value={sort}
+          onChange={(event) => onSortChange(event.target.value as BrowseSort)}
+        >
+          {BROWSE_SORTS.map((option) => (
+            <option key={option.id} value={option.id}>
+              {option.label}
+            </option>
+          ))}
+        </Select>
+      </div>
 
-        - `min-h-0` — `.chip` reserves a 3rem touch target, which is right when
-          chips are the whole control (`/listings/mine`) and wrong beside inputs
-          of this height. Left in, this button measured 59px against its neighbours
-          and dragged the row taller than the map it sits on.
-        - `py-1.5 px-3` — the class's `0.75rem 1.125rem` is sized for a bare chip.
-        - `whitespace-nowrap` — the button is a flex item and can be squeezed; at
-          99px wide its icon and label stopped fitting and wrapped onto two lines,
-          which is the "two floors" of content.
-        - `shrink-0` — never squeezed at all, which is what makes the previous
-          line a guarantee rather than a hope.
-        - `min-h-[2.375rem]` — the height of the `.field-input` beside it, so the
-          row aligns. A button and an input are sized by different rules, and
-          padding alone left this one short of its neighbours.
+      <p
+        className="shrink-0 text-xs whitespace-nowrap text-muted tabular-nums"
+        aria-live="polite"
+      >
+        {total} annonce{total > 1 ? "s" : ""}
+      </p>
 
-          It is the one value here that is arithmetic rather than taste: the inputs
-          above are `py-1.5` over a 0.925rem font, which measures 38px, and the
-          button is a flex item whose height is this floor and nothing else. Note
-          what is given up — 38px is below the 44px a finger is comfortable with,
-          though comfortably over the 24px WCAG 2.5.8 sets as the minimum target.
-          `py-2` is one line away if that trade is not worth the height.
-      */}
+      <div ref={rootRef} className="relative shrink-0">
         <button
           type="button"
           className={cn(
             "chip min-h-[2.375rem] shrink-0 whitespace-nowrap px-3 py-1.5",
-            filters.urgentOnly && "is-active",
+            open && "is-active",
           )}
-          aria-pressed={filters.urgentOnly}
-          onClick={() => onFiltersChange({ urgentOnly: !filters.urgentOnly })}
+          aria-expanded={open}
+          onClick={() => setOpen((current) => !current)}
         >
-          <AlertTriangleIcon className="mr-1 inline-block align-[-0.15em] size-3.5" />
-          Urgentes
+          <SlidersIcon className="mr-1 inline-block align-[-0.15em] size-3.5" />
+          Filtres
+          {appliedFilters > 0 && (
+            <span
+              className={cn(
+                "ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[0.625rem] font-semibold tabular-nums",
+                open
+                  ? "bg-primary-foreground/15 text-primary-foreground"
+                  : "bg-primary/15 text-primary",
+              )}
+            >
+              {appliedFilters}
+            </span>
+          )}
         </button>
 
-        <p
-          className="text-xs whitespace-nowrap text-muted tabular-nums"
-          aria-live="polite"
-        >
-          {total} annonce{total > 1 ? "s" : ""}
-        </p>
+        {open && (
+          <div
+            className={cn(
+              "absolute top-[calc(100%+0.5rem)] right-0 z-30 w-[19rem] rounded-card border border-border bg-surface p-4",
+              "shadow-[var(--shadow-pop)]",
+            )}
+          >
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-1.5">
+                <label className="field-label" htmlFor="browse-specialty">
+                  Spécialité
+                </label>
+                <Select
+                  id="browse-specialty"
+                  className="rounded-full py-1.5"
+                  value={filters.specialty}
+                  onChange={(event) =>
+                    onFiltersChange({
+                      specialty: event.target.value as Specialty | "",
+                    })
+                  }
+                >
+                  <option value="">Toutes spécialités</option>
+                  {specialties.map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.label}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+
+              {/*
+                The pair grows, but within a ceiling, and its two fields grow
+                with it — the same shape it had on the row, kept here where there
+                is finally room for it to be honest.
+              */}
+              <div className="flex flex-col gap-1.5">
+                <span className="field-label">Date de début</span>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="min-w-0">
+                    <label className="sr-only" htmlFor="browse-from">
+                      Démarrant après le
+                    </label>
+                    <input
+                      id="browse-from"
+                      type="date"
+                      aria-label="Démarrant après le"
+                      className="field-input w-full min-w-0 rounded-full py-1.5"
+                      value={filters.from}
+                      max={filters.to || undefined}
+                      onChange={(event) =>
+                        onFiltersChange({ from: event.target.value })
+                      }
+                    />
+                  </div>
+                  <div className="min-w-0">
+                    <label className="sr-only" htmlFor="browse-to">
+                      Démarrant avant le
+                    </label>
+                    <input
+                      id="browse-to"
+                      type="date"
+                      aria-label="Démarrant avant le"
+                      className="field-input w-full min-w-0 rounded-full py-1.5"
+                      value={filters.to}
+                      min={filters.from || undefined}
+                      onChange={(event) =>
+                        onFiltersChange({ to: event.target.value })
+                      }
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                className={cn(
+                  "chip min-h-0 w-full shrink-0 whitespace-nowrap px-3 py-2",
+                  filters.urgentOnly && "is-active",
+                )}
+                aria-pressed={filters.urgentOnly}
+                onClick={() =>
+                  onFiltersChange({ urgentOnly: !filters.urgentOnly })
+                }
+              >
+                <AlertTriangleIcon className="mr-1 inline-block align-[-0.15em] size-3.5" />
+                Urgentes seulement
+              </button>
+
+              {/*
+                The way out, and it only exists on a filtered view. It clears all
+                four at once, which is the difference between a reset and four
+                undos: a reader who narrowed three fields wants the collection
+                back, not the last field.
+              */}
+              {filtered && (
+                <button
+                  type="button"
+                  onClick={onResetFilters}
+                  className="text-xs font-medium text-primary transition-opacity hover:opacity-80"
+                >
+                  Tout réinitialiser
+                </button>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

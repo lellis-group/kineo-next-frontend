@@ -8,18 +8,18 @@ import { cn } from "@/lib/cn";
  * The site shell — header, the scrolling region, and the footer — sized by
  * route.
  *
- * A client component for one reason: the browse feed (`/listings`) is the one
- * screen that is a full-height workspace rather than a scrolling document. Its
- * content — facets rail, map and results table side by side — is built to fill
- * the window and scroll in its own regions, so the shell bounds itself to the
+ * A client component for one reason: `/listings` and `/listings/mine` are the two
+ * screens that are full-height workspaces rather than scrolling documents. Their
+ * content — a rail of summary panels beside one main card — is built to fill the
+ * window and scroll in its own regions, so the shell bounds itself to the
  * viewport (`h-dvh`, `overflow-hidden`), makes `<main>` the one flexible band,
  * and drops the marketing footer entirely — every pixel of height goes to the
  * workspace. Every other page is an ordinary document: it grows with its
  * content, scrolls the page, and keeps its footer.
  *
  * The two shapes are chosen here, by path, rather than baked into the shared
- * layout, so the full-height treatment stays confined to the feed and no other
- * console page is changed. `usePathname` runs on the server for the first paint
+ * layout, so the full-height treatment stays confined to the workspaces and no
+ * other console page changes. `usePathname` runs on the server for the first paint
  * as well — client components are server-rendered — so the correct shape is in
  * the HTML from the start; no class is swapped in after hydration and nothing
  * shifts on arrival.
@@ -39,10 +39,28 @@ export function SiteShell({
 }) {
   const pathname = usePathname();
 
-  // The browse feed only. `/listings/mine` and its detail pages are ordinary
-  // documents and keep the page-scroll shell. An exact match, so the guard
-  // cannot leak onto a sibling route the way a `startsWith("/listings")` would.
-  const isFullHeightWorkspace = pathname === "/listings";
+  /*
+   * The two workspaces, and only those two.
+   *
+   * `/listings` is the browse feed and `/listings/mine` is the practice's own
+   * board; both are drawn as the reference dashboard — a rail of summary panels
+   * beside one main card, filling the window with each region scrolling on its
+   * own. Every other page is an ordinary document: it grows with its content,
+   * scrolls the page, and keeps the marketing footer.
+   *
+   * The two shapes are chosen here, by path, rather than baked into the shared
+   * layout, so the full-height treatment stays confined to the workspaces and no
+   * other console page changes. `usePathname` runs on the server for the first
+   * paint as well — client components are server-rendered — so the correct shape
+   * is in the HTML from the start; no class is swapped in after hydration and
+   * nothing shifts on arrival.
+   *
+   * An exact pair, so a sibling route cannot leak into it the way a
+   * `startsWith("/listings")` would: the detail page under `/listings/mine/[id]`
+   * is a document with its own back link and none of the rail.
+   */
+  const isFullHeightWorkspace =
+    pathname === "/listings" || pathname === "/listings/mine";
 
   return (
     <div

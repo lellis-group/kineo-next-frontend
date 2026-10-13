@@ -1,7 +1,5 @@
-import type { ReactNode } from "react";
 import {
   AlertTriangleIcon,
-  ExpandIcon,
   FileTextIcon,
   LayersIcon,
   PercentIcon,
@@ -9,8 +7,9 @@ import {
 import { ProgressCurve } from "@/components/atoms/progress-curve";
 import { SegmentedBar } from "@/components/atoms/segmented-bar";
 import { Panel } from "@/components/molecules/panel";
+import { PanelExpand, StatChip } from "@/components/molecules/panel-chrome";
+import { SpecialtyBars } from "@/components/molecules/specialty-bars";
 import { SpecialtyIcon } from "@/components/molecules/specialty-icon";
-import { cn } from "@/lib/cn";
 import { plural } from "@/lib/format";
 import type { BrowseFacets } from "@/lib/listings";
 import { SPECIALTY_SHORT_LABELS } from "@/lib/profile";
@@ -41,50 +40,6 @@ import { SPECIALTY_SHORT_LABELS } from "@/lib/profile";
  */
 const SPECIALTY_ROWS = 5;
 
-/** The expand mark the reference puts in the corner of every card it draws. */
-function PanelExpand() {
-  return (
-    /*
-     * Decorative.
-     *
-     * The reference puts one of these in the corner of every card on its column,
-     * and its position is most of what makes the column read as that reference —
-     * but there is nothing on this screen for it to expand, so it is `aria-hidden`
-     * and out of the tab order rather than a button that does nothing. A control
-     * which looks live and is not the one thing a reader cannot forgive in a
-     * control; the shape is kept, the lie is not.
-     */
-    <ExpandIcon className="size-4 shrink-0 text-faint" aria-hidden="true" />
-  );
-}
-
-/** One cell of the 2×2 grid: its icon, then the name of the figure and the figure. */
-function StatChip({
-  icon,
-  label,
-  value,
-}: {
-  icon: ReactNode;
-  label: string;
-  value: string;
-}) {
-  return (
-    <div className="flex min-w-0 items-center gap-2.5 rounded-xl bg-white/[0.04] px-3 py-2.5">
-      <span className="grid size-6 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
-        {icon}
-      </span>
-      <span className="min-w-0">
-        <span className="block truncate text-[0.6875rem] leading-tight text-muted">
-          {label}
-        </span>
-        <span className="block truncate text-base leading-tight font-medium text-foreground tabular-nums">
-          {value}
-        </span>
-      </span>
-    </div>
-  );
-}
-
 export function ListingsFacetsRail({ facets }: { facets: BrowseFacets }) {
   const urgentPercent =
     facets.total > 0 ? Math.round((facets.urgent / facets.total) * 100) : 0;
@@ -98,7 +53,7 @@ export function ListingsFacetsRail({ facets }: { facets: BrowseFacets }) {
     .reduce((sum, row) => sum + row.count, 0);
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       <Panel title="Annonces urgentes" action={<PanelExpand />}>
         {facets.total === 0 ? (
           <p className="py-6 text-center text-sm text-muted">
@@ -278,74 +233,17 @@ export function ListingsFacetsRail({ facets }: { facets: BrowseFacets }) {
               invented axis: each bar is labelled with the specialty it stands
               for rather than with a period that does not exist.
             */}
-            <VolumeBars facets={facets} />
+            <SpecialtyBars
+              rows={facets.bySpecialty.slice(0, SPECIALTY_ROWS).map((row) => ({
+                key: row.specialty,
+                label: row.label,
+                short: SPECIALTY_SHORT_LABELS[row.specialty],
+                count: row.count,
+              }))}
+            />
           </>
         )}
       </Panel>
-    </div>
-  );
-}
-
-/**
- * The distribution behind the volume figure, as bars.
- *
- * Its own component rather than markup inline above, because it is the one part
- * of the rail that has to do something: scale itself to the counts. Each bar is
- * a share of the tallest one, not of the total — a collection whose busiest
- * specialty holds four openings would otherwise draw four hairline bars and
- * read as an empty panel.
- *
- * `title` on every bar, because a truncated label is the compromise the width
- * forces and the full name has to remain reachable.
- */
-function VolumeBars({ facets }: { facets: BrowseFacets }) {
-  const rows = facets.bySpecialty.slice(0, SPECIALTY_ROWS);
-  const tallest = Math.max(1, ...rows.map((row) => row.count));
-
-  // A collection with a total and no specialty would draw an empty 80px band
-  // under the figures. It cannot happen from the endpoint — every posting has
-  // one — but the bar chart is the one thing here that reads as broken rather
-  // than as empty, so it simply does not draw.
-  if (rows.length === 0) return null;
-
-  return (
-    <div className="mt-5">
-      <div className="flex h-20 items-end gap-1.5">
-        {rows.map((row) => (
-          <div
-            key={row.specialty}
-            title={`${row.label} — ${row.count}`}
-            className="flex h-full min-w-0 flex-1 flex-col justify-end"
-          >
-            <div
-              /*
-                The tallest bar is cream; the rest are a step back from it. The
-                reference uses exactly this two-tone to keep the eye on one
-                column, and here it does the same work without a legend — the
-                reader is looking at a ranking, and the leader is the one the
-                total above belongs to.
-              */
-              className={cn(
-                "w-full rounded-t-[3px]",
-                row.count === tallest ? "bg-primary" : "bg-primary/35",
-              )}
-              style={{ height: `${Math.max(8, (row.count / tallest) * 100)}%` }}
-            />
-          </div>
-        ))}
-      </div>
-
-      <div className="mt-2 flex gap-1.5">
-        {rows.map((row) => (
-          <span
-            key={row.specialty}
-            title={row.label}
-            className="min-w-0 flex-1 truncate text-center text-[0.5625rem] leading-none text-faint"
-          >
-            {SPECIALTY_SHORT_LABELS[row.specialty]}
-          </span>
-        ))}
-      </div>
     </div>
   );
 }

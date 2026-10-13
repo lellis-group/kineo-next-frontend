@@ -3,7 +3,6 @@ import { FileTextIcon } from "@/components/atoms/icons";
 import { Pagination } from "@/components/molecules/pagination";
 import { Panel } from "@/components/molecules/panel";
 import { SegmentedControl } from "@/components/molecules/segmented-control";
-import { Select } from "@/components/molecules/select";
 import { EmptyState } from "@/components/organisms/empty-state";
 import { ListingCard } from "@/components/organisms/listing-card";
 import {
@@ -11,30 +10,7 @@ import {
   type ListingsTableHandle,
 } from "@/components/organisms/listings-table";
 import { cn } from "@/lib/cn";
-import type { BrowseHorizon, BrowseListing, BrowseSort } from "@/lib/listings";
-
-/**
- * How the reader wants the rows ordered — the labels for the sort picker.
- *
- * The `BrowseSort` union itself lives in the domain (`lib/listings`): ordering is
- * a real parameter the endpoint takes, so the set of values belongs with the
- * contracts, not with a component. What stays here is the French copy, which is
- * presentation and belongs beside the `<Select>` that renders it.
- *
- * It sits with the results rather than with the filter bar because sorting is not
- * a narrowing: it changes no result set, only which row comes first. A reader who
- * changes it expects the list below to rearrange, not the set of results to shrink.
- */
-interface BrowseSortOption {
-  id: BrowseSort;
-  label: string;
-}
-
-const BROWSE_SORTS: readonly BrowseSortOption[] = [
-  { id: "recent", label: "Plus récentes" },
-  { id: "urgent", label: "Urgentes d'abord" },
-  { id: "startDate", label: "Date de début" },
-];
+import type { BrowseHorizon, BrowseListing } from "@/lib/listings";
 
 interface BrowseHorizonOption {
   id: BrowseHorizon;
@@ -76,22 +52,13 @@ interface ListingsResultsPanelProps {
   horizon: BrowseHorizon;
   onHorizonChange: (horizon: BrowseHorizon) => void;
   /**
-   * How the rows are ordered.
-   *
-   * Part of this panel's interface rather than the filter bar's: ordering does not
-   * narrow anything, and a reader who changes it expects the list below to
-   * rearrange, not the set of results to shrink.
-   */
-  sort: BrowseSort;
-  onSortChange: (sort: BrowseSort) => void;
-  /** Row the reader is pointing at; mirrored onto its map marker. */
-  activeListingId: string | null;
-  onActiveListingChange: (id: string | null) => void;
-  /**
    * Clears every filter — offered on the filtered empty state as the way out of a
    * search that matched nothing.
    */
   onResetFilters: () => void;
+  /** Row the reader is pointing at; mirrored onto its map marker. */
+  activeListingId: string | null;
+  onActiveListingChange: (id: string | null) => void;
   /**
    * A handle onto the table, so the screen can scroll a picked posting into
    * view. Passed down rather than reached for: the table owns the row markup,
@@ -121,11 +88,9 @@ export function ListingsResultsPanel({
   filtered,
   horizon,
   onHorizonChange,
-  sort,
-  onSortChange,
+  onResetFilters,
   activeListingId,
   onActiveListingChange,
-  onResetFilters,
   tableRef,
 }: ListingsResultsPanelProps) {
   return (
@@ -134,36 +99,18 @@ export function ListingsResultsPanel({
       className="lg:flex-1"
       title="Annonces"
       action={
-        /*
-          `min-w-0`, and it is what keeps the row inside the panel.
-          `Panel` gives this wrapper `min-w-0` so it can shrink, but that only
-          holds if *this* div does too: as a flex item its default minimum is its
-          content's own, and the four-option segmented row beside the sort is
-          394px of it. On a phone the panel's content box is 307, so the row ran
-          87px past the card's edge and the sort's right edge sat over the page
-          margin. Letting it shrink hands the overflow to the segmented control,
-          which scrolls its own track — the one control here that can lose an
-          option without losing a function.
-        */
         <div className="flex min-w-0 flex-wrap items-center justify-end gap-3">
           {/*
-            Rendered whether or not a fetch is in flight, and hidden with
-            `invisible` rather than absent when idle — `invisible` reserves the
-            box, `display:none` would not.
+            Whether a fetch is in flight, said once and reserved: `invisible`
+            rather than absent when idle, so the box is taken whether or not this
+            panel is refreshing. It has to be reserved because it is one more item
+            in a *wrapping* row, and a transient status that comes and goes would
+            change the header's height under the reader.
 
-            It has to be here at all, and it has to be reserved, because it is
-            one more item in a *wrapping* row (`Panel`'s header is `flex-wrap`,
-            and so is this one). The status is ~97px wide once its gap is
-            counted, and past a certain viewport width that is exactly what
-            pushes the whole action block off the title's line and onto a second
-            one — the panel then grew 28px at 1024 and 960, and 53px at 820,
-            only to shrink back when the response landed. The height of a panel
-            is not something a transient status gets to decide.
-
-            `invisible` rather than `opacity-0` for the same reason: an
-            invisible element is out of the accessibility tree, so a screen
-            reader is not left with a stale « Actualisation… » on a panel that is
-            no longer loading, and still hears the one that appears.
+            `invisible` rather than `opacity-0`: an invisible element is out of the
+            accessibility tree, so a screen reader is not left with a stale
+            « Actualisation… » on a panel that is no longer loading, and still
+            hears the one that appears.
           */}
           <span
             className={cn(
@@ -175,25 +122,18 @@ export function ListingsResultsPanel({
             Actualisation…
           </span>
 
-          <label
-            className="text-xs whitespace-nowrap text-muted"
-            htmlFor="browse-sort"
-          >
-            Trier par
-          </label>
-          <Select
-            id="browse-sort"
-            className="py-1.5"
-            value={sort}
-            onChange={(event) => onSortChange(event.target.value as BrowseSort)}
-          >
-            {BROWSE_SORTS.map((option) => (
-              <option key={option.id} value={option.id}>
-                {option.label}
-              </option>
-            ))}
-          </Select>
+          {/*
+            The reference's trailing control on this card: a track of options with
+            the active one filled. Ordering used to live here too, as a labelled
+            select — the sort is not a narrowing, so its place is with the row of
+            controls that changes no result set. It moved up to the map's own row,
+            where « Trier par » reads beside the search it belongs with.
 
+            `min-w-0` stays: `Panel` gives this wrapper the same, and it only
+            holds if this div has it as well. As a flex item its default minimum
+            is its content's own, and a four-option track is wide — on a phone the
+            row ran past the card's edge until the track was told it could shrink.
+          */}
           <SegmentedControl
             ariaLabel="Filtrer les annonces par date de début"
             options={BROWSE_HORIZONS}
