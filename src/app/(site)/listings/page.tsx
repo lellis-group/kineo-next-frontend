@@ -5,9 +5,9 @@ import { ListSkeleton } from "@/components/molecules/list-skeleton";
 import { ListingsContainer } from "@/components/templates/listings-container";
 import { serverTransport } from "@/lib/api-transport.server";
 import {
-  emptyBrowsePlaces,
   fetchBrowseListings,
   fetchBrowsePlaces,
+  fetchFacets,
 } from "@/lib/listings";
 import { fetchServerAuth } from "@/lib/server-auth";
 
@@ -34,16 +34,24 @@ export const metadata: Metadata = {
  * rather than with the skeleton the `Suspense` boundary would otherwise hold for
  * the whole round trip.
  *
- * Two requests, not one, and the second is not redundancy. The page is the ten
- * rows under the reader's eyes; the map is the collection they are part of. The
- * server resolved both because seeding the map from the page — the obvious way to
- * save a call — paints ten pins where there should be thirty-two, and correcting
- * it only after the first filter change would mean the map lied on arrival and
- * told the truth afterwards.
+ * Two of the three reads are awaited and the third is not, and the third is the
+ * one that streams. The rows and the panels are what a reader reads, so the page
+ * waits for them; the map's read is both the slowest and the largest answer on
+ * the screen, and the map is drawn by a client-only chunk that arrives after the
+ * HTML anyway. Held as a promise, it is unwrapped behind a `<Suspense>` boundary
+ * inside the container, so it cannot hold up the list. Awaiting it here — the
+ * obvious shape, and what this did — made the whole page wait for a map nobody
+ * has scrolled to.
+ *
+ * The map's promise is also the only one that cannot fail loudly:
+ * `fetchBrowsePlaces` answers `null` rather than throwing, and the `.catch`
+ * guards the transport itself.
  */
 export default function ListingsPage() {
   return (
-    <Suspense fallback={<ListSkeleton mapFirst cardCount={4} />}>
+    <Suspense
+      fallback={<ListSkeleton mapFirst titleBlock={false} cardCount={4} />}
+    >
       <Listings />
     </Suspense>
   );
@@ -57,16 +65,24 @@ async function Listings() {
     redirect("/signin");
   }
 
-  const [data, places] = await Promise.all([
+  const [data, facets] = await Promise.all([
     fetchBrowseListings({}, serverTransport),
-    fetchBrowsePlaces({}, serverTransport),
+    // Not part of the rows' read any more, and for the same reason the two are
+    // separate here: the panels depend on a subset of the filters, so the client
+    // asks for them only when that subset changes. Awaiting them together is
+    // still right — the first paint should not arrive without its summary.
+    fetchFacets({}, serverTransport),
   ]);
+
+  const places = fetchBrowsePlaces({}, serverTransport).catch(() => null);
+
   // No previous pins to keep on a first render, so a failed places read starts
   // the map empty rather than taking the whole page down over it.
   return (
     <ListingsContainer
       initialData={data}
-      initialPlaces={places ?? emptyBrowsePlaces()}
+      initialFacets={facets}
+      initialPlaces={places}
     />
   );
 }

@@ -120,7 +120,7 @@ export function MyListingsContainer({
     <>
       {/* Never fatal: the server always delivered the default bucket. */}
       {error !== null && (
-        <InlineRetryBanner noun="Les annonces" onRetry={reload} />
+        <InlineRetryBanner noun="Les annonces" onRetry={reload} error={error} />
       )}
       <MyListingsView
         listings={visibleListings}

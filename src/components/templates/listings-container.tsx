@@ -1,13 +1,22 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Suspense,
+  use,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { InlineRetryBanner } from "@/components/molecules/inline-retry-banner";
 import type { ListingsTableHandle } from "@/components/organisms/listings-table";
 import { ListingsView } from "@/components/templates/listings-view";
 import { usePaginatedResource } from "@/lib/hooks/use-paginated-resource";
 import {
   BROWSE_PAGE_SIZE,
+  type BrowseFacets,
   type BrowseFormFilters,
   type BrowseListingsData,
   type BrowsePlacesData,
@@ -16,6 +25,8 @@ import {
   EMPTY_BROWSE_FILTERS,
   fetchBrowseListings,
   fetchBrowsePlaces,
+  fetchFacets,
+  fetchListingPageOf,
   horizonForStart,
   horizonStart,
   isDefaultBrowseView,
@@ -59,17 +70,30 @@ const ListingsMap = dynamic(
  * what it was for, since a filter that keeps page 4 hands the reader an empty
  * screen and a pager offering pages that no longer exist.
  *
- * `initialData` and `initialLocations` are two answers to two questions. The
- * first is what the rows say; the second is where all of them are. They are
- * fetched separately because they are fetched for separate reasons, and the map
- * does not move when the page does.
+ * Three reads, not one, and the split is the whole point:
+ *
+ * - the **rows** answer what the page shows, so they follow the pager;
+ * - the **panels** (`/facets`) answer the shape of the collection and depend on
+ *   a strict subset of the filters — never the specialty, never the page, never
+ *   the ordering. They used to be refetched with the rows, on every page turn
+ *   and every reordering, for an answer that could not have changed;
+ * - the **map** is the whole filtered collection, not a page, so it moves when
+ *   the filters do and not when the page does.
+ *
+ * The map's read arrives as a promise and is unwrapped inside a `<Suspense>`
+ * boundary one level down, so the rows and the panels paint without waiting for
+ * the heaviest read on the screen — which on the seeded corpus is also the
+ * biggest payload. `initialPlaces` stays a promise rather than being awaited in
+ * the page for exactly that reason; see `ListingsMapSlot`.
  */
 export function ListingsContainer({
   initialData,
+  initialFacets,
   initialPlaces,
 }: {
   initialData: BrowseListingsData;
-  initialPlaces: BrowsePlacesData;
+  initialFacets: BrowseFacets;
+  initialPlaces: Promise<BrowsePlacesData | null>;
 }) {
   const [filters, setFilters] =
     useState<BrowseFormFilters>(EMPTY_BROWSE_FILTERS);
@@ -118,10 +142,13 @@ export function ListingsContainer({
    * Fetches one view.
    *
    * `BrowseView` already carries the ordering, so this has nothing to add: the
-   * view is what the server is asked for, filters and page and sort alike.
+   * view is what the server is asked for, filters and page and sort alike. The
+   * second argument is the hook's abort signal, forwarded untouched to the
+   * transport, so a page change stops the read the last page turn started.
    */
   const load = useCallback(
-    (target: BrowseView) => fetchBrowseListings(target),
+    (target: BrowseView, init?: RequestInit) =>
+      fetchBrowseListings(target, undefined, init),
     [],
   );
 
@@ -152,6 +179,52 @@ export function ListingsContainer({
   );
 
   /**
+   * The filters the panels actually depend on.
+   *
+   * The facets endpoint is sent the reader's filters but never their specialty
+   * and never the page or the ordering, because a « répartition par spécialité »
+   * panel reading « Médecine générale — 12 » under a Dermatologie filter answers
+   * a question nobody asked. The same reasoning says when to ask again: only
+   * when one of these four changes. Paging, reordering and narrowing by
+   * specialty leave the panels' collection alone, so they leave the numbers
+   * alone too — three requests behind a click that moved ten rows, until now.
+   *
+   * Keyed on the widened values, not on `filters`, so that an untouched date
+   * field does not read as a changed one.
+   */
+  const facetsScope = useMemo(() => {
+    const widened = toBrowseView(filters);
+    return {
+      city: widened.city,
+      startDateFrom: widened.startDateFrom,
+      startDateTo: widened.startDateTo,
+      urgentOnly: widened.urgentOnly,
+    };
+  }, [filters]);
+
+  const [facets, setFacets] = useState(initialFacets);
+  const facetsSeeded = useRef(facetsScope);
+
+  useEffect(() => {
+    // Skip the first run for the scope the server already answered: asking again
+    // would be the very request this split was meant to avoid, and it would fire
+    // on every page load for an answer already in hand.
+    if (facetsSeeded.current === facetsScope) return;
+    facetsSeeded.current = facetsScope;
+    const controller = new AbortController();
+
+    fetchFacets(facetsScope, undefined, { signal: controller.signal })
+      .then((loaded) => {
+        if (!controller.signal.aborted) setFacets(loaded);
+      })
+      // Neither is something the panels need to say: an aborted read is the
+      // reader moving on, and a 5xx is absorbed by `fetchFacets` itself.
+      .catch(() => {});
+
+    return () => controller.abort();
+  }, [facetsScope]);
+
+  /**
    * The postings the map draws, held apart from the page on screen.
    *
    * Two states with two lives. The list is paged and re-fetches whenever the
@@ -159,11 +232,16 @@ export function ListingsContainer({
    * when the filters change. Sharing one state was the defect — paging used to
    * redraw the map, so the same posts vanished from it and came back a page later.
    *
-   * Seeded from the server's answer so the first paint already carries markers, and
-   * the first effect run is skipped: the server sent exactly this data for exactly
-   * these filters, and asking again would be the very request we avoided.
+   * Seeded from the server's answer, so the first paint already carries markers,
+   * and the first effect run is skipped: the server sent exactly this data for
+   * exactly these filters, and asking again would be the very request we avoided.
+   *
+   * Held as a source rather than as a value, because the seed arrives as a
+   * promise the page has not awaited. `ListingsMapSlot` unwraps whichever source
+   * is current inside its own `<Suspense>`, and a refetched collection replaces
+   * the source with a resolved one.
    */
-  const [placesData, setPlacesData] = useState(initialPlaces);
+  const [placesSource, setPlacesSource] = useState(initialPlaces);
   const seeded = useRef({ filters, sort });
 
   useEffect(() => {
@@ -171,14 +249,17 @@ export function ListingsContainer({
       return;
     }
     seeded.current = { filters, sort };
-    let cancelled = false;
+    const controller = new AbortController();
 
-    fetchBrowsePlaces(toBrowseView(filters, 1, sort))
+    fetchBrowsePlaces(toBrowseView(filters, 1, sort), undefined, {
+      signal: controller.signal,
+    })
       .then((data) => {
         // `null` is the failure signal; the map keeps the markers it has rather
         // than emptying itself over a failed refresh, because stale pins are a
         // smaller lie than a blank map.
-        if (!cancelled && data) setPlacesData(data);
+        if (controller.signal.aborted || !data) return;
+        setPlacesSource(Promise.resolve(data));
       })
       .catch(() => {
         // Unreachable while `fetchBrowsePlaces` catches its own failures, and
@@ -186,9 +267,7 @@ export function ListingsContainer({
         // an unhandled rejection.
       });
 
-    return () => {
-      cancelled = true;
-    };
+    return () => controller.abort();
   }, [filters, sort]);
 
   /** Set when a posting is picked on the map but is not on the current page. */
@@ -222,22 +301,28 @@ export function ListingsContainer({
       setActiveListingId(id);
 
       // On this page already: the table scrolls the row itself and reports it
-      // was found, so there is nothing to page to.
+      // was found, so there is nothing to page to — and nothing to ask.
       if (tableRef.current?.scrollToId(id)) {
         return;
       }
 
-      // Which page of the server's ordering holds it. The map's rows come from the
-      // same query the list pages through, so the index decides the page — and
-      // when the reader has reordered the list, its position is wherever they put
-      // it, which no page number can answer.
-      const position = placesData.listingIds.indexOf(id);
+      // Which page of the server's ordering holds it. The map covers the whole
+      // filtered collection and the list one page of it, so the answer is a
+      // position in that collection — asked now, of the reader's current filters
+      // and page size, rather than carried by every map read as the id of every
+      // posting it could ever be asked about.
+      //
+      // `null` is a real answer: the posting is not in the current view, or the
+      // read failed. Either way there is no page to turn to, and the list is
+      // still correct — it just cannot show a posting it does not show.
       setPendingScrollId(id);
-      if (position >= 0) {
-        setPage(Math.floor(position / BROWSE_PAGE_SIZE) + 1);
-      }
+      fetchListingPageOf(id, { ...view, limit: BROWSE_PAGE_SIZE }).then(
+        (target) => {
+          if (target !== null) setPage(target);
+        },
+      );
     },
-    [placesData.listingIds],
+    [view],
   );
 
   /**
@@ -269,12 +354,16 @@ export function ListingsContainer({
     <>
       {error != null && (
         <div className="mx-auto w-full max-w-[100rem] px-4 pt-6 sm:px-6">
-          <InlineRetryBanner noun="Les annonces affichées" onRetry={reload} />
+          <InlineRetryBanner
+            noun="Les annonces affichées"
+            onRetry={reload}
+            error={error}
+          />
         </div>
       )}
 
       <ListingsView
-        facets={data.facets}
+        facets={facets}
         filtered={!isDefaultBrowseView(view)}
         onResetFilters={resetFilters}
         toolbar={{
@@ -301,17 +390,59 @@ export function ListingsContainer({
           tableRef,
         }}
         map={
-          <ListingsMap
-            places={placesData.places}
-            unlocated={placesData.unlocated}
-            totalPlaces={placesData.totalPlaces}
-            truncated={placesData.truncated}
-            activeListingId={activeListingId}
-            onActiveListingChange={setActiveListingId}
-            onListingPick={pickListing}
-          />
+          <Suspense
+            fallback={
+              <div
+                className="size-full rounded-2xl bg-surface"
+                aria-hidden="true"
+              />
+            }
+          >
+            <ListingsMapSlot
+              places={placesSource}
+              activeListingId={activeListingId}
+              onActiveListingChange={setActiveListingId}
+              onListingPick={pickListing}
+            />
+          </Suspense>
         }
       />
     </>
+  );
+}
+
+/**
+ * The map, and the promise its first read arrived in.
+ *
+ * The seed for this map is not awaited in the page: `/places` is the heaviest
+ * read on this screen and the biggest payload in the response, and holding the
+ * rows behind it meant the list a reader actually reads waited on a map that is
+ * drawn by a chunk that has not loaded yet. So the read stays a promise until
+ * here, inside its own boundary, and the rows paint without it.
+ *
+ * `use()` suspends this component — not the container — which is what puts the
+ * boundary in the right place. It is called on a promise either way, whether the
+ * data is the server's seed or one a filter change has since resolved, so the
+ * order of the hook never changes.
+ */
+function ListingsMapSlot({
+  places,
+  ...rest
+}: {
+  places: Promise<BrowsePlacesData | null>;
+} & Omit<
+  React.ComponentProps<typeof ListingsMap>,
+  "places" | "unlocated" | "totalPlaces" | "truncated"
+>) {
+  const resolved = use(places);
+
+  return (
+    <ListingsMap
+      places={resolved?.places ?? []}
+      unlocated={resolved?.unlocated ?? 0}
+      totalPlaces={resolved?.totalPlaces ?? 0}
+      truncated={resolved?.truncated ?? false}
+      {...rest}
+    />
   );
 }

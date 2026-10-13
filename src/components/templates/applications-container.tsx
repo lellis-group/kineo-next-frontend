@@ -76,7 +76,11 @@ export function ApplicationsContainer({
     <div>
       {/* Never fatal: the server always delivered the default view. */}
       {error !== null && (
-        <InlineRetryBanner noun="Les candidatures" onRetry={reload} />
+        <InlineRetryBanner
+          noun="Les candidatures"
+          onRetry={reload}
+          error={error}
+        />
       )}
       <ApplicationsView
         data={data}

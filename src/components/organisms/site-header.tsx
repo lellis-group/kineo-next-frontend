@@ -4,7 +4,9 @@ import { KineoLogo } from "@/components/atoms/kineo-logo";
 import { HeaderNav } from "@/components/molecules/header-nav";
 import { MobileMenu } from "@/components/molecules/mobile-menu";
 import { UserIdentity } from "@/components/molecules/user-identity";
+import { cn } from "@/lib/cn";
 import type { UserSummary } from "@/lib/dashboard";
+import { SITE_SHELL } from "@/lib/layout";
 import type { HeaderLink } from "@/lib/navigation";
 
 function NotificationsButton() {
@@ -37,7 +39,12 @@ export function SiteHeader({
 }) {
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
-      <div className="mx-auto flex h-[calc(4rem+env(safe-area-inset-top))] w-full max-w-360 items-center justify-between gap-2 px-4 pt-[env(safe-area-inset-top)] sm:h-[calc(4.75rem+env(safe-area-inset-top))] sm:gap-6 sm:px-8 lg:px-10">
+      <div
+        className={cn(
+          SITE_SHELL,
+          "flex h-[calc(4rem+env(safe-area-inset-top))] items-center justify-between gap-2 pt-[env(safe-area-inset-top)] sm:h-[calc(4.75rem+env(safe-area-inset-top))] sm:gap-6",
+        )}
+      >
         <div className="flex min-w-0 items-center gap-6 lg:gap-10">
           <Link href="/" aria-label="Kineo — Accueil">
             <KineoLogo />

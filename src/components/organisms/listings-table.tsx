@@ -74,7 +74,49 @@ export const ListingsTable = forwardRef<
   );
 
   return (
-    <div className="hidden overflow-x-auto sm:block">
+    /*
+     * `scrollbar-gutter: stable` on the scroller, and it is the whole fix for a
+     * panel that resized as the reader paged.
+     *
+     * This table has no fixed layout, so its min-content width is decided by the
+     * rows themselves: 709px for a page of short postings, 825px for a page
+     * carrying one long title or practice name. The scroller is the panel width
+     * minus 88px, so below roughly 900px of window the table overflows — and
+     * *whether* it overflows is a property of the page on screen, not of the
+     * layout. Turning the page was enough to make the horizontal scrollbar
+     * appear on one page and vanish on the next.
+     *
+     * It could not be hidden the way `SegmentedControl` and `FilterChips` hide
+     * theirs: a six-column table needs a visible cue that there is more to see.
+     * So the gutter is reserved instead. The bar then draws into a space that
+     * was always there, and the panel keeps the same height whether or not it
+     * is showing — which is the other half of it, because an appearing
+     * scrollbar also takes 10–15px of *width*, re-flowing the columns and
+     * making the rows taller on top of the height it added.
+     *
+     * The price is 10–15px of table width at every size, so the table starts
+     * overflowing that much sooner. Below roughly 900px of window there is
+     * simply not room for these six columns and the bar is honest about it.
+     *
+     * `h-full overflow-auto` rather than `overflow-x-auto`: the box this lives
+     * in has a fixed height, so the rows scroll inside it instead of deciding how
+     * tall the panel is. See `RESULTS_BOX` in `listings-results-panel`.
+     *
+     * And the frame, which is what the scrolling region is for. Now that the
+     * rows move inside a box rather than the panel growing to hold them, the
+     * table has edges a reader can see: the panel says « here is a panel », the
+     * frame says « this much of it is the list, and the rest of it moves ».
+     *
+     * `border`, not `border-strong`: the frame sits *inside* a panel that is
+     * itself outlined in `border`, and a stronger inner edge would read as the
+     * more important of two boundaries that are not.
+     *
+     * It also happens to finish the table properly. `.table` drops the last
+     * row's own bottom border, which used to be right when the rows ended the
+     * panel and the panel's padding closed the list — from here they end at a
+     * scroll edge, and this is the line that closes them.
+     */
+    <div className="hidden h-full overflow-auto rounded-xl border border-border [scrollbar-gutter:stable] sm:block">
       <table ref={tableRef} className="table listings-table">
         <thead>
           <tr>
@@ -114,9 +156,17 @@ export const ListingsTable = forwardRef<
               >
                 <td>
                   <div className="flex items-start gap-[var(--cell-gap)]">
+                    {/*
+                      Sized to `--cell-icon` and top-aligned against a title whose
+                      first line carries the same value as its line-height (below),
+                      so the icon's box and the title's first-line box are the same
+                      height and start at the same y. The icon is centred on that
+                      line by construction — no `mt` nudge that only held for one
+                      font size.
+                    */}
                     <SpecialtyIcon
                       specialty={listing.specialty}
-                      className="mt-0.5 size-[var(--cell-icon)] shrink-0 text-primary"
+                      className="size-[var(--cell-icon)] shrink-0 text-primary"
                     />
                     <div className="min-w-0">
                       {/*
@@ -124,8 +174,13 @@ export const ListingsTable = forwardRef<
                         the rest and lift its own column out of line with the
                         others. `min-w-0` on the wrapper is what lets the clamp
                         engage instead of the text overflowing the cell.
+
+                        `leading-[var(--cell-icon)]` is what lines this first line
+                        up with the icon beside it, and with every other column's
+                        first line: they all share one box height, so their text
+                        sits at the same y across the whole row.
                       */}
-                      <p className="line-clamp-2 font-medium text-foreground">
+                      <p className="line-clamp-2 font-medium leading-[var(--cell-icon)] text-foreground">
                         {listing.title}
                       </p>
                       <p className="text-xs text-muted">
@@ -134,21 +189,23 @@ export const ListingsTable = forwardRef<
                     </div>
                   </div>
                 </td>
-                <td className="text-muted">{listing.practiceName}</td>
+                <td className="leading-[var(--cell-icon)] text-muted">
+                  {listing.practiceName}
+                </td>
                 <td>
-                  <span className="inline-flex items-center gap-[var(--cell-gap)] text-muted">
+                  <span className="inline-flex items-center gap-[var(--cell-gap)] leading-[var(--cell-icon)] text-muted">
                     <MapPinIcon className="size-[var(--cell-icon)] shrink-0" />
                     {listing.city || "—"}
                   </span>
                 </td>
                 <td>
-                  <span className="inline-flex items-center gap-[var(--cell-gap)] whitespace-nowrap text-muted">
+                  <span className="inline-flex items-center gap-[var(--cell-gap)] whitespace-nowrap leading-[var(--cell-icon)] text-muted">
                     <CalendarIcon className="size-[var(--cell-icon)] shrink-0" />
                     {listing.dateRange}
                   </span>
                 </td>
                 <td>
-                  <span className="inline-flex items-center gap-[var(--cell-gap)] whitespace-nowrap text-muted tabular-nums">
+                  <span className="inline-flex items-center gap-[var(--cell-gap)] whitespace-nowrap leading-[var(--cell-icon)] text-muted tabular-nums">
                     <UsersIcon className="size-[var(--cell-icon)] shrink-0" />
                     {listing.applicationsCount}
                     {listing.maxApplications
@@ -157,7 +214,16 @@ export const ListingsTable = forwardRef<
                   </span>
                 </td>
                 <td>
-                  <Badge tone={badge.tone}>{badge.label}</Badge>
+                  {/*
+                    The badge is taller than a text line, so top-aligning it left
+                    it floating off the row's first line. Centred on a box of
+                    exactly `--cell-icon` — the same line the icons are centred on
+                    — its middle lands level with the title's first line and with
+                    the icon columns. The overflow is absorbed by the cell padding.
+                  */}
+                  <span className="flex h-[var(--cell-icon)] items-center">
+                    <Badge tone={badge.tone}>{badge.label}</Badge>
+                  </span>
                 </td>
               </tr>
             );

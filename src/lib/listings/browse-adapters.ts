@@ -104,7 +104,6 @@ export function adaptBrowseListings(
 export function emptyBrowsePlaces(): BrowsePlacesData {
   return {
     places: [],
-    listingIds: [],
     unlocated: 0,
     totalPlaces: 0,
     truncated: false,
@@ -149,7 +148,6 @@ export function adaptBrowsePlaces(
 
   return {
     places,
-    listingIds: raw.listingIds,
     unlocated: raw.unlocated,
     totalPlaces: raw.totalPlaces,
     truncated: raw.truncated,

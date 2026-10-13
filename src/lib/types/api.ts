@@ -340,11 +340,18 @@ export interface ApiListingPlace {
   listings: ApiPlaceListing[];
 }
 
+/**
+ * The page of the reader's ordering that holds one posting, `null` when the
+ * current filters do not show it.
+ */
+export interface ApiListingPageOf {
+  page: number | null;
+}
+
 export interface ApiListingPlaces {
   places: ApiListingPlace[];
 
   /** Every matching posting's id, in the ordering the reader asked for. */
-  listingIds: string[];
 
   /** Matching postings whose practice was never geocoded. */
   unlocated: number;

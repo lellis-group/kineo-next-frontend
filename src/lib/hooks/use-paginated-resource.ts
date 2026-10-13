@@ -28,6 +28,14 @@ import { signInOnExpiredSession } from "@/lib/session-redirect";
  * bucket you just left overwrites the rows for the bucket you are now looking at
  * — no error, and nothing for the reader to tell it apart. Every response is
  * therefore checked against a request id before it is allowed to write.
+ *
+ * ## What the request id does not do
+ *
+ * It discards the answer, and leaves the request running. Every discarded read
+ * still went to the backend, was answered, and was paid for by a reader who is
+ * no longer looking at it — which matters most where the read is most expensive
+ * (the listings map). `load` is handed a `RequestInit` carrying a signal, so a
+ * view change cancels the read it supersedes rather than ignoring its answer.
  */
 export function usePaginatedResource<T, V>({
   initialData,
@@ -43,7 +51,7 @@ export function usePaginatedResource<T, V>({
   view: V;
   isDefaultView: (view: V) => boolean;
   /** Fetches one view. Rejections surface as `error`, never as a throw. */
-  load: (view: V) => Promise<T>;
+  load: (view: V, init?: RequestInit) => Promise<T>;
   /** After a successful fetch — drop caches that described the previous rows. */
   onLoaded?: () => void;
   /** After restoring `initialData`, which is also a view change. */
@@ -67,41 +75,66 @@ export function usePaginatedResource<T, V>({
 
   /** Bumped per request; a response with a stale id is discarded. */
   const requestId = useRef(0);
+  /** The read the last view change started, cancelled by the next one. */
+  const inFlight = useRef<AbortController | null>(null);
+
+  /**
+   * Stops the read in progress, if any.
+   *
+   * An aborted fetch rejects with an `AbortError`, which the caller's `load` has
+   * to survive: the abort is this hook's decision, not a failure of the
+   * endpoint, and reading it as one would put « could not read » on a screen
+   * whose request the reader themselves superseded.
+   */
+  const cancel = useCallback(() => {
+    inFlight.current?.abort();
+    inFlight.current = null;
+  }, []);
 
   const fetchView = useCallback(
     (target: V) => {
+      cancel();
+      inFlight.current = new AbortController();
+
+      const controller = inFlight.current;
       requestId.current += 1;
       const mine = requestId.current;
 
       setError(null);
       setLoading(true);
 
-      load(target)
+      load(target, { signal: controller.signal })
         .then((loaded) => {
           if (mine !== requestId.current) return;
+          inFlight.current = null;
           setData(loaded);
           setLoading(false);
           afterLoad.current?.();
         })
         .catch((err) => {
           if (mine !== requestId.current) return;
+          inFlight.current = null;
           setLoading(false);
+          // The abort above, not a broken endpoint: nothing to show and nothing
+          // to say, because the reader is already looking at the next view's rows.
+          if (controller.signal.aborted) return;
           if (signInOnExpiredSession(err, router)) return;
           setError(err);
         });
     },
-    [load, router],
+    [cancel, load, router],
   );
 
   const restore = useCallback(() => {
     // Invalidate any request still in flight: its answer describes a view the
     // reader has already left.
+    cancel();
     requestId.current += 1;
     setData(initialData);
     setError(null);
     setLoading(false);
     afterRestore.current?.();
-  }, [initialData]);
+  }, [cancel, initialData]);
 
   useEffect(() => {
     if (isDefaultView(view)) {

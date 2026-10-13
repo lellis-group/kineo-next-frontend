@@ -94,6 +94,7 @@ export {
   fetchBrowseListings,
   fetchBrowsePlaces,
   fetchFacets,
+  fetchListingPageOf,
 } from "./browse-service";
 export type { CameraTarget } from "./map-camera";
 export { cameraTargetFor, distinctPoints } from "./map-camera";

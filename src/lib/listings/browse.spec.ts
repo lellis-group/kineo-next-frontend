@@ -11,7 +11,11 @@ import {
   listingBadge,
   toBrowseView,
 } from "./browse-contracts";
-import { fetchBrowsePlaces } from "./browse-service";
+import {
+  fetchBrowseListings,
+  fetchBrowsePlaces,
+  fetchListingPageOf,
+} from "./browse-service";
 
 describe("adaptFacets", () => {
   it("gives every specialty a row, including those holding nothing", () => {
@@ -198,6 +202,168 @@ describe("listingBadge", () => {
   });
 });
 
+describe("fetchBrowseListings", () => {
+  /** A transport that records the path and answers one feed page. */
+  function recorder() {
+    const paths: string[] = [];
+    const transport: ApiTransport = async (path) => {
+      paths.push(path);
+      return Response.json({
+        data: [
+          {
+            id: "l1",
+            practiceId: "p1",
+            practice: {
+              id: "p1",
+              name: "Cabinet",
+              city: "Lyon",
+              latitude: 45.76,
+              longitude: 4.83,
+            },
+            title: "Remplacement",
+            startDate: "2026-10-01T08:00:00.000Z",
+            endDate: "2026-10-03T08:00:00.000Z",
+            status: "OPEN",
+            specialty: "GENERALIST",
+            urgent: false,
+            maxApplications: null,
+            applicationsCount: 2,
+            createdAt: "2026-09-01T08:00:00.000Z",
+            updatedAt: "2026-09-01T08:00:00.000Z",
+          },
+        ],
+        meta: { page: 1, limit: 10, total: 1, totalPages: 1 },
+      });
+    };
+    return { paths, transport };
+  }
+
+  /**
+   * The rows and the panels are two reads, not one.
+   *
+   * The panels were fetched alongside the rows, which meant every page turn and
+   * every reordering asked for a distribution the filter they just changed could
+   * not have touched — the facets endpoint is given no `specialty`, no `sort`
+   * and no page. This pins that the rows read asks for the rows and nothing
+   * else, so the panels stay where they belong: a separate read, with its own
+   * trigger.
+   */
+  it("asks for the rows, and for nothing else", async () => {
+    const { paths, transport } = recorder();
+
+    const data = await fetchBrowseListings({ page: 1 }, transport);
+
+    expect(paths).toHaveLength(1);
+    expect(paths[0]).toBe("/replacement-listings?page=1&limit=10");
+    expect(data.listings).toHaveLength(1);
+    expect("facets" in data).toBe(false);
+  });
+
+  it("carries the page, the ordering and the filters it is given", async () => {
+    const { paths, transport } = recorder();
+
+    await fetchBrowseListings(
+      {
+        specialty: "DENTIST",
+        city: "Paris",
+        urgentOnly: true,
+        startDateFrom: "2026-10-01",
+        sort: "urgent",
+        page: 3,
+      },
+      transport,
+    );
+
+    expect(paths[0]).toContain("specialty=DENTIST");
+    expect(paths[0]).toContain("city=Paris");
+    expect(paths[0]).toContain("urgent=true");
+    expect(paths[0]).toContain("startDateFrom=2026-10-01");
+    expect(paths[0]).toContain("sort=urgent");
+    expect(paths[0]).toContain("page=3");
+  });
+
+  /**
+   * An aborted read is this client's decision, not the endpoint's answer.
+   *
+   * A page turn cancels the read the last page turn started; that cancellation
+   * must surface here as a rejection the caller's guard handles, and not as a
+   * page of rows the reader has already left.
+   */
+  it("forwards a caller's signal", async () => {
+    const { paths, transport } = recorder();
+    const controller = new AbortController();
+
+    await fetchBrowseListings({}, transport, { signal: controller.signal });
+    controller.abort();
+
+    expect(paths).toHaveLength(1);
+  });
+});
+
+describe("fetchListingPageOf", () => {
+  it("asks for one posting, with the page size the reader pages the list with", async () => {
+    const paths: string[] = [];
+    const transport: ApiTransport = async (path) => {
+      paths.push(path);
+      return Response.json({ page: 7 });
+    };
+
+    const page = await fetchListingPageOf(
+      "listing-9",
+      { limit: 10 },
+      transport,
+    );
+
+    expect(paths).toHaveLength(1);
+    expect(paths[0]).toContain("id=listing-9");
+    expect(paths[0]).toContain("limit=10");
+    expect(page).toBe(7);
+  });
+
+  /**
+   * The filters travel with it, because a page is a position inside the filtered
+   * collection: the same posting is on page 2 of one view and page 9 of another,
+   * and asking without the filters would answer for a collection the reader is
+   * not looking at.
+   */
+  it("carries the filters and the ordering the reader is on", async () => {
+    const paths: string[] = [];
+    const transport: ApiTransport = async (path) => {
+      paths.push(path);
+      return Response.json({ page: 1 });
+    };
+
+    await fetchListingPageOf(
+      "listing-9",
+      { city: "Lyon", urgentOnly: true, sort: "urgent", specialty: "DENTIST" },
+      transport,
+    );
+
+    expect(paths[0]).toContain("city=Lyon");
+    expect(paths[0]).toContain("urgent=true");
+    expect(paths[0]).toContain("sort=urgent");
+    expect(paths[0]).toContain("specialty=DENTIST");
+  });
+
+  /**
+   * `null` for "not in this view" and for "could not ask", which the caller acts
+   * on the same way: turn to no page rather than to a wrong one.
+   */
+  it("reads an absent page as null", async () => {
+    const transport: ApiTransport = () =>
+      Promise.resolve(Response.json({ page: null }));
+
+    expect(await fetchListingPageOf("x", {}, transport)).toBeNull();
+  });
+
+  it("reads a failed read as null rather than throwing", async () => {
+    const transport: ApiTransport = () =>
+      Promise.resolve(new Response("", { status: 500 }));
+
+    expect(await fetchListingPageOf("x", {}, transport)).toBeNull();
+  });
+});
+
 describe("fetchBrowsePlaces", () => {
   const place = (practiceId: string, count: number): ApiListingPlace => ({
     practiceId,
@@ -225,7 +391,6 @@ describe("fetchBrowsePlaces", () => {
       paths.push(path);
       return Response.json({
         places,
-        listingIds: ["p1-l1"],
         unlocated: 2,
         totalPlaces: places.length,
         truncated: false,

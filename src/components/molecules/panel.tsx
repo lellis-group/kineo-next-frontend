@@ -9,6 +9,16 @@ interface PanelProps {
   className?: string;
   /** Removes the body padding, for a panel whose content bleeds to the edge. */
   flush?: boolean;
+  /**
+   * Lets the panel fill a bounded height and hand the overflow to its body.
+   *
+   * The shell becomes `flex flex-col` and the body becomes the one flexible
+   * region, so a child that scrolls (the results table) can take the height the
+   * layout gives it instead of the panel growing to its content and pushing the
+   * page. Responsive (`lg:`) on purpose: below `lg` the screen is ordinary
+   * document flow, where nothing is bounded and `fill` would do nothing.
+   */
+  fill?: boolean;
 }
 
 /**
@@ -27,12 +37,14 @@ export function Panel({
   action,
   className,
   flush = false,
+  fill = false,
 }: PanelProps) {
   return (
     <section
       className={cn(
         "rounded-2xl border border-border bg-surface",
         "shadow-[var(--shadow-card)]",
+        fill && "lg:flex lg:min-h-0 lg:flex-col",
         className,
       )}
     >
@@ -46,9 +58,16 @@ export function Panel({
         <h2 className="text-[0.9375rem] leading-tight font-medium text-foreground">
           {title}
         </h2>
-        {action ? <div className="min-w-0">{action}</div> : null}
+        {action ? (
+          <div className="flex min-w-0 items-center gap-2">{action}</div>
+        ) : null}
       </header>
-      <div className={cn(flush ? undefined : "px-4 pb-4 sm:px-5 sm:pb-5")}>
+      <div
+        className={cn(
+          flush ? undefined : "px-4 pb-4 sm:px-5 sm:pb-5",
+          fill && "lg:flex lg:min-h-0 lg:flex-1 lg:flex-col",
+        )}
+      >
         {children}
       </div>
     </section>

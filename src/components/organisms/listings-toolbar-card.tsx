@@ -3,6 +3,7 @@ import {
   ListingsToolbar,
   type SpecialtyOption,
 } from "@/components/molecules/listings-toolbar";
+import { cn } from "@/lib/cn";
 import type { BrowseFormFilters } from "@/lib/listings";
 
 interface ListingsToolbarCardProps {
@@ -13,6 +14,17 @@ interface ListingsToolbarCardProps {
   total: number;
   /** The map the bar floats over. Kept as a slot: it can only render in a browser. */
   children: ReactNode;
+  /**
+   * Height and width the layout hands the card.
+   *
+   * The card no longer decides how tall it is: from `lg` up it sits in a
+   * full-height shell beside the facets rail and above the results table, and the
+   * page's height is the viewport's — so a fixed `min-h` here would either waste
+   * the space the table needs or push the table off screen. The parent sizes it;
+   * the map simply fills whatever height results. Below `lg` the class carries a
+   * usable floor of its own, since there the card is ordinary document flow.
+   */
+  className?: string;
 }
 
 /**
@@ -34,9 +46,15 @@ export function ListingsToolbarCard({
   specialties,
   total,
   children,
+  className,
 }: ListingsToolbarCardProps) {
   return (
-    <div className="relative flex min-h-[22rem] flex-1 flex-col sm:min-h-[26rem]">
+    <div
+      className={cn(
+        "relative flex min-h-[20rem] flex-1 flex-col sm:min-h-[24rem] lg:min-h-0",
+        className,
+      )}
+    >
       {/*
         A strip across the top of the map rather than a block in its corner.
 
@@ -72,10 +90,12 @@ export function ListingsToolbarCard({
           total={total}
         />
       </div>
-      {/* `flex-1` so the map absorbs whatever height the rail column sets on the
-          grid row. Left at its minimum the rail would run on past it and leave a
-          band of empty page between the two. */}
-      <div className="order-2 min-h-[22rem] flex-1 sm:order-none sm:min-h-[26rem]">
+      {/* `flex-1` so the map absorbs whatever height the card is given. From `lg`
+          the card is a fixed-height band in the browse shell, so the min-h floors
+          below are lifted there (`lg:min-h-0`) — otherwise the map's own 26rem
+          minimum would overflow the card and push the results table off screen.
+          Below `lg` the card is ordinary flow and keeps a usable floor of its own. */}
+      <div className="order-2 min-h-[22rem] flex-1 sm:order-none sm:min-h-[26rem] lg:min-h-0">
         {children}
       </div>
     </div>

@@ -9,6 +9,12 @@ interface ListSkeletonProps {
   cardHeight?: string;
   /** Pages whose layout is not the console list: the browse feed leads with a map. */
   mapFirst?: boolean;
+  /**
+   * The title + subtitle block. Off for the browse feed, which dropped its page
+   * header: a placeholder for a heading that never arrives would draw it, then
+   * pull the whole list up when the real content replaced it.
+   */
+  titleBlock?: boolean;
   className?: string;
 }
 
@@ -32,14 +38,19 @@ export function ListSkeleton({
   cardCount = 3,
   cardHeight = "h-36",
   mapFirst = false,
+  titleBlock = true,
   className,
 }: ListSkeletonProps) {
   const chips = chipCount ?? 0;
 
   return (
     <div className={cn(PAGE_CONTAINER, className)}>
-      <div className="h-9 w-64 animate-pulse rounded-control bg-surface" />
-      <div className="mt-3 h-5 w-96 max-w-full animate-pulse rounded-control bg-surface" />
+      {titleBlock && (
+        <>
+          <div className="h-9 w-64 animate-pulse rounded-control bg-surface" />
+          <div className="mt-3 h-5 w-96 max-w-full animate-pulse rounded-control bg-surface" />
+        </>
+      )}
 
       {chips > 0 && (
         <div className="mt-6 flex flex-wrap gap-2">

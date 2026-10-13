@@ -523,15 +523,48 @@
    * The gutter is a variable that the cells' own icon and gap are sized from, so
    * the two sides cannot drift. They have: with the padding and the icon each
    * hard-coded to their own number, nothing failed until one icon changed size.
+   *
+   * `--cell-icon` doubles as the line-height of every icon-bearing line — each
+   * cell sets `leading-[var(--cell-icon)]` beside an icon of
+   * `size-[var(--cell-icon)]`. An icon whose box equals the line it sits in is
+   * centred on that line by construction: no per-column `mt`, no nudge that only
+   * held for one font size. This is the fix for icons that were neither centred
+   * on their text nor aligned across the row.
    */
   .listings-table {
-    --cell-icon: 1.2rem;
-    --cell-gap: 0.45rem;
+    --cell-icon: 1.25rem;
+    --cell-gap: 0.5rem;
     --cell-gutter: calc(var(--cell-icon) + var(--cell-gap));
   }
 
   .listings-table thead th.has-gutter {
     padding-left: calc(1rem + var(--cell-gutter));
+  }
+
+  /*
+   * The column labels, pinned to the top of the scrolling box.
+   *
+   * The table lives in a box of fixed height (`RESULTS_BOX` in
+   * `listings-results-panel`), so its rows scroll — and a reader
+   * scrolled to row eight was looking at six cells whose names they
+   * had left behind. The header is what makes a column a column.
+   *
+   * The background is not optional: a sticky `th` is transparent by
+   * default, so the rows sliding under it would show through their
+   * labels. It carries the panel's own `surface`, the colour the
+   * rows sit on, which is what "opaque" means here.
+   *
+   * Scoped to `.listings-table` on purpose. `.table` is shared by
+   * every list in the product, and most of those lists are short
+   * enough to never scroll: a sticky header on a table that fits is
+   * a border that never moves, painted over rows that are already in
+   * view.
+   */
+  .listings-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--surface);
   }
 
   /*

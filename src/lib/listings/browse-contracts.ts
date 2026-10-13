@@ -210,15 +210,15 @@ export interface MapPlace {
 /**
  * Everything the map needs, in one answer.
  *
- * `listingIds` travels with the places because the popup can name a posting the
- * list is not showing, and the list is paged: getting to the row that holds it
- * needs the position of the posting in the filtered collection, which the
- * previews cannot answer — the places are ordered by population and each holds
- * four of its own.
+ * No ordering of the collection, and no listing ids. The popup can name a
+ * posting the list is not showing — the places are ordered by population and each
+ * holds four previews of its own — and turning the list to it is now a question
+ * asked when the reader asks it (`fetchListingPageOf`). It used to travel here,
+ * as the id of every matching posting: a rare click paid for on every page
+ * render, on every filter change, and on every reordering.
  */
 export interface BrowsePlacesData {
   places: MapPlace[];
-  listingIds: string[];
   /** Matching postings whose practice was never geocoded. */
   unlocated: number;
   /** How many practices the filters matched, before the ceiling. */
@@ -227,14 +227,22 @@ export interface BrowsePlacesData {
   truncated: boolean;
 }
 
-/** One feed page, plus the counts behind the panels. */
+/**
+ * One page of the feed — the rows, and the facts about the page they came from.
+ *
+ * No `facets`, and that is not an omission. The panels the facets feed answer
+ * (repartition par spécialité, urgentes) depend on a strict subset of the
+ * filters, and the feed depends on all of them plus the page; carrying the
+ * panels inside the page's answer meant every page turn and every reordering
+ * re-asked for them. Two reads with two lifetimes, kept apart: this one for the
+ * rows, `fetchFacets` for the panels.
+ */
 export interface BrowseListingsData {
   listings: BrowseListing[];
   page: number;
   totalPages: number;
   /** Filtered total, driving pagination. */
   total: number;
-  facets: BrowseFacets;
 }
 
 /**
