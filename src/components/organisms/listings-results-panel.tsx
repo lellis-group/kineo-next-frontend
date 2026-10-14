@@ -41,6 +41,19 @@ const BROWSE_HORIZONS: readonly BrowseHorizonOption[] = [
  */
 const RESULTS_BOX = "min-h-[20rem] sm:min-h-[24rem] lg:min-h-0 lg:flex-1";
 
+/**
+ * The dimming a fetch in flight puts over the rows.
+ *
+ * Declared unconditionally, not on the loading branch only: a `transition-*`
+ * class added at the same moment as the opacity it animates has nothing to
+ * transition *from*, so the list would go dim instantly and then fade back in on
+ * its own. Both states need the class for the pair to interpolate.
+ *
+ * It is a value rather than markup because the two presentations below are now
+ * siblings rather than two children of one wrapper — see the note at the list.
+ */
+const REFRESHING = "transition-opacity duration-200 ease-out";
+
 interface ListingsResultsPanelProps {
   listings: BrowseListing[];
   totalPages: number;
@@ -177,43 +190,57 @@ export function ListingsResultsPanel({
             />
           </div>
         ) : (
-          <div
-            /*
-             * The transition is declared unconditionally, not on the loading
-             * branch only: a `transition-*` class added at the same moment as the
-             * opacity it animates has nothing to transition *from*, so the list
-             * would go dim instantly and then fade back in on its own. Both
-             * states need the class for the pair to interpolate.
-             */
-            className={cn(
-              "transition-opacity duration-200 ease-out sm:h-full",
-              loading && "opacity-60",
-            )}
-          >
-            <div className="sm:hidden">
-              <ul className="flex flex-col gap-3">
-                {listings.map((listing, index) => (
-                  <li key={listing.id}>
-                    <ListingCard
-                      listing={listing}
-                      index={index}
-                      selectedListingId={selectedListingId}
-                      onListingSelect={onListingSelect}
-                    />
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div className="hidden sm:block sm:h-full">
-              <ListingsTable
-                ref={tableRef}
-                listings={listings}
-                onHoveredChange={onHoveredChange}
-                selectedListingId={selectedListingId}
-                onListingSelect={onListingSelect}
-              />
-            </div>
-          </div>
+          <>
+            {/*
+              The two presentations are siblings, each one told how it takes its
+              height, where they used to sit inside a wrapper that put a single
+              `sm:h-full` on both.
+
+              That wrapper was the empty space under a short page. `h-full` is not
+              "as tall as you need", it is "as tall as the box" — so the table's
+              frame was drawn down to the bottom of the panel whatever the row
+              count, and a page of two rows was a bordered box with an empty
+              lower half.
+
+              Flattening them is what lets the fix work. A frame that is a
+              *direct* child of the results box is a flex item of it, and a flex
+              item sizes itself to its content and only shrinks if it has to —
+              which is exactly « short page, no scroll; long page, scroll
+              inside ». Bevel the frame behind a wrapper div and that wrapper
+              becomes the flex item instead: it would have to carry the
+              `min-h-0` that lets the chain reach the frame at all, and the extra
+              link is one more thing to keep in step. So the refresh dimming goes
+              on the presentations themselves — which is where it belongs anyway,
+              it is a property of the rows and not of a box that held them.
+            */}
+            <ul
+              className={cn(
+                REFRESHING,
+                "flex flex-col gap-3 sm:hidden",
+                loading && "opacity-60",
+              )}
+            >
+              {listings.map((listing, index) => (
+                <li key={listing.id}>
+                  <ListingCard
+                    listing={listing}
+                    index={index}
+                    selectedListingId={selectedListingId}
+                    onListingSelect={onListingSelect}
+                  />
+                </li>
+              ))}
+            </ul>
+
+            <ListingsTable
+              ref={tableRef}
+              listings={listings}
+              className={cn(REFRESHING, loading && "opacity-60", "sm:min-h-0")}
+              onHoveredChange={onHoveredChange}
+              selectedListingId={selectedListingId}
+              onListingSelect={onListingSelect}
+            />
+          </>
         )}
       </div>
 

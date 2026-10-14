@@ -100,12 +100,24 @@ export const MyListingsTable = forwardRef<
   );
 
   /*
-   * `scrollbar-gutter: stable` and `h-full overflow-auto`: the table is the
-   * scrolling region of a card in a full-height workspace, so the rows move
-   * inside it instead of deciding how tall the page is.
+   * `scrollbar-gutter: stable` and `min-h-0 overflow-auto`: the table is the
+   * scrolling region of a card in a full-height workspace, so a full board's rows
+   * move inside it instead of deciding how tall the page is.
+   *
+   * It sizes itself to its rows, though, rather than to the card. `h-full` — as
+   * it was — drew the frame down to the bottom of the card whatever the posting
+   * count, and a practice with two of its own offers was looking at a bordered
+   * box with an empty lower half. Sized by its content the frame is exactly the
+   * rows, and the space below it belongs to the panel.
+   *
+   * `min-h-0` is what keeps the long case working: a flex item's `min-height`
+   * defaults to its content, so without it the frame would refuse to shrink,
+   * push past the card and take the pager off screen. With it, a long board is
+   * capped at the height the card gives it and scrolls; a short one is its own
+   * height. The same fix as the browse feed's table, for the same reason.
    */
   return (
-    <div className="hidden h-full overflow-auto rounded-xl border border-border [scrollbar-gutter:stable] sm:block">
+    <div className="hidden min-h-0 overflow-auto rounded-xl border border-border [scrollbar-gutter:stable] sm:block">
       <table ref={tableRef} className="table listings-table">
         <thead>
           <tr>

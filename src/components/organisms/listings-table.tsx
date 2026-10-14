@@ -48,6 +48,16 @@ interface ListingsTableProps {
   selectedListingId?: string | null;
   onListingSelect?: (listing: BrowseListing) => void;
   onActiveListingChange?: (id: string | null) => void;
+  /**
+   * On the scrolling frame itself.
+   *
+   * The panel puts the dimming of a refresh here rather than around the table,
+   * which is what lets the frame be a *direct* child of the results box: an
+   * element between them would have to carry the same `min-height: 0` for the
+   * flex chain to keep reaching the frame, and one link in that chain missing it
+   * is enough for the table to push past the box instead of scrolling inside it.
+   */
+  className?: string;
 }
 
 /**
@@ -74,7 +84,7 @@ export const ListingsTable = forwardRef<
   ListingsTableHandle,
   ListingsTableProps
 >(function ListingsTable(
-  { listings, onHoveredChange, selectedListingId, onListingSelect },
+  { listings, onHoveredChange, selectedListingId, onListingSelect, className },
   ref,
 ) {
   const tableRef = useRef<HTMLTableElement>(null);
@@ -122,14 +132,25 @@ export const ListingsTable = forwardRef<
      * overflowing that much sooner. Below roughly 900px of window there is
      * simply not room for these six columns and the bar is honest about it.
      *
-     * `h-full overflow-auto` rather than `overflow-x-auto`: the box this lives
-     * in has a fixed height, so the rows scroll inside it instead of deciding how
-     * tall the panel is. See `RESULTS_BOX` in `listings-results-panel`.
+     * `min-h-0 overflow-auto`, and no height of its own: this is what stops a
+     * short page from drawing its frame down to the bottom of the panel. It used
+     * to be `h-full`, so a page of two rows was a frame as tall as the panel — a
+     * bordered box whose lower half was nothing but empty surface, which is a
+     * hole on the screen rather than a list. Sized by its content, the frame is
+     * exactly its rows, and the space below it belongs to the panel.
+     *
+     * `min-h-0` is what keeps the other half working. As a flex item this box
+     * may shrink, and a flex item's `min-height` defaults to its content — so
+     * without it a full page of rows would refuse to shrink, push past the
+     * results box and take the pager off screen. With it the frame is capped at
+     * the height the panel gives it and `overflow-auto` scrolls the rows inside.
+     * A short page is its own height; a long one is the box's, scrolled.
+     * See `RESULTS_BOX` in `listings-results-panel`.
      *
      * And the frame, which is what the scrolling region is for. Now that the
      * rows move inside a box rather than the panel growing to hold them, the
      * table has edges a reader can see: the panel says « here is a panel », the
-     * frame says « this much of it is the list, and the rest of it moves ».
+     * frame says « this much of it is the list ».
      *
      * `border`, not `border-strong`: the frame sits *inside* a panel that is
      * itself outlined in `border`, and a stronger inner edge would read as the
@@ -140,7 +161,12 @@ export const ListingsTable = forwardRef<
      * panel and the panel's padding closed the list — from here they end at a
      * scroll edge, and this is the line that closes them.
      */
-    <div className="hidden h-full overflow-auto rounded-xl border border-border [scrollbar-gutter:stable] sm:block">
+    <div
+      className={cn(
+        "hidden min-h-0 overflow-auto rounded-xl border border-border [scrollbar-gutter:stable] sm:block",
+        className,
+      )}
+    >
       <table ref={tableRef} className="table listings-table">
         <thead>
           <tr>
