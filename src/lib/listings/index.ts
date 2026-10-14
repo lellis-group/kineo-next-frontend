@@ -11,7 +11,6 @@ export {
   formatActiveApplications,
   formatCapacity,
   formatListingAge,
-  LISTING_STATUS_META,
   RECEIVED_DECISION_LABELS,
   RECEIVED_STATUS_LABELS,
   receivedDecisionLabel,
@@ -33,6 +32,8 @@ export type {
 } from "./contracts";
 export {
   LISTING_FILTERS,
+  LISTING_STATUS_META,
+  LISTING_STATUS_ORDER,
   RECEIVED_FILTERS,
   RECRUITING_STATUSES,
 } from "./contracts";

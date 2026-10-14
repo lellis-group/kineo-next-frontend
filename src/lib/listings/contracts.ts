@@ -17,11 +17,103 @@ import type {
 } from "@/lib/types/api";
 import type { BadgeTone } from "@/lib/ui-tokens";
 
-/** Label + tone for a listing status, as shown on its card. */
+/** What one listing status is called, and how it is drawn. */
 export interface ListingStatusMeta {
+  /** The full name, as prose reads it. */
   label: string;
+  /**
+   * The terse name a fixed-width column can carry.
+   *
+   * Not a truncation of `label`: « Candidatures en cours » and « Clôturée sans
+   * remplaçant » are both wider than a rail column, and a label cut mid-word is
+   * worse than a terse one — the reader cannot tell which bar is theirs, and that
+   * column is one of scan-and-match, not one of reading. The full name is the
+   * row's `title`.
+   */
+  shortLabel: string;
   tone: BadgeTone;
+  /** Whether a posting in this state can still receive an application. */
+  recruiting: boolean;
 }
+
+/**
+ * Everything the product knows about a listing status, in one row each.
+ *
+ * This was five tables: the label and tone in `./adapters`, the short labels in
+ * the board's rail, the display order in that rail again, the recruiting set in
+ * this file, and the icon as a `switch` beside it. Adding a status meant editing
+ * five files, and the two of them that claimed to be exhaustive — both typed
+ * `Record<keyof typeof LISTING_STATUS_META, …>` — were not: a key added to this
+ * table compiled fine and rendered `undefined` where its label was read.
+ *
+ * `satisfies` is what fixes that, and it is the reason for `as const` alongside
+ * it: the first makes an entry the type forgets a *type* error, the second keeps
+ * each entry's own fields literal so `LISTING_STATUS.OPEN.tone` is `"info"` and
+ * not `BadgeTone`.
+ *
+ * Key order is the display order — the rail draws the statuses in the sequence a
+ * posting moves through them, and a separate array saying so would be one more
+ * thing to forget to update.
+ *
+ * The icon is deliberately absent: it is a React component, and this module is
+ * imported by everything including the server. It stays beside the rail that
+ * draws it.
+ */
+export const LISTING_STATUS_META = {
+  DRAFT: {
+    label: "Brouillon",
+    shortLabel: "Brouillon",
+    tone: "neutral",
+    recruiting: false,
+  },
+  OPEN: {
+    label: "Ouverte",
+    shortLabel: "Ouverte",
+    tone: "info",
+    recruiting: true,
+  },
+  IN_DISCUSSION: {
+    label: "Candidatures en cours",
+    shortLabel: "En discussion",
+    tone: "warning",
+    recruiting: true,
+  },
+  FULL: {
+    label: "Complet",
+    shortLabel: "Complet",
+    tone: "warning",
+    recruiting: true,
+  },
+  FILLED: {
+    label: "Pourvue",
+    shortLabel: "Pourvue",
+    tone: "success",
+    recruiting: false,
+  },
+  CLOSED: {
+    label: "Clôturée",
+    shortLabel: "Clôturée",
+    tone: "neutral",
+    recruiting: false,
+  },
+  CLOSED_NO_CANDIDATE: {
+    label: "Clôturée sans remplaçant",
+    shortLabel: "Sans remp.",
+    tone: "neutral",
+    recruiting: false,
+  },
+  CANCELLED: {
+    label: "Annulée",
+    shortLabel: "Annulée",
+    tone: "danger",
+    recruiting: false,
+  },
+} as const satisfies Record<ReplacementListingStatus, ListingStatusMeta>;
+
+/** The statuses in the order a listing moves through them — `LISTING_STATUS_META`'s own keys. */
+export const LISTING_STATUS_ORDER = Object.keys(
+  LISTING_STATUS_META,
+) as ReplacementListingStatus[];
 
 /** A listing published by the user, with the counts needed to act on it. */
 export interface MyListing {
@@ -91,9 +183,18 @@ export interface ReceivedApplication {
   raw: ApiApplication;
 }
 
-/** Statuses a listing can still receive an application on. */
+/**
+ * Statuses a listing can still receive an application on.
+ *
+ * Derived from the table rather than written out beside it: the flag on each row
+ * is the same statement, and two lists of the same three statuses is a drift
+ * waiting to happen — a status marked `recruiting: true` that this set did not
+ * know about would be drawn as open here and closed everywhere else.
+ */
 export const RECRUITING_STATUSES: ReadonlySet<ReplacementListingStatus> =
-  new Set(["OPEN", "IN_DISCUSSION", "FULL"]);
+  new Set(
+    LISTING_STATUS_ORDER.filter((s) => LISTING_STATUS_META[s].recruiting),
+  );
 
 /**
  * Filter buckets above the list.

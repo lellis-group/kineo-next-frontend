@@ -15,7 +15,6 @@ import type {
 } from "../types/api";
 import type {
   ApplicationApplicant,
-  ListingStatusMeta,
   MyListing,
   ReceivedApplication,
   ReceivedApplicationCounts,
@@ -25,24 +24,6 @@ import { RECRUITING_STATUSES } from "./contracts";
 
 /** Shown in place of a name once the account is erased. */
 const ANONYMIZED_APPLICANT_NAME = "Candidat anonymisé";
-
-/** French labels + tone per listing status. */
-export const LISTING_STATUS_META: Record<
-  ReplacementListingStatus,
-  ListingStatusMeta
-> = {
-  DRAFT: { label: "Brouillon", tone: "neutral" },
-  OPEN: { label: "Ouverte", tone: "info" },
-  IN_DISCUSSION: { label: "Candidatures en cours", tone: "warning" },
-  FULL: { label: "Complet", tone: "warning" },
-  FILLED: { label: "Pourvue", tone: "success" },
-  CLOSED: { label: "Clôturée", tone: "neutral" },
-  CLOSED_NO_CANDIDATE: {
-    label: "Clôturée sans remplaçant",
-    tone: "neutral",
-  },
-  CANCELLED: { label: "Annulée", tone: "danger" },
-};
 
 /** French labels per application status, as seen by the receiving practice. */
 export const RECEIVED_STATUS_LABELS: Record<ApplicationStatus, string> = {
