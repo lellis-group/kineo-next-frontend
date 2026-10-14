@@ -44,6 +44,7 @@ export function usePaginatedResource<T, V>({
   load,
   onLoaded,
   onRestored,
+  seedFromServer,
 }: {
   /** The server's answer for the default view. */
   initialData: T;
@@ -56,6 +57,17 @@ export function usePaginatedResource<T, V>({
   onLoaded?: () => void;
   /** After restoring `initialData`, which is also a view change. */
   onRestored?: () => void;
+  /**
+   * True when the screen's URL is the source of truth and the server answers
+   * every view by re-rendering — `/listings`, whose filters and page live in the
+   * query string. Then `initialData` is never stale: it is always the server's
+   * answer for the current view, delivered on mount and again on every URL
+   * change, so the hook adopts each fresh `initialData` and never fetches
+   * client-side — the server already did. Left off, the hook behaves as it
+   * always has: `initialData` is the default view only, and every other view is
+   * client state that fetches. The three console screens leave it off.
+   */
+  seedFromServer?: boolean;
 }) {
   const router = useRouter();
   const [data, setData] = useState(initialData);
@@ -136,13 +148,53 @@ export function usePaginatedResource<T, V>({
     afterRestore.current?.();
   }, [cancel, initialData]);
 
+  /**
+   * True once the hook has adopted the server's opening answer.
+   *
+   * Only used on the client-driven path (the three console screens). The first
+   * effect run always restores `initialData`, whatever the view is, because
+   * `initialData` is by contract the server's answer for the view this screen
+   * starts on — which on those screens is always the default one, so this
+   * replaces a `restore()` the `isDefaultView` branch would already have made,
+   * with no behaviour change. The server-seeded path below has no such branch.
+   */
+  const hydrated = useRef(false);
+
   useEffect(() => {
+    // Server-seeded: the URL is the source of truth and the server answered this
+    // exact view. Adopt its rows rather than refetching them over the wire. This
+    // runs on mount and again on every URL change, because each one re-renders
+    // the route with a fresh `initialData` — the reference is the signal that new
+    // rows have arrived, and there is never a client fetch on this path.
+    if (seedFromServer) {
+      cancel();
+      requestId.current += 1;
+      setData(initialData);
+      setError(null);
+      setLoading(false);
+      afterRestore.current?.();
+      return;
+    }
+
+    if (!hydrated.current) {
+      hydrated.current = true;
+      restore();
+      return;
+    }
     if (isDefaultView(view)) {
       restore();
       return;
     }
     fetchView(view);
-  }, [view, isDefaultView, fetchView, restore]);
+  }, [
+    view,
+    initialData,
+    isDefaultView,
+    fetchView,
+    restore,
+    seedFromServer,
+    cancel,
+  ]);
 
   /** Re-runs the current view — the « Réessayer » button. */
   const reload = useCallback(() => {

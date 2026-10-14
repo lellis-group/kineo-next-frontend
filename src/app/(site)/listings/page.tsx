@@ -5,9 +5,11 @@ import { ListSkeleton } from "@/components/molecules/list-skeleton";
 import { ListingsContainer } from "@/components/templates/listings-container";
 import { serverTransport } from "@/lib/api-transport.server";
 import {
+  browseViewFromParams,
   fetchBrowseListings,
   fetchBrowsePlaces,
   fetchFacets,
+  toBrowseView,
 } from "@/lib/listings";
 import { fetchServerAuth } from "@/lib/server-auth";
 
@@ -30,9 +32,12 @@ export const metadata: Metadata = {
  * so `requireMember` would sail straight past. Reading the session state is the
  * only check that actually answers "is this reader signed in".
  *
- * The default view is the one the server sends, so the route paints with content
- * rather than with the skeleton the `Suspense` boundary would otherwise hold for
- * the whole round trip.
+ * The URL is the source of truth, and the server answers whatever view it names.
+ * `searchParams` is parsed once here into a view, and all three reads are seeded
+ * with it, so a shared or bookmarked link paints its exact results — filters,
+ * page and ordering — rather than the default view the route used to render
+ * regardless of the query string. The client reads the same string and never
+ * refetches, which is why the rows it shows are the rows the server just sent.
  *
  * Two of the three reads are awaited and the third is not, and the third is the
  * one that streams. The rows and the panels are what a reader reads, so the page
@@ -47,17 +52,25 @@ export const metadata: Metadata = {
  * `fetchBrowsePlaces` answers `null` rather than throwing, and the `.catch`
  * guards the transport itself.
  */
-export default function ListingsPage() {
+export default function ListingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
   return (
     <Suspense
       fallback={<ListSkeleton mapFirst titleBlock={false} cardCount={4} />}
     >
-      <Listings />
+      <Listings searchParams={searchParams} />
     </Suspense>
   );
 }
 
-async function Listings() {
+async function Listings({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
   // The authoritative check: a cookie the backend refuses reads as anonymous,
   // which is exactly the reader the proxy's fast path was there to catch early.
   const auth = await fetchServerAuth();
@@ -65,16 +78,39 @@ async function Listings() {
     redirect("/signin");
   }
 
+  // The view the URL names, parsed once and widened once. `toBrowseView` widens
+  // the date fields to ISO bounds and omits every unset filter, so the same view
+  // the client will read back off the URL is the one every read is seeded with —
+  // the two never describe different collections.
+  //
+  // The awaited `searchParams` is a plain record, and `browseViewFromParams`
+  // reads it through `URLSearchParams.get` so the server and the client parse the
+  // same string the same way — the client hands it `new URLSearchParams(...)`,
+  // so the server builds one here. Repeated keys are kept as `get` reads them:
+  // the first value, which is the only one a single-valued filter means.
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(await searchParams)) {
+    if (typeof value === "string") params.append(key, value);
+    else if (Array.isArray(value))
+      for (const item of value) params.append(key, item);
+  }
+  const { filters, page, sort } = browseViewFromParams(params);
+  const view = toBrowseView(filters, page, sort);
+
   const [data, facets] = await Promise.all([
-    fetchBrowseListings({}, serverTransport),
-    // Not part of the rows' read any more, and for the same reason the two are
-    // separate here: the panels depend on a subset of the filters, so the client
-    // asks for them only when that subset changes. Awaiting them together is
-    // still right — the first paint should not arrive without its summary.
-    fetchFacets({}, serverTransport),
+    fetchBrowseListings(view, serverTransport),
+    // A separate read from the rows, and still right to await together: the
+    // panels depend on a subset of the filters (never the specialty, never the
+    // page, never the ordering — `fetchFacets` drops them), and the first paint
+    // should not arrive without its summary. On a page turn the server re-runs
+    // this route, but `fetchFacets` answers the same collection it answered
+    // before, so the panels hold their numbers.
+    fetchFacets(view, serverTransport),
   ]);
 
-  const places = fetchBrowsePlaces({}, serverTransport).catch(() => null);
+  // The map is the whole filtered collection, not the page — seeded with the
+  // view but no page, so paging does not redraw it.
+  const places = fetchBrowsePlaces(view, serverTransport).catch(() => null);
 
   // No previous pins to keep on a first render, so a failed places read starts
   // the map empty rather than taking the whole page down over it.

@@ -4,6 +4,8 @@ import type { ApiTransport } from "../api-client";
 import { toIsoDayBound } from "../format";
 import { adaptFacets } from "./browse-adapters";
 import {
+  browseViewFromParams,
+  browseViewToParams,
   EMPTY_BROWSE_FILTERS,
   horizonForStart,
   horizonStart,
@@ -476,5 +478,207 @@ describe("fetchBrowsePlaces", () => {
     // apply, a failed read is null and leaves the pins alone.
     expect(data).not.toBeNull();
     expect(data?.places).toEqual([]);
+  });
+});
+
+/**
+ * The URL boundary: a view read off the query string and written back to it.
+ *
+ * These two are the halves of one contract, and the tests that matter are the
+ * round-trips — a value written must read back as the same view, or the screen
+ * and the URL drift apart with nothing to catch it. `/listings` is built on this:
+ * `page.tsx` parses the URL server-side, the client reads the same string, and a
+ * shared link has to open exactly the view it was made from.
+ */
+describe("browseViewFromParams", () => {
+  it("reads an empty query as the default view", () => {
+    const { filters, page, sort } = browseViewFromParams(new URLSearchParams());
+
+    expect(filters).toEqual(EMPTY_BROWSE_FILTERS);
+    expect(page).toBe(1);
+    expect(sort).toBe("recent");
+  });
+
+  it("reads every filter, the page and the ordering", () => {
+    const params = new URLSearchParams({
+      specialty: "DENTIST",
+      city: "Lyon",
+      from: "2026-10-01",
+      to: "2026-10-31",
+      urgent: "true",
+      page: "3",
+      sort: "urgent",
+    });
+
+    const { filters, page, sort } = browseViewFromParams(params);
+
+    expect(filters).toEqual({
+      specialty: "DENTIST",
+      city: "Lyon",
+      from: "2026-10-01",
+      to: "2026-10-31",
+      urgentOnly: true,
+    });
+    expect(page).toBe(3);
+    expect(sort).toBe("urgent");
+  });
+
+  /**
+   * The value comes off the query string, so it is attacker- and accident-shaped.
+   * An unknown specialty is not a filter to send — it is dropped, and the feed
+   * reads as « toutes spécialités » rather than as a 400. A prototype key is not
+   * a specialty either: `"toString"` would pass an `in` check and must not.
+   */
+  it("drops a specialty that is not one of the specialties", () => {
+    expect(
+      browseViewFromParams(new URLSearchParams({ specialty: "WIZARDRY" }))
+        .filters.specialty,
+    ).toBe("");
+    expect(
+      browseViewFromParams(new URLSearchParams({ specialty: "toString" }))
+        .filters.specialty,
+    ).toBe("");
+  });
+
+  /**
+   * `page` is a number the pagination is divided by. A fractional, negative or
+   * non-numeric page reads as page 1 rather than as a broken feed — the reader
+   * typed the URL, and the safe reading of a bad page is the first one.
+   */
+  it("reads a page that is not a positive integer as page 1", () => {
+    expect(browseViewFromParams(new URLSearchParams({ page: "0" })).page).toBe(
+      1,
+    );
+    expect(browseViewFromParams(new URLSearchParams({ page: "-2" })).page).toBe(
+      1,
+    );
+    expect(
+      browseViewFromParams(new URLSearchParams({ page: "2.5" })).page,
+    ).toBe(1);
+    expect(
+      browseViewFromParams(new URLSearchParams({ page: "abc" })).page,
+    ).toBe(1);
+  });
+
+  it("reads an unknown ordering as the default one", () => {
+    expect(
+      browseViewFromParams(new URLSearchParams({ sort: "sideways" })).sort,
+    ).toBe("recent");
+  });
+
+  /**
+   * The shape alone is not a date. A `<input type="date">` never produces
+   * « 2026-13-40 », but a hand-edited URL can, and an impossible bound handed to
+   * the feed reads as a request that matched nothing.
+   */
+  it("drops a date that is shaped like one but is not a real day", () => {
+    expect(
+      browseViewFromParams(new URLSearchParams({ from: "2026-02-30" })).filters
+        .from,
+    ).toBe("");
+    expect(
+      browseViewFromParams(new URLSearchParams({ to: "nope" })).filters.to,
+    ).toBe("");
+  });
+
+  it("reads a missing `urgent` as false, and only `true` as true", () => {
+    expect(
+      browseViewFromParams(new URLSearchParams({ urgent: "false" })).filters
+        .urgentOnly,
+    ).toBe(false);
+    expect(
+      browseViewFromParams(new URLSearchParams({ urgent: "true" })).filters
+        .urgentOnly,
+    ).toBe(true);
+  });
+});
+
+describe("browseViewToParams", () => {
+  it("writes the default view as an empty query, not as a row of defaults", () => {
+    expect(
+      browseViewToParams(EMPTY_BROWSE_FILTERS, 1, "recent").toString(),
+    ).toBe("");
+  });
+
+  it("writes only what is narrowed", () => {
+    const query = browseViewToParams(
+      { ...EMPTY_BROWSE_FILTERS, city: "Lyon" },
+      1,
+      "recent",
+    );
+
+    expect(query.get("city")).toBe("Lyon");
+    expect(query.has("specialty")).toBe(false);
+    expect(query.has("page")).toBe(false);
+    expect(query.has("sort")).toBe(false);
+  });
+
+  it("writes the page and the ordering only when they are not the default", () => {
+    expect(
+      browseViewToParams(EMPTY_BROWSE_FILTERS, 1, "recent").has("page"),
+    ).toBe(false);
+    expect(
+      browseViewToParams(EMPTY_BROWSE_FILTERS, 4, "recent").get("page"),
+    ).toBe("4");
+    expect(
+      browseViewToParams(EMPTY_BROWSE_FILTERS, 1, "urgent").get("sort"),
+    ).toBe("urgent");
+  });
+});
+
+/**
+ * The round-trip is the contract that matters most here: the server parses the
+ * URL, the client reads the same string, and the two have to agree on the view.
+ * A value that does not survive the round-trip is a screen and a URL that drift.
+ */
+describe("browse view round-trips through the URL", () => {
+  it("reads back the view it was written from", () => {
+    const written = browseViewToParams(
+      {
+        specialty: "DENTIST",
+        city: "Lyon",
+        from: "2026-10-01",
+        to: "2026-10-31",
+        urgentOnly: true,
+      },
+      3,
+      "urgent",
+    );
+
+    const { filters, page, sort } = browseViewFromParams(
+      new URLSearchParams(written.toString()),
+    );
+
+    expect(filters).toEqual({
+      specialty: "DENTIST",
+      city: "Lyon",
+      from: "2026-10-01",
+      to: "2026-10-31",
+      urgentOnly: true,
+    });
+    expect(page).toBe(3);
+    expect(sort).toBe("urgent");
+  });
+
+  it("round-trips the default view to an empty query and back", () => {
+    const written = browseViewToParams(EMPTY_BROWSE_FILTERS, 1, "recent");
+
+    expect(written.toString()).toBe("");
+    const { filters, page, sort } = browseViewFromParams(written);
+    expect(filters).toEqual(EMPTY_BROWSE_FILTERS);
+    expect(page).toBe(1);
+    expect(sort).toBe("recent");
+  });
+
+  /**
+   * The invariant the whole screen leans on: whatever the URL parses to, feeding
+   * it back through `toBrowseView` must give a view `usePaginatedResource`
+   * recognises — or `seedFromServer` would adopt rows for a view the server was
+   * never asked for. The default query must read as the default view.
+   */
+  it("parses the default query to the view the server answered", () => {
+    const { filters, page, sort } = browseViewFromParams(new URLSearchParams());
+
+    expect(isDefaultBrowseView(toBrowseView(filters, page, sort))).toBe(true);
   });
 });

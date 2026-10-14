@@ -81,6 +81,8 @@ export type {
 export {
   type BrowsePlacesData,
   type BrowseSort,
+  browseViewFromParams,
+  browseViewToParams,
   DEFAULT_BROWSE_VIEW,
   EMPTY_BROWSE_FILTERS,
   horizonForStart,

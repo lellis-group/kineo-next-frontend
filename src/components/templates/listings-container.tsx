@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   forwardRef,
   Suspense,
@@ -10,6 +11,7 @@ import {
   useMemo,
   useRef,
   useState,
+  useTransition,
 } from "react";
 import { InlineRetryBanner } from "@/components/molecules/inline-retry-banner";
 import type { ListingsTableHandle } from "@/components/organisms/listings-table";
@@ -26,10 +28,10 @@ import {
   type BrowsePlacesData,
   type BrowseSort,
   type BrowseView,
+  browseViewFromParams,
+  browseViewToParams,
   EMPTY_BROWSE_FILTERS,
   fetchBrowseListings,
-  fetchBrowsePlaces,
-  fetchFacets,
   fetchListingPageOf,
   horizonForStart,
   horizonStart,
@@ -70,28 +72,38 @@ const ListingsMap = dynamic(
 );
 
 /**
- * Owns the browse screen's state: which filters, which page, and how the rows
- * are ordered.
+ * Owns the browse screen's state — and the state now lives in the URL.
  *
- * The split is the same as on the other three console screens. The server sends
- * the default view — no filter, first page — so the route paints with content on
- * arrival; every other combination is client state that fetches, through the
- * shared `usePaginatedResource` hook and its cancellation guard.
+ * This screen is the odd one out among the four console screens, and on purpose.
+ * The other three hold their filter, page and bucket in `useState` and fetch
+ * client-side; this one writes the query string and lets the server answer. The
+ * difference is the reader's expectation: a filtered search here is something to
+ * share, to bookmark and to walk back through with the back button, and none of
+ * that survives a `useState`. So `filters`, `page` and `sort` are read from
+ * `useSearchParams` (the single source of truth) and every change is a
+ * `router.push`/`replace` — see `writeView`.
  *
- * The filters are one object rather than five states. Handing the toolbar
- * `filters` and `onFiltersChange(patch)` collapses seven `useState`s and seven
- * near-identical handlers into one merge, and it puts the "every filter change
- * returns to page 1" rule in one place instead of in each handler — which is
- * what it was for, since a filter that keeps page 4 hands the reader an empty
+ * The server answers every view by re-rendering: `page.tsx` reads the same query
+ * string and seeds `fetchBrowseListings`, `fetchFacets` and `fetchBrowsePlaces`
+ * with it. So all three reads arrive here as fresh `initialData`/`initialFacets`/
+ * `initialPlaces` on each navigation, and there is **no client fetch on this
+ * screen at all** — the loader handed to `usePaginatedResource` exists only to
+ * satisfy the shared hook, and `seedFromServer` tells it to adopt each new
+ * `initialData` rather than refetch. That is what removes the double read a
+ * seeded filtered URL would otherwise cause.
+ *
+ * The filters stay one object rather than five states, and `onFiltersChange(patch)`
+ * still merges a partial — it now folds the "every filter change returns to page
+ * 1" rule into the one URL it writes, which is the whole reason it is a merge
+ * rather than five setters: a filter that keeps page 4 hands the reader an empty
  * screen and a pager offering pages that no longer exist.
  *
- * Three reads, not one, and the split is the whole point:
+ * Three reads, not one, and the split is still the whole point:
  *
  * - the **rows** answer what the page shows, so they follow the pager;
  * - the **panels** (`/facets`) answer the shape of the collection and depend on
  *   a strict subset of the filters — never the specialty, never the page, never
- *   the ordering. They used to be refetched with the rows, on every page turn
- *   and every reordering, for an answer that could not have changed;
+ *   the ordering;
  * - the **map** is the whole filtered collection, not a page, so it moves when
  *   the filters do and not when the page does.
  *
@@ -110,10 +122,26 @@ export function ListingsContainer({
   initialFacets: BrowseFacets;
   initialPlaces: Promise<BrowsePlacesData | null>;
 }) {
-  const [filters, setFilters] =
-    useState<BrowseFormFilters>(EMPTY_BROWSE_FILTERS);
-  const [page, setPage] = useState(1);
-  const [sort, setSort] = useState<BrowseSort>("recent");
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const [isNavigating, startTransition] = useTransition();
+
+  /**
+   * The view, read from the URL — the single source of truth.
+   *
+   * Filters, page and sort all live in the query string, so a shared link opens
+   * the exact view it was made from and the browser's back button walks the
+   * views the reader has been through, which three `useState`s could not do.
+   * `useSearchParams` hands back a fresh object each render; the query string is
+   * the value that actually changes, so it is what the memo keys on, and the
+   * parse runs only when it does.
+   */
+  const paramsKey = searchParams.toString();
+  const { filters, page, sort } = useMemo(
+    () => browseViewFromParams(new URLSearchParams(paramsKey)),
+    [paramsKey],
+  );
 
   /**
    * The two halves of pointing at something.
@@ -137,40 +165,84 @@ export function ListingsContainer({
   );
 
   /**
+   * Writes a view to the URL, which is how every view change happens now.
+   *
+   * `method` is the history policy: `replace` for a filter or a sort, so a
+   * reader who narrows three fields does not build three back-button stops to
+   * walk back through; `push` for the pager, where turning back a page is
+   * exactly what the reader expects. Every write re-renders the route on the
+   * server — see the container's header — so there is no client fetch behind
+   * this, only a navigation. Wrapped in a transition so the list can show its
+   * pending state rather than freezing.
+   */
+  const writeView = useCallback(
+    (
+      next: { filters: BrowseFormFilters; page: number; sort: BrowseSort },
+      method: "replace" | "push",
+    ) => {
+      const query = browseViewToParams(next.filters, next.page, next.sort);
+      const search = query.toString();
+      const url = search ? `${pathname}?${search}` : pathname;
+      startTransition(() => {
+        if (method === "push") router.push(url);
+        else router.replace(url);
+      });
+    },
+    [pathname, router],
+  );
+
+  /**
    * Applies a filter change and returns to the first page.
    *
    * Not a nicety: the new result set is frequently shorter than the old one, and
    * staying on page 4 would show nothing while the pagination still offered four
    * pages. It also covers clearing a filter, which is how a reader recovers from
-   * exactly that.
+   * exactly that. The page reset is not a second write — it is folded into the
+   * one URL this produces.
    */
-  const applyFilters = useCallback((patch: Partial<BrowseFormFilters>) => {
-    setFilters((current) => ({ ...current, ...patch }));
-    setPage(1);
-    setHoveredListingId(null);
-    setSelectedListing(null);
-  }, []);
+  const applyFilters = useCallback(
+    (patch: Partial<BrowseFormFilters>) => {
+      setHoveredListingId(null);
+      setSelectedListing(null);
+      writeView(
+        { filters: { ...filters, ...patch }, page: 1, sort },
+        "replace",
+      );
+    },
+    [filters, sort, writeView],
+  );
 
   /**
    * Applies a reordering and returns to the first page.
    *
    * Same rule as a filter: the reader changes how the rows are ordered, and
-   * page 4 of the old ordering says nothing about where to land in the new
-   * one.
+   * page 4 of the old ordering says nothing about where to land in the new one.
    */
-  const applySort = useCallback((next: BrowseSort) => {
-    setSort(next);
-    setPage(1);
-    setHoveredListingId(null);
-    setSelectedListing(null);
-  }, []);
+  const applySort = useCallback(
+    (next: BrowseSort) => {
+      setHoveredListingId(null);
+      setSelectedListing(null);
+      writeView({ filters, page: 1, sort: next }, "replace");
+    },
+    [filters, writeView],
+  );
 
   const resetFilters = useCallback(() => {
-    setFilters(EMPTY_BROWSE_FILTERS);
-    setPage(1);
     setHoveredListingId(null);
     setSelectedListing(null);
-  }, []);
+    writeView({ filters: EMPTY_BROWSE_FILTERS, page: 1, sort }, "replace");
+  }, [sort, writeView]);
+
+  /**
+   * Turns the page. A `push`, unlike a filter change, so the back button walks
+   * the pages rather than leaving the feed.
+   */
+  const changePage = useCallback(
+    (next: number) => {
+      writeView({ filters, page: next, sort }, "push");
+    },
+    [filters, sort, writeView],
+  );
 
   /**
    * Fetches one view.
@@ -179,6 +251,12 @@ export function ListingsContainer({
    * view is what the server is asked for, filters and page and sort alike. The
    * second argument is the hook's abort signal, forwarded untouched to the
    * transport, so a page change stops the read the last page turn started.
+   *
+   * It is still passed to the hook — the hook's contract asks for a loader — but
+   * on this screen it is never called: the URL is the source of truth and the
+   * server answers every view by re-rendering, so the rows arrive as fresh
+   * `initialData` and `seedFromServer` adopts them. There is no client fetch on
+   * this path, and this loader exists only to satisfy the shared hook.
    */
   const load = useCallback(
     (target: BrowseView, init?: RequestInit) =>
@@ -191,6 +269,7 @@ export function ListingsContainer({
     view,
     isDefaultView: isDefaultBrowseView,
     load,
+    seedFromServer: true,
   });
 
   /**
@@ -213,96 +292,33 @@ export function ListingsContainer({
   );
 
   /**
-   * The filters the panels actually depend on.
+   * The panels' figures, straight from the server's answer.
    *
-   * The facets endpoint is sent the reader's filters but never their specialty
-   * and never the page or the ordering, because a « répartition par spécialité »
-   * panel reading « Médecine générale — 12 » under a Dermatologie filter answers
-   * a question nobody asked. The same reasoning says when to ask again: only
-   * when one of these four changes. Paging, reordering and narrowing by
-   * specialty leave the panels' collection alone, so they leave the numbers
-   * alone too — three requests behind a click that moved ten rows, until now.
-   *
-   * Keyed on the widened values, not on `filters`, so that an untouched date
-   * field does not read as a changed one.
+   * No state and no client fetch: the URL is the source of truth, so every view
+   * change re-renders the route and the server delivers fresh facets for exactly
+   * the filters on screen. The split this replaces — panels depending on a
+   * subset of the filters, refetched only when that subset changed — is the
+   * server's job now, and it is what `page.tsx` seeds `fetchFacets` with. What
+   * used to live here as a `useState` plus a `useEffect` with an abort guard was
+   * a second request behind a navigation that had already produced the answer.
    */
-  const facetsScope = useMemo(() => {
-    const widened = toBrowseView(filters);
-    return {
-      city: widened.city,
-      startDateFrom: widened.startDateFrom,
-      startDateTo: widened.startDateTo,
-      urgentOnly: widened.urgentOnly,
-    };
-  }, [filters]);
-
-  const [facets, setFacets] = useState(initialFacets);
-  const facetsSeeded = useRef(facetsScope);
-
-  useEffect(() => {
-    // Skip the first run for the scope the server already answered: asking again
-    // would be the very request this split was meant to avoid, and it would fire
-    // on every page load for an answer already in hand.
-    if (facetsSeeded.current === facetsScope) return;
-    facetsSeeded.current = facetsScope;
-    const controller = new AbortController();
-
-    fetchFacets(facetsScope, undefined, { signal: controller.signal })
-      .then((loaded) => {
-        if (!controller.signal.aborted) setFacets(loaded);
-      })
-      // Neither is something the panels need to say: an aborted read is the
-      // reader moving on, and a 5xx is absorbed by `fetchFacets` itself.
-      .catch(() => {});
-
-    return () => controller.abort();
-  }, [facetsScope]);
+  const facets = initialFacets;
 
   /**
-   * The postings the map draws, held apart from the page on screen.
+   * The postings the map draws, straight from the server's promise.
    *
-   * Two states with two lives. The list is paged and re-fetches whenever the
-   * reader pages; the map is the whole filtered collection and re-fetches only
-   * when the filters change. Sharing one state was the defect — paging used to
-   * redraw the map, so the same posts vanished from it and came back a page later.
+   * No state and no client refetch: the URL is the source of truth, so a filter
+   * change re-renders the route and `initialPlaces` arrives as a fresh promise
+   * for exactly those filters. The map is still the whole filtered collection,
+   * never the page — `page.tsx` seeds `fetchBrowsePlaces` with the filters and
+   * no page, so paging does not redraw it.
    *
-   * Seeded from the server's answer, so the first paint already carries markers,
-   * and the first effect run is skipped: the server sent exactly this data for
-   * exactly these filters, and asking again would be the very request we avoided.
-   *
-   * Held as a source rather than as a value, because the seed arrives as a
-   * promise the page has not awaited. `ListingsMapSlot` unwraps whichever source
-   * is current inside its own `<Suspense>`, and a refetched collection replaces
-   * the source with a resolved one.
+   * Still a source rather than a value, because the page does not await this
+   * read: it is the heaviest payload on the screen and the rows must not wait
+   * for it. `ListingsMapSlot` unwraps whichever promise is current inside its
+   * own `<Suspense>`, so a new navigation suspends only the map, not the list.
    */
-  const [placesSource, setPlacesSource] = useState(initialPlaces);
-  const seeded = useRef({ filters, sort });
-
-  useEffect(() => {
-    if (seeded.current.filters === filters && seeded.current.sort === sort) {
-      return;
-    }
-    seeded.current = { filters, sort };
-    const controller = new AbortController();
-
-    fetchBrowsePlaces(toBrowseView(filters, 1, sort), undefined, {
-      signal: controller.signal,
-    })
-      .then((data) => {
-        // `null` is the failure signal; the map keeps the markers it has rather
-        // than emptying itself over a failed refresh, because stale pins are a
-        // smaller lie than a blank map.
-        if (controller.signal.aborted || !data) return;
-        setPlacesSource(Promise.resolve(data));
-      })
-      .catch(() => {
-        // Unreachable while `fetchBrowsePlaces` catches its own failures, and
-        // left in place only because a rejected promise here would otherwise be
-        // an unhandled rejection.
-      });
-
-    return () => controller.abort();
-  }, [filters, sort]);
+  const placesSource = initialPlaces;
 
   /** Set when a posting is picked on the map but is not on the current page. */
   const [pendingScrollId, setPendingScrollId] = useState<string | null>(null);
@@ -383,14 +399,20 @@ export function ListingsContainer({
       // `null` is a real answer: the posting is not in the current view, or the
       // read failed. Either way there is no page to turn to, and the list is
       // still correct — it just cannot show a posting it does not show.
+      //
+      // The turn itself is a `replace`, not a `push`: the reader picked a
+      // posting, they did not page to it, and a jump they never asked for must
+      // not become a stop the back button walks back through.
       setPendingScrollId(id);
       fetchListingPageOf(id, { ...view, limit: BROWSE_PAGE_SIZE }).then(
         (target) => {
-          if (target !== null) setPage(target);
+          if (target !== null) {
+            writeView({ filters, page: target, sort }, "replace");
+          }
         },
       );
     },
-    [data.listings, view],
+    [data.listings, view, filters, sort, writeView],
   );
 
   /**
@@ -440,14 +462,18 @@ export function ListingsContainer({
           ...view,
           limit: BROWSE_PAGE_SIZE,
         }).then((target) => {
-          if (target !== null) setPage(target);
+          // A `replace`, like `pickListing`'s turn: the reader chose a posting,
+          // the page followed, and that jump is not a history stop.
+          if (target !== null) {
+            writeView({ filters, page: target, sort }, "replace");
+          }
         });
         return;
       }
 
       tableRef.current?.scrollToId(listing.id);
     },
-    [onScreenIds, view],
+    [onScreenIds, view, filters, sort, writeView],
   );
 
   useEffect(() => {
@@ -490,8 +516,11 @@ export function ListingsContainer({
           listings: data.listings,
           totalPages: data.totalPages,
           page: data.page,
-          onPageChange: setPage,
-          loading,
+          onPageChange: changePage,
+          // The hook's `loading` never fires on this screen — there is no client
+          // fetch. The pending signal that matters is the server navigation the
+          // URL write started, so the list dims while the new rows are in flight.
+          loading: loading || isNavigating,
           filtered: !isDefaultBrowseView(view),
           horizon,
           onHorizonChange: (next) =>
