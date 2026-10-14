@@ -243,6 +243,43 @@
     color: var(--primary-foreground);
   }
 
+  /*
+   * The three other sizes a chip is drawn at, and the only reason `Chip` exists
+   * rather than `className="chip"`.
+   *
+   * `.chip`'s own height is a touch target — 3rem of padding and a floor — and
+   * that is right for a filter row and wrong elsewhere: a chip beside another
+   * control on a toolbar wants to be shorter without losing it, a chip inside a
+   * popover has no room for a floor at all, and the one standing alone in that
+   * popover has a row to itself and the room to be comfortable in. All three were
+   * the same numbers written inline at three call sites.
+   *
+   * These are the theme's own numbers, spelled out: the call sites used `px-3` and
+   * `py-1.5` / `py-2`, which on this sheet's `--spacing` of 0.3rem are 0.9rem and
+   * 0.45 / 0.6rem — *not* the 0.75 / 0.375 / 0.5rem a reader of the source would
+   * assume. Writing those decimals instead is how the chips lost four pixels of
+   * padding each when this was extracted, so the scaled values are what is here,
+   * with the utilities they came from named beside them.
+   */
+  .chip-sm {
+    /* was: min-h-0 px-3 py-1.5 */
+    min-height: 0;
+    padding: 0.45rem 0.9rem;
+  }
+
+  .chip-md {
+    /* was: min-h-[2.375rem] px-3 py-1.5 */
+    min-height: 2.375rem;
+    padding: 0.45rem 0.9rem;
+  }
+
+  .chip-block {
+    /* was: min-h-0 w-full px-3 py-2 */
+    min-height: 0;
+    padding: 0.6rem 0.9rem;
+    width: 100%;
+  }
+
   .badge {
     display: inline-flex;
     align-items: center;

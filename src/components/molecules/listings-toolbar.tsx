@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { Chip } from "@/components/atoms/chip";
 import {
   AlertTriangleIcon,
   SearchIcon,
@@ -244,12 +245,10 @@ export function ListingsToolbar({
       </p>
 
       <div ref={rootRef} className="relative shrink-0">
-        <button
-          type="button"
-          className={cn(
-            "chip min-h-[2.375rem] shrink-0 whitespace-nowrap px-3 py-1.5",
-            open && "is-active",
-          )}
+        <Chip
+          size="md"
+          active={open}
+          className="shrink-0 whitespace-nowrap"
           aria-expanded={open}
           onClick={() => setOpen((current) => !current)}
         >
@@ -267,7 +266,7 @@ export function ListingsToolbar({
               {appliedFilters}
             </span>
           )}
-        </button>
+        </Chip>
 
         {open && (
           <div
@@ -343,12 +342,9 @@ export function ListingsToolbar({
                 </div>
               </div>
 
-              <button
-                type="button"
-                className={cn(
-                  "chip min-h-0 w-full shrink-0 whitespace-nowrap px-3 py-2",
-                  filters.urgentOnly && "is-active",
-                )}
+              <Chip
+                size="block"
+                className="shrink-0 whitespace-nowrap"
                 aria-pressed={filters.urgentOnly}
                 onClick={() =>
                   onFiltersChange({ urgentOnly: !filters.urgentOnly })
@@ -356,7 +352,7 @@ export function ListingsToolbar({
               >
                 <AlertTriangleIcon className="mr-1 inline-block align-[-0.15em] size-3.5" />
                 Urgentes seulement
-              </button>
+              </Chip>
 
               {/*
                 The way out, and it only exists on a filtered view. It clears all

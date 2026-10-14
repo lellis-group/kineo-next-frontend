@@ -1,3 +1,4 @@
+import { Chip } from "@/components/atoms/chip";
 import { FileTextIcon, UsersIcon } from "@/components/atoms/icons";
 import { Pagination } from "@/components/molecules/pagination";
 import { Panel } from "@/components/molecules/panel";
@@ -137,17 +138,15 @@ export function MyListingsView({
                   its totals down by status only, and a « (0) » that meant « the
                   server did not send this » would be worse than no number.
                 */}
-                <button
-                  type="button"
-                  className={cn(
-                    "chip min-h-0 shrink-0 whitespace-nowrap px-3 py-1.5",
-                    urgentOnly && "is-active",
-                  )}
+                <Chip
+                  size="sm"
+                  active={urgentOnly}
+                  className="shrink-0 whitespace-nowrap"
                   aria-pressed={urgentOnly}
                   onClick={onUrgentToggle}
                 >
                   Urgentes
-                </button>
+                </Chip>
 
                 <SegmentedControl
                   ariaLabel="Filtrer les annonces par situation"
