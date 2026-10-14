@@ -4,10 +4,15 @@ import {
   LayersIcon,
   PercentIcon,
 } from "@/components/atoms/icons";
-import { ProgressCurve } from "@/components/atoms/progress-curve";
-import { SegmentedBar } from "@/components/atoms/segmented-bar";
 import { Panel } from "@/components/molecules/panel";
 import { PanelExpand, StatChip } from "@/components/molecules/panel-chrome";
+import {
+  RailDistribution,
+  type RailDistributionRow,
+} from "@/components/molecules/rail-distribution";
+import { RailEmpty } from "@/components/molecules/rail-empty";
+import { RailGauge } from "@/components/molecules/rail-gauge";
+import { RailVolume } from "@/components/molecules/rail-volume";
 import { SpecialtyBars } from "@/components/molecules/specialty-bars";
 import { SpecialtyIcon } from "@/components/molecules/specialty-icon";
 import { plural } from "@/lib/format";
@@ -27,6 +32,11 @@ import { SPECIALTY_SHORT_LABELS } from "@/lib/profile";
  * zero rather than hidden — a reader who has filtered themselves down to nothing
  * needs to be told that, in place, instead of watching a column of panels
  * disappear and take the layout with them.
+ *
+ * The three panel bodies are molecules shared with the practice's board
+ * (`RailGauge`, `RailDistribution`, `RailVolume`): the two rails are the same
+ * column of panels filled from different numbers, and they used to be written
+ * out twice.
  */
 
 /**
@@ -52,15 +62,44 @@ export function ListingsFacetsRail({ facets }: { facets: BrowseFacets }) {
     .slice(SPECIALTY_ROWS)
     .reduce((sum, row) => sum + row.count, 0);
 
+  /*
+    The reference's distribution rows lead with a glyph for each of its
+    categories, and the glyph is what lets a reader match a bar to a card they
+    have already seen elsewhere on the screen — here the same mark that opens a
+    row of the results table.
+  */
+  const specialtyRows: RailDistributionRow[] = shown.map((row) => ({
+    key: row.specialty,
+    mark: (
+      <SpecialtyIcon
+        specialty={row.specialty}
+        className="size-4 shrink-0 text-muted"
+      />
+    ),
+    /*
+      The short name, not the one the endpoint sends: « Chirurgien-dentiste » and
+      « Autre spécialité » are both wider than the column, and a label cut
+      mid-word is worse than a terse one — the reader cannot tell which bar is
+      theirs. The full name is the row's `title`.
+    */
+    label: SPECIALTY_SHORT_LABELS[row.specialty],
+    title: row.label,
+    count: row.count,
+    percent: row.percent,
+  }));
+
   return (
     <div className="flex flex-col gap-3">
       <Panel title="Annonces urgentes" action={<PanelExpand />}>
         {facets.total === 0 ? (
-          <p className="py-6 text-center text-sm text-muted">
-            Aucune annonce ne correspond à votre recherche.
-          </p>
+          <RailEmpty>Aucune annonce ne correspond à votre recherche.</RailEmpty>
         ) : (
-          <>
+          <RailGauge
+            percent={urgentPercent}
+            caption={`${facets.urgent} annonce${plural(
+              facets.urgent,
+            )} urgente${plural(facets.urgent)} sur ${facets.total}`}
+          >
             {/*
               The four figures of this collection, as the reference states its
               category breakdown: four boxes in a 2×2 grid, each one an icon, a
@@ -71,91 +110,36 @@ export function ListingsFacetsRail({ facets }: { facets: BrowseFacets }) {
               takes the share from the arc and the absolute from a chip, without
               leaving the card.
             */}
-            <div className="grid grid-cols-2 gap-2">
-              <StatChip
-                icon={<LayersIcon className="size-3.5" />}
-                label="Annonces"
-                value={String(facets.total)}
-              />
-              <StatChip
-                icon={<AlertTriangleIcon className="size-3.5" />}
-                label="Urgentes"
-                value={String(facets.urgent)}
-              />
-              <StatChip
-                icon={<FileTextIcon className="size-3.5" />}
-                label="Ouvertes"
-                value={String(open)}
-              />
-              <StatChip
-                icon={<PercentIcon className="size-3.5" />}
-                label="% urgentes"
-                value={`${urgentPercent} %`}
-              />
-            </div>
-
-            <div className="mt-5">
-              <ProgressCurve
-                percent={urgentPercent}
-                caption={`${facets.urgent} annonce${plural(
-                  facets.urgent,
-                )} urgente${plural(facets.urgent)} sur ${facets.total}`}
-              />
-            </div>
-          </>
+            <StatChip
+              icon={<LayersIcon className="size-3.5" />}
+              label="Annonces"
+              value={String(facets.total)}
+            />
+            <StatChip
+              icon={<AlertTriangleIcon className="size-3.5" />}
+              label="Urgentes"
+              value={String(facets.urgent)}
+            />
+            <StatChip
+              icon={<FileTextIcon className="size-3.5" />}
+              label="Ouvertes"
+              value={String(open)}
+            />
+            <StatChip
+              icon={<PercentIcon className="size-3.5" />}
+              label="% urgentes"
+              value={`${urgentPercent} %`}
+            />
+          </RailGauge>
         )}
       </Panel>
 
       <Panel title="Répartition par spécialité" action={<PanelExpand />}>
         {facets.total === 0 ? (
-          <p className="py-6 text-center text-sm text-muted">
-            Aucune spécialité représentée.
-          </p>
+          <RailEmpty>Aucune spécialité représentée.</RailEmpty>
         ) : (
           <>
-            <ul className="flex flex-col gap-3">
-              {shown.map((row) => (
-                // `min-w-0` on the row so the bar — the only elastic child — is
-                // the one that gives way. With fixed widths on the label and the
-                // counters, an overflowing row pushes them out of the panel
-                // instead of shrinking the bar, and the percentages end up
-                // printed over the page background.
-                <li
-                  key={row.specialty}
-                  className="flex min-w-0 items-center gap-2"
-                  title={row.label}
-                >
-                  {/*
-                    The reference's distribution rows lead with a glyph for each
-                    of its categories, and the glyph is what lets a reader match a
-                    bar to a card they have already seen elsewhere on the screen —
-                    here the same mark that opens a row of the results table. It
-                    sits outside the elastic part of the row, so a long specialty
-                    name gives way to it rather than the other way round.
-
-                    The short name, not the one the endpoint sends: « Chirurgien-
-                    dentiste » and « Autre spécialité » are both wider than the
-                    column, and a label cut mid-word is worse than a terse one —
-                    the reader cannot tell which bar is theirs. The full name is
-                    the row's `title`.
-                  */}
-                  <SpecialtyIcon
-                    specialty={row.specialty}
-                    className="size-4 shrink-0 text-muted"
-                  />
-                  <span className="w-[6.5rem] shrink-0 truncate text-sm text-foreground">
-                    {SPECIALTY_SHORT_LABELS[row.specialty]}
-                  </span>
-                  <span className="w-5 shrink-0 text-right text-sm font-medium text-foreground tabular-nums">
-                    {row.count}
-                  </span>
-                  <SegmentedBar percent={row.percent} className="min-w-0" />
-                  <span className="w-9 shrink-0 text-right text-xs text-muted tabular-nums">
-                    {row.percent} %
-                  </span>
-                </li>
-              ))}
-            </ul>
+            <RailDistribution rows={specialtyRows} />
 
             {/*
               The fold. Named, and counted: five rows is a summary, and a summary
@@ -173,9 +157,7 @@ export function ListingsFacetsRail({ facets }: { facets: BrowseFacets }) {
 
       <Panel title="Volume de la recherche" action={<PanelExpand />}>
         {facets.total === 0 ? (
-          <p className="py-6 text-center text-sm text-muted">
-            Aucun volume à afficher.
-          </p>
+          <RailEmpty>Aucun volume à afficher.</RailEmpty>
         ) : (
           <>
             {/*
@@ -189,39 +171,15 @@ export function ListingsFacetsRail({ facets }: { facets: BrowseFacets }) {
               carries the share, which is the only figure here that is a ratio of
               two others rather than a count of things.
             */}
-            <dl className="flex items-end justify-between gap-3">
-              <div className="flex flex-col gap-2.5">
-                <div>
-                  <dt className="text-[0.6875rem] leading-tight text-muted">
-                    Urgentes
-                  </dt>
-                  <dd className="text-lg leading-tight font-medium text-foreground tabular-nums">
-                    {facets.urgent}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-[0.6875rem] leading-tight text-muted">
-                    Ouvertes
-                  </dt>
-                  <dd className="text-lg leading-tight font-medium text-foreground tabular-nums">
-                    {open}
-                  </dd>
-                </div>
-              </div>
-
-              <div className="text-center">
-                <dd className="text-4xl leading-none font-medium text-foreground tabular-nums">
-                  {facets.total}
-                </dd>
-                <dt className="mt-1.5 text-[0.6875rem] leading-tight text-muted">
-                  annonces ouvertes
-                </dt>
-              </div>
-
-              <span className="badge badge-info shrink-0 self-end">
-                {urgentPercent} % urgentes
-              </span>
-            </dl>
+            <RailVolume
+              leading={[
+                { label: "Urgentes", value: facets.urgent },
+                { label: "Ouvertes", value: open },
+              ]}
+              total={facets.total}
+              totalLabel="annonces ouvertes"
+              badge={`${urgentPercent} % urgentes`}
+            />
 
             {/*
               The bars.

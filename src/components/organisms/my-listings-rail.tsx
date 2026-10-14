@@ -1,3 +1,4 @@
+import type { ComponentType, SVGProps } from "react";
 import {
   ActivityIcon,
   AlertTriangleIcon,
@@ -7,10 +8,15 @@ import {
   LayersIcon,
   UsersIcon,
 } from "@/components/atoms/icons";
-import { ProgressCurve } from "@/components/atoms/progress-curve";
-import { SegmentedBar } from "@/components/atoms/segmented-bar";
 import { Panel } from "@/components/molecules/panel";
 import { PanelExpand, StatChip } from "@/components/molecules/panel-chrome";
+import {
+  RailDistribution,
+  type RailDistributionRow,
+} from "@/components/molecules/rail-distribution";
+import { RailEmpty } from "@/components/molecules/rail-empty";
+import { RailGauge } from "@/components/molecules/rail-gauge";
+import { RailVolume } from "@/components/molecules/rail-volume";
 import {
   type BarRow,
   SpecialtyBars,
@@ -19,8 +25,10 @@ import { plural } from "@/lib/format";
 import {
   countRecruitingListings,
   LISTING_STATUS_META,
+  LISTING_STATUS_ORDER,
   type ListingStatusCounts,
   type MyListing,
+  RECRUITING_STATUSES,
 } from "@/lib/listings";
 import { SPECIALTY_LABELS, SPECIALTY_SHORT_LABELS } from "@/lib/profile";
 import type { Specialty } from "@/lib/types/api";
@@ -40,6 +48,11 @@ import type { Specialty } from "@/lib/types/api";
  *   paging through forty postings must not read « 3 candidatures » as a fact
  *   about all forty, which is exactly what the same figures on the browse screen
  *   *do* mean: there the panels are fed by an aggregate, and here they are not.
+ *
+ * The three panel bodies are molecules shared with the browse feed
+ * (`RailGauge`, `RailDistribution`, `RailVolume`): the two rails are the same
+ * column of panels filled from different numbers, and they used to be written
+ * out twice.
  */
 export function MyListingsRail({
   listings,
@@ -68,10 +81,21 @@ export function MyListingsRail({
   const filledPercent =
     counts.total > 0 ? Math.round((filled / counts.total) * 100) : 0;
 
+  const recruitingTotal = LISTING_STATUS_ORDER.reduce(
+    (sum, status) =>
+      sum + (RECRUITING_STATUSES.has(status) ? counts[status] : 0),
+    0,
+  );
+
   return (
     <div className="flex flex-col gap-3">
       <Panel title="Recrutement" action={<PanelExpand />}>
-        <div className="grid grid-cols-2 gap-2">
+        <RailGauge
+          percent={recruitingPercent}
+          caption={`${recruiting} annonce${plural(
+            recruiting,
+          )} en cours sur ${listings.length} (cette page)`}
+        >
           <StatChip
             icon={<ClockIcon className="size-3.5" />}
             label="En cours"
@@ -92,22 +116,7 @@ export function MyListingsRail({
             label="Pourvues"
             value={String(filled)}
           />
-        </div>
-
-        {/*
-          The arc is this page's share of listings still recruiting — the same
-          gauge the browse screen's urgent panel draws, and it earns its place for
-          the same reason: the number a practice wants is not how many postings
-          they own but how much of what they are looking at is still live.
-        */}
-        <div className="mt-5">
-          <ProgressCurve
-            percent={recruitingPercent}
-            caption={`${recruiting} annonce${plural(
-              recruiting,
-            )} en cours sur ${listings.length} (cette page)`}
-          />
-        </div>
+        </RailGauge>
       </Panel>
 
       <Panel title="Répartition par statut" action={<PanelExpand />}>
@@ -116,51 +125,18 @@ export function MyListingsRail({
 
       <Panel title="Volume publié" action={<PanelExpand />}>
         {counts.total === 0 ? (
-          <p className="py-6 text-center text-sm text-muted">
-            Aucune annonce publiée.
-          </p>
+          <RailEmpty>Aucune annonce publiée.</RailEmpty>
         ) : (
           <>
-            <dl className="flex items-end justify-between gap-3">
-              <div className="flex flex-col gap-2.5">
-                <div>
-                  <dt className="text-[0.6875rem] leading-tight text-muted">
-                    En cours
-                  </dt>
-                  <dd className="text-lg leading-tight font-medium text-foreground tabular-nums">
-                    {recruitingStates.reduce(
-                      (sum, status) => sum + (counts[status] ?? 0),
-                      0,
-                    )}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-[0.6875rem] leading-tight text-muted">
-                    Autres
-                  </dt>
-                  <dd className="text-lg leading-tight font-medium text-foreground tabular-nums">
-                    {counts.total -
-                      recruitingStates.reduce(
-                        (sum, status) => sum + (counts[status] ?? 0),
-                        0,
-                      )}
-                  </dd>
-                </div>
-              </div>
-
-              <div className="text-center">
-                <dd className="text-4xl leading-none font-medium text-foreground tabular-nums">
-                  {counts.total}
-                </dd>
-                <dt className="mt-1.5 text-[0.6875rem] leading-tight text-muted">
-                  annonces publiées
-                </dt>
-              </div>
-
-              <span className="badge badge-info shrink-0 self-end">
-                {filledPercent} % pourvues
-              </span>
-            </dl>
+            <RailVolume
+              leading={[
+                { label: "En cours", value: recruitingTotal },
+                { label: "Autres", value: counts.total - recruitingTotal },
+              ]}
+              total={counts.total}
+              totalLabel="annonces publiées"
+              badge={`${filledPercent} % pourvues`}
+            />
 
             {/*
               Bars over the page's specialties.
@@ -182,27 +158,27 @@ export function MyListingsRail({
   );
 }
 
-/** The statuses that count as « still looking » — the board's own vocabulary. */
-const recruitingStates = ["OPEN", "IN_DISCUSSION", "FULL"] as const;
-
 /**
- * The name each status takes in a fixed-width column.
+ * A mark per status, chosen from the icons this product already carries.
  *
- * A second table rather than a truncation of `LISTING_STATUS_META`'s labels:
- * « Candidatures en cours » and « Clôturée sans remplaçant » are both wider than
- * the column, and a label cut mid-word is worse than a terse one — the reader
- * cannot tell which bar is theirs, and this column is one of scan-and-match, not
- * one of reading. The full name is the row's `title`.
+ * The one thing `LISTING_STATUS_META` does not carry, because it is a React
+ * component and that table is imported by the server as well. Keyed by status
+ * and *total* rather than defaulted, so a status the table gains without a mark
+ * here is a compile error rather than a clock.
  */
-const STATUS_SHORT_LABELS: Record<keyof typeof LISTING_STATUS_META, string> = {
-  DRAFT: "Brouillon",
-  OPEN: "Ouverte",
-  IN_DISCUSSION: "En discussion",
-  FULL: "Complet",
-  FILLED: "Pourvue",
-  CLOSED: "Clôturée",
-  CLOSED_NO_CANDIDATE: "Sans remp.",
-  CANCELLED: "Annulée",
+const STATUS_MARKS: Record<
+  keyof typeof LISTING_STATUS_META,
+  ComponentType<SVGProps<SVGSVGElement>>
+> = {
+  DRAFT: LayersIcon,
+  OPEN: ActivityIcon,
+  IN_DISCUSSION: FileTextIcon,
+  FULL: UsersIcon,
+  FILLED: CheckIcon,
+  // « stopped », and the fallback MapLibre would have drawn anyway.
+  CLOSED: ClockIcon,
+  CLOSED_NO_CANDIDATE: ClockIcon,
+  CANCELLED: ClockIcon,
 };
 
 /**
@@ -220,80 +196,42 @@ function StatusDistribution({ counts }: { counts: ListingStatusCounts }) {
   })).filter((row) => row.count > 0);
 
   if (rows.length === 0) {
-    return (
-      <p className="py-6 text-center text-sm text-muted">
-        Aucune annonce à répartir.
-      </p>
-    );
+    return <RailEmpty>Aucune annonce à répartir.</RailEmpty>;
   }
 
   const percent = (count: number) =>
     Math.round((count / (counts.total || 1)) * 100);
 
   return (
-    <ul className="flex flex-col gap-3">
-      {rows.map((row) => (
-        <li key={row.status} className="flex min-w-0 items-center gap-2">
-          {/*
+    <RailDistribution
+      rows={rows.map(
+        (row): RailDistributionRow => ({
+          key: row.status,
+          /*
             The mark that opens each row, the reference's own arrangement: a
             glyph per category is what lets a reader match a bar here to a row in
             the table under it, where the same status pill appears.
-          */}
-          <StatusMark status={row.status} />
-          <span
-            className="w-[6.5rem] shrink-0 truncate text-sm text-foreground"
-            title={LISTING_STATUS_META[row.status].label}
-          >
-            {STATUS_SHORT_LABELS[row.status]}
-          </span>
-          <span className="w-5 shrink-0 text-right text-sm font-medium text-foreground tabular-nums">
-            {row.count}
-          </span>
-          <SegmentedBar percent={percent(row.count)} className="min-w-0" />
-          <span className="w-9 shrink-0 text-right text-xs text-muted tabular-nums">
-            {percent(row.count)} %
-          </span>
-        </li>
-      ))}
-    </ul>
+          */
+          mark: <StatusMark status={row.status} />,
+          label: LISTING_STATUS_META[row.status].shortLabel,
+          title: LISTING_STATUS_META[row.status].label,
+          count: row.count,
+          percent: percent(row.count),
+        }),
+      )}
+    />
   );
 }
-/** Statuses in the order a listing moves through them. */
-const LISTING_STATUS_ORDER = [
-  "DRAFT",
-  "OPEN",
-  "IN_DISCUSSION",
-  "FULL",
-  "FILLED",
-  "CLOSED",
-  "CLOSED_NO_CANDIDATE",
-  "CANCELLED",
-] as const;
 
 /**
  * A mark per status, chosen from the icons this product already carries.
  *
- * Not an `STATUS_ICONS` table written for five more glyphs: the set already
- * covers « not published », « live », « in discussion », « full », « done » and
- * « stopped ». Decorative either way — the label sits beside it on the same row,
- * and the pill in the table says the same thing in colour.
+ * Decorative either way — the label sits beside it on the same row, and the pill
+ * in the table says the same thing in colour.
  */
 function StatusMark({ status }: { status: keyof typeof LISTING_STATUS_META }) {
-  const shared = "size-4 shrink-0 text-muted";
-  switch (status) {
-    case "DRAFT":
-      return <LayersIcon className={shared} />;
-    case "OPEN":
-      return <ActivityIcon className={shared} />;
-    case "IN_DISCUSSION":
-      return <FileTextIcon className={shared} />;
-    case "FULL":
-      return <UsersIcon className={shared} />;
-    case "FILLED":
-      return <CheckIcon className={shared} />;
-    default:
-      return <ClockIcon className={shared} />;
-  }
+  const Mark = STATUS_MARKS[status];
+  return <Mark className="size-4 shrink-0 text-muted" />;
 }
 
 /**
