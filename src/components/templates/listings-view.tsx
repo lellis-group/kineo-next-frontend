@@ -4,7 +4,7 @@ import { ListingsResultsPanel } from "@/components/organisms/listings-results-pa
 import { ListingsToolbarCard } from "@/components/organisms/listings-toolbar-card";
 import { cn } from "@/lib/cn";
 import { SITE_SHELL } from "@/lib/layout";
-import type { BrowseFacets } from "@/lib/listings";
+import type { BrowseFacets, BrowseLayout } from "@/lib/listings";
 
 /**
  * The browse screen's shell — one screenful, no page scroll from `lg` up.
@@ -54,6 +54,8 @@ export interface ListingsViewProps {
   toolbar: ToolbarProps;
   /** The map. A slot because it can only be rendered in a browser. */
   map: ReactNode;
+  /** Which halves are on screen. Drives what this layout shows, nothing else. */
+  layout: BrowseLayout;
 }
 
 /**
@@ -67,13 +69,26 @@ export interface ListingsViewProps {
  * The rail stacks above the map below `lg` rather than beside it: three panels
  * at the column width is fine, three at phone width would push the map — the
  * reason the screen exists — entirely off the first screenful.
+ *
+ * The layout prop decides which of the two right-hand sections show. `split`
+ * (the desktop default) is map-over-list, each about half the height; `list`
+ * drops the map so the whole height goes to the rows; `map` drops the list so it
+ * all goes to the map. The filter bar stays in every mode — it is where the
+ * switch itself lives, so hiding it with the map would leave a `list` reader
+ * with no way back. That is why the bar and the map are one section that can
+ * show the bar without the map (`hideMap`), rather than the map hiding the bar
+ * with it.
  */
 export function ListingsView({
   facets,
   results,
   toolbar,
   map,
+  layout,
 }: ListingsViewProps) {
+  const showMap = layout !== "list";
+  const showList = layout !== "map";
+
   return (
     <div className={SHELL}>
       {/*
@@ -103,9 +118,11 @@ export function ListingsView({
             map. The reset now lives where the filters it clears are — inside
             « Filtres », which also says how many of them are applied.
           */}
-          <ListingsToolbarCard {...toolbar}>{map}</ListingsToolbarCard>
+          <ListingsToolbarCard {...toolbar} hideMap={!showMap}>
+            {map}
+          </ListingsToolbarCard>
 
-          <ListingsResultsPanel {...results} />
+          {showList && <ListingsResultsPanel {...results} />}
         </div>
       </div>
     </div>

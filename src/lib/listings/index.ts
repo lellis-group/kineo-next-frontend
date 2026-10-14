@@ -70,6 +70,7 @@ export type {
   BrowseFilters,
   BrowseFormFilters,
   BrowseHorizon,
+  BrowseLayout,
   BrowseListing,
   BrowseListingsData,
   BrowseView,

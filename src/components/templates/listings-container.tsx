@@ -23,6 +23,7 @@ import {
   BROWSE_PAGE_SIZE,
   type BrowseFacets,
   type BrowseFormFilters,
+  type BrowseLayout,
   type BrowseListing,
   type BrowseListingsData,
   type BrowsePlacesData,
@@ -158,6 +159,16 @@ export function ListingsContainer({
     latitude: number;
     longitude: number;
   } | null>(null);
+
+  /**
+   * Which halves are on screen — a preference, held here and nowhere else.
+   *
+   * Client state, deliberately not in the URL: a layout change reflows the
+   * screen and fetches nothing, and on this screen a URL write re-reads all
+   * three endpoints. So it lives beside the hover and the selection, the other
+   * things that are true of a sitting and not of a link. See `BrowseLayout`.
+   */
+  const [layout, setLayout] = useState<BrowseLayout>("split");
 
   const view = useMemo(
     () => toBrowseView(filters, page, sort),
@@ -374,6 +385,15 @@ export function ListingsContainer({
    */
   const pickListing = useCallback(
     (id: string) => {
+      // In « Carte seule » the list is not drawn, so scrolling a row into view has
+      // nothing to scroll. The popup's action is « see this in the list », so the
+      // honest answer is to reveal the list: switching to the split mounts it,
+      // and the rest of this handler — the page turn and the scroll — then has a
+      // list to act on once it renders.
+      if (layout === "map") {
+        setLayout("split");
+      }
+
       const listing = data.listings.find((row) => row.id === id);
       if (listing?.location) {
         setSelectedListing({
@@ -385,8 +405,10 @@ export function ListingsContainer({
       setHoveredListingId(id);
 
       // On this page already: the table scrolls the row itself and reports it
-      // was found, so there is nothing to page to — and nothing to ask.
-      if (tableRef.current?.scrollToId(id)) {
+      // was found, so there is nothing to page to — and nothing to ask. In
+      // « Carte seule » the table is not mounted yet, so this is false and the
+      // page turn below runs instead; the row scrolls in once the list renders.
+      if (layout !== "map" && tableRef.current?.scrollToId(id)) {
         return;
       }
 
@@ -412,7 +434,7 @@ export function ListingsContainer({
         },
       );
     },
-    [data.listings, view, filters, sort, writeView],
+    [data.listings, view, filters, sort, writeView, layout],
   );
 
   /**
@@ -445,6 +467,18 @@ export function ListingsContainer({
         longitude: listing.location.longitude,
       });
 
+      // In « Liste seule » the map is not drawn, so a camera move has nowhere to
+      // land and a scroll to the map card has nothing to show. The row's title is
+      // a « voir sur la carte » action, so the honest answer is to reveal the map:
+      // switching to the split mounts it and the map opens this posting's card.
+      // The imperative fly below is left to the case where the map is already
+      // there, and the page turn is skipped because a posting the reader could
+      // click is already on screen.
+      if (layout === "list") {
+        setLayout("split");
+        return;
+      }
+
       mapRef.current?.focusOn(listing.location);
 
       // On a phone the map is a screen away *above* the list, and a camera move
@@ -473,7 +507,7 @@ export function ListingsContainer({
 
       tableRef.current?.scrollToId(listing.id);
     },
-    [onScreenIds, view, filters, sort, writeView],
+    [onScreenIds, view, filters, sort, writeView, layout],
   );
 
   useEffect(() => {
@@ -511,7 +545,10 @@ export function ListingsContainer({
           total: data.total,
           sort,
           onSortChange: applySort,
+          layout,
+          onLayoutChange: setLayout,
         }}
+        layout={layout}
         results={{
           listings: data.listings,
           totalPages: data.totalPages,

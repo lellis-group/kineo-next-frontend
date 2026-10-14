@@ -6,10 +6,15 @@ import {
   SearchIcon,
   SlidersIcon,
 } from "@/components/atoms/icons";
+import { SegmentedControl } from "@/components/molecules/segmented-control";
 import { Select } from "@/components/molecules/select";
 import { cn } from "@/lib/cn";
 import { useCommittedInput } from "@/lib/hooks/use-committed-input";
-import type { BrowseFormFilters, BrowseSort } from "@/lib/listings";
+import type {
+  BrowseFormFilters,
+  BrowseLayout,
+  BrowseSort,
+} from "@/lib/listings";
 import type { Specialty } from "@/lib/types/api";
 
 export interface SpecialtyOption {
@@ -22,6 +27,19 @@ const BROWSE_SORTS: readonly { id: BrowseSort; label: string }[] = [
   { id: "recent", label: "Plus récentes" },
   { id: "urgent", label: "Urgentes d'abord" },
   { id: "startDate", label: "Date de début" },
+];
+
+/**
+ * How the two halves share the screen — the labels for the layout picker.
+ *
+ * « Les deux » rather than « Côte à côte »: the split is map-over-list, not
+ * side-by-side, and naming it for its shape would promise an arrangement the
+ * reader does not get. It names what they see — both, one, or the other.
+ */
+const BROWSE_LAYOUTS: readonly { id: BrowseLayout; label: string }[] = [
+  { id: "split", label: "Les deux" },
+  { id: "list", label: "Liste" },
+  { id: "map", label: "Carte" },
 ];
 
 interface ListingsToolbarProps {
@@ -45,6 +63,9 @@ interface ListingsToolbarProps {
   /** Ordering, and its change handler. */
   sort: BrowseSort;
   onSortChange: (sort: BrowseSort) => void;
+  /** Which halves are shown, and its change handler. A preference, not a filter. */
+  layout: BrowseLayout;
+  onLayoutChange: (layout: BrowseLayout) => void;
   className?: string;
 }
 
@@ -76,6 +97,8 @@ export function ListingsToolbar({
   onResetFilters,
   sort,
   onSortChange,
+  layout,
+  onLayoutChange,
   className,
 }: ListingsToolbarProps) {
   /**
@@ -190,6 +213,27 @@ export function ListingsToolbar({
             </option>
           ))}
         </Select>
+      </div>
+
+      {/*
+        The layout switch, beside the sort it belongs with — both are how the
+        reader wants the screen, neither narrows anything. A `SegmentedControl`
+        because it is « which of these few », the same shape as the period row.
+
+        Shown from `lg` only, where the split it toggles actually exists and the
+        bar has room for a third label; the toolbar already wraps, and a fourth
+        control on a phone would push the row to two lines for a preference that
+        matters most on a wide screen. The state still applies below `lg` — a
+        « Liste » chosen on desktop hides the map on a phone too — it is only the
+        control that is hidden, not the preference.
+      */}
+      <div className="hidden shrink-0 lg:block">
+        <SegmentedControl
+          ariaLabel="Disposition de l'écran"
+          options={BROWSE_LAYOUTS}
+          value={layout}
+          onChange={onLayoutChange}
+        />
       </div>
 
       <p

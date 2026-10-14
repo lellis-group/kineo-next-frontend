@@ -101,6 +101,24 @@ export interface BrowseView extends BrowseFilters {
  */
 export type BrowseSort = "recent" | "urgent" | "startDate";
 
+/**
+ * How the two halves of the screen are arranged.
+ *
+ * A presentation choice, not a view of the feed: it changes no result set, only
+ * how much of the screen the map and the list each take. `split` is the desktop
+ * default — map above list, each about half the height; `list` gives the whole
+ * height to the list for scanning many rows; `map` gives it to the map for
+ * exploring. It lives here, beside the sort, because it is the same kind of
+ * thing: a preference that does not narrow anything.
+ *
+ * It deliberately does *not* live in the URL, unlike the filters and the page.
+ * On this screen a URL write re-renders the route and re-reads all three
+ * endpoints, and a purely visual reflow is not worth a round trip. So it is
+ * client state, like the map's fullscreen — reset on a reload, which is the
+ * right life for a preference rather than for a search.
+ */
+export type BrowseLayout = "split" | "list" | "map";
+
 export interface BrowseFormFilters {
   specialty: Specialty | "";
   city: string;
