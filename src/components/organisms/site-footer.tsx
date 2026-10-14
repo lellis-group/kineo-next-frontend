@@ -64,12 +64,13 @@ function FooterLink({ href, label }: { href: string; label: string }) {
  * and quieter than the links it names, `text-faint` against their `text-muted`,
  * so the signpost is never mistaken for one more link that goes nowhere.
  *
- * Its links are one row that wraps. Two across (a grid) held the product list
- * to two lines but gave it a shape the legal group beside it did not have, and a
- * row of pills gave the legal group the mirror of that problem; one row each is
- * the single shape both groups share, and it is the one the rest of the site
- * uses whenever the same kind of thing repeats — the console's chips, the trust
- * bar's pills.
+ * Its links are stacked, one per line, so the two groups read as the columns a
+ * footer is made of. They were a single row that wraps, which put « Tarifs » and
+ * « Console Live » side by side under one heading: the list kept the shape of a
+ * sentence rather than of a column, and on a wide screen the two groups drifted
+ * apart because one was two lines long and the other one. A column is also the
+ * shape the rest of the page uses whenever a list is read rather than scanned —
+ * the console's side panels, the legal pages' section outlines.
  */
 function FooterLinkGroup({
   title,
@@ -79,12 +80,12 @@ function FooterLinkGroup({
   links: Array<{ label: string; href: string }>;
 }) {
   return (
-    <nav aria-label={title} className="min-w-0">
+    <nav aria-label={title} className="min-w-40">
       <h3 className="text-[0.6875rem] leading-tight font-medium text-faint">
         {title}
       </h3>
 
-      <ul className="mt-2 flex flex-wrap gap-x-5 gap-y-1.5">
+      <ul className="mt-2 flex flex-col gap-1.5">
         {links.map((link) => (
           <li key={`${title}-${link.label}`}>
             <FooterLink href={link.href} label={link.label} />
@@ -159,7 +160,7 @@ export function SiteFooter() {
           </p>
         </div>
 
-        <div className="flex min-w-0 flex-col gap-5 sm:flex-row sm:gap-10">
+        <div className="flex min-w-0 flex-col gap-5 sm:flex-row sm:gap-12">
           <FooterLinkGroup title="Produit" links={footerContent.productLinks} />
           <FooterLinkGroup
             title="Légal & Contact"
