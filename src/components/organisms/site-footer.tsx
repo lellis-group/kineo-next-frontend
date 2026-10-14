@@ -30,37 +30,26 @@ function BetaBadge() {
 /**
  * A link in the footer.
  *
- * Three renderings, because the reference draws three different shapes for a
- * link depending on how many of them there are and what they are for: the
- * dashboard's own controls are pills on a wash, and its text is plain with a
- * colour change on hover. Legal links are the utility cluster — four of them,
- * names that carry no hierarchy — so they take the pill. Product links are a
- * short list and take the text.
+ * One shape for every link, and it is the plainest one. It used to come in two
+ * — pills on a wash for the legal cluster, bare text for the product list — so
+ * the two groups sitting side by side read as two different kinds of thing, and
+ * the pills read as the console's filter chips dropped into a footer. A quiet
+ * line of text, washed to the brand cream on hover, is the whole vocabulary: the
+ * hairline above the band and the colour under it are what make the group read
+ * as a footer rather than as a row of buttons.
  *
  * `title` on the placeholders: « Tarifs » and friends point at `#` until the
  * page exists, and a link that silently does nothing reads as broken rather
  * than as pending.
  */
-function FooterLink({
-  href,
-  label,
-  pill,
-}: {
-  href: string;
-  label: string;
-  pill?: boolean;
-}) {
+function FooterLink({ href, label }: { href: string; label: string }) {
   const pending = href === "#" ? "Bientôt disponible" : undefined;
 
   return (
     <Link
       href={href}
       title={pending}
-      className={
-        pill
-          ? "inline-flex items-center rounded-full bg-white/[0.04] px-2.5 py-1 text-[0.8125rem] text-muted transition-colors hover:bg-white/[0.07] hover:text-primary"
-          : "inline-block text-[0.8125rem] text-muted transition-colors hover:text-primary"
-      }
+      className="text-[0.8125rem] leading-tight whitespace-nowrap text-muted transition-colors hover:text-primary"
     >
       {label}
     </Link>
@@ -71,80 +60,65 @@ function FooterLink({
  * One group of links, under its own label.
  *
  * The label is small, muted and medium-weight — the treatment the console's
- * panels give the names of their figures (« Urgentes », « annonces ouvertes »),
- * and the reference's own: its chart labels are set quiet rather than shouted,
- * because a group heading in a footer is a signpost and not a headline. It used
- * to be bold and upper-case, which made two columns of footer text into two
- * columns of headings.
+ * panels give the names of their figures (« Urgentes », « annonces ouvertes ») —
+ * and quieter than the links it names, `text-faint` against their `text-muted`,
+ * so the signpost is never mistaken for one more link that goes nowhere.
+ *
+ * Its links are one row that wraps. Two across (a grid) held the product list
+ * to two lines but gave it a shape the legal group beside it did not have, and a
+ * row of pills gave the legal group the mirror of that problem; one row each is
+ * the single shape both groups share, and it is the one the rest of the site
+ * uses whenever the same kind of thing repeats — the console's chips, the trust
+ * bar's pills.
  */
 function FooterLinkGroup({
   title,
   links,
-  variant,
 }: {
   title: string;
   links: Array<{ label: string; href: string }>;
-  /** `pills` for the utility cluster, `list` for the short two-column one. */
-  variant: "pills" | "list";
 }) {
   return (
     <nav aria-label={title} className="min-w-0">
-      <h3 className="text-[0.6875rem] leading-tight font-medium text-muted">
+      <h3 className="text-[0.6875rem] leading-tight font-medium text-faint">
         {title}
       </h3>
 
-      {variant === "pills" ? (
-        /*
-          One line, wrapping: four short names in pills are one row of chrome,
-          where four stacked lines were four rows of it — and the pills are what
-          the reference puts in a row whenever the same kind of link repeats.
-        */
-        <ul className="mt-2 flex flex-wrap gap-1.5">
-          {links.map((link) => (
-            <li key={`${title}-${link.label}`}>
-              <FooterLink href={link.href} label={link.label} pill />
-            </li>
-          ))}
-        </ul>
-      ) : (
-        /*
-          Two columns, because a list of four that runs down the screen costs
-          twice the width of the group beside it and four lines of height. Two
-          across is the shape that fits the row instead of setting its height.
-        */
-        <ul className="mt-2 grid grid-cols-2 gap-x-6 gap-y-1.5">
-          {links.map((link) => (
-            <li key={`${title}-${link.label}`}>
-              <FooterLink href={link.href} label={link.label} />
-            </li>
-          ))}
-        </ul>
-      )}
+      <ul className="mt-2 flex flex-wrap gap-x-5 gap-y-1.5">
+        {links.map((link) => (
+          <li key={`${title}-${link.label}`}>
+            <FooterLink href={link.href} label={link.label} />
+          </li>
+        ))}
+      </ul>
     </nav>
   );
 }
 
 /**
- * The site footer, drawn in the console's own language.
+ * The site footer, drawn in the band the page already speaks.
  *
- * One band — a hairline above, the near-black surface under — and two zones on
+ * One band — a hairline above, the page's own colour under — and two zones on
  * it from `sm` up: the brand on the left, the link groups on the right. No
  * separate bottom bar: the copyright sits under the tagline, in the shortest of
  * the zones, so the layout keeps the row height the brand column needs and no
  * more.
  *
- * It does not grow it either. The tallest column used to be the link lists, at
- * four rows each; the products are two across and the legal ones are one row of
- * pills, so the brand column is now what sets the height, and the footer is
- * thinner than it was while carrying every link it carried before.
+ * The band is `bg-background` and not `bg-surface`, which is the change that
+ * matters most. The footer is chrome, not a card: on the near-black surface it
+ * sat directly under the `bg-surface` call-to-action band with only a hairline
+ * between them, so the two merged into one black slab at the foot of every page
+ * and the footer had no edge of its own. In the page's colour it is the header's
+ * counterpart — a hairline and nothing else, at the other end of the document —
+ * and the cream hairline under the CTA above it is what ends that band.
  *
- * Everything is drawn from the theme tokens (`--surface`, `--primary`,
- * `--border`, `--muted`), so it follows any palette change without a second
- * edit.
+ * Everything is drawn from the theme tokens (`--background`, `--primary`,
+ * `--border`, `--muted`, `--faint`), so it follows any palette change without a
+ * second edit.
  */
 export function SiteFooter() {
   return (
-    <footer className="border-t border-border bg-surface">
+    <footer className="border-t border-border bg-background">
       <div
         className={cn(
           SITE_SHELL,
@@ -185,16 +159,11 @@ export function SiteFooter() {
           </p>
         </div>
 
-        <div className="flex flex-col gap-5 sm:flex-row sm:gap-10">
-          <FooterLinkGroup
-            title="Produit"
-            links={footerContent.productLinks}
-            variant="list"
-          />
+        <div className="flex min-w-0 flex-col gap-5 sm:flex-row sm:gap-10">
+          <FooterLinkGroup title="Produit" links={footerContent.productLinks} />
           <FooterLinkGroup
             title="Légal & Contact"
             links={footerContent.legalLinks}
-            variant="pills"
           />
         </div>
       </div>
