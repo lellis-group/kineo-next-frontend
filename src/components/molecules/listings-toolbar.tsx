@@ -10,7 +10,10 @@ import {
 import { SegmentedControl } from "@/components/molecules/segmented-control";
 import { Select } from "@/components/molecules/select";
 import { cn } from "@/lib/cn";
-import { useCommittedInput } from "@/lib/hooks/use-committed-input";
+import {
+  useCommittedInput,
+  useDebouncedInput,
+} from "@/lib/hooks/use-committed-input";
 import type {
   BrowseFormFilters,
   BrowseLayout,
@@ -121,11 +124,26 @@ export function ListingsToolbar({
     }
   };
 
+  /**
+   * Free text, applied a beat after the reader stops typing.
+   *
+   * Debounced rather than committed on blur, unlike the city: a search is read
+   * letter by letter, and a reader expects the feed to answer as they finish a
+   * word, not only when they click away. The draft is local so the box stays
+   * instant; only the settled value is lifted, which collapses a burst of
+   * keystrokes into one URL write and one set of reads. See `useDebouncedInput`.
+   */
+  const { draft: queryDraft, setDraft: setQueryDraft } = useDebouncedInput(
+    filters.q,
+    (value) => onFiltersChange({ q: value }),
+  );
+
   // How many of the four narrowing controls are applied. It is what the « Filtres »
   // button carries: a panel that hides applied filters without saying so would
   // leave the reader reading a narrowed map with no clue what narrowed it.
   const appliedFilters = [
     filters.specialty !== "",
+    filters.q.trim() !== "",
     filters.from !== "",
     filters.to !== "",
     filters.urgentOnly,
@@ -165,7 +183,30 @@ export function ListingsToolbar({
       the far edge of a full-width bar.
     */
     <div className={cn("flex flex-wrap items-center gap-2", className)}>
-      <div className="min-w-[10rem] flex-1">
+      {/*
+        Free text first, then the city: what the reader is looking for before
+        where. Both `flex-1` so they share the bar's slack and each keeps a
+        readable floor; on a narrow bar they wrap onto their own lines rather
+        than squeeze into unusable slivers.
+      */}
+      <div className="min-w-[9rem] flex-1">
+        <label className="sr-only" htmlFor="browse-q">
+          Rechercher une annonce
+        </label>
+        <div className="relative">
+          <SearchIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted" />
+          <input
+            id="browse-q"
+            type="search"
+            className="field-input rounded-full py-1.5 pl-9"
+            placeholder="Spécialité, mot-clé…"
+            value={queryDraft}
+            onChange={(event) => setQueryDraft(event.target.value)}
+          />
+        </div>
+      </div>
+
+      <div className="min-w-[9rem] flex-1">
         <label className="sr-only" htmlFor="browse-city">
           Rechercher une ville
         </label>

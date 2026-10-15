@@ -65,6 +65,8 @@ export interface BrowseListing {
 export interface BrowseFilters {
   specialty?: Specialty;
   city?: string;
+  /** Free-text match on the posting's title and description. */
+  q?: string;
   /** ISO date, inclusive lower bound on `startDate`. */
   startDateFrom?: string;
   /** ISO date, inclusive upper bound on `startDate`. */
@@ -122,6 +124,8 @@ export type BrowseLayout = "split" | "list" | "map";
 export interface BrowseFormFilters {
   specialty: Specialty | "";
   city: string;
+  /** What the reader typed to search the postings' words. */
+  q: string;
   from: string;
   to: string;
   urgentOnly: boolean;
@@ -130,6 +134,7 @@ export interface BrowseFormFilters {
 export const EMPTY_BROWSE_FILTERS: BrowseFormFilters = {
   specialty: "",
   city: "",
+  q: "",
   from: "",
   to: "",
   urgentOnly: false,
@@ -159,6 +164,7 @@ export function toBrowseView(
     sort,
     specialty: filters.specialty || undefined,
     city: filters.city.trim() || undefined,
+    q: filters.q.trim() || undefined,
     urgentOnly: filters.urgentOnly || undefined,
     startDateFrom: toIsoDayBound(filters.from),
     startDateTo: toIsoDayBound(filters.to, true),
@@ -172,6 +178,7 @@ export function isDefaultBrowseView(view: BrowseView): boolean {
     view.sort === DEFAULT_BROWSE_VIEW.sort &&
     view.specialty === undefined &&
     view.city === undefined &&
+    view.q === undefined &&
     view.startDateFrom === undefined &&
     view.startDateTo === undefined &&
     view.urgentOnly !== true
@@ -233,6 +240,7 @@ export function browseViewFromParams(params: Pick<URLSearchParams, "get">): {
     filters: {
       specialty: readSpecialty(params.get("specialty") ?? ""),
       city: (params.get("city") ?? "").trim(),
+      q: (params.get("q") ?? "").trim(),
       from: readDate(params.get("from") ?? ""),
       to: readDate(params.get("to") ?? ""),
       urgentOnly: params.get("urgent") === "true",
@@ -270,6 +278,8 @@ export function browseViewToParams(
   if (filters.specialty) params.set("specialty", filters.specialty);
   const city = filters.city.trim();
   if (city) params.set("city", city);
+  const q = filters.q.trim();
+  if (q) params.set("q", q);
   if (filters.from) params.set("from", filters.from);
   if (filters.to) params.set("to", filters.to);
   if (filters.urgentOnly) params.set("urgent", "true");

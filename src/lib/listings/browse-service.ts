@@ -87,6 +87,7 @@ export async function fetchBrowseListings(
   const query = buildQuery({
     specialty: filters.specialty,
     city: filters.city,
+    q: filters.q,
     startDateFrom: filters.startDateFrom,
     startDateTo: filters.startDateTo,
     urgent: filters.urgentOnly ? "true" : undefined,
@@ -134,6 +135,7 @@ export async function fetchBrowsePlaces(
   const query = buildQuery({
     specialty: filters.specialty,
     city: filters.city,
+    q: filters.q,
     startDateFrom: filters.startDateFrom,
     startDateTo: filters.startDateTo,
     urgent: filters.urgentOnly ? "true" : undefined,
@@ -179,6 +181,7 @@ export async function fetchListingPageOf(
     id,
     specialty: filters.specialty,
     city: filters.city,
+    q: filters.q,
     startDateFrom: filters.startDateFrom,
     startDateTo: filters.startDateTo,
     urgent: filters.urgentOnly ? "true" : undefined,
@@ -215,6 +218,10 @@ export async function fetchFacets(
 ): Promise<BrowseFacets> {
   const query = buildQuery({
     city: filters.city,
+    // Unlike `specialty`, the free-text term is sent: a distribution panel under
+    // a search should describe the searched collection, exactly as it does under
+    // a city or a date. Only the specialty is withheld, and for its own reason.
+    q: filters.q,
     startDateFrom: filters.startDateFrom,
     startDateTo: filters.startDateTo,
     urgent: filters.urgentOnly ? "true" : undefined,

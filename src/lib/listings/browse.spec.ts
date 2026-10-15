@@ -139,6 +139,11 @@ describe("isDefaultBrowseView", () => {
         toBrowseView({ ...EMPTY_BROWSE_FILTERS, urgentOnly: true }),
       ),
     ).toBe(false);
+    expect(
+      isDefaultBrowseView(
+        toBrowseView({ ...EMPTY_BROWSE_FILTERS, q: "dermatologue" }),
+      ),
+    ).toBe(false);
     expect(isDefaultBrowseView(toBrowseView(EMPTY_BROWSE_FILTERS, 2))).toBe(
       false,
     );
@@ -268,6 +273,7 @@ describe("fetchBrowseListings", () => {
       {
         specialty: "DENTIST",
         city: "Paris",
+        q: "dermatologue",
         urgentOnly: true,
         startDateFrom: "2026-10-01",
         sort: "urgent",
@@ -278,6 +284,7 @@ describe("fetchBrowseListings", () => {
 
     expect(paths[0]).toContain("specialty=DENTIST");
     expect(paths[0]).toContain("city=Paris");
+    expect(paths[0]).toContain("q=dermatologue");
     expect(paths[0]).toContain("urgent=true");
     expect(paths[0]).toContain("startDateFrom=2026-10-01");
     expect(paths[0]).toContain("sort=urgent");
@@ -417,6 +424,7 @@ describe("fetchBrowsePlaces", () => {
       {
         specialty: "DENTIST",
         city: "Paris",
+        q: "dermatologue",
         urgentOnly: true,
         startDateFrom: "2026-10-01",
       },
@@ -425,6 +433,7 @@ describe("fetchBrowsePlaces", () => {
 
     expect(paths[0]).toContain("specialty=DENTIST");
     expect(paths[0]).toContain("city=Paris");
+    expect(paths[0]).toContain("q=dermatologue");
     expect(paths[0]).toContain("urgent=true");
     expect(paths[0]).toContain("startDateFrom=2026-10-01");
   });
@@ -503,6 +512,7 @@ describe("browseViewFromParams", () => {
     const params = new URLSearchParams({
       specialty: "DENTIST",
       city: "Lyon",
+      q: "dermatologue",
       from: "2026-10-01",
       to: "2026-10-31",
       urgent: "true",
@@ -515,6 +525,7 @@ describe("browseViewFromParams", () => {
     expect(filters).toEqual({
       specialty: "DENTIST",
       city: "Lyon",
+      q: "dermatologue",
       from: "2026-10-01",
       to: "2026-10-31",
       urgentOnly: true,
@@ -624,6 +635,27 @@ describe("browseViewToParams", () => {
       browseViewToParams(EMPTY_BROWSE_FILTERS, 1, "urgent").get("sort"),
     ).toBe("urgent");
   });
+
+  /**
+   * A search is a narrowing like any other: it belongs in the URL, trimmed, and
+   * dropped when it is blank — a query for «   » is no query at all.
+   */
+  it("writes the free-text term, trimmed, and drops it when blank", () => {
+    expect(
+      browseViewToParams(
+        { ...EMPTY_BROWSE_FILTERS, q: "  dermato  " },
+        1,
+        "recent",
+      ).get("q"),
+    ).toBe("dermato");
+    expect(
+      browseViewToParams(
+        { ...EMPTY_BROWSE_FILTERS, q: "   " },
+        1,
+        "recent",
+      ).has("q"),
+    ).toBe(false);
+  });
 });
 
 /**
@@ -637,6 +669,7 @@ describe("browse view round-trips through the URL", () => {
       {
         specialty: "DENTIST",
         city: "Lyon",
+        q: "dermatologue",
         from: "2026-10-01",
         to: "2026-10-31",
         urgentOnly: true,
@@ -652,6 +685,7 @@ describe("browse view round-trips through the URL", () => {
     expect(filters).toEqual({
       specialty: "DENTIST",
       city: "Lyon",
+      q: "dermatologue",
       from: "2026-10-01",
       to: "2026-10-31",
       urgentOnly: true,
