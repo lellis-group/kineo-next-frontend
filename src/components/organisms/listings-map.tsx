@@ -137,6 +137,15 @@ export const ListingsMap = forwardRef<ListingsMapHandle, ListingsMapProps>(
           "relative size-full overflow-hidden rounded-card",
           className,
         )}
+        /*
+          Names the canvas for a screen reader: the map itself is opaque to one,
+          so the region is introduced by what it holds rather than left as an
+          unlabelled box of tiles. `application` because the markers inside are
+          real controls — focusable buttons a reader tabs into — not passive
+          content a `region` or `figure` would imply.
+        */
+        role="application"
+        aria-label="Carte des cabinets"
       >
         <div ref={containerRef} className="size-full" />
 
@@ -174,25 +183,42 @@ export const ListingsMap = forwardRef<ListingsMapHandle, ListingsMapProps>(
           <FullscreenToggle containerRef={containerRef} />
         </div>
 
-        {unlocated > 0 && (
-          <p className="absolute bottom-3 left-3 rounded-full bg-white/90 px-3 py-1.5 text-[0.6875rem] text-map-ink shadow-[0_2px_10px_rgb(22_21_15/0.12)] backdrop-blur-sm">
-            {unlocated} annonce{unlocated > 1 ? "s" : ""} sans coordonnées,
-            visible{unlocated > 1 ? "s" : ""} dans la liste seulement
-          </p>
-        )}
+        {/*
+          The map's own counts, in one polite live region.
 
-        {/* The ceiling, stated with a count. A flag with no figure behind it
-          invites the reader to hunt for what is missing.
+          A screen-reader user gets nothing from the canvas, so these are the
+          only thing that tells them what the map is showing — and the numbers
+          move whenever a filter changes. `aria-live="polite"` announces the new
+          state when it settles rather than interrupting, and one region holds
+          both lines so they are read together rather than as two separate
+          announcements. The `<output>` element carries an implicit `status`
+          role, which gives the region a name to hang the politeness on in
+          the older readers that want one.
+        */}
+        <output
+          aria-live="polite"
+          className="pointer-events-none absolute bottom-3 left-3 flex flex-col items-start gap-1.5"
+        >
+          {unlocated > 0 && (
+            <p className="rounded-full bg-white/90 px-3 py-1.5 text-[0.6875rem] text-map-ink shadow-[0_2px_10px_rgb(22_21_15/0.12)] backdrop-blur-sm">
+              {unlocated} annonce{unlocated > 1 ? "s" : ""} sans coordonnées,
+              visible{unlocated > 1 ? "s" : ""} dans la liste seulement
+            </p>
+          )}
 
-          "Les plus actives" is what `/places` does: it ranks practices by open
-          listing count and keeps the top `maxPlaces`, so the ones left off are
-          the quietest, not the oldest or the furthest. */}
-        {truncated && (
-          <p className="absolute bottom-12 left-3 rounded-full bg-white/90 px-3 py-1.5 text-[0.6875rem] text-map-ink shadow-[0_2px_10px_rgb(22_21_15/0.12)] backdrop-blur-sm">
-            {places.length} cabinets sur {totalPlaces} représentés — les plus
-            actives
-          </p>
-        )}
+          {/* The ceiling, stated with a count. A flag with no figure behind it
+            invites the reader to hunt for what is missing.
+
+            "Les plus actives" is what `/places` does: it ranks practices by open
+            listing count and keeps the top `maxPlaces`, so the ones left off are
+            the quietest, not the oldest or the furthest. */}
+          {truncated && (
+            <p className="rounded-full bg-white/90 px-3 py-1.5 text-[0.6875rem] text-map-ink shadow-[0_2px_10px_rgb(22_21_15/0.12)] backdrop-blur-sm">
+              {places.length} cabinets sur {totalPlaces} représentés — les plus
+              actives
+            </p>
+          )}
+        </output>
       </div>
     );
   },
