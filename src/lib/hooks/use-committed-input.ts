@@ -15,18 +15,30 @@ import { useEffect, useRef, useState } from "react";
  * empty result set with a city still typed into it. The sync writes straight to
  * the draft rather than through `commit`, because a value the parent already
  * holds is not a change to report back.
+ *
+ * The sync is conditional (see `shouldAdoptCommitted`): it must not adopt the
+ * echo of the field's own commit. A commit writes the URL and the new committed
+ * value only arrives after the navigation lands, so between the two the draft
+ * may already hold newer keystrokes the echo would clobber.
  */
 export function useCommittedInput(committed: string) {
   const [draft, setDraft] = useState(committed);
   const committedRef = useRef(committed);
   committedRef.current = committed;
+  const lastSentRef = useRef<string | null>(null);
 
-  useEffect(() => setDraft(committed), [committed]);
+  useEffect(() => {
+    if (shouldAdoptCommitted(committed, lastSentRef.current)) {
+      lastSentRef.current = null;
+      setDraft(committed);
+    }
+  }, [committed]);
 
   /** Reports the draft if it differs from what is already applied. */
   const commit = () => {
     const trimmed = draft.trim();
     if (trimmed !== committedRef.current) {
+      lastSentRef.current = trimmed;
       return trimmed;
     }
     return null;
@@ -62,11 +74,21 @@ export function useDebouncedInput(
   const [draft, setDraft] = useState(committed);
   const committedRef = useRef(committed);
   committedRef.current = committed;
+  const lastSentRef = useRef<string | null>(null);
   const onCommitRef = useRef(onCommit);
   onCommitRef.current = onCommit;
 
   // An external change — reset, or the back button — becomes the new draft.
-  useEffect(() => setDraft(committed), [committed]);
+  // The echo of this field's own commit is not external: the navigation lands
+  // after the reader may already have typed past the value it carries, and
+  // adopting it would clobber those newer keystrokes. The timer guard below
+  // re-commits the surviving draft, so nothing the reader typed is lost.
+  useEffect(() => {
+    if (shouldAdoptCommitted(committed, lastSentRef.current)) {
+      lastSentRef.current = null;
+      setDraft(committed);
+    }
+  }, [committed]);
 
   useEffect(() => {
     // Nothing typed since the last apply: no timer, no apply.
@@ -74,6 +96,7 @@ export function useDebouncedInput(
     const timer = setTimeout(() => {
       const trimmed = draft.trim();
       if (trimmed !== committedRef.current) {
+        lastSentRef.current = trimmed;
         onCommitRef.current(trimmed);
       }
     }, delay);
@@ -81,4 +104,23 @@ export function useDebouncedInput(
   }, [draft, delay]);
 
   return { draft, setDraft };
+}
+
+/**
+ * Whether an arriving committed value should replace the draft.
+ *
+ * A commit writes the URL and the new committed value only lands after the
+ * navigation — so a `committed` that equals what this field last sent is the
+ * echo of its own commit, not news from elsewhere, and the draft (which may
+ * already hold newer keystrokes) wins. Anything else is external — a reset, or
+ * the back button walking to another view — and becomes the new draft.
+ *
+ * A pure function so the rule is testable without a DOM: the hooks own the
+ * refs, this owns the decision.
+ */
+export function shouldAdoptCommitted(
+  committed: string,
+  lastSent: string | null,
+): boolean {
+  return committed !== lastSent;
 }
