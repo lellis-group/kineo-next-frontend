@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version: 1.4.0
+      - run: bun install --frozen-lockfile
+      # No `bun audit --production` gate here: Next 16.3.3 ships with known
+      # advisories (GHSA-f87g-xv8r-7p7x and siblings) that fail the audit on a
+      # clean tree. Gate it once Next is bumped past the fixed range instead of
+      # baking a red build in.
+      #
+      # No services and no env either: the two NEXT_PUBLIC_* vars fall back to
+      # localhost (see backend-proxy.ts, auth-client.ts), so `build` needs no
+      # secrets to prerender.
+      - run: bun run lint
+      - run: bun run typecheck
+      - run: bun run test
+      - run: bun run build
