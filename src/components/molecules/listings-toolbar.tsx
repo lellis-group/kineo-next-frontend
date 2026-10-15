@@ -138,6 +138,24 @@ export function ListingsToolbar({
     (value) => onFiltersChange({ q: value }),
   );
 
+  /**
+   * The two date bounds, each applied a beat after the reader settles it.
+   *
+   * A native date input can emit several changes while one date is being chosen
+   * — a partial value on the way to a whole one — and each would otherwise write
+   * the URL and re-read the feed. Debounced, a burst collapses into one apply.
+   * Each bound keeps its own draft so the box stays instant; the two commit
+   * independently, which is correct because a range is two filters, not one.
+   */
+  const { draft: fromDraft, setDraft: setFrom } = useDebouncedInput(
+    filters.from,
+    (value) => onFiltersChange({ from: value }),
+  );
+  const { draft: toDraft, setDraft: setTo } = useDebouncedInput(
+    filters.to,
+    (value) => onFiltersChange({ to: value }),
+  );
+
   // How many of the four narrowing controls are applied. It is what the « Filtres »
   // button carries: a panel that hides applied filters without saying so would
   // leave the reader reading a narrowed map with no clue what narrowed it.
@@ -357,11 +375,12 @@ export function ListingsToolbar({
                       type="date"
                       aria-label="Démarrant après le"
                       className="field-input w-full min-w-0 rounded-full py-1.5"
-                      value={filters.from}
+                      value={fromDraft}
+                      // The settled `to`, not its draft: the ceiling is what is
+                      // actually applied, and reading a half-typed bound here
+                      // would reject a date the reader is still entering.
                       max={filters.to || undefined}
-                      onChange={(event) =>
-                        onFiltersChange({ from: event.target.value })
-                      }
+                      onChange={(event) => setFrom(event.target.value)}
                     />
                   </div>
                   <div className="min-w-0">
@@ -373,11 +392,9 @@ export function ListingsToolbar({
                       type="date"
                       aria-label="Démarrant avant le"
                       className="field-input w-full min-w-0 rounded-full py-1.5"
-                      value={filters.to}
+                      value={toDraft}
                       min={filters.from || undefined}
-                      onChange={(event) =>
-                        onFiltersChange({ to: event.target.value })
-                      }
+                      onChange={(event) => setTo(event.target.value)}
                     />
                   </div>
                 </div>
