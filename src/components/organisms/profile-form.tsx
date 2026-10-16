@@ -11,6 +11,7 @@ import {
   type ProfileFormData,
   type ProfileFormValues,
   RPPS_DIGITS,
+  RPPS_PATTERN_SOURCE,
   SPECIALTY_LABELS,
   validateProfileForm,
 } from "@/lib/profile";
@@ -115,7 +116,7 @@ export function ProfileForm({
             name="rppsNumber"
             type="text"
             inputMode="numeric"
-            pattern={`d{${RPPS_DIGITS}}`}
+            pattern={RPPS_PATTERN_SOURCE}
             maxLength={RPPS_DIGITS}
             placeholder="12345678901"
             defaultValue={initialValues.rppsNumber}

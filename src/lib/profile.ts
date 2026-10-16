@@ -8,7 +8,18 @@
  * decided again.
  */
 export const RPPS_DIGITS = 11;
-export const RPPS_PATTERN = new RegExp(`^\\d{${RPPS_DIGITS}}$`);
+/**
+ * The rule as a pattern *source*, so the two consumers that cannot share a
+ * `RegExp` both read it from here.
+ *
+ * The input's `pattern` attribute takes a string and anchors it itself, so it
+ * wants the bare `\d{11}`; the validator wants the anchored `RegExp`. Writing
+ * the attribute inline instead — `d{11}` — made it match the literal letter
+ * `d` eleven times, so a real number was rejected by the browser's own
+ * constraint validation and a French message never appeared.
+ */
+export const RPPS_PATTERN_SOURCE = `\\d{${RPPS_DIGITS}}`;
+export const RPPS_PATTERN = new RegExp(`^${RPPS_PATTERN_SOURCE}$`);
 export const RPPS_ERROR_MESSAGE = `Le numéro RPPS doit contenir exactement ${RPPS_DIGITS} chiffres.`;
 
 /** Mirrors the backend's `city` bound (`textField(100, "City")`). */
