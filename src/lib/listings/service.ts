@@ -191,6 +191,12 @@ export async function fetchListingApplications(
     status?: ApplicationStatus;
   } = {},
   transport?: ApiTransport,
+  /**
+   * Forwarded to the request, so a caller can cancel a read it has superseded —
+   * the panel behind an expanded card, which the reader collapses or replaces
+   * before the answer arrives.
+   */
+  init?: RequestInit,
 ): Promise<ListingApplicationsData> {
   const query = buildQuery({
     page: params.page ?? 1,
@@ -202,7 +208,7 @@ export async function fetchListingApplications(
     ApiPaginated<ApiApplication> & {
       meta: { counts?: Partial<ReceivedApplicationCounts> };
     }
-  >(`/applications/listing/${listingId}?${query}`, undefined, transport);
+  >(`/applications/listing/${listingId}?${query}`, init, transport);
 
   return {
     applications: raw.data
