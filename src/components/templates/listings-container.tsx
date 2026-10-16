@@ -20,6 +20,7 @@ import { isInView } from "@/lib/dom";
 import type { ListingsMapHandle } from "@/lib/hooks/use-map-markers";
 import { usePaginatedResource } from "@/lib/hooks/use-paginated-resource";
 import {
+  BROWSE_MAP_ID,
   BROWSE_PAGE_SIZE,
   type BrowseFacets,
   type BrowseFormFilters,
@@ -41,17 +42,6 @@ import {
 } from "@/lib/listings";
 import { SPECIALTY_LABELS } from "@/lib/profile";
 import type { Specialty } from "@/lib/types/api";
-
-/**
- * The map card's id, so a choice made in the list can bring it back into view.
- *
- * On a phone the map sits a screen above the results, and the reciprocal gesture
- * — the row's title flies the camera — is invisible unless the camera is on
- * screen. Looked up by id rather than held in a ref because the map is rendered
- * through a `Suspense` boundary by a component this file does not own the markup
- * of; the id is the one thing that crosses it.
- */
-const BROWSE_MAP_ID = "browse-map";
 
 /**
  * The map, loaded only in the browser.

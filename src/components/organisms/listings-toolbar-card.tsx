@@ -4,14 +4,12 @@ import {
   type SpecialtyOption,
 } from "@/components/molecules/listings-toolbar";
 import { cn } from "@/lib/cn";
-import type {
-  BrowseFormFilters,
-  BrowseLayout,
-  BrowseSort,
+import {
+  BROWSE_MAP_ID,
+  type BrowseFormFilters,
+  type BrowseLayout,
+  type BrowseSort,
 } from "@/lib/listings";
-
-/** Shared with the container, which scrolls this card back into view. */
-const BROWSE_MAP_ID = "browse-map";
 
 interface ListingsToolbarCardProps {
   filters: BrowseFormFilters;

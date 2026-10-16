@@ -81,6 +81,7 @@ export type {
   SpecialtyFacet,
 } from "./browse-contracts";
 export {
+  BROWSE_MAP_ID,
   type BrowsePlacesData,
   type BrowseSort,
   browseViewFromParams,

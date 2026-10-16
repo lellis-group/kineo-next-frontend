@@ -121,6 +121,21 @@ export type BrowseSort = "recent" | "urgent" | "startDate";
  */
 export type BrowseLayout = "split" | "list" | "map";
 
+/**
+ * The map card's id, so a choice made in the list can bring it back into view.
+ *
+ * It lives here because two files need it and neither owns the other: the
+ * toolbar card sets it on the element that wraps the map, and the container
+ * looks it up to scroll it. Looked up by id rather than held in a ref because
+ * the map is rendered through a `Suspense` boundary by a component this pair
+ * does not own the markup of; the id is the one thing that crosses it.
+ *
+ * Declared once, here: a literal written in both places is two literals that
+ * agree until a typo makes them disagree, and the failure is a camera move
+ * nobody sees rather than an error.
+ */
+export const BROWSE_MAP_ID = "browse-map";
+
 export interface BrowseFormFilters {
   specialty: Specialty | "";
   city: string;
