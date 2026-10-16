@@ -14,6 +14,7 @@ export {
   RECEIVED_DECISION_LABELS,
   RECEIVED_STATUS_LABELS,
   receivedDecisionLabel,
+  recruitingCount,
   specialtyLabel,
 } from "./adapters";
 export type {

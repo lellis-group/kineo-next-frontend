@@ -316,6 +316,18 @@ export interface ApiApplicationPage<T> extends ApiPaginated<T> {
     counts?: Partial<ApiApplicationStatusCounts>;
     /** Per-situation totals for the rejected applications. Absent on older backends. */
     bucketCounts?: Partial<ApiApplicationBucketCounts>;
+    /**
+     * Open applications the practice has not opened yet, over the whole
+     * collection. A backend one release behind sends none, and a caller reads that
+     * as zero rather than paging the collection to count it.
+     */
+    unseenOpenCount?: number;
+    /**
+     * Applications that got an answer, withdrawn ones excluded — the numerator of
+     * the dashboard's response rate, sent beside the totals that form its
+     * denominator so the two cannot describe different collections.
+     */
+    respondedCount?: number;
   };
 }
 

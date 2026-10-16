@@ -1,11 +1,19 @@
-import type { ApiApplication } from "../types/api";
+import type { ApiApplicationStatusCounts } from "../types/api";
 import type { DashboardData, ReactivityStat } from "./contracts";
 
-export function adaptReactivity(
-  applications: ApiApplication[],
-): DashboardData["reactivity"] {
-  // All metrics are about applications SENT by the user.
-  const sent = applications.length;
+/**
+ * How many of the member's applications got an answer.
+ *
+ * Read from the totals rather than counted off a page: the rate below is a figure
+ * about every application sent, and a numerator drawn from the four newest rows
+ * would divide a page by a collection.
+ */
+export function adaptReactivity(applications: {
+  counts: ApiApplicationStatusCounts;
+  respondedCount: number;
+}): DashboardData["reactivity"] {
+  const { counts, respondedCount } = applications;
+  const sent = counts.total;
 
   /**
    * Withdrawn applications stay out of the response rate.
@@ -15,21 +23,17 @@ export function adaptReactivity(
    * leaving it in the denominator turned a deliberate withdrawal into a mark
    * against the practice. Someone who withdrew four of five applications was
    * shown 20% under a metric that had nothing to do with the practices they
-   * wrote to.
+   * wrote to. The backend draws that same line in `respondedCount`, so the two
+   * ends of the division describe one collection.
    */
-  const answerable = applications.filter((a) => a.status !== "WITHDRAWN");
-  const responded = answerable.filter((a) => a.respondedAt).length;
+  const answerable = sent - counts.WITHDRAWN;
   const rate =
-    answerable.length > 0
-      ? Math.round((responded / answerable.length) * 100)
-      : 0;
-
-  const accepted = applications.filter((a) => a.status === "ACCEPTED").length;
+    answerable > 0 ? Math.round((respondedCount / answerable) * 100) : 0;
 
   const stats: ReactivityStat[] = [
     { label: "Taux de réponse des cabinets", value: `${rate}%`, accent: true },
     { label: "Candidatures envoyées", value: `${sent}` },
-    { label: "Acceptées", value: `${accepted}` },
+    { label: "Acceptées", value: `${counts.ACCEPTED}` },
   ];
 
   return {

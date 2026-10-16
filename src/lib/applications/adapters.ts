@@ -6,6 +6,7 @@
 import { formatDateRange, formatRelativeTime } from "../format";
 import type {
   ApiApplication,
+  ApiApplicationStatusCounts,
   ApplicationDecisionSource,
   ApplicationStatus,
 } from "../types/api";
@@ -160,13 +161,20 @@ export const WITHDRAWABLE_STATUSES: ReadonlySet<ApplicationStatus> = new Set([
 export const AWAITING_DECISION_STATUSES: ReadonlySet<ApplicationStatus> =
   new Set(["PENDING", "SHORTLISTED"]);
 
-/** How many applications are still awaiting the practice's decision. */
-export function countAwaitingDecision(
-  applications: ReadonlyArray<{ status: ApplicationStatus }>,
+/**
+ * How many applications are still awaiting the practice's decision.
+ *
+ * Sums the server's totals rather than counting rows: this is a figure about the
+ * whole collection, and a caller holding one page of it would report a page.
+ */
+export function awaitingDecisionCount(
+  counts: ApiApplicationStatusCounts,
 ): number {
-  return applications.filter((application) =>
-    AWAITING_DECISION_STATUSES.has(application.status),
-  ).length;
+  let total = 0;
+  for (const status of AWAITING_DECISION_STATUSES) {
+    total += counts[status];
+  }
+  return total;
 }
 
 /** Label shown when the targeted listing no longer resolves. */

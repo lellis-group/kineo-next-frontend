@@ -181,4 +181,17 @@ export interface ApplicationsData {
    * what the current page happens to hold.
    */
   bucketCounts: ApiApplicationBucketCounts;
+  /**
+   * Open applications the practice has not opened yet, over the whole collection.
+   *
+   * Server-computed, like the counts above: it qualifies a figure that describes
+   * every application, so counting it from the loaded page would describe the page
+   * instead. Zeroed when a backend one release behind sends no counter.
+   */
+  unseenOpenCount: number;
+  /**
+   * Applications that got an answer, withdrawn ones excluded — the numerator of
+   * the response rate. Zeroed when absent, for the same reason.
+   */
+  respondedCount: number;
 }

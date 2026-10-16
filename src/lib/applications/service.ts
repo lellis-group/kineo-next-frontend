@@ -24,7 +24,11 @@ import type {
   ApiApplicationStatusCounts,
   ApplicationRejectionBucket,
 } from "../types/api";
-import { adaptApplicationEntry, byNewestFirst } from "./adapters";
+import {
+  AWAITING_DECISION_STATUSES,
+  adaptApplicationEntry,
+  byNewestFirst,
+} from "./adapters";
 import type { ApplicationEntry, ApplicationsData } from "./contracts";
 
 /**
@@ -123,6 +127,18 @@ async function fetchMyApplications(
         bucketCounts[application.rejectionBucket] += 1;
       }
     }
+    // Same for the two counters a newer backend sends: every row is here, so they
+    // are counted rather than zeroed — a zero on a collection of thirty would be a
+    // claim the rows in hand already contradict.
+    const open = shape.rows.filter(
+      (application) =>
+        AWAITING_DECISION_STATUSES.has(application.status) &&
+        !application.viewedAt,
+    ).length;
+    const responded = shape.rows.filter(
+      (application) =>
+        application.status !== "WITHDRAWN" && application.respondedAt,
+    ).length;
     return {
       applications: shape.rows,
       meta: {
@@ -132,6 +148,8 @@ async function fetchMyApplications(
         totalPages: 1,
         counts,
         bucketCounts,
+        unseenOpenCount: open,
+        respondedCount: responded,
       },
     };
   }
@@ -145,6 +163,8 @@ async function fetchMyApplications(
       totalPages: 0,
       counts: statusCounts(0),
       bucketCounts: zeroBucketCounts(),
+      unseenOpenCount: 0,
+      respondedCount: 0,
     },
   };
 }
@@ -199,6 +219,10 @@ export async function fetchApplicationsData(
       meta.bucketCounts,
       COUNT_KEYS.rejectionBucket,
     ) as ApplicationsData["bucketCounts"],
+    // `?? 0`, not derived: a backend one release behind sends neither, and these
+    // two describe the whole collection while the rows on hand are one page of it.
+    unseenOpenCount: meta.unseenOpenCount ?? 0,
+    respondedCount: meta.respondedCount ?? 0,
   };
 }
 

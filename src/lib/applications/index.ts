@@ -5,8 +5,8 @@
 
 export {
   AWAITING_DECISION_STATUSES,
+  awaitingDecisionCount,
   byNewestFirst,
-  countAwaitingDecision,
   countForBucket,
   countForSituation,
   DECISION_SUMMARIES,

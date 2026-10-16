@@ -15,6 +15,7 @@ import type {
 } from "../types/api";
 import type {
   ApplicationApplicant,
+  ListingStatusCounts,
   MyListing,
   ReceivedApplication,
   ReceivedApplicationCounts,
@@ -170,24 +171,44 @@ export function countForFilter(
 }
 
 /**
- * How many listings are still recruiting.
+ * How many of the listings *on hand* are still recruiting.
  *
  * Sourced from `RECRUITING_STATUSES` rather than spelled out, because the
  * concept already has a name and two other surfaces use it: the « En cours »
  * filter bucket on /listings/mine, and the gate that decides whether a listing
  * card offers close/cancel. The dashboard used to re-derive the count with
- * `OPEN` + `IN_DISCUSSION` written out by hand, in two places, which left a
- * FULL listing counted as "En cours" on one screen and absent from the homepage
+ * `OPEN` + `IN_DISCUSSION` written out by hand, in two places, which left a FULL
+ * listing counted as "En cours" on one screen and absent from the homepage
  * headline on the next.
  *
- * Takes raw payloads because the dashboard counts before adapting; a caller that
- * already holds `MyListing` can filter with the same set directly.
+ * Counts rows, so it answers about the rows and nothing else: a caller that needs
+ * the figure for the whole collection wants `recruitingCount` over the server's
+ * totals. The rail uses this one because its share is deliberately page-scoped —
+ * it divides by the listings on screen, not by the collection.
  */
 export function countRecruitingListings(
   listings: ReadonlyArray<{ status: ReplacementListingStatus }>,
 ): number {
   return listings.filter((listing) => RECRUITING_STATUSES.has(listing.status))
     .length;
+}
+
+/**
+ * How many listings are still recruiting, from the server's totals.
+ *
+ * Sums the breakdown rather than counting rows: the figure describes the whole
+ * collection, and a caller holding one page of it would report a page. The set
+ * stays `RECRUITING_STATUSES`, the same one the close/cancel gate uses — it used
+ * to be spelled out again here, and a status marked recruiting in the table but
+ * missing from that list counted as a FULL listing on one screen and as active on
+ * the next.
+ */
+export function recruitingCount(counts: ListingStatusCounts): number {
+  let total = 0;
+  for (const status of RECRUITING_STATUSES) {
+    total += counts[status];
+  }
+  return total;
 }
 
 /** « 3 candidatures actives » — the count that decides whether to act. */
