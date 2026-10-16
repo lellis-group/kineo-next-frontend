@@ -10,15 +10,17 @@ import {
   fetchMyListings,
   LISTING_FILTERS,
   type ListingsFilter,
-  MY_LISTINGS_PAGE_SIZE,
   type MyListingsData,
 } from "@/lib/listings";
+import { type PageSize, rememberPageSize } from "@/lib/page-size";
 import type { ReplacementListingStatus } from "@/lib/types/api";
 
 interface View {
   page: number;
   filter: ListingsFilter;
   urgentOnly: boolean;
+  /** Rows per page — the reader's choice, and part of what identifies a page. */
+  pageSize: PageSize;
 }
 
 const DEFAULT_FILTER: ListingsFilter = "ALL";
@@ -28,9 +30,19 @@ const DEFAULT_FILTER: ListingsFilter = "ALL";
  * is a narrowing the *server* has to apply, so a « Toutes » first page reached
  * with the toggle on is not the view the server delivered. Restoring
  * `initialData` there would silently drop the filter the reader just asked for.
+ *
+ * The page size joins them for the same reason. `initialData` is the server's
+ * answer at the size *it* seeded the page with, so a reader who asks for another
+ * size is no longer looking at that answer: restoring it would put the rows they
+ * had before the choice back on screen, at the size they just rejected.
  */
-function isDefaultView(view: View): boolean {
-  return view.page === 1 && view.filter === DEFAULT_FILTER && !view.urgentOnly;
+function isDefaultView(view: View, seededPageSize: PageSize): boolean {
+  return (
+    view.page === 1 &&
+    view.filter === DEFAULT_FILTER &&
+    !view.urgentOnly &&
+    view.pageSize === seededPageSize
+  );
 }
 
 /**
@@ -47,7 +59,7 @@ function loadListings(target: View) {
   return fetchMyListings({
     statuses: statusesForFilter(target.filter),
     page: target.page,
-    limit: MY_LISTINGS_PAGE_SIZE,
+    limit: target.pageSize,
     urgentOnly: target.urgentOnly,
   });
 }
@@ -61,27 +73,34 @@ function loadListings(target: View) {
  */
 export function MyListingsContainer({
   initialData,
+  initialPageSize,
 }: {
   initialData: MyListingsData;
+  /** The size the server seeded the first page with — the reader's own choice. */
+  initialPageSize: PageSize;
 }) {
   const [page, setPage] = useState(1);
   const [filter, setFilter] = useState<ListingsFilter>(DEFAULT_FILTER);
   const [urgentOnly, setUrgentOnly] = useState(false);
+  const [pageSize, setPageSize] = useState<PageSize>(initialPageSize);
 
   const view = useMemo(
-    () => ({ page, filter, urgentOnly }),
-    [page, filter, urgentOnly],
+    () => ({ page, filter, urgentOnly, pageSize }),
+    [page, filter, urgentOnly, pageSize],
   );
 
   const candidates = useExpandedCandidates();
 
-  const { data, error, reload, replace } = usePaginatedResource<
+  const { data, error, loading, reload, replace } = usePaginatedResource<
     MyListingsData,
     View
   >({
     initialData,
     view,
-    isDefaultView,
+    isDefaultView: (target) => isDefaultView(target, initialPageSize),
+    // The chosen size travels with the view rather than beside it: the size is
+    // part of what a page *is*, so a read asking for another one is a different
+    // view — and a closure over the size would hide that from the hook.
     load: loadListings,
     // The refetched rows are the truth; anything cached for them may describe an
     // application that has since been withdrawn elsewhere.
@@ -143,6 +162,20 @@ export function MyListingsContainer({
           // old one would keep showing candidates beside a card that is gone.
           candidates.clear();
         }}
+        pageSize={pageSize}
+        onPageSizeChange={(next) => {
+          setPageSize(next);
+          // Back to the first page: the reader asked for a different slice, and
+          // page 7 of 500 rows is not page 7 of what is on screen. The panels go
+          // with the rows.
+          setPage(1);
+          candidates.clear();
+          // Written from the browser: the server page reads this on the next
+          // visit, and a round trip to store four bytes would make the list show
+          // the old size until it came back.
+          rememberPageSize(next);
+        }}
+        loading={loading}
         receivedByListing={candidates.receivedByListing}
         expandedListingId={candidates.expandedListingId}
         loadingListingId={candidates.loadingListingId}

@@ -49,7 +49,6 @@ export {
   LISTING_TRANSITION_CODES,
   listingActionErrorMessage,
   listingReadErrorMessage,
-  MY_LISTINGS_PAGE_SIZE,
 } from "./service";
 
 /*

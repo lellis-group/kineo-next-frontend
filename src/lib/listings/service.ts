@@ -129,16 +129,17 @@ function emptyCounts(): ListingStatusCounts {
 }
 
 /**
- * Page size for the listings list, server page and client container alike.
+ * Page size for the candidates received on one listing.
  *
- * Lives here, next to the endpoint, for the reason `APPLICATIONS_PAGE_SIZE` does
- * on the other side: the number the server rendered and the number the client
- * refetches have to be one number, or a filter change silently changes the
- * page size and the reader lands on a page that does not exist.
+ * Lives here, next to the endpoint, for the reason the number the server rendered
+ * and the number the client refetches have to be one: a filter change silently
+ * changing the page size would land the reader on a page that does not exist.
+ *
+ * The console lists that offer a choice — the practice's own listings and the
+ * member's applications — no longer have one number to agree on. Both the server
+ * page and the container read the reader's choice instead (`lib/page-size.ts`),
+ * which is why this constant is about the one screen that has no choice to offer.
  */
-export const MY_LISTINGS_PAGE_SIZE = 10;
-
-/** Same, for the candidates received on one listing. */
 export const LISTING_APPLICATIONS_PAGE_SIZE = 10;
 
 /**

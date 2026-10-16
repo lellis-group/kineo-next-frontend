@@ -3,7 +3,8 @@ import { Suspense } from "react";
 import { MyListingsSkeleton } from "@/components/molecules/my-listings-skeleton";
 import { MyListingsContainer } from "@/components/templates/my-listings-container";
 import { serverTransport } from "@/lib/api-transport.server";
-import { fetchMyListings, MY_LISTINGS_PAGE_SIZE } from "@/lib/listings";
+import { fetchMyListings } from "@/lib/listings";
+import { readServerPageSize } from "@/lib/page-size.server";
 import { requireMember } from "@/lib/require-member";
 
 export const metadata: Metadata = {
@@ -23,8 +24,12 @@ export default function MyListingsPage() {
 }
 
 async function MyListings() {
+  // Seeded at the size the reader chose, so the cold load is the page they are
+  // coming back to rather than the default one they then have to grow into.
+  const pageSize = await readServerPageSize();
+
   const data = await requireMember(
-    fetchMyListings({ limit: MY_LISTINGS_PAGE_SIZE }, serverTransport),
+    fetchMyListings({ limit: pageSize }, serverTransport),
   );
-  return <MyListingsContainer initialData={data} />;
+  return <MyListingsContainer initialData={data} initialPageSize={pageSize} />;
 }
