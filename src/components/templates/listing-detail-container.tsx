@@ -7,8 +7,6 @@ import { errorMessage } from "@/lib/api-errors";
 import { useListingAction } from "@/lib/hooks/use-listing-action";
 import { usePaginatedResource } from "@/lib/hooks/use-paginated-resource";
 import {
-  cancelListing,
-  closeListing,
   fetchListingApplications,
   fetchMyListing,
   LISTING_APPLICATIONS_PAGE_SIZE,
@@ -116,9 +114,9 @@ export function ListingDetailContainer({
    * One listing is in scope here, so the scoping the list screen needs (which
    * card shows the message) collapses to the message itself.
    *
-   * `closeListing` / `cancelListing` already come back as French sentences (see
-   * `mapListingActionError`); only the re-reads that follow can throw a raw API
-   * error, so the classifier covers what they leave behind.
+   * The writes report their own refusals (`listingActionErrorMessage`, called by
+   * the hook); only the re-reads that follow can throw a raw API error, so the
+   * classifier covers what they leave behind.
    */
   const readError =
     error === null
@@ -147,14 +145,14 @@ export function ListingDetailContainer({
       onClose={() =>
         action.run(
           listingId,
-          closeListing,
+          "close",
           "Annonce clôturée. Les candidatures en cours ont été terminées.",
         )
       }
       onCancel={() =>
         action.run(
           listingId,
-          cancelListing,
+          "cancel",
           "Annonce annulée. Les candidatures en cours ont été terminées.",
         )
       }
