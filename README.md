@@ -88,17 +88,16 @@ bun run test       # unit tests for src/lib (bun test)
 | `/verify-email`       | Email verification                        |
 | `/profile` (`/create`, `/edit`) | Member profile management          |
 | `/applications` (+ `/{id}`) | Application tracking (locum side)    |
-| `/listings`          | Browse open postings — filters + map (public) |
+| `/listings`          | Browse open postings — filters + map (members only) |
 | `/listings/mine`     | Published listings + received candidates |
 | `/goodbye`           | Account-erasure confirmation (from the email link) |
 | `/terms` · `/privacy` | Legal documents                       |
 
 Protected routes are guarded by an optimistic session-cookie check in `src/proxy.ts`
-that redirects guests to `/signin`. The guard covers `/profile`, `/applications`, the
-whole `/listings` prefix and `/practices`; the first three exist, `/practices` does
-not yet. Every guarded page also resolves the session for real on the server and
-redirects an `anonymous` state itself, so the cookie check is a fast path rather than
-the only barrier.
+that redirects guests to `/signin`. The guard covers `/profile`, `/applications` and the
+whole `/listings` prefix. Every guarded page also resolves the session for real on the
+server and redirects an `anonymous` state itself, so the cookie check is a fast path
+rather than the only barrier.
 
 `/listings` — the browse feed — is member-only, behind the same two layers. Its
 endpoints stay anonymous on the backend (`GET /replacement-listings` answers a
@@ -272,13 +271,17 @@ sequenceDiagram
 The platform is evolving beyond the core user journey. Priorities below, in rough order:
 
 ### Phase 1 — Core product experience
-- **Live listings** — publish & browse openings (`/listings`, `/practices`), with
-  filters by speciality, dates and location. `/listings` now exists: the public
-  feed, with filters, a map and per-specialty counts from
+- **Live listings** — publish & browse openings (`/listings`), with
+  filters by speciality, dates and location. `/listings` exists: the feed, with
+  filters, a map and per-specialty counts from
   `GET /replacement-listings/facets`. `/listings/mine` (the practice's own
-  listings) is in place; `/practices` does not yet, so that nav link still 404s.
-  - The feed's *sort* control orders the rows on screen only — the endpoint
-    exposes no sort parameter. Sorting the whole collection is backend work.
+  listings) is in place. There is no `/practices` page yet, and nothing links to
+  one any more — the practice side is `/listings/mine` for now.
+  - The feed's *sort* control is a server parameter: `GET /replacement-listings`
+    takes `sort=recent|urgent|startDate` and orders the whole collection before
+    paging, with `id` as the tiebreak so a re-sort never reorders a page twice.
+    The front sends it (`browse-service.ts`) and puts it in the URL, so a sorted
+    feed is shareable.
 - **Apply to a listing** — `/applications` tracks the applications already sent,
   but there is no browse-and-apply flow yet, and no public listing detail page
   for a row to open.

@@ -29,19 +29,19 @@ const myApplicationsAction: DashboardAction = {
   icon: "file",
 };
 
-const myPracticesAction: DashboardAction = {
-  label: "Gérer mes cabinets",
-  href: "/practices",
-  variant: "outline",
-};
-
-/** Home actions, filtered by `profileType`. */
+/**
+ * Home actions, filtered by `profileType`.
+ *
+ * Nothing here points at a page that does not exist: `/practices` had an action
+ * of its own for an installed practice, and it 404s on both sides of the wire —
+ * the practice side is `/listings/mine` until a real practice screen is built.
+ */
 export function adaptActions(
   profileType?: ProfileType | null,
 ): DashboardAction[] {
   switch (profileType) {
     case "INSTALLED":
-      return [publishAction, myOffersAction, myPracticesAction];
+      return [publishAction, myOffersAction];
     case "REPLACEMENT":
       return [{ ...searchAction, variant: "primary" }, myApplicationsAction];
     default:
@@ -50,7 +50,6 @@ export function adaptActions(
         searchAction,
         myOffersAction,
         myApplicationsAction,
-        myPracticesAction,
       ];
   }
 }

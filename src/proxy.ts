@@ -23,10 +23,9 @@ export const config = {
     // be the one public route — a locum landing on it to find a replacement — but
     // the feed is now member-only. `/listings/:path*` already covers
     // `/listings/mine` and its detail pages, so the practice side needs no entry
-    // of its own.
+    // of its own. No `/practices` entry either: there is no such route, and a
+    // matcher for a page that does not exist guards nothing.
     "/listings",
     "/listings/:path*",
-    "/practices",
-    "/practices/:path*",
   ],
 };
