@@ -98,6 +98,25 @@ export interface MyListingsData {
    * bucket cannot change the numbers.
    */
   counts: ListingStatusCounts;
+  /**
+   * The soonest period still to come, among the postings that are in play, or
+   * null when there is none.
+   *
+   * Server-answered, because it cannot be answered from a page: it asks for the
+   * soonest start date across every posting the member owns, and a breakdown of
+   * statuses holds no dates. A client that had to find it would read every page
+   * and report the soonest among them — a wrong date rather than a missing one.
+   */
+  nextRecruitingListing: NextRecruitingListing | null;
+}
+
+/** What the server says about the member's next replacement to cover. */
+export interface NextRecruitingListing {
+  id: string;
+  title: string;
+  /** ISO instant — formatted in the reader's locale by `formatDateRange`. */
+  startDate: string;
+  endDate: string;
 }
 
 /**
@@ -153,7 +172,10 @@ export async function fetchMyListings(
   });
   const raw = await apiFetch<
     ApiPaginated<ApiReplacementListing> & {
-      meta: { counts?: Partial<ListingStatusCounts> };
+      meta: {
+        counts?: Partial<ListingStatusCounts>;
+        nextRecruitingListing?: NextRecruitingListing | null;
+      };
     }
   >(
     `/replacement-listings/mine${query ? `?${query}` : ""}`,
@@ -168,6 +190,7 @@ export async function fetchMyListings(
       totalPages: 0,
       total: 0,
       counts: emptyCounts(),
+      nextRecruitingListing: null,
     };
   }
 
@@ -179,6 +202,9 @@ export async function fetchMyListings(
     // Partial on the wire (a status the backend does not know about would be
     // absent), so it is completed rather than cast.
     counts: withZeroCounts(raw.meta.counts, COUNT_KEYS.listingStatus),
+    // Absent from a backend one release behind, which is "nothing to show" — the
+    // same thing it is when the member has nothing coming.
+    nextRecruitingListing: raw.meta.nextRecruitingListing ?? null,
   };
 }
 

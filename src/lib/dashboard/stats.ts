@@ -1,8 +1,8 @@
 import type { ApplicationsData } from "../applications";
 import { awaitingDecisionCount } from "../applications";
 import { formatDateRange, plural } from "../format";
-import type { MyListing, MyListingsData } from "../listings";
-import { RECRUITING_STATUSES, recruitingCount } from "../listings";
+import type { MyListingsData } from "../listings";
+import { recruitingCount } from "../listings";
 import type { DashboardStat } from "./contracts";
 
 /**
@@ -13,9 +13,10 @@ import type { DashboardStat } from "./contracts";
  * the member's whole collection — up to twenty requests — to count it, and
  * reported figures that were short past the last page.
  *
- * The one figure that cannot be a total is « Prochain remplacement », which asks
- * for the soonest period still to come: a breakdown has no dates in it. That one
- * reads the listings page, bounded, and is the reason this read asks for rows.
+ * Nothing here reads a row. « Prochain remplacement » once did — it asks for the
+ * soonest period still to come, which no breakdown of statuses can answer — and
+ * the server now answers it beside the counts, over the whole collection rather
+ * than over the hundred most recent postings.
  */
 export function adaptStats(
   listings: MyListingsData,
@@ -63,11 +64,12 @@ export function adaptStats(
     `${full} complet${plural(full)}`,
   ].filter((part) => !part.startsWith("0 "));
 
-  // Only a listing that is actually recruiting can be the next replacement to
-  // cover. The previous test was "not cancelled", which let a DRAFT (never
-  // published) or a CLOSED one — the replacement was found — surface here, and
-  // `RECRUITING_STATUSES` is the set that means what it says.
-  const upcoming = nextRecruitingPeriod(listings.listings);
+  // Only a posting that is actually recruiting can be the next replacement to
+  // cover. The server draws that line — the statuses it considers in play, and
+  // `startDate` in the future — and answers with the soonest one, or with nothing
+  // when there is nothing to come. It used to be found here, by walking the
+  // member's postings and comparing dates.
+  const upcoming = listings.nextRecruitingListing;
 
   const nextReplacement: DashboardStat = upcoming
     ? {
@@ -130,31 +132,4 @@ export function adaptStats(
     },
     nextReplacement,
   ];
-}
-
-/**
- * The soonest period still to come, among the postings that can take someone.
- *
- * Over the rows the caller read, not over the collection: this is the one figure a
- * breakdown cannot answer, because a breakdown holds no dates. The bound is the
- * page the service asked for — one request, the endpoint's maximum page size — so
- * past a hundred simultaneous postings the figure describes the hundred most
- * recent. That is the trade for answering a home screen without paging the
- * member's whole history on every visit.
- */
-function nextRecruitingPeriod(
-  rows: readonly MyListing[],
-): MyListing | undefined {
-  const now = new Date();
-
-  return rows
-    .filter(
-      (listing) =>
-        new Date(listing.startDate) > now &&
-        RECRUITING_STATUSES.has(listing.status),
-    )
-    .sort(
-      (a, b) =>
-        new Date(a.startDate).getTime() - new Date(b.startDate).getTime(),
-    )[0];
 }

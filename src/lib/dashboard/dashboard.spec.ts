@@ -5,7 +5,7 @@ import {
   zeroCounts,
   zeroCounts as zeroListingCounts,
 } from "../counts";
-import type { MyListing, MyListingsData } from "../listings";
+import type { MyListingsData } from "../listings";
 import type { ApiApplicationStatusCounts } from "../types/api";
 import { ACTIVITY_FEED_SIZE, adaptActivity } from "./activity";
 import { adaptReactivity } from "./reactivity";
@@ -38,31 +38,21 @@ const entry = (id: string, over: Partial<ApplicationEntry> = {}) =>
     ...over,
   }) satisfies ApplicationEntry;
 
-const listing = (id: string, over: Partial<MyListing> = {}) =>
-  ({
-    id,
-    title: `Annonce ${id}`,
-    status: "OPEN",
-    specialty: "GENERALIST",
-    startDate: "2026-12-01T00:00:00.000Z",
-    endDate: "2026-12-05T00:00:00.000Z",
-    urgent: false,
-    applicationsCount: 0,
-    createdAt: "2026-10-01T08:00:00.000Z",
-    ...over,
-  }) satisfies MyListing;
-
 const stat = (stats: ReturnType<typeof adaptStats>, id: string) =>
   stats.find((entry) => entry.id === id);
 
 describe("adaptStats", () => {
-  const listings = (counts: MyListingsData["counts"], rows: MyListing[] = []) =>
+  const listings = (
+    counts: MyListingsData["counts"],
+    nextRecruitingListing: MyListingsData["nextRecruitingListing"] = null,
+  ) =>
     ({
-      listings: rows,
+      listings: [],
       counts,
       page: 1,
       totalPages: 1,
       total: 0,
+      nextRecruitingListing,
     }) satisfies MyListingsData;
 
   const applications = (counts: ApiApplicationStatusCounts, over = {}) =>
@@ -120,27 +110,27 @@ describe("adaptStats", () => {
     expect(stat(stats, "applications")?.detail).toBe("3 en attente");
   });
 
-  test("picks the soonest recruiting period, and ignores a DRAFT", () => {
+  test("names the posting the server picked as the next one", () => {
     const stats = adaptStats(
-      listings(listingCounts({ total: 3, OPEN: 2 }), [
-        listing("late", { startDate: "2027-01-01T00:00:00.000Z" }),
-        listing("soon", { startDate: "2026-11-01T00:00:00.000Z" }),
-        listing("draft", {
-          status: "DRAFT",
-          startDate: "2026-10-05T00:00:00.000Z",
-        }),
-      ]),
+      listings(listingCounts({ total: 3, OPEN: 2 }), {
+        id: "soon",
+        title: "Annonce soon",
+        startDate: "2026-11-01T00:00:00.000Z",
+        endDate: "2026-11-05T00:00:00.000Z",
+      }),
       applications(applicationCounts({ total: 0 })),
     );
 
     expect(stat(stats, "next-replacement")?.detail).toBe("Annonce soon");
+    expect(stat(stats, "next-replacement")?.value).not.toBe("Aucun");
   });
 
-  test("says « Aucun » rather than naming a period that has passed", () => {
+  test("says « Aucun » when the server found nothing coming", () => {
+    // A period that has passed, a DRAFT that was never published, a posting that
+    // left circulation: all of it is the server's answer now, and « nothing » is an
+    // answer rather than a missing field.
     const stats = adaptStats(
-      listings(listingCounts({ total: 1, OPEN: 1 }), [
-        listing("past", { startDate: "2020-01-01T00:00:00.000Z" }),
-      ]),
+      listings(listingCounts({ total: 1, OPEN: 1 }), null),
       applications(applicationCounts({ total: 0 })),
     );
 

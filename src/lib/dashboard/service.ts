@@ -10,18 +10,18 @@ import { adaptReactivity } from "./reactivity";
 import { adaptStats } from "./stats";
 
 /**
- * How many listings the home screen reads, and why it reads any.
+ * Why the listings read asks for one row.
  *
- * The counters it shows come from the endpoint's own totals, so one row would be
- * enough for them. « Prochain remplacement » is the exception: it asks for the
- * soonest period still to come, which a breakdown of statuses cannot answer. One
- * bounded page is what that costs, at the endpoint's maximum page size.
+ * Nothing on the home screen is derived from them: the counters come from the
+ * endpoint's own totals, and « Prochain remplacement » is answered beside them,
+ * over the whole collection, by the server. One row is what it takes to carry a
+ * page's worth of `meta`.
  *
- * This replaced a walk of up to twenty pages of a hundred rows, on every visit,
- * to compute figures the backend already sends — and to compute them correctly
- * only until the twentieth page.
+ * This read used to page the member's whole collection — up to twenty requests,
+ * on every visit — to count figures the endpoints already count, and to compute
+ * them correctly only until the twentieth page.
  */
-const LISTINGS_LIMIT = 100;
+const LISTINGS_LIMIT = 1;
 
 export async function fetchDashboardData(
   userName?: string,
