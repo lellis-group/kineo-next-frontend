@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit",
     "format": "biome format --write",
     "knip": "knip",
-    "test": "bun test src/lib"
+    "test": "bun test src"
   },
   "dependencies": {
     "better-auth": "^1.7.6",

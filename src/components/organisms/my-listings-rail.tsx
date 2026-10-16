@@ -165,8 +165,13 @@ export function MyListingsRail({
  * component and that table is imported by the server as well. Keyed by status
  * and *total* rather than defaulted, so a status the table gains without a mark
  * here is a compile error rather than a clock.
+ *
+ * Exported for `my-listings-rail.spec.ts`, which holds the two tables against
+ * each other: the type above makes a missing mark a compile error, but only as
+ * long as nobody widens it to a `Partial` one day, and the test is what still
+ * notices when they do.
  */
-const STATUS_MARKS: Record<
+export const STATUS_MARKS: Record<
   keyof typeof LISTING_STATUS_META,
   ComponentType<SVGProps<SVGSVGElement>>
 > = {
