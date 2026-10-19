@@ -16,7 +16,10 @@ import {
   type RejectionSituationFilter,
 } from "@/lib/applications";
 import { PAGE_CONTAINER } from "@/lib/layout";
-import type { PageSize } from "@/lib/page-size";
+import {
+  APPLICATIONS_PAGE_SIZE_CHOICES,
+  type ApplicationsPageSize,
+} from "@/lib/page-size";
 
 interface ApplicationsViewProps {
   data: ApplicationsData;
@@ -25,9 +28,9 @@ interface ApplicationsViewProps {
   currentFilter: ApplicationsFilter;
   currentSituation: RejectionSituationFilter;
   onSituationChange: (situation: RejectionSituationFilter) => void;
-  /** Rows per page, and the handler for a new choice — see `Pagination`. */
-  pageSize: PageSize;
-  onPageSizeChange: (size: PageSize) => void;
+  /** Rows per page — 10/25/50/100 on this screen, see `Pagination`. */
+  pageSize: ApplicationsPageSize;
+  onPageSizeChange: (size: ApplicationsPageSize) => void;
   /** A read is in flight: the pager holds, so the reader cannot burst it. */
   loading: boolean;
 }
@@ -103,6 +106,7 @@ export function ApplicationsView({
         onPageChange={onPageChange}
         pageSize={pageSize}
         onPageSizeChange={onPageSizeChange}
+        choices={APPLICATIONS_PAGE_SIZE_CHOICES}
         loading={loading}
       />
     </div>

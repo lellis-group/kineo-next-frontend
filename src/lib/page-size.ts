@@ -17,9 +17,32 @@
  * which is a better home for a preference the reader may want to share or to walk
  * back through. The browse feed is also held at 10 by `BROWSE_PAGE_SIZE`, and the
  * map beside it is drawn from the same collection.
+ *
+ * Two lists, not one: a 500-row page of applications ships ~78 ko gzip and
+ * renders ~500 cards (~12 000 DOM nodes), where the same page of listings is
+ * ~40 ko gzip of much smaller rows. Offering 500 on /applications buys no
+ * reading — nobody scrolls 500 application cards — while on /listings/mine it
+ * stays defensible. The cookie stays shared, so each screen clamps what it
+ * reads to its own list rather than rejecting the other's choice.
  */
 
-export const PAGE_SIZE_CHOICES = [10, 50, 100, 500] as const;
+/** Rows per page offered on /applications — the heavy cards. */
+export const APPLICATIONS_PAGE_SIZE_CHOICES = [10, 25, 50, 100] as const;
+
+export type ApplicationsPageSize =
+  (typeof APPLICATIONS_PAGE_SIZE_CHOICES)[number];
+
+/** Rows per page offered on /listings/mine — the lighter rows. */
+export const MY_LISTINGS_PAGE_SIZE_CHOICES = [10, 25, 50, 100, 500] as const;
+
+export type MyListingsPageSize = (typeof MY_LISTINGS_PAGE_SIZE_CHOICES)[number];
+
+/**
+ * Every size any console screen may hold, so a cookie written by one screen
+ * stays readable by the other. `readPageSize` resolves against this union;
+ * each screen clamps the result to its own list.
+ */
+export const PAGE_SIZE_CHOICES = [10, 25, 50, 100, 500] as const;
 
 export type PageSize = (typeof PAGE_SIZE_CHOICES)[number];
 
@@ -40,6 +63,24 @@ const PAGE_SIZE_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
 
 function isPageSize(value: number): value is PageSize {
   return (PAGE_SIZE_CHOICES as readonly number[]).includes(value);
+}
+
+/**
+ * Narrows a resolved size to what one screen offers.
+ *
+ * The cookie is shared between /applications and /listings/mine, whose lists
+ * differ (500 stays offered on the listings board only). A reader coming from
+ * the other screen keeps their size when it exists on both lists; otherwise
+ * they fall back to the default rather than sending a limit their own pager
+ * never proposed.
+ */
+export function clampPageSize<C extends PageSize>(
+  size: PageSize,
+  choices: readonly C[],
+): C {
+  return (choices as readonly number[]).includes(size)
+    ? (size as C)
+    : (DEFAULT_PAGE_SIZE as C);
 }
 
 /**

@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { slimForTarget, slimListPayload } from "@/lib/list-slimming";
 
 /**
  * Forwards a request to the Kineo backend and streams the answer back.
@@ -11,6 +12,11 @@ import { type NextRequest, NextResponse } from "next/server";
  *
  * `rewrite` maps the incoming path onto the backend path; `label` names the
  * service in the 502 body, so a failure says which half of the API is down.
+ *
+ * List slimming (see `lib/list-slimming.ts`): the two heavy list reads are
+ * buffered and re-emitted without the fields their cards never render
+ * (`listing.description`, practice address/coords, full `message`), so every
+ * page size benefits — including today's. Detail reads pass through untouched.
  */
 export async function proxyToBackend(
   request: NextRequest,
@@ -45,6 +51,9 @@ export async function proxyToBackend(
       redirect: "manual",
     });
 
+    const slimmed = await maybeSlimListResponse(request, target, response);
+    if (slimmed) return slimmed;
+
     const responseHeaders = new Headers(response.headers);
     // The body is forwarded as a stream, so it is no longer the encoding these
     // headers describe. Passing them through makes the client try to decode it
@@ -64,4 +73,38 @@ export async function proxyToBackend(
       { status: 502 },
     );
   }
+}
+
+/**
+ * Buffers, slims and re-emits the two heavy list reads, or null to stream.
+ *
+ * Strictly `GET /applications/mine` and `GET /replacement-listings/mine`:
+ * detail reads, writes and every other route return null and keep streaming
+ * untouched. Non-JSON or unparsable answers fall through the same way, so a
+ * slimming path that cannot parse never breaks a response it did not
+ * understand — and an unknown future shape falls back to streaming rather
+ * than to a broken page.
+ */
+async function maybeSlimListResponse(
+  request: NextRequest,
+  target: string,
+  upstream: Response,
+): Promise<NextResponse | null> {
+  if (request.method !== "GET" || !upstream.ok) return null;
+  const slim = slimForTarget(target);
+  if (!slim) return null;
+  const contentType = upstream.headers.get("content-type") ?? "";
+  if (!contentType.includes("application/json")) return null;
+  let raw: unknown;
+  try {
+    raw = (await upstream.json()) as unknown;
+  } catch {
+    return null;
+  }
+  const slimmed = slimListPayload(raw, slim);
+  if (slimmed === null) return null;
+  return NextResponse.json(slimmed, {
+    status: upstream.status,
+    statusText: upstream.statusText,
+  });
 }

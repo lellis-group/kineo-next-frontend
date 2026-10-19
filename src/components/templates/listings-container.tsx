@@ -13,7 +13,6 @@ import {
   useState,
   useTransition,
 } from "react";
-import { InlineRetryBanner } from "@/components/molecules/inline-retry-banner";
 import type { ListingsTableHandle } from "@/components/organisms/listings-table";
 import { ListingsView } from "@/components/templates/listings-view";
 import { isInView } from "@/lib/dom";
@@ -35,8 +34,8 @@ import {
   EMPTY_BROWSE_FILTERS,
   fetchBrowseListings,
   fetchListingPageOf,
-  horizonForStart,
-  horizonStart,
+  horizonBounds,
+  horizonForBounds,
   isDefaultBrowseView,
   toBrowseView,
 } from "@/lib/listings";
@@ -205,6 +204,9 @@ export function ListingsContainer({
     (patch: Partial<BrowseFormFilters>) => {
       setHoveredListingId(null);
       setSelectedListing(null);
+      // A pending scroll belongs to the view the reader just left: whatever it
+      // was waiting for is no longer the page they are being shown.
+      setPendingScrollId(null);
       writeView(
         { filters: { ...filters, ...patch }, page: 1, sort },
         "replace",
@@ -223,6 +225,7 @@ export function ListingsContainer({
     (next: BrowseSort) => {
       setHoveredListingId(null);
       setSelectedListing(null);
+      setPendingScrollId(null);
       writeView({ filters, page: 1, sort: next }, "replace");
     },
     [filters, writeView],
@@ -231,6 +234,7 @@ export function ListingsContainer({
   const resetFilters = useCallback(() => {
     setHoveredListingId(null);
     setSelectedListing(null);
+    setPendingScrollId(null);
     writeView({ filters: EMPTY_BROWSE_FILTERS, page: 1, sort }, "replace");
   }, [sort, writeView]);
 
@@ -265,7 +269,15 @@ export function ListingsContainer({
     [],
   );
 
-  const { data, error, loading, reload } = usePaginatedResource({
+  /**
+   * One resource, seeded by the server on every URL change.
+   *
+   * `seedFromServer` never client-fetches here, which also settles the error
+   * surface: every read this screen performs belongs to a server navigation,
+   * whose failure renders the route's error state — a banner pointing at
+   * `reload` would offer a retry for a request this screen never makes.
+   */
+  const { data, loading } = usePaginatedResource({
     initialData,
     view,
     isDefaultView: isDefaultBrowseView,
@@ -274,14 +286,18 @@ export function ListingsContainer({
   });
 
   /**
-   * Which period chip is lit, read back from the date field rather than stored.
+   * Which period chip is lit, read back from the date fields rather than stored.
    *
-   * The two date inputs and the segmented row write the same `from`, so keeping
-   * a second copy of the choice would let them disagree: pick « Ce mois », then
-   * clear the lower date by hand, and the row would still claim a narrowing the
-   * results no longer have.
+   * The two date inputs and the segmented row write the same `from` *and `to`*
+   * — a horizon names a period, not a lower bound — so keeping a second copy of
+   * the choice would let them disagree: pick « Ce mois », then widen the lower
+   * date by hand, and the row would still claim a narrowing the results no
+   * longer have.
    */
-  const horizon = horizonForStart(filters.from || undefined);
+  const horizon = horizonForBounds(
+    filters.from || undefined,
+    filters.to || undefined,
+  );
 
   const specialties = useMemo(
     () =>
@@ -378,11 +394,12 @@ export function ListingsContainer({
       // In « Carte seule » the list is not drawn, so scrolling a row into view has
       // nothing to scroll. The popup's action is « see this in the list », so the
       // honest answer is to reveal the list: switching to the split mounts it,
-      // and the rest of this handler — the page turn and the scroll — then has a
-      // list to act on once it renders.
+      // and the rows this screen already holds are the rows it then renders.
       if (layout === "map") {
         setLayout("split");
       }
+
+      setHoveredListingId(id);
 
       const listing = data.listings.find((row) => row.id === id);
       if (listing?.location) {
@@ -392,13 +409,13 @@ export function ListingsContainer({
           longitude: listing.location.longitude,
         });
       }
-      setHoveredListingId(id);
 
-      // On this page already: the table scrolls the row itself and reports it
-      // was found, so there is nothing to page to — and nothing to ask. In
-      // « Carte seule » the table is not mounted yet, so this is false and the
-      // page turn below runs instead; the row scrolls in once the list renders.
-      if (layout !== "map" && tableRef.current?.scrollToId(id)) {
+      if (listing) {
+        // The posting is in the rows the screen already holds: there is a page
+        // (the one showing) and nothing to ask. The scroll waits on the effect
+        // below — which, coming from a popup in « Carte seule », runs again
+        // once the split has mounted the table.
+        setPendingScrollId(id);
         return;
       }
 
@@ -408,19 +425,21 @@ export function ListingsContainer({
       // and page size, rather than carried by every map read as the id of every
       // posting it could ever be asked about.
       //
-      // `null` is a real answer: the posting is not in the current view, or the
-      // read failed. Either way there is no page to turn to, and the list is
-      // still correct — it just cannot show a posting it does not show.
-      //
       // The turn itself is a `replace`, not a `push`: the reader picked a
       // posting, they did not page to it, and a jump they never asked for must
       // not become a stop the back button walks back through.
       setPendingScrollId(id);
       fetchListingPageOf(id, { ...view, limit: BROWSE_PAGE_SIZE }).then(
         (target) => {
-          if (target !== null) {
-            writeView({ filters, page: target, sort }, "replace");
+          // `null` — not in this view, or the read failed. Give the pending
+          // scroll up rather than leave it armed: left, it would land on the
+          // next read that happens to carry the id, a jump the reader moved
+          // past asking.
+          if (target === null) {
+            setPendingScrollId(null);
+            return;
           }
+          writeView({ filters, page: target, sort }, "replace");
         },
       );
     },
@@ -487,10 +506,14 @@ export function ListingsContainer({
           limit: BROWSE_PAGE_SIZE,
         }).then((target) => {
           // A `replace`, like `pickListing`'s turn: the reader chose a posting,
-          // the page followed, and that jump is not a history stop.
-          if (target !== null) {
-            writeView({ filters, page: target, sort }, "replace");
+          // the page followed, and that jump is not a history stop. And like
+          // `pickListing`, `null` gives the pending scroll up rather than
+          // leaving it armed for a later read.
+          if (target === null) {
+            setPendingScrollId(null);
+            return;
           }
+          writeView({ filters, page: target, sort }, "replace");
         });
         return;
       }
@@ -513,74 +536,61 @@ export function ListingsContainer({
   }, [onScreenIds, pendingScrollId]);
 
   return (
-    <>
-      {error != null && (
-        <div className="mx-auto w-full max-w-[100rem] px-4 pt-6 sm:px-6">
-          <InlineRetryBanner
-            noun="Les annonces affichées"
-            onRetry={reload}
-            error={error}
-          />
-        </div>
-      )}
-
-      <ListingsView
-        facets={facets}
-        toolbar={{
-          filters,
-          onFiltersChange: applyFilters,
-          specialties,
-          filtered: !isDefaultBrowseView(view),
-          onResetFilters: resetFilters,
-          total: data.total,
-          sort,
-          onSortChange: applySort,
-          layout,
-          onLayoutChange: setLayout,
-        }}
-        layout={layout}
-        results={{
-          listings: data.listings,
-          totalPages: data.totalPages,
-          page: data.page,
-          onPageChange: changePage,
-          // The hook's `loading` never fires on this screen — there is no client
-          // fetch. The pending signal that matters is the server navigation the
-          // URL write started, so the list dims while the new rows are in flight.
-          loading: loading || isNavigating,
-          filtered: !isDefaultBrowseView(view),
-          horizon,
-          onHorizonChange: (next) =>
-            applyFilters({ from: horizonStart(next) ?? "" }),
-          onHoveredChange: setHoveredListingId,
-          selectedListingId: selectedListing?.id ?? null,
-          onListingSelect: selectListing,
-          onResetFilters: resetFilters,
-          tableRef,
-        }}
-        map={
-          <Suspense
-            fallback={
-              <div
-                className="size-full rounded-card bg-map-base"
-                aria-hidden="true"
-              />
-            }
-          >
-            <ListingsMapSlot
-              ref={mapRef}
-              places={placesSource}
-              hoveredListingId={hoveredListingId}
-              onHoveredChange={setHoveredListingId}
-              selectedListing={selectedListing}
-              onSelectionClear={() => setSelectedListing(null)}
-              onMarkerSelect={setSelectedListing}
-              onListingPick={pickListing}
+    <ListingsView
+      facets={facets}
+      toolbar={{
+        filters,
+        onFiltersChange: applyFilters,
+        specialties,
+        filtered: !isDefaultBrowseView(view),
+        onResetFilters: resetFilters,
+        total: data.total,
+        sort,
+        onSortChange: applySort,
+        layout,
+        onLayoutChange: setLayout,
+      }}
+      layout={layout}
+      results={{
+        listings: data.listings,
+        totalPages: data.totalPages,
+        page: data.page,
+        onPageChange: changePage,
+        // The hook's `loading` never fires on this screen — there is no client
+        // fetch. The pending signal that matters is the server navigation the
+        // URL write started, so the list dims while the new rows are in flight.
+        loading: loading || isNavigating,
+        filtered: !isDefaultBrowseView(view),
+        horizon,
+        onHorizonChange: (next) => applyFilters(horizonBounds(next)),
+        onHoveredChange: setHoveredListingId,
+        selectedListingId: selectedListing?.id ?? null,
+        onListingSelect: selectListing,
+        onResetFilters: resetFilters,
+        tableRef,
+      }}
+      map={
+        <Suspense
+          fallback={
+            <div
+              className="size-full rounded-card bg-map-base"
+              aria-hidden="true"
             />
-          </Suspense>
-        }
-      />
-    </>
+          }
+        >
+          <ListingsMapSlot
+            ref={mapRef}
+            places={placesSource}
+            hoveredListingId={hoveredListingId}
+            onHoveredChange={setHoveredListingId}
+            selectedListing={selectedListing}
+            onSelectionClear={() => setSelectedListing(null)}
+            onMarkerSelect={setSelectedListing}
+            onListingPick={pickListing}
+          />
+        </Suspense>
+      }
+    />
   );
 }
 

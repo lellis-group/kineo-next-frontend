@@ -4,6 +4,7 @@ import { MyListingsSkeleton } from "@/components/molecules/my-listings-skeleton"
 import { MyListingsContainer } from "@/components/templates/my-listings-container";
 import { serverTransport } from "@/lib/api-transport.server";
 import { fetchMyListings } from "@/lib/listings";
+import { clampPageSize, MY_LISTINGS_PAGE_SIZE_CHOICES } from "@/lib/page-size";
 import { readServerPageSize } from "@/lib/page-size.server";
 import { requireMember } from "@/lib/require-member";
 
@@ -26,7 +27,12 @@ export default function MyListingsPage() {
 async function MyListings() {
   // Seeded at the size the reader chose, so the cold load is the page they are
   // coming back to rather than the default one they then have to grow into.
-  const pageSize = await readServerPageSize();
+  // Clamped to this screen's list for the symmetric reason: a 25 written by
+  // /applications stays valid here because it is on both lists.
+  const pageSize = clampPageSize(
+    await readServerPageSize(),
+    MY_LISTINGS_PAGE_SIZE_CHOICES,
+  );
 
   const data = await requireMember(
     fetchMyListings({ limit: pageSize }, serverTransport),

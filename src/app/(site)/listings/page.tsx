@@ -5,7 +5,9 @@ import { ListSkeleton } from "@/components/molecules/list-skeleton";
 import { ListingsContainer } from "@/components/templates/listings-container";
 import { serverTransport } from "@/lib/api-transport.server";
 import {
+  browsePageClamp,
   browseViewFromParams,
+  browseViewToParams,
   fetchBrowseListings,
   fetchBrowsePlaces,
   fetchFacets,
@@ -38,6 +40,9 @@ export const metadata: Metadata = {
  * page and ordering — rather than the default view the route used to render
  * regardless of the query string. The client reads the same string and never
  * refetches, which is why the rows it shows are the rows the server just sent.
+ * One exception to "answers whatever it names": a page past the end of the
+ * collection is clamped, by a redirect that rewrites the URL rather than a
+ * screen that pretends `page=5` has rows.
  *
  * Two of the three reads are awaited and the third is not, and the third is the
  * one that streams. The rows and the panels are what a reader reads, so the page
@@ -107,6 +112,20 @@ async function Listings({
     // before, so the panels hold their numbers.
     fetchFacets(view, serverTransport),
   ]);
+
+  // A shared or hand-edited link can name a page past the end of the collection
+  // — `browseViewFromParams` accepts any positive integer, and the honest answer
+  // for « Page 5 sur 2 » is not empty rows under a pager that claims five
+  // pages exist. Redirecting *replaces* the URL with the clamped page's query
+  // string, so the round-trip the screen runs on (server parse, client read,
+  // writes back) names the view the reader is actually looking at, and a
+  // refresh does not repeat the lie.
+  const clampedPage = browsePageClamp(view.page, data.totalPages);
+  if (clampedPage !== null) {
+    redirect(
+      `/listings?${browseViewToParams(filters, clampedPage, sort).toString()}`,
+    );
+  }
 
   // The map is the whole filtered collection, not the page — seeded with the
   // view but no page, so paging does not redraw it.

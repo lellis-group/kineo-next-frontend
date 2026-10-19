@@ -12,7 +12,7 @@ import {
   type ListingsFilter,
   type MyListingsData,
 } from "@/lib/listings";
-import { type PageSize, rememberPageSize } from "@/lib/page-size";
+import { type MyListingsPageSize, rememberPageSize } from "@/lib/page-size";
 import type { ReplacementListingStatus } from "@/lib/types/api";
 
 interface View {
@@ -20,7 +20,7 @@ interface View {
   filter: ListingsFilter;
   urgentOnly: boolean;
   /** Rows per page — the reader's choice, and part of what identifies a page. */
-  pageSize: PageSize;
+  pageSize: MyListingsPageSize;
 }
 
 const DEFAULT_FILTER: ListingsFilter = "ALL";
@@ -36,7 +36,10 @@ const DEFAULT_FILTER: ListingsFilter = "ALL";
  * size is no longer looking at that answer: restoring it would put the rows they
  * had before the choice back on screen, at the size they just rejected.
  */
-function isDefaultView(view: View, seededPageSize: PageSize): boolean {
+function isDefaultView(
+  view: View,
+  seededPageSize: MyListingsPageSize,
+): boolean {
   return (
     view.page === 1 &&
     view.filter === DEFAULT_FILTER &&
@@ -77,12 +80,12 @@ export function MyListingsContainer({
 }: {
   initialData: MyListingsData;
   /** The size the server seeded the first page with — the reader's own choice. */
-  initialPageSize: PageSize;
+  initialPageSize: MyListingsPageSize;
 }) {
   const [page, setPage] = useState(1);
   const [filter, setFilter] = useState<ListingsFilter>(DEFAULT_FILTER);
   const [urgentOnly, setUrgentOnly] = useState(false);
-  const [pageSize, setPageSize] = useState<PageSize>(initialPageSize);
+  const [pageSize, setPageSize] = useState<MyListingsPageSize>(initialPageSize);
 
   const view = useMemo(
     () => ({ page, filter, urgentOnly, pageSize }),

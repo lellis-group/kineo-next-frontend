@@ -11,7 +11,7 @@ import {
   type RejectionSituationFilter,
 } from "@/lib/applications";
 import { usePaginatedResource } from "@/lib/hooks/use-paginated-resource";
-import { type PageSize, rememberPageSize } from "@/lib/page-size";
+import { type ApplicationsPageSize, rememberPageSize } from "@/lib/page-size";
 
 interface View {
   page: number;
@@ -19,7 +19,7 @@ interface View {
   /** Which situation, within « Refusées » only. */
   situation: RejectionSituationFilter;
   /** Rows per page — the reader's choice, and part of what identifies a page. */
-  pageSize: PageSize;
+  pageSize: ApplicationsPageSize;
 }
 
 const DEFAULT_FILTER: ApplicationsFilter = "ALL";
@@ -30,7 +30,10 @@ const DEFAULT_FILTER: ApplicationsFilter = "ALL";
  * a reader who asks for another size is no longer looking at that answer —
  * restoring it would put the rows they had before the choice back on screen.
  */
-function isDefaultView(view: View, seededPageSize: PageSize): boolean {
+function isDefaultView(
+  view: View,
+  seededPageSize: ApplicationsPageSize,
+): boolean {
   // `"ALL"`, not `null`, for the situation: the state is initialised to « Toutes »,
   // so testing it against null meant this was never true — the default view was
   // refetched on every visit instead of adopting the page the server had already
@@ -57,12 +60,13 @@ export function ApplicationsContainer({
 }: {
   initialData: ApplicationsData;
   /** The size the server seeded the first page with — the reader's own choice. */
-  initialPageSize: PageSize;
+  initialPageSize: ApplicationsPageSize;
 }) {
   const [page, setPage] = useState(1);
   const [filter, setFilter] = useState<ApplicationsFilter>(DEFAULT_FILTER);
   const [situation, setSituation] = useState<RejectionSituationFilter>("ALL");
-  const [pageSize, setPageSize] = useState<PageSize>(initialPageSize);
+  const [pageSize, setPageSize] =
+    useState<ApplicationsPageSize>(initialPageSize);
 
   const view = useMemo(
     () => ({ page, filter, situation, pageSize }),

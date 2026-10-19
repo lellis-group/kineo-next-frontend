@@ -217,6 +217,23 @@ function popupContent(
   const [first] = place.listings;
 
   /*
+    A count the endpoint claims with no previews behind it is a payload that
+    should not happen, but the markers are built at read time and a reader
+    whose map is up must not pay for the inconsistency with a TypeError that
+    takes every pin down. Name the count and keep the camera move; the rest is
+    skipped because there is no name to print for it.
+  */
+  if (!first) {
+    const heading = document.createElement("h3");
+    heading.className = "text-sm leading-snug font-medium text-map-ink";
+    heading.textContent =
+      place.count === 1 ? "1 annonce" : `${place.count} annonces`;
+    root.append(heading);
+    root.append(zoomButton(place, map, dismiss));
+    return root;
+  }
+
+  /*
     The short reference on the first line — `#A1B2C3D4` — exactly as the
     reference's marker card leads with `#AB045861` under « Electronics 25kg ».
 

@@ -160,8 +160,8 @@ export function useMapMarkers({
   const onMarkerSelectRef = useRef(onMarkerSelect);
   onMarkerSelectRef.current = onMarkerSelect;
 
-  /** The places the camera was last framed on, so a refit is not repeated. */
-  const lastFramedRef = useRef<MapPlace[] | null>(null);
+  /** The framing key the camera was last fitted over, so a refit is not repeated. */
+  const lastFramedKeyRef = useRef<string | null>(null);
 
   /** The cluster set on the map, so an unchanged one is not rebuilt. */
   const lastSignatureRef = useRef<string | null>(null);
@@ -203,13 +203,15 @@ export function useMapMarkers({
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !ready || clusters.length === 0) {
+    if (!map || !ready) {
       return;
     }
 
     // A pan settles often without changing which markers touch, and rebuilding
     // them is what costs: positions are MapLibre's job and it repositions existing
-    // markers on every frame. The signature is what says the *set* changed.
+    // markers on every frame. The signature is what says the *set* changed — and
+    // an empty set has a signature of its own (""), so filtering down to nothing
+    // reaches the rebuild that clears the map of the pins the previous view drew.
     const signature = clusters
       .map((place) => `${place.key}:${place.count}`)
       .join("|");
@@ -230,10 +232,20 @@ export function useMapMarkers({
       );
     }
 
-    // Gated on the places themselves, not on the viewport: re-framing the camera
-    // every time the reader scrolls would make the map impossible to look at.
-    if (places !== lastFramedRef.current) {
-      lastFramedRef.current = places;
+    /**
+     * Fitted over the places when their *content* changes, and nothing else.
+     *
+     * Every server navigation hands this effect a fresh array — the places read
+     * arrives as a promise and is unwrapped per navigation — so an identity
+     * gate (`places !== lastFramed`) never saw the second render of the same
+     * collection and the camera was refitted, dragging the reader's own pan
+     * and zoom away with it, on every page turn and every reordering. The key
+     * is the content itself: identical practices at identical points read as
+     * the same frame.
+     */
+    const framedKey = framingKey(places);
+    if (framedKey !== lastFramedKeyRef.current) {
+      lastFramedKeyRef.current = framedKey;
       fitToPlaces(map, places);
     }
 
@@ -244,7 +256,7 @@ export function useMapMarkers({
     // And the chosen posting's card: it opens the moment a marker stands at its
     // own coordinates, which is not the moment the row was clicked — the camera
     // is still flying, and the marker that covered the posting a frame ago may
-    // have been a merged cluster. Waiting for the coordinates rather than for a
+    // have been a merged cluster. Waiting for the coordinates rather than a
     // timer is what makes this both correct and stateless.
     openCardForSelected(
       markersRef.current,
@@ -266,6 +278,15 @@ export function useMapMarkers({
     const map = mapRef.current;
     if (!map || !ready) return;
     paintStates(markersRef.current, hoveredIdRef.current, selectedListing);
+    // A dropped choice closes its own card: the popup belongs to the choice —
+    // opened by a marker click or a pick in the list — and a card the choice no
+    // longer stands for is a card about nothing. Markers are de-highlighted by
+    // `paintStates` above; the popup has to go the same way.
+    if (!selectedListing) {
+      popupRef.current?.remove();
+      popupRef.current = null;
+      return;
+    }
     openCardForSelected(
       markersRef.current,
       livePlacesRef.current,
@@ -314,8 +335,24 @@ export function useMapMarkers({
       dismiss();
     };
 
+    /**
+     * Escape clears a choice the *map* made — not whichever control the reader
+     * happens to be in.
+     *
+     * The toolbar's « Filtres » popover and its two search fields each bind
+     * their own Escape to close themselves, and this listener is on the
+     * document like theirs: ungated, closing the popover also reached over and
+     * dropped the selection on the map. The map owns the key when focus is
+     * nowhere (the body a click on the canvas or a marker left) or inside the
+     * map container — which is where the markers and the popup live.
+     */
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") dismiss();
+      if (event.key !== "Escape") return;
+      const target = event.target as HTMLElement | null;
+      if (target && target !== document.body) {
+        if (!map.getContainer().contains(target)) return;
+      }
+      dismiss();
     };
 
     map.on("click", onMapClick);
@@ -390,4 +427,25 @@ interface Viewport {
 function viewportOf(map: MapLibreMap): Viewport {
   const centre = map.getCenter();
   return { zoom: map.getZoom(), center: [centre.lng, centre.lat] };
+}
+
+/**
+ * The collection a camera framing stands for, as a comparable key.
+ *
+ * Key and coordinates, sorted: the order the read answered in says nothing
+ * about geography (`/places` ranks practices by activity), and the coordinates
+ * belong in the key because a practice regrouped at a new point deserves the
+ * new frame. Two places on the same practice key are two entries here — the
+ * merge that `clusterPlaces` does later is a matter of zoom, not of identity.
+ */
+function framingKey(places: readonly MapPlace[]): string {
+  return places
+    .map(
+      (place) =>
+        `${place.key}:${place.latitude.toFixed(5)},${place.longitude.toFixed(
+          5,
+        )}`,
+    )
+    .sort()
+    .join("|");
 }

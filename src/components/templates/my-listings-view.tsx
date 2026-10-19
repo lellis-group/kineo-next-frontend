@@ -20,7 +20,10 @@ import {
   type ListingsFilter,
   type MyListing,
 } from "@/lib/listings";
-import type { PageSize } from "@/lib/page-size";
+import {
+  MY_LISTINGS_PAGE_SIZE_CHOICES,
+  type MyListingsPageSize,
+} from "@/lib/page-size";
 
 export interface MyListingsViewProps {
   listings: MyListing[];
@@ -34,9 +37,9 @@ export interface MyListingsViewProps {
   page: number;
   totalPages: number;
   onPageChange: (page: number) => void;
-  /** Rows per page, and the handler for a new choice — see `Pagination`. */
-  pageSize: PageSize;
-  onPageSizeChange: (size: PageSize) => void;
+  /** Rows per page — 10/25/50/100/500 on this screen, see `Pagination`. */
+  pageSize: MyListingsPageSize;
+  onPageSizeChange: (size: MyListingsPageSize) => void;
   /** A read is in flight: the pager holds, so the reader cannot burst it. */
   loading: boolean;
   /** Candidates per listing id, present only for the expanded listing. */
@@ -238,6 +241,7 @@ export function MyListingsView({
               onPageChange={onPageChange}
               pageSize={pageSize}
               onPageSizeChange={onPageSizeChange}
+              choices={MY_LISTINGS_PAGE_SIZE_CHOICES}
               loading={loading}
             />
           </Panel>

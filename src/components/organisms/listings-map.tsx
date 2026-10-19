@@ -244,8 +244,15 @@ function FullscreenToggle({
   return (
     <button
       type="button"
+      /*
+        In the flow of the control column, and not absolutely positioned: this
+        button used to carry its own `absolute top-3 right-3`, left over from
+        before the column existed, which put it exactly on top of the « Cadrer »
+        button beside it — the fullscreen one drawn second took every click, and
+        the crosshair was the control that could not be pressed.
+      */
       aria-label="Plein écran"
-      className="absolute top-3 right-3 grid size-9 cursor-pointer place-items-center rounded-full bg-white/90 text-map-ink shadow-[0_2px_10px_rgb(22_21_15/0.2)] backdrop-blur-sm transition-colors hover:bg-white"
+      className="grid size-9 cursor-pointer place-items-center rounded-full bg-white/90 text-map-ink shadow-[0_2px_10px_rgb(22_21_15/0.2)] backdrop-blur-sm transition-colors hover:bg-white"
       onClick={() => {
         const node = containerRef.current?.parentElement;
         if (!node) return;

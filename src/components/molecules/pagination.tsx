@@ -5,7 +5,7 @@ import { ArrowLeftIcon, ArrowRightIcon } from "@/components/atoms/icons";
 import { Select } from "@/components/molecules/select";
 import { PAGE_SIZE_CHOICES, type PageSize } from "@/lib/page-size";
 
-interface PaginationProps {
+interface PaginationProps<C extends PageSize = PageSize> {
   /** Current page number (1-based). */
   currentPage: number;
   totalPages: number;
@@ -29,19 +29,26 @@ interface PaginationProps {
    *
    * A change returns to page 1 in both callers: the reader asked for a different
    * slice, and page 7 of the new size is rarely page 7 of what is on screen.
+   *
+   * `choices` narrows the list per screen: 500 stays offered on /listings/mine
+   * (light rows, ~40 ko gzip) but not on /applications (heavy cards, ~78 ko
+   * gzip + ~12 000 DOM nodes nobody scrolls through). Defaults to the shared
+   * list so existing callers keep working unchanged.
    */
-  pageSize?: PageSize;
-  onPageSizeChange?: (size: PageSize) => void;
+  pageSize?: C;
+  onPageSizeChange?: (size: C) => void;
+  choices?: readonly C[];
 }
 
-export function Pagination({
+export function Pagination<C extends PageSize = PageSize>({
   currentPage,
   totalPages,
   onPageChange,
   loading = false,
   pageSize,
   onPageSizeChange,
-}: PaginationProps) {
+  choices = PAGE_SIZE_CHOICES as unknown as readonly C[],
+}: PaginationProps<C>) {
   const hasMoreThanOnePage = totalPages > 1;
   const canChooseSize = onPageSizeChange !== undefined;
 
@@ -105,11 +112,11 @@ export function Pagination({
           value={String(pageSize)}
           disabled={loading}
           onChange={(event) =>
-            onPageSizeChange(Number(event.target.value) as PageSize)
+            onPageSizeChange(Number(event.target.value) as C)
           }
           className="w-auto py-0 text-sm"
         >
-          {PAGE_SIZE_CHOICES.map((size) => (
+          {choices.map((size) => (
             <option key={size} value={size}>
               {size} / page
             </option>

@@ -102,16 +102,15 @@ export function rebuildMarkers(
      * Reused rather than rebuilt, and this is what makes the animation legible.
      *
      * A key is built from the places it covers, so the same key means the same
-     * group — the only thing that can have changed is its count. Rebuilding it
-     * anyway (which is what this did) meant that panning one pin across another
-     * tore down and recreated *every* marker on the map: unaffected dots blinked
-     * out and in for no reason, and the ones that had nothing to do with the
-     * gesture were the most noticeable.
+     * group — the only thing that can have changed is its count and its
+     * previews. Rebuilding it anyway (which is what this did) meant that
+     * panning one pin across another tore down and recreated *every* marker on
+     * the map: unaffected dots blinked out and in for no reason, and the ones
+     * that had nothing to do with the gesture were the most noticeable.
      */
     if (existing) {
       existing.setLngLat([place.longitude, place.latitude]);
-      relabel(existing.getElement(), place, isCluster);
-      livePlaces.set(key, place);
+      refreshMarker(existing, place, isCluster, key, livePlaces);
       continue;
     }
 
@@ -201,6 +200,7 @@ export function rebuildMarkers(
 /** What a dot says: the count on a group, and what the button announces. */
 function relabel(node: HTMLElement, place: MapPlace, isCluster: boolean) {
   const dot = node.firstElementChild;
+  const [first] = place.listings;
 
   if (dot) {
     /*
@@ -225,9 +225,50 @@ function relabel(node: HTMLElement, place: MapPlace, isCluster: boolean) {
   node.setAttribute(
     "aria-label",
     isCluster
-      ? `${place.count} annonces à ${place.listings[0].practiceName}`
-      : `${place.listings[0].title}, ${place.listings[0].practiceName}`,
+      ? `${place.count} annonces à ${first?.practiceName ?? "cabinet"}`
+      : first
+        ? `${first.title}, ${first.practiceName}`
+        : `${place.count} annonces`,
   );
+}
+
+/**
+ * Brings a marker kept from the last pass up to the place it now stands for.
+ *
+ * Two things a rebuild would have refreshed and a bare `setLngLat` does not:
+ *
+ * - the size classes, which the count decides — a lone posting grows into a
+ *   count-bearing marker (or shrinks back) without the key changing, and
+ *   leaving the disc one size out draws a dot that says « 12 » the size it says
+ *   « 1 »;
+ * - the ids stamped on the element, which `paintStates` and the popup's opener
+ *   read back to decide which marker a hover or a selection lights. The
+ *   previews a place holds change between read — a posting closes, another
+ *   opens — and a stale stamp quietly drops the highlight off the row the
+ *   reader is pointing at.
+ */
+function refreshMarker(
+  marker: Marker,
+  place: MapPlace,
+  isCluster: boolean,
+  key: string,
+  livePlaces: Map<string, MapPlace>,
+) {
+  const node = marker.getElement();
+  const wasCluster = (livePlaces.get(key)?.count ?? 1) > 1;
+
+  if (wasCluster !== isCluster) {
+    node.classList.toggle(MARKER_CLUSTER_CLASS);
+    // The dot's two extra classes are one string by construction — the
+    // creation path sets them together — so they are toggled together too.
+    for (const token of MARKER_DOT_CLUSTER_CLASS.split(" ")) {
+      node.firstElementChild?.classList.toggle(token);
+    }
+  }
+
+  node.dataset.ids = place.listings.map((listing) => listing.id).join(",");
+  relabel(node, place, isCluster);
+  livePlaces.set(key, place);
 }
 
 /**
