@@ -122,11 +122,14 @@ export function MyListingsContainer({
   });
 
   /**
-   * Client-side safety net: the toggle sends `urgent=true` to the backend, but if
-   * the backend ignores it the list would come back unchanged and the button
-   * would look like it does nothing. Filtering here guarantees « Urgentes
-   * seulement » never shows a non-urgent posting, whatever the server did.
-   * When the server already filters, this one is a no-op.
+   * Client-side safety net: the toggle sends `urgent=true` and the backend
+   * applies it (`buildListingsWhere` carries `urgent` on every read), so this is
+   * a no-op against the server it is written for — kept because it is the one
+   * guarantee that « Urgentes seulement » never shows a non-urgent posting,
+   * whatever a future server revision does. One price, known and accepted: when
+   * it *does* bite, the totals behind the pager still describe the unfiltered
+   * collection, and the safe rows and the pager then disagree about how much
+   * there is.
    */
   const visibleListings = useMemo(
     () =>

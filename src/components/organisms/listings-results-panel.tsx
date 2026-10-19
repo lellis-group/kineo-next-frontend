@@ -26,20 +26,25 @@ const BROWSE_HORIZONS: readonly BrowseHorizonOption[] = [
 ];
 
 /**
- * How the results box takes its height — and it is no longer a fixed dimension.
+ * How the results box takes its height — by giving it back to its rows.
  *
  * From `lg` up the whole page is a full-height shell (`100dvh`, no page scroll),
  * so this box is `flex-1 min-h-0`: it absorbs whatever the map card above it
- * leaves, and the table scrolls inside it. That is what lets ten rows and three
- * rows be the same panel without the panel deciding a height of its own — the
- * fixed `clamp` this replaces existed only because the box used to have to guess.
+ * leaves, and the table frame inside it is `flex-1` in turn, so the box's spare
+ * room falls *inside* the frame, under its rows, and the pager — a direct child
+ * of the panel, after this box — stays at the card's foot instead of drifting
+ * across the void (the browse table's own note, and the same decision). That is
+ * what lets ten rows and three rows be the same panel without the panel
+ * deciding a height of its own.
  *
- * Below `lg` the screen is ordinary document flow: there is no bounded height to
- * fill, so the box keeps a floor of its own (`min-h`) and the page scrolls as a
- * page should. `sm:` and not below — under 640px this is `ListingCard`, and a
- * card-sized list is not a scrolled region.
+ * Below `lg` the screen is ordinary document flow, and the box carries no floor:
+ * there is no bounded height to fill, so the panel hugs the rows and the pager
+ * follows them. The `min-h` this used to keep existed to give the box a shape of
+ * its own, and it was exactly the shape of the feature — a region of empty
+ * surface between the last row and the pager, on every screen short pages are
+ * short on.
  */
-const RESULTS_BOX = "min-h-[20rem] sm:min-h-[24rem] lg:min-h-0 lg:flex-1";
+const RESULTS_BOX = "lg:min-h-0 lg:flex-1";
 
 /**
  * The dimming a fetch in flight puts over the rows.
@@ -235,7 +240,11 @@ export function ListingsResultsPanel({
             <ListingsTable
               ref={tableRef}
               listings={listings}
-              className={cn(REFRESHING, loading && "opacity-60", "sm:min-h-0")}
+              className={cn(
+                REFRESHING,
+                loading && "opacity-60",
+                "sm:min-h-0 lg:flex-1",
+              )}
               onHoveredChange={onHoveredChange}
               selectedListingId={selectedListingId}
               onListingSelect={onListingSelect}

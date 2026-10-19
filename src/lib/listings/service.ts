@@ -158,7 +158,12 @@ export async function fetchMyListings(
   params: {
     statuses?: ReplacementListingStatus[];
     page?: number;
-    /** Page size, capped at 100 by the endpoint. */
+    /**
+     * Page size. The endpoint takes up to 500 (`MAX_PAGE_SIZE`), raised from 100
+     * so the console's own 500 choice is reachable; its other bound is
+     * `page × limit ≤ 10 000`, which at this size answers the first twenty
+     * pages.
+     */
     limit?: number;
     /** Narrow to postings flagged urgent, on top of the status bucket. */
     urgentOnly?: boolean;

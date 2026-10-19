@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Fragment, forwardRef, useImperativeHandle, useRef } from "react";
 import { Badge } from "@/components/atoms/badge";
 import {
@@ -104,20 +105,24 @@ export const MyListingsTable = forwardRef<
    * scrolling region of a card in a full-height workspace, so a full board's rows
    * move inside it instead of deciding how tall the page is.
    *
-   * It sizes itself to its rows, though, rather than to the card. `h-full` — as
-   * it was — drew the frame down to the bottom of the card whatever the posting
-   * count, and a practice with two of its own offers was looking at a bordered
-   * box with an empty lower half. Sized by its content the frame is exactly the
-   * rows, and the space below it belongs to the panel.
+   * `flex-1` gives the frame the height the card has. This used to be
+   * deliberately the opposite — the frame sized itself to its rows, on the
+   * theory that a short page would otherwise be a bordered box with an empty
+   * lower half — and the theory priced out wrong: the space it spared the frame
+   * fell between the rows and the pager, which the card then pinned to its
+   * bottom, so a short page was a few rows floating in a void with the pager
+   * sent to the far end of it. The void is the hole, wherever it sits; inside
+   * the frame at least it is named by the border that holds the rows, and the
+   * pager stays where a control lands in the reference — at the card's foot.
    *
-   * `min-h-0` is what keeps the long case working: a flex item's `min-height`
-   * defaults to its content, so without it the frame would refuse to shrink,
-   * push past the card and take the pager off screen. With it, a long board is
-   * capped at the height the card gives it and scrolls; a short one is its own
-   * height. The same fix as the browse feed's table, for the same reason.
+   * `min-h-0` is still what keeps the long case working: a flex item's
+   * `min-height` defaults to its content, so without it the frame would refuse
+   * to shrink, push past the card and take the pager off screen. With it, a
+   * long board is capped at the height the card gives it and scrolls. The same
+   * fix as the browse feed's table, for the same reason.
    */
   return (
-    <div className="hidden min-h-0 overflow-auto rounded-xl border border-border [scrollbar-gutter:stable] sm:block">
+    <div className="hidden min-h-0 flex-1 overflow-auto rounded-xl border border-border [scrollbar-gutter:stable] sm:block">
       <table ref={tableRef} className="table listings-table">
         <thead>
           <tr>
@@ -155,9 +160,20 @@ export const MyListingsTable = forwardRef<
                         className="size-[var(--cell-icon)] shrink-0 text-primary"
                       />
                       <div className="min-w-0">
-                        <p className="line-clamp-2 font-medium leading-[var(--cell-icon)] text-foreground">
+                        {/*
+                          The title is the link, for the reason `MyListingCard`
+                          states: the mobile row's title is, and a board whose
+                          two presentations of the same posting answer
+                          differently is two designs. The desktop detail — the
+                          posting's own text, its candidates across every
+                          bucket — was otherwise reachable only by URL.
+                        */}
+                        <Link
+                          href={`/listings/mine/${listing.id}`}
+                          className="line-clamp-2 font-medium leading-[var(--cell-icon)] wrap-break-word text-foreground transition-colors hover:text-primary"
+                        >
                           {listing.title}
-                        </p>
+                        </Link>
                         <p className="text-xs text-muted">
                           {SPECIALTY_SHORT_LABELS[listing.specialty]}
                         </p>

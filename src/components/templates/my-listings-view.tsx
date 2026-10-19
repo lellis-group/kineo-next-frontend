@@ -170,11 +170,19 @@ export function MyListingsView({
             }
           >
             {/*
-              Two presentations, one removed by CSS: `display:none` also takes it
-              out of the accessibility tree, so a screen reader and a keyboard
-              never meet the copy that is not on screen.
+              Two presentations, one removed by CSS: `display:none` also takes
+              it out of the accessibility tree, so a screen reader and a
+              keyboard never meet the copy that is not on screen.
+
+              One region, then the pager — and the region takes the height the
+              card has at `lg`: the table frame inside it is `flex-1` too, so a
+              short page's spare room lives *inside* the frame, under its rows,
+              and the pager stays at the card's foot (see `my-listings-table`).
+              Below `lg` the screen is ordinary document flow: no floor on this
+              region, so the card hugs the rows and the pager follows them
+              instead of floating off across empty space.
             */}
-            <div className="flex min-h-[20rem] flex-col sm:min-h-[24rem] lg:min-h-0 lg:flex-1">
+            <div className="flex flex-col lg:min-h-0 lg:flex-1">
               {counts.total === 0 ? (
                 <div className="flex flex-1 items-center">
                   <EmptyState

@@ -132,20 +132,23 @@ export const ListingsTable = forwardRef<
      * overflowing that much sooner. Below roughly 900px of window there is
      * simply not room for these six columns and the bar is honest about it.
      *
-     * `min-h-0 overflow-auto`, and no height of its own: this is what stops a
-     * short page from drawing its frame down to the bottom of the panel. It used
-     * to be `h-full`, so a page of two rows was a frame as tall as the panel — a
-     * bordered box whose lower half was nothing but empty surface, which is a
-     * hole on the screen rather than a list. Sized by its content, the frame is
-     * exactly its rows, and the space below it belongs to the panel.
+     * `min-h-0 overflow-auto`, and no height of its own — *until the caller
+     * stretches it*: the frame is a flex item of whatever box renders it, so a
+     * caller whose panel is a bounded, full-height card passes `lg:flex-1` and
+     * the frame takes the card's height (spare room falls inside the frame,
+     * under the rows, and the pager stays at the card's foot); one in ordinary
+     * document flow passes nothing and the frame is exactly its rows. It used
+     * to be `h-full` everywhere, so a page of two rows was a frame as tall as
+     * the panel — a bordered box whose lower half was nothing but empty surface,
+     * with the pager sent to the far end of it.
      *
-     * `min-h-0` is what keeps the other half working. As a flex item this box
-     * may shrink, and a flex item's `min-height` defaults to its content — so
-     * without it a full page of rows would refuse to shrink, push past the
-     * results box and take the pager off screen. With it the frame is capped at
-     * the height the panel gives it and `overflow-auto` scrolls the rows inside.
-     * A short page is its own height; a long one is the box's, scrolled.
-     * See `RESULTS_BOX` in `listings-results-panel`.
+     * `min-h-0` is what keeps the scroll half working either way. As a flex item
+     * this box may shrink, and a flex item's `min-height` defaults to its
+     * content — so without it a full page of rows would refuse to shrink, push
+     * past the results box and take the pager off screen. With it the frame is
+     * capped at the height the panel gives it and `overflow-auto` scrolls the
+     * rows inside. A short page is its own height in flow, the box's when
+     * stretched. See `RESULTS_BOX` in `listings-results-panel`.
      *
      * And the frame, which is what the scrolling region is for. Now that the
      * rows move inside a box rather than the panel growing to hold them, the
