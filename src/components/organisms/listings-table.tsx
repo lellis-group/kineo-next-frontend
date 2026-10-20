@@ -109,38 +109,24 @@ export const ListingsTable = forwardRef<
 
   return (
     /*
-     * `scrollbar-gutter: stable` on the scroller, and it is the whole fix for a
-     * panel that resized as the reader paged.
+     * `min-h-0 overflow-auto`: the frame is the scrolling region of a
+     * full-height card, and carries no height of its own — *until the caller
+     * stretches it*. It is a flex item of whatever box renders it, so a caller
+     * whose panel is a bounded card passes `lg:flex-1` and the frame takes the
+     * card's height; one in ordinary document flow passes nothing and the
+     * frame is exactly its rows. It used to be `h-full` everywhere, so a page
+     * of two rows was a frame as tall as the panel — a bordered box whose
+     * lower half was nothing but empty surface, with the pager sent to the far
+     * end of it.
      *
-     * This table has no fixed layout, so its min-content width is decided by the
-     * rows themselves: 709px for a page of short postings, 825px for a page
-     * carrying one long title or practice name. The scroller is the panel width
-     * minus 88px, so below roughly 900px of window the table overflows — and
-     * *whether* it overflows is a property of the page on screen, not of the
-     * layout. Turning the page was enough to make the horizontal scrollbar
-     * appear on one page and vanish on the next.
-     *
-     * It could not be hidden the way `SegmentedControl` and `FilterChips` hide
-     * theirs: a six-column table needs a visible cue that there is more to see.
-     * So the gutter is reserved instead. The bar then draws into a space that
-     * was always there, and the panel keeps the same height whether or not it
-     * is showing — which is the other half of it, because an appearing
-     * scrollbar also takes 10–15px of *width*, re-flowing the columns and
-     * making the rows taller on top of the height it added.
-     *
-     * The price is 10–15px of table width at every size, so the table starts
-     * overflowing that much sooner. Below roughly 900px of window there is
-     * simply not room for these six columns and the bar is honest about it.
-     *
-     * `min-h-0 overflow-auto`, and no height of its own — *until the caller
-     * stretches it*: the frame is a flex item of whatever box renders it, so a
-     * caller whose panel is a bounded, full-height card passes `lg:flex-1` and
-     * the frame takes the card's height (spare room falls inside the frame,
-     * under the rows, and the pager stays at the card's foot); one in ordinary
-     * document flow passes nothing and the frame is exactly its rows. It used
-     * to be `h-full` everywhere, so a page of two rows was a frame as tall as
-     * the panel — a bordered box whose lower half was nothing but empty surface,
-     * with the pager sent to the far end of it.
+     * Stretched, the frame no longer keeps the spare room for itself, and
+     * neither does the void-swap that once put it between the rows and the
+     * pager: the table inside is `lg:h-full`, and a table reads its own
+     * height as a *minimum* — so a short page's extra height is distributed
+     * to the rows (never squeezing them, never leaving them a stretch of
+     * bordered nothing under them), and a long page overflows into the
+     * scroll `min-h-0` asks for. The same treatment as `MyListingsTable`,
+     * which shares this frame and this rule.
      *
      * `min-h-0` is what keeps the scroll half working either way. As a flex item
      * this box may shrink, and a flex item's `min-height` defaults to its
@@ -149,6 +135,17 @@ export const ListingsTable = forwardRef<
      * capped at the height the panel gives it and `overflow-auto` scrolls the
      * rows inside. A short page is its own height in flow, the box's when
      * stretched. See `RESULTS_BOX` in `listings-results-panel`.
+     *
+     * There used to be a `[scrollbar-gutter: stable]` on this very scroller —
+     * the whole fix for a panel that resized as the reader paged, on a table
+     * whose min-content width is a property of the page on screen (709px of
+     * short postings, 825px of one long title, so the overflow came and went
+     * by the page and took 10–15px of column width with it). It was taken off
+     * to match `MyListingsTable`, where the same reasoning was tried and
+     * priced out as a permanent band of dead surface inside the border on
+     * every short page — the state most of this table's pages sit in. Its
+     * purchase now: the columns re-flow by a scrollbar's width on the pages
+     * that do overflow, which is a transition, not a layout broke mid-reader.
      *
      * And the frame, which is what the scrolling region is for. Now that the
      * rows move inside a box rather than the panel growing to hold them, the
@@ -166,11 +163,11 @@ export const ListingsTable = forwardRef<
      */
     <div
       className={cn(
-        "hidden min-h-0 overflow-auto rounded-xl border border-border [scrollbar-gutter:stable] sm:block",
+        "hidden min-h-0 overflow-auto rounded-xl border border-border sm:block",
         className,
       )}
     >
-      <table ref={tableRef} className="table listings-table">
+      <table ref={tableRef} className="table listings-table lg:h-full">
         <thead>
           <tr>
             {/*

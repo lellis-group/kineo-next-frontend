@@ -258,6 +258,14 @@ export function ListingsResultsPanel({
         totalPages={totalPages}
         onPageChange={onPageChange}
         loading={loading}
+        /*
+          Tighter than the flow margin, for the reason `Pagination` states in
+          its `className` note and the same the mine table's pager carries: the
+          table frame above is a bordered region, and at `lg` its edge is the
+          boundary this row reads against — `mt-8` there is one step of air
+          repeated on one edge.
+        */
+        className="mt-3 lg:mt-4"
       />
     </Panel>
   );

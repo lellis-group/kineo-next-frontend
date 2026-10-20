@@ -41,6 +41,17 @@ interface PaginationProps<C extends PageSize = PageSize> {
   pageSize?: C;
   onPageSizeChange?: (size: C) => void;
   choices?: readonly C[];
+  /**
+   * Extra classes, headline use: tighter air between the table and this row.
+   *
+   * `mt-8` is the document-flow margin — a pager under content the page scrolls,
+   * where nothing above it is a bounded frame. In a full-height card the table
+   * frame already reaches for the foot (`lg:flex-1`), and its border is the
+   * boundary this row reads against, so `mt-8` is a step of air repeated twice
+   * on one edge. Pass `mt-3` instead: `twMerge` resolves the two against each
+   * other, and callers who pass nothing keep the flow margin.
+   */
+  className?: string;
 }
 
 /**
@@ -70,6 +81,7 @@ export function Pagination<C extends PageSize = PageSize>({
   pageSize,
   onPageSizeChange,
   choices = PAGE_SIZE_CHOICES as unknown as readonly C[],
+  className,
 }: PaginationProps<C>) {
   const canChooseSize = onPageSizeChange !== undefined;
   const hasMoreThanOnePage = totalPages > 1;
@@ -89,7 +101,10 @@ export function Pagination<C extends PageSize = PageSize>({
     <nav
       aria-label="Pagination"
       aria-busy={loading}
-      className="mt-8 flex flex-wrap items-center justify-center gap-2 sm:gap-3"
+      className={cn(
+        "mt-8 flex flex-wrap items-center justify-center gap-2 sm:gap-3",
+        className,
+      )}
     >
       {hasMoreThanOnePage ? (
         <div className="flex items-center rounded-full bg-surface-2 p-1">

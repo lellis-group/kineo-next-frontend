@@ -101,29 +101,29 @@ export const MyListingsTable = forwardRef<
   );
 
   /*
-   * `scrollbar-gutter: stable` and `min-h-0 overflow-auto`: the table is the
-   * scrolling region of a card in a full-height workspace, so a full board's rows
-   * move inside it instead of deciding how tall the page is.
+   * `min-h-0 overflow-auto`: the table is the scrolling region of a card in a
+   * full-height workspace, so a full board's rows move inside it instead of
+   * deciding how tall the page is.
    *
-   * `flex-1` gives the frame the height the card has. This used to be
-   * deliberately the opposite — the frame sized itself to its rows, on the
-   * theory that a short page would otherwise be a bordered box with an empty
-   * lower half — and the theory priced out wrong: the space it spared the frame
-   * fell between the rows and the pager, which the card then pinned to its
-   * bottom, so a short page was a few rows floating in a void with the pager
-   * sent to the far end of it. The void is the hole, wherever it sits; inside
-   * the frame at least it is named by the border that holds the rows, and the
-   * pager stays where a control lands in the reference — at the card's foot.
+   * `flex-1` gives the frame the height the card has, and the table inside it
+   * is `lg:h-full` in turn: since the table is the taller of the two only when
+   * its rows demand it, those two together mean a short page's spare room goes
+   * to the rows themselves — stretched across the full frame, their cells
+   * carried on the first line as anywhere — rather than sitting under them as
+   * an empty stretch of bordered surface. A long page overflows: a table's
+   * own height is read as a minimum, never squeezing the rows, and the
+   * `overflow-auto` scrolls them. The same frame as the browse feed's table;
+   * what the two disagree on — `scrollbar-gutter` — that table states in its
+   * own note.
    *
    * `min-h-0` is still what keeps the long case working: a flex item's
    * `min-height` defaults to its content, so without it the frame would refuse
    * to shrink, push past the card and take the pager off screen. With it, a
-   * long board is capped at the height the card gives it and scrolls. The same
-   * fix as the browse feed's table, for the same reason.
+   * long board is capped at the height the card gives it and scrolls.
    */
   return (
-    <div className="hidden min-h-0 flex-1 overflow-auto rounded-xl border border-border [scrollbar-gutter:stable] sm:block">
-      <table ref={tableRef} className="table listings-table">
+    <div className="hidden min-h-0 flex-1 overflow-auto rounded-xl border border-border sm:block">
+      <table ref={tableRef} className="table listings-table lg:h-full">
         <thead>
           <tr>
             <th scope="col" className="has-gutter">
@@ -345,7 +345,13 @@ function ListingDetailRow({
   return (
     <tr data-listing-id={listing.id} className="bg-background/30">
       <td colSpan={6} id={panelId} className="p-0 align-top">
-        <div className="flex flex-col gap-4 border-t border-border px-5 py-5 sm:px-6">
+        {/*
+          Aligned on the cells it sits under: `.table` pads a row at 1rem on
+          every side, so the opened panel starting on that same edge reads as
+          the row's own continuation. At the layout's `px-5 sm:px-6` it met the
+          text above it 8px further in, and read as a second, wider surface.
+        */}
+        <div className="flex flex-col gap-4 border-t border-border px-4 py-4">
           {feedback && <InlineAlert tone="success">{feedback}</InlineAlert>}
           {error && (
             <InlineAlert as="p" tone="danger">

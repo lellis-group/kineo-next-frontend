@@ -251,6 +251,15 @@ export function MyListingsView({
               onPageSizeChange={onPageSizeChange}
               choices={MY_LISTINGS_PAGE_SIZE_CHOICES}
               loading={loading}
+              /*
+                Tighter than the flow margin: the table frame above is a
+                bordered region whose edge the pager reads against, so the
+                `mt-8` a flowing page needs is a second layer of air on the one
+                edge (`Pagination`, and its `className` note). A little stays,
+                because the frame's border still wants to breathe before its own
+                card ends.
+              */
+              className="mt-3 lg:mt-4"
             />
           </Panel>
         </div>
