@@ -132,7 +132,12 @@ function useAnimatedPercent(target: number): number {
     const start = performance.now();
     const durationMs = 650;
     const tick = (now: number) => {
-      const t = Math.min(1, (now - start) / durationMs);
+      // Clamped on both sides: `now` is the frame's start time, which can sit a
+      // few milliseconds *before* the `performance.now()` captured above (frame
+      // clock skew). Unclamped, that negative elapsed time makes the eased value
+      // dip below `from` — below 0 on the opening sweep — and a negative value
+      // reaches the clip `rect`'s width, which SVG rejects outright.
+      const t = Math.max(0, Math.min(1, (now - start) / durationMs));
       const eased = 1 - (1 - t) ** 3;
       const next = t >= 1 ? target : from + (target - from) * eased;
       fromRef.current = next;
@@ -213,7 +218,7 @@ export function ProgressCurve({
                 above is positioned by x. A dash-offset fill would stop short of
                 the dot, or run past it, depending on the shape. */}
             <clipPath id={clipId}>
-              <rect x="0" y="0" width={animated} height="40" />
+              <rect x="0" y="0" width={Math.max(0, animated)} height="40" />
             </clipPath>
           </defs>
           {/* A symmetric circular arc (R 102 puts the apex at y 12 for a 96-wide
