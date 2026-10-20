@@ -678,15 +678,26 @@
   }
 
   /*
-   * Top-aligned, where the shared rule centres its cells.
+   * Centred, where the rule this replaced kept every column's first line on
+   * one row.
    *
-   * The first cell carries a two-line block, so centring it in a tall row lifted
-   * it away from every other column's single line: about 8px on a short title and
-   * 28px on one that wrapped. Aligning on the first line puts every column's
-   * opening text on the same row, which is what a table of rows is read as.
+   * The `top` this was — set so a two-line title cell and its one-line
+   * neighbours opened on the same line — priced out the moment rows began to
+   * stretch: `fill` hands a short page's spare height to the rows themselves,
+   * and a top-aligned cell poured all of it under its text, so with two or
+   * three rows on screen the content lived in the top quarter of every cell
+   * over a stretch of nothing. Centred, the air splits above and below and the
+   * content owns the middle, which is what a tall row reads as.
+   *
+   * Rows of natural height don't move: there the content *is* the height, so
+   * top and middle coincide. The one body case that still diffs is a wrapped
+   * title, which now centres its single-line neighbours instead of leading
+   * them — a fair trade, the more so because the detail row keeps its
+   * `align-top`: a candidates panel opens from the top of its own row, it does
+   * not float into the middle of one.
    */
   .listings-table tbody td {
-    vertical-align: top;
+    vertical-align: middle;
   }
 
   /*
