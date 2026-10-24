@@ -4,7 +4,7 @@
  * anonymized candidate requires.
  */
 
-import { formatDateRange, formatRelativeTime, plural } from "../format";
+import { formatRelativeTime, plural } from "../format";
 import { SPECIALTY_LABELS } from "../profile";
 import type {
   ApiApplication,
@@ -22,6 +22,7 @@ import type {
   ReceivedApplicationsFilterOption,
 } from "./contracts";
 import { RECRUITING_STATUSES } from "./contracts";
+import { adaptListingBase } from "./shared";
 
 /** Shown in place of a name once the account is erased. */
 const ANONYMIZED_APPLICANT_NAME = "Candidat anonymisé";
@@ -67,19 +68,10 @@ export function adaptMyListings(
 }
 
 export function adaptMyListing(listing: ApiReplacementListing): MyListing {
+  const base = adaptListingBase(listing);
   return {
-    id: listing.id,
-    title: listing.title,
+    ...base,
     status: listing.status,
-    specialty: listing.specialty,
-    dateRange: formatDateRange(listing.startDate, listing.endDate),
-    startDate: listing.startDate,
-    endDate: listing.endDate,
-    description: listing.description?.trim() || undefined,
-    urgent: listing.urgent,
-    applicationsCount: listing.applicationsCount ?? 0,
-    maxApplications: listing.maxApplications ?? undefined,
-    createdAt: listing.createdAt,
     updatedAt: listing.updatedAt,
   };
 }

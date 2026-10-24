@@ -23,6 +23,7 @@ import type {
   MapPlaceListing,
   SpecialtyFacet,
 } from "./browse-contracts";
+import { adaptListingBase } from "./shared";
 
 /**
  * Zeroed facets, for a response that carried none.
@@ -49,17 +50,11 @@ export function emptyFacets(): BrowseFacets {
 export function adaptBrowseListing(
   listing: ApiReplacementListing,
 ): BrowseListing {
+  const base = adaptListingBase(listing);
   const { practice } = listing;
 
   return {
-    id: listing.id,
-    title: listing.title,
-    dateRange: formatDateRange(listing.startDate, listing.endDate),
-    startDate: listing.startDate,
-    endDate: listing.endDate,
-    specialty: listing.specialty,
-    urgent: listing.urgent,
-    description: listing.description?.trim() || undefined,
+    ...base,
     practiceName: practice?.name?.trim() || "Cabinet",
     city: practice?.city?.trim() || "",
     // Both coordinates or neither: a pin at 0,0 in the Gulf of Guinea is worse
@@ -70,9 +65,6 @@ export function adaptBrowseListing(
       typeof practice?.longitude === "number"
         ? { latitude: practice.latitude, longitude: practice.longitude }
         : null,
-    applicationsCount: listing.applicationsCount ?? 0,
-    maxApplications: listing.maxApplications ?? undefined,
-    createdAt: listing.createdAt,
   };
 }
 
