@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   fetchListingApplications,
   type ListingApplicationsData,
@@ -9,6 +9,7 @@ import {
   listingReadErrorMessage,
 } from "@/lib/listings";
 import { signInOnExpiredSession } from "@/lib/session-redirect";
+import { useRaceGuard } from "./use-race-guard";
 
 /**
  * Candidates for the listings a practice chooses to open, fetched on demand.
@@ -35,10 +36,10 @@ import { signInOnExpiredSession } from "@/lib/session-redirect";
  * (`forget`), which drop the cache while a read for a card that is leaving the
  * screen is still running.
  *
- * The request id decides who may write; the `AbortSignal` stops the read that
- * lost rather than only ignoring its answer, which is the pair
- * `usePaginatedResource` uses. Only one read runs at a time here, so one
- * controller and one id are enough — no per-listing bookkeeping, which would only
+ * The guard now lives in `useRaceGuard`, shared with `usePaginatedResource`:
+ * one request id decides who may write, and the `AbortSignal` stops the read
+ * that lost rather than only ignoring its answer. Only one read runs at a time
+ * here, so one guard is enough — no per-listing bookkeeping, which would only
  * matter with several in flight.
  */
 export function useExpandedCandidates() {
@@ -50,16 +51,9 @@ export function useExpandedCandidates() {
   const [loadingListingId, setLoadingListingId] = useState<string>();
   const [panelError, setPanelError] = useState<ListingMessage | null>(null);
 
-  /** Bumped per request; a response with a stale id is discarded. */
-  const requestId = useRef(0);
-  /** The read the last expansion started, cancelled by the next one. */
-  const inFlight = useRef<AbortController | null>(null);
-
-  const cancel = useCallback(() => {
-    inFlight.current?.abort();
-    inFlight.current = null;
-    requestId.current += 1;
-  }, []);
+  /** Cancels in-flight reads, starts races, and stamps stale answers. */
+  const raceGuard = useRaceGuard();
+  const { cancel, start, isStale, settled } = raceGuard;
 
   // A read still running when the screen goes away has nobody to report to.
   useEffect(() => () => cancel(), [cancel]);
@@ -102,10 +96,7 @@ export function useExpandedCandidates() {
         return;
       }
 
-      const controller = new AbortController();
-      inFlight.current = controller;
-      requestId.current += 1;
-      const mine = requestId.current;
+      const { controller, mine } = start();
 
       setLoadingListingId(listingId);
 
@@ -113,8 +104,8 @@ export function useExpandedCandidates() {
         signal: controller.signal,
       })
         .then((result) => {
-          if (mine !== requestId.current) return;
-          inFlight.current = null;
+          if (isStale(mine)) return;
+          settled();
           setLoadingListingId(undefined);
           setReceivedByListing((current) => ({
             ...current,
@@ -122,8 +113,8 @@ export function useExpandedCandidates() {
           }));
         })
         .catch((err) => {
-          if (mine !== requestId.current) return;
-          inFlight.current = null;
+          if (isStale(mine)) return;
+          settled();
           setLoadingListingId(undefined);
           // The abort above, not a broken endpoint: the reader is looking at
           // another panel, and « could not read » would be a fault they did not
@@ -136,7 +127,15 @@ export function useExpandedCandidates() {
           setPanelError({ listingId, message: listingReadErrorMessage(err) });
         });
     },
-    [cancel, expandedListingId, receivedByListing, router],
+    [
+      cancel,
+      start,
+      isStale,
+      settled,
+      expandedListingId,
+      receivedByListing,
+      router,
+    ],
   );
 
   return {

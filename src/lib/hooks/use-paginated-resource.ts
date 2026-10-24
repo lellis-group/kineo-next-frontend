@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { signInOnExpiredSession } from "@/lib/session-redirect";
+import { useRaceGuard } from "./use-race-guard";
 
 /**
  * One resource, paged and filtered, seeded from the server payload.
@@ -36,6 +37,10 @@ import { signInOnExpiredSession } from "@/lib/session-redirect";
  * no longer looking at it — which matters most where the read is most expensive
  * (the listings map). `load` is handed a `RequestInit` carrying a signal, so a
  * view change cancels the read it supersedes rather than ignoring its answer.
+ *
+ * The cancellation guard itself now lives in `useRaceGuard`, shared with
+ * `useExpandedCandidates` — no call-site codes `requestId` + `AbortController`
+ * by hand anymore.
  */
 export function usePaginatedResource<T, V>({
   initialData,
@@ -85,47 +90,28 @@ export function usePaginatedResource<T, V>({
   afterLoad.current = onLoaded;
   afterRestore.current = onRestored;
 
-  /** Bumped per request; a response with a stale id is discarded. */
-  const requestId = useRef(0);
-  /** The read the last view change started, cancelled by the next one. */
-  const inFlight = useRef<AbortController | null>(null);
-
-  /**
-   * Stops the read in progress, if any.
-   *
-   * An aborted fetch rejects with an `AbortError`, which the caller's `load` has
-   * to survive: the abort is this hook's decision, not a failure of the
-   * endpoint, and reading it as one would put « could not read » on a screen
-   * whose request the reader themselves superseded.
-   */
-  const cancel = useCallback(() => {
-    inFlight.current?.abort();
-    inFlight.current = null;
-  }, []);
+  /** Cancels in-flight reads, starts races, and stamps stale answers. */
+  const raceGuard = useRaceGuard();
+  const { start, isStale, settled, revoke } = raceGuard;
 
   const fetchView = useCallback(
     (target: V) => {
-      cancel();
-      inFlight.current = new AbortController();
-
-      const controller = inFlight.current;
-      requestId.current += 1;
-      const mine = requestId.current;
+      const { controller, mine } = start();
 
       setError(null);
       setLoading(true);
 
       load(target, { signal: controller.signal })
         .then((loaded) => {
-          if (mine !== requestId.current) return;
-          inFlight.current = null;
+          if (isStale(mine)) return;
+          settled();
           setData(loaded);
           setLoading(false);
           afterLoad.current?.();
         })
         .catch((err) => {
-          if (mine !== requestId.current) return;
-          inFlight.current = null;
+          if (isStale(mine)) return;
+          settled();
           setLoading(false);
           // The abort above, not a broken endpoint: nothing to show and nothing
           // to say, because the reader is already looking at the next view's rows.
@@ -134,19 +120,18 @@ export function usePaginatedResource<T, V>({
           setError(err);
         });
     },
-    [cancel, load, router],
+    [start, isStale, settled, load, router],
   );
 
   const restore = useCallback(() => {
     // Invalidate any request still in flight: its answer describes a view the
     // reader has already left.
-    cancel();
-    requestId.current += 1;
+    revoke();
     setData(initialData);
     setError(null);
     setLoading(false);
     afterRestore.current?.();
-  }, [cancel, initialData]);
+  }, [revoke, initialData]);
 
   /**
    * True once the hook has adopted the server's opening answer.
@@ -167,8 +152,7 @@ export function usePaginatedResource<T, V>({
     // the route with a fresh `initialData` — the reference is the signal that new
     // rows have arrived, and there is never a client fetch on this path.
     if (seedFromServer) {
-      cancel();
-      requestId.current += 1;
+      revoke();
       setData(initialData);
       setError(null);
       setLoading(false);
@@ -193,7 +177,7 @@ export function usePaginatedResource<T, V>({
     fetchView,
     restore,
     seedFromServer,
-    cancel,
+    revoke,
   ]);
 
   /** Re-runs the current view — the « Réessayer » button. */
@@ -214,12 +198,15 @@ export function usePaginatedResource<T, V>({
    * It stays in this hook so that `restore` and `reload` remain the only things
    * that know about `initialData`.
    */
-  const replace = useCallback((fresh: T) => {
-    requestId.current += 1;
-    setData(fresh);
-    setError(null);
-    setLoading(false);
-  }, []);
+  const replace = useCallback(
+    (fresh: T) => {
+      revoke();
+      setData(fresh);
+      setError(null);
+      setLoading(false);
+    },
+    [revoke],
+  );
 
   return { data, error, loading, reload, replace };
 }
