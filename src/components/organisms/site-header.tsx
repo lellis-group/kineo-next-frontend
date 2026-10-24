@@ -69,7 +69,7 @@ export function SiteHeader({
       <div
         className={cn(
           SITE_SHELL,
-          `${HEADER_HEIGHT} items-center justify-between gap-2 pt-[env(safe-area-inset-top)] ${HEADER_HEIGHT_SM} sm:gap-6`,
+          `flex ${HEADER_HEIGHT} items-center justify-between gap-2 pt-[env(safe-area-inset-top)] ${HEADER_HEIGHT_SM} sm:gap-6`,
         )}
       >
         <div className="flex min-w-0 items-center gap-6 lg:gap-10">
