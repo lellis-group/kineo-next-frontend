@@ -14,6 +14,7 @@
  */
 
 import { toIsoDayBound } from "@/lib/format";
+import type { MapPlace, MapPlaceListing } from "@/lib/map/types";
 import { SPECIALTY_LABELS } from "@/lib/profile";
 import type { Specialty } from "@/lib/types/api";
 import type { BadgeTone } from "@/lib/ui-tokens";
@@ -355,24 +356,7 @@ export interface BrowseFacets {
  * carry its coordinates, so one pin per posting stacks identical buttons on the
  * same pixel — the top one takes every click and the rest cannot be reached.
  */
-export interface MapPlaceListing {
-  id: string;
-  title: string;
-  dateRange: string;
-  practiceName: string;
-  city: string;
-  location: { latitude: number; longitude: number };
-}
-
-export interface MapPlace {
-  /** Stable key — the practice the read grouped under. */
-  key: string;
-  latitude: number;
-  longitude: number;
-  /** How many postings sit here, whatever the preview list holds. */
-  count: number;
-  listings: MapPlaceListing[];
-}
+export type { MapPlace, MapPlaceListing };
 
 /**
  * Everything the map needs, in one answer.

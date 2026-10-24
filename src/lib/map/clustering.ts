@@ -1,5 +1,5 @@
 import type { Map as MapLibreMap } from "maplibre-gl";
-import type { MapPlace } from "@/lib/listings";
+import type { MapPlace } from "./types";
 
 /**
  * Which places the map draws as one marker.

@@ -1,4 +1,4 @@
-import type { MapPlace } from "./browse-contracts";
+import type { MapPlace } from "@/lib/map/types";
 
 /**
  * Where the camera should go when the reader asks to look at one place.

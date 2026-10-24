@@ -1,12 +1,12 @@
 import type { Map as MapLibreMap } from "maplibre-gl";
 import * as maplibregl from "maplibre-gl";
 import type { RefObject } from "react";
-import type { MapPlace } from "@/lib/listings";
 import { zoomToPlace } from "@/lib/map/camera";
 import {
   keepPopupInView,
   POPUP_EDGE_MARGIN,
 } from "@/lib/map/keep-popup-in-view";
+import type { MapPlace } from "./types";
 
 /**
  * The card a marker opens — the reference's marker card, and the one element on

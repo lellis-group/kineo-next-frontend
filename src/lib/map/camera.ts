@@ -1,6 +1,7 @@
 import type { Map as MapLibreMap } from "maplibre-gl";
 import * as maplibregl from "maplibre-gl";
-import { cameraTargetFor, type MapPlace } from "@/lib/listings";
+import { cameraTargetFor } from "@/lib/listings";
+import type { MapPlace } from "./types";
 
 /**
  * Every camera move the browse map makes, in one place.

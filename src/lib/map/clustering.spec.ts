@@ -1,10 +1,10 @@
 import { describe, expect, test } from "bun:test";
-import type { MapPlace } from "@/lib/listings";
 import {
   groupByDistance,
   mergePlaces,
   type ProjectedPlace,
 } from "@/lib/map/clustering";
+import type { MapPlace } from "./types";
 
 /** A place as `MapPlace`, with one posting under it. */
 function bare(key: string, latitude = 0, longitude = 0, count = 1): MapPlace {

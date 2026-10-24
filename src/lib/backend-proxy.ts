@@ -22,6 +22,12 @@ export async function proxyToBackend(
   request: NextRequest,
   rewrite: (pathname: string) => string,
   label: string,
+  /** Slimming table: which backend path wants which row slimming, or null to stream. */
+  slimForTargetFn: (
+    target: string,
+  ) =>
+    | ((row: Record<string, unknown>) => Record<string, unknown>)
+    | null = slimForTarget,
 ): Promise<NextResponse> {
   const backendUrl =
     process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3000";
@@ -51,7 +57,12 @@ export async function proxyToBackend(
       redirect: "manual",
     });
 
-    const slimmed = await maybeSlimListResponse(request, target, response);
+    const slimmed = await maybeSlimListResponse(
+      request,
+      target,
+      response,
+      slimForTargetFn,
+    );
     if (slimmed) return slimmed;
 
     const responseHeaders = new Headers(response.headers);
@@ -89,9 +100,12 @@ async function maybeSlimListResponse(
   request: NextRequest,
   target: string,
   upstream: Response,
+  slimForTargetFn: (
+    target: string,
+  ) => ((row: Record<string, unknown>) => Record<string, unknown>) | null,
 ): Promise<NextResponse | null> {
   if (request.method !== "GET" || !upstream.ok) return null;
-  const slim = slimForTarget(target);
+  const slim = slimForTargetFn(target);
   if (!slim) return null;
   const contentType = upstream.headers.get("content-type") ?? "";
   if (!contentType.includes("application/json")) return null;

@@ -2,9 +2,9 @@ import type { Map as MapLibreMap, Marker } from "maplibre-gl";
 import * as maplibregl from "maplibre-gl";
 import type { RefObject } from "react";
 import { cn } from "@/lib/cn";
-import type { MapPlace } from "@/lib/listings";
 import { zoomToPlace } from "@/lib/map/camera";
 import { openPopupForKey } from "@/lib/map/popup";
+import type { MapPlace } from "./types";
 
 /**
  * The markers themselves: the node MapLibre positions, what is drawn inside it,
