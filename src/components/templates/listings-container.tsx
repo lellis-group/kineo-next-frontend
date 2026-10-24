@@ -373,6 +373,31 @@ export function ListingsContainer({
   );
 
   /**
+   * Turns the page to the one holding `id`, then scrolls to it.
+   *
+   * Shared by `pickListing` and `selectListing`: both need to send the reader to
+   * the page that holds a posting the map named, and only one of them should own
+   * that read. A `replace`, not a `push`: the reader picked a posting, they did
+   * not page to it, and a jump they never asked for must not become a stop the
+   * back button walks back through.
+   */
+  const turnToPage = useCallback(
+    (id: string) => {
+      scrollTo(id);
+      fetchListingPageOf(id, { ...view, limit: BROWSE_PAGE_SIZE }).then(
+        (target) => {
+          if (target === null) {
+            clearScroll();
+            return;
+          }
+          writeView({ filters, page: target, sort }, "replace");
+        },
+      );
+    },
+    [view, filters, sort, writeView, scrollTo, clearScroll],
+  );
+
+  /**
    * Brings a posting picked on the map to the reader in the list.
    *
    * The two halves of this screen are one set of rows seen two ways, and the map
@@ -420,40 +445,9 @@ export function ListingsContainer({
         return;
       }
 
-      // Which page of the server's ordering holds it. The map covers the whole
-      // filtered collection and the list one page of it, so the answer is a
-      // position in that collection — asked now, of the reader's current filters
-      // and page size, rather than carried by every map read as the id of every
-      // posting it could ever be asked about.
-      //
-      // The turn itself is a `replace`, not a `push`: the reader picked a
-      // posting, they did not page to it, and a jump they never asked for must
-      // not become a stop the back button walks back through.
-      scrollTo(id);
-      fetchListingPageOf(id, { ...view, limit: BROWSE_PAGE_SIZE }).then(
-        (target) => {
-          // `null` — not in this view, or the read failed. Give the pending
-          // scroll up rather than leave it armed: left, it would land on the
-          // next read that happens to carry the id, a jump the reader moved
-          // past asking.
-          if (target === null) {
-            clearScroll();
-            return;
-          }
-          writeView({ filters, page: target, sort }, "replace");
-        },
-      );
+      turnToPage(id);
     },
-    [
-      data.listings,
-      view,
-      filters,
-      sort,
-      writeView,
-      layout,
-      scrollTo,
-      clearScroll,
-    ],
+    [data.listings, layout, scrollTo, turnToPage],
   );
 
   /**
@@ -510,36 +504,13 @@ export function ListingsContainer({
       }
 
       if (!onScreenIds.has(listing.id)) {
-        scrollTo(listing.id);
-        fetchListingPageOf(listing.id, {
-          ...view,
-          limit: BROWSE_PAGE_SIZE,
-        }).then((target) => {
-          // A `replace`, like `pickListing`'s turn: the reader chose a posting,
-          // the page followed, and that jump is not a history stop. And like
-          // `pickListing`, `null` gives the pending scroll up rather than
-          // leaving it armed for a later read.
-          if (target === null) {
-            clearScroll();
-            return;
-          }
-          writeView({ filters, page: target, sort }, "replace");
-        });
+        turnToPage(listing.id);
         return;
       }
 
       tableRef.current?.scrollToId(listing.id);
     },
-    [
-      onScreenIds,
-      view,
-      filters,
-      sort,
-      writeView,
-      layout,
-      scrollTo,
-      clearScroll,
-    ],
+    [onScreenIds, layout, turnToPage],
   );
 
   return (
