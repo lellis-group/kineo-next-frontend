@@ -2,9 +2,9 @@ import { describe, expect, test } from "bun:test";
 import { ApiError } from "../api-client";
 import {
   LISTING_TRANSITION_CODES,
-  type ListingActionKind,
   listingActionErrorMessage,
-} from "./service";
+} from "./listing-errors";
+import type { ListingActionKind } from "./service";
 
 /** A refusal as the backend sends it: a 400 carrying a code and English prose. */
 function refusal(

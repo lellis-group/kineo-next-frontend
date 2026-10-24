@@ -38,18 +38,20 @@ export {
   RECEIVED_FILTERS,
   RECRUITING_STATUSES,
 } from "./contracts";
-export type { ListingActionKind, MyListingsData } from "./service";
 export {
   ACTION_SUCCESS,
+  LISTING_TRANSITION_CODES,
+  listingActionErrorMessage,
+  listingReadErrorMessage,
+} from "./listing-errors";
+export type { ListingActionKind, MyListingsData } from "./service";
+export {
   cancelListing,
   closeListing,
   fetchListingApplications,
   fetchMyListing,
   fetchMyListings,
   LISTING_APPLICATIONS_PAGE_SIZE,
-  LISTING_TRANSITION_CODES,
-  listingActionErrorMessage,
-  listingReadErrorMessage,
 } from "./service";
 
 /*

@@ -10,13 +10,11 @@
  */
 
 import {
-  ApiError,
   type ApiTransport,
   apiFetch,
   buildQuery,
   notFoundAs,
 } from "../api-client";
-import { errorMessage } from "../api-errors";
 import { COUNT_KEYS, withZeroCounts, zeroCounts } from "../counts";
 import type {
   ApiApplication,
@@ -80,17 +78,6 @@ export type ListingActionKind = "close" | "cancel";
  * at the call site. Deriving the participle from the infinitive instead —
  * `${verb}e` — produces « clôturée » and « annuléee », so it is spelled out.
  */
-const ACTION_COPY: Record<ListingActionKind, { verb: string; done: string }> = {
-  close: { verb: "clôturer", done: "clôturée" },
-  cancel: { verb: "annuler", done: "annulée" },
-};
-
-/** The confirmation sentence each owner action reports on success. */
-export const ACTION_SUCCESS: Record<ListingActionKind, string> = {
-  close: "Annonce clôturée. Les candidatures en cours ont été terminées.",
-  cancel: "Annonce annulée. Les candidatures en cours ont été terminées.",
-};
-
 /** The listings page: the filtered slice plus the totals behind the chips. */
 export interface MyListingsData {
   listings: MyListing[];
@@ -322,138 +309,5 @@ async function mutateListing(
 ): Promise<void> {
   await apiFetch(`/replacement-listings/${id}/${action}`, {
     method: "PATCH",
-  });
-}
-
-/**
- * What each refusal code means, in French.
- *
- * A function rather than a string only where the sentence names the action: the
- * backend sends the same `LISTING_NOT_CLOSEABLE` whether the practice asked to
- * close or to cancel, and « Impossible de clôturer » on a cancel button is a
- * sentence about the wrong thing.
- *
- * Two entries are unreachable from this screen — `NOT_DRAFT`, `NOT_MODIFIABLE`,
- * `INVALID_DATES`, `FILLED_CANNOT_BE_DELETED` and `QUOTA_REACHED` belong to the
- * publish, edit, delete and create routes, which this client does not call yet.
- * They stay because the table is a mirror of the contract, not of the calls: a
- * route arriving with its French sentence ready is the point.
- *
- * `ALREADY_CLOSED` used to carry « Impossible d'annuler : elle est pourvue.
- * Clôturez-la à la place », because the backend answered a filled listing with
- * its own code. It answers `LISTING_ALREADY_CLOSED` for that case now, so the
- * sentence names every terminal status it covers and advises nothing that would
- * be wrong for one of them — and the screen never offers « Annuler » on a filled
- * listing anyway (`FILLED` is not a recruiting status).
- */
-const LISTING_REFUSAL_MESSAGES: Record<
-  (typeof LISTING_TRANSITION_CODES)[keyof typeof LISTING_TRANSITION_CODES],
-  string | ((action: ListingActionKind) => string)
-> = {
-  [LISTING_TRANSITION_CODES.NOT_DRAFT]:
-    "Seule une annonce en brouillon peut être publiée.",
-  [LISTING_TRANSITION_CODES.NOT_MODIFIABLE]:
-    "Cette annonce n'est plus modifiable : elle a quitté la diffusion.",
-  [LISTING_TRANSITION_CODES.INVALID_DATES]:
-    "La date de début doit précéder la date de fin.",
-  [LISTING_TRANSITION_CODES.NOT_CLOSEABLE]: (action) =>
-    `Impossible de ${ACTION_COPY[action].verb} l'annonce : elle n'est plus en diffusion.`,
-  [LISTING_TRANSITION_CODES.ALREADY_CLOSED]: (action) =>
-    `Impossible de ${ACTION_COPY[action].verb} l'annonce : elle a quitté la diffusion (clôturée, annulée ou pourvue).`,
-  [LISTING_TRANSITION_CODES.FILLED_CANNOT_BE_DELETED]:
-    "Impossible de supprimer l'annonce : elle est pourvue. Clôturez-la à la place.",
-  [LISTING_TRANSITION_CODES.QUOTA_REACHED]:
-    "Vous avez atteint le nombre maximal d'annonces. Libérez-en une ou contactez-nous.",
-};
-
-/**
- * A refused or failed owner action, in French.
- *
- * Pure: it reads the typed error and returns a sentence, which is what makes it
- * testable per code. The caller decides when to show it — `useListingAction`
- * shows it, and redirects first on an expired session.
- *
- * The code is asked before the status, because it is the more specific of the
- * two: a 400 says the state of the data refused the write, and only the code
- * says *which* state. A code this client does not know degrades to a sentence
- * about the current state, never to a wrong one.
- *
- * The English `message` the backend sends alongside the code is never parsed.
- * It used to be, with six regexes over the wording; a reword on the server
- * silently turned a precise refusal into « Veuillez réessayer », which is advice
- * that cannot help a posting that is already closed.
- */
-export function listingActionErrorMessage(
-  error: unknown,
-  action: ListingActionKind,
-): string {
-  const { verb, done } = ACTION_COPY[action];
-
-  if (error instanceof ApiError) {
-    const byCode =
-      error.code === undefined
-        ? undefined
-        : LISTING_REFUSAL_MESSAGES[
-            error.code as keyof typeof LISTING_REFUSAL_MESSAGES
-          ];
-    if (byCode !== undefined) {
-      return typeof byCode === "function" ? byCode(action) : byCode;
-    }
-
-    if (error.status === 404) {
-      return "Cette annonce n'existe plus.";
-    }
-    if (error.status === 403) {
-      // Two unrelated refusals share this status since the backend widened
-      // `EmailVerifiedGuard` to every write: not the owner, or an address that
-      // has not been confirmed. The generic copy names both, and a signed-out
-      // reader is not told to retry a request that could never succeed.
-      return errorMessage(error, {
-        forbidden:
-          "Vous n'êtes pas le propriétaire de cette annonce, ou votre adresse e-mail n'est pas validée.",
-      });
-    }
-    if (error.status === 409) {
-      // The only 409 a listing write raises: another candidate's application is
-      // still active and the cascade would take it (`common/application-guard.ts`).
-      // It arrives without a code, so this is answered by status alone.
-      return `Impossible de ${verb} l'annonce : des candidatures d'autres candidats lui sont encore actives.`;
-    }
-    // A 400/409/422 carrying a code this client does not know. The state of the
-    // data refused the action; retrying unchanged will refuse again, so the
-    // sentence says that rather than suggesting a second attempt.
-    if (error.status === 400 || error.status === 409 || error.status === 422) {
-      return `Impossible de ${verb} l'annonce dans son état actuel.`;
-    }
-  }
-
-  // 401 included: the hook redirects before ever asking for a sentence, so a
-  // session that expired mid-write is not reported as a failed action.
-  return errorMessage(error, {
-    unavailable: `Impossible de ${verb} l'annonce pour le moment. Veuillez réessayer.`,
-    "service-down": `Le service est hors service : l'annonce n'a pas été ${done}. Réessayez dans quelques minutes.`,
-  });
-}
-
-/**
- * A failed *read* on a listing, in French, with the 403 case spelled out.
- *
- * The sibling of `listingActionErrorMessage`, and separate from it because the
- * two endpoints answer 403 for different reasons and the reader needs a different
- * way out of each.
- *
- * The candidates endpoint answers a bare English « You do not own this listing »
- * on a 403, which is the same string the service layer maps for the *write*
- * actions. Surfacing `err.message` instead put that sentence — plus the
- * `API 403 (/applications/listing/…):` prefix `apiFetch` builds — in front of a
- * French-speaking practice. `errorMessage` classifies the typed status; only the
- * 403 needed domain wording, because the generic « action non autorisée » copy
- * is about the unverified-email guard and would have sent them to check an
- * address that is fine.
- */
-export function listingReadErrorMessage(error: unknown): string {
-  return errorMessage(error, {
-    forbidden:
-      "Cette annonce ne vous appartient pas, ou elle n'existe plus. Retournez à vos annonces.",
   });
 }

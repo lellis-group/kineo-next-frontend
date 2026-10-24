@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { ApiError } from "./api-client";
+import { classifyError } from "./api-errors";
 
 /**
  * Session handling for server-side reads.
@@ -8,6 +9,10 @@ import { ApiError } from "./api-client";
  * exists, they hold its credentials, and landing on « Créer un compte » reads as
  * being asked to register again. See the same reasoning on sign-out in
  * `app-header.tsx`.
+ *
+ * « Session expirée » is defined once, in `api-errors.ts` (`classifyError`
+ * reads a 401 as `"session"`). This module asks it rather than re-deciding, so
+ * the status that means "sign in again" lives in one place.
  */
 
 /**
@@ -15,15 +20,15 @@ import { ApiError } from "./api-client";
  *
  * The proxy only checks that a session cookie is *present*; the backend decides
  * whether it is still valid, so the authoritative answer can only come from a
- * real request. Anything other than a 401 is left to propagate — a 500 or a cut
- * connection is a fault worth showing, not a reason to pretend the reader signed
- * out.
+ * real request. Anything other than a session expiry is left to propagate — a
+ * 500 or a cut connection is a fault worth showing, not a reason to pretend the
+ * reader signed out.
  */
 export async function requireMember<T>(work: Promise<T>): Promise<T> {
   try {
     return await work;
   } catch (error) {
-    if (error instanceof ApiError && error.status === 401) {
+    if (classifyError(error) === "session") {
       redirect("/signin");
     }
     throw error;
@@ -56,13 +61,14 @@ export async function requireExisting<T>(work: Promise<T>): Promise<T> {
   try {
     return await work;
   } catch (error) {
-    if (error instanceof ApiError) {
-      if (error.status === 401) {
-        redirect("/signin");
-      }
-      if (error.status === 403 || error.status === 404) {
-        notFound();
-      }
+    if (classifyError(error) === "session") {
+      redirect("/signin");
+    }
+    if (
+      error instanceof ApiError &&
+      (error.status === 403 || error.status === 404)
+    ) {
+      notFound();
     }
     throw error;
   }

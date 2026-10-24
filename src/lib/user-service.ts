@@ -7,13 +7,25 @@ import { errorMessage } from "./api-errors";
 import { authClient } from "./auth-client";
 import type { ApiUser } from "./types/api";
 
-/** GET /get-session — returns the current user. */
+/** GET /get-session — returns the current user.
+ *
+ * Reads the same endpoint as `server-auth.ts` (the single get-session path),
+ * so the session shape is parsed identically on both sides of the wire.
+ */
 async function fetchUserInfo(): Promise<ApiUser> {
-  const { data, error } = await authClient.getSession();
-  if (error || !data?.user) {
-    throw error ?? new Error("Failed to fetch user info");
+  const response = await fetch("/api/auth/get-session", {
+    credentials: "include",
+    cache: "no-store",
+  });
+  if (!response.ok) {
+    throw new Error("Failed to fetch user info");
   }
-  return data.user as unknown as ApiUser;
+  const session = (await response.json()) as { user?: ApiUser } | null;
+  const user = session?.user;
+  if (!user) {
+    throw new Error("Failed to fetch user info");
+  }
+  return user;
 }
 
 /** POST /update-user — updates name and/or image. */
