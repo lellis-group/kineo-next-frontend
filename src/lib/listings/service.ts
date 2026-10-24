@@ -85,6 +85,12 @@ const ACTION_COPY: Record<ListingActionKind, { verb: string; done: string }> = {
   cancel: { verb: "annuler", done: "annulée" },
 };
 
+/** The confirmation sentence each owner action reports on success. */
+export const ACTION_SUCCESS: Record<ListingActionKind, string> = {
+  close: "Annonce clôturée. Les candidatures en cours ont été terminées.",
+  cancel: "Annonce annulée. Les candidatures en cours ont été terminées.",
+};
+
 /** The listings page: the filtered slice plus the totals behind the chips. */
 export interface MyListingsData {
   listings: MyListing[];

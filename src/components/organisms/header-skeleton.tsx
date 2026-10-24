@@ -1,4 +1,5 @@
 import { KineoLogo } from "@/components/atoms/kineo-logo";
+import { HEADER_HEIGHT, HEADER_HEIGHT_SM } from "@/lib/layout";
 
 /**
  * Placeholder for the header while the server resolves the session.
@@ -18,7 +19,9 @@ export function HeaderSkeleton() {
       className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur"
       aria-busy="true"
     >
-      <div className="mx-auto flex h-[calc(4rem+env(safe-area-inset-top))] w-full max-w-360 items-center justify-between gap-2 px-4 pt-[env(safe-area-inset-top)] sm:h-[calc(4.75rem+env(safe-area-inset-top))] sm:gap-6 sm:px-8 lg:px-10">
+      <div
+        className={`mx-auto flex ${HEADER_HEIGHT} w-full max-w-360 items-center justify-between gap-2 px-4 pt-[env(safe-area-inset-top)] ${HEADER_HEIGHT_SM} sm:gap-6 sm:px-8 lg:px-10`}
+      >
         <div className="flex min-w-0 items-center gap-6 lg:gap-10">
           <KineoLogo />
 

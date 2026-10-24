@@ -7,6 +7,7 @@ import { useExpandedCandidates } from "@/lib/hooks/use-expanded-candidates";
 import { useListingAction } from "@/lib/hooks/use-listing-action";
 import { usePaginatedResource } from "@/lib/hooks/use-paginated-resource";
 import {
+  ACTION_SUCCESS,
   fetchMyListings,
   LISTING_FILTERS,
   type ListingsFilter,
@@ -190,18 +191,10 @@ export function MyListingsContainer({
         actionFeedback={action.feedback}
         onToggle={candidates.toggle}
         onClose={(listingId) =>
-          action.run(
-            listingId,
-            "close",
-            "Annonce clôturée. Les candidatures en cours ont été terminées.",
-          )
+          action.run(listingId, "close", ACTION_SUCCESS.close)
         }
         onCancel={(listingId) =>
-          action.run(
-            listingId,
-            "cancel",
-            "Annonce annulée. Les candidatures en cours ont été terminées.",
-          )
+          action.run(listingId, "cancel", ACTION_SUCCESS.cancel)
         }
       />
     </>

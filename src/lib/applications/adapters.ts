@@ -328,7 +328,14 @@ export function countForBucket(
   option: ApplicationsFilterOption,
   data: ApplicationsData,
 ): number {
-  return option.id === "ALL"
-    ? data.counts.total
-    : (data.counts[option.id as keyof typeof data.counts] ?? 0);
+  if (option.id === "ALL") {
+    return data.counts.total;
+  }
+  // Every non-ALL bucket names a backend status, so `status` is set — and it is
+  // the status key (e.g. "REJECTED"), not the presentation id (e.g. "REFUSED"),
+  // that the server's totals are keyed by. Using `id` here read `counts["REFUSED"]`
+  // on an object keyed by `ApplicationStatus`, which is always 0.
+  const status = option.status;
+  if (status === undefined) return 0;
+  return data.counts[status] ?? 0;
 }

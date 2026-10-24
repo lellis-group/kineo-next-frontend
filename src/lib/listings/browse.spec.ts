@@ -7,8 +7,8 @@ import {
   browseViewFromParams,
   browseViewToParams,
   EMPTY_BROWSE_FILTERS,
-  horizonForStart,
-  horizonStart,
+  horizonBounds,
+  horizonForBounds,
   isDefaultBrowseView,
   listingBadge,
   toBrowseView,
@@ -172,8 +172,10 @@ describe("isDefaultBrowseView", () => {
 
 describe("horizons", () => {
   it("round-trips: a horizon's bound reads back as that horizon", () => {
-    expect(horizonForStart(horizonStart("MONTH"))).toBe("MONTH");
-    expect(horizonForStart(horizonStart("LATER"))).toBe("LATER");
+    const month = horizonBounds("MONTH");
+    const later = horizonBounds("LATER");
+    expect(horizonForBounds(month.from, month.to)).toBe("MONTH");
+    expect(horizonForBounds(later.from, later.to)).toBe("LATER");
   });
 
   /**
@@ -181,7 +183,8 @@ describe("horizons", () => {
    * take from now on, whatever the day of the week is.
    */
   it("treats a bound of today as this week", () => {
-    expect(horizonForStart(horizonStart("WEEK"))).toBe("WEEK");
+    const week = horizonBounds("WEEK");
+    expect(horizonForBounds(week.from, week.to)).toBe("WEEK");
   });
 
   /**
@@ -190,9 +193,11 @@ describe("horizons", () => {
    * filter the results do not have.
    */
   it("reads a bound that is not a horizon as no horizon", () => {
-    expect(horizonForStart("2020-07-04")).toBe("ALL");
-    expect(horizonForStart(`${horizonStart("WEEK")}x`)).toBe("ALL");
-    expect(horizonForStart(undefined)).toBe("ALL");
+    expect(horizonForBounds("2020-07-04", undefined)).toBe("ALL");
+    expect(horizonForBounds(`${horizonBounds("WEEK").from}x`, undefined)).toBe(
+      "ALL",
+    );
+    expect(horizonForBounds(undefined, undefined)).toBe("ALL");
   });
 });
 

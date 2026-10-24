@@ -242,7 +242,10 @@ export const LISTING_FILTERS: readonly ListingsFilterOption[] = [
   {
     id: "RECRUITING",
     label: "En cours",
-    statuses: ["OPEN", "IN_DISCUSSION", "FULL"],
+    // Derived from the SSOT table rather than spelled out beside it: the same
+    // three statuses feed the « En cours » bucket, the close/cancel gate and
+    // the dashboard headline, and a hand-written copy here is how they drift.
+    statuses: [...RECRUITING_STATUSES],
   },
   { id: "OPEN", label: "Ouvertes", statuses: ["OPEN"] },
   { id: "IN_DISCUSSION", label: "En discussion", statuses: ["IN_DISCUSSION"] },

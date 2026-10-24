@@ -42,7 +42,7 @@ export interface ApplicationsFilterOption {
   id: ApplicationsFilter;
   label: string;
   /** Backend status filter, comma-separated when the bucket spans several. */
-  status?: string;
+  status?: ApplicationStatus;
 }
 
 export const APPLICATION_FILTERS: readonly ApplicationsFilterOption[] = [

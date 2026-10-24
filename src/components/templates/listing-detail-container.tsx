@@ -7,6 +7,7 @@ import { errorMessage } from "@/lib/api-errors";
 import { useListingAction } from "@/lib/hooks/use-listing-action";
 import { usePaginatedResource } from "@/lib/hooks/use-paginated-resource";
 import {
+  ACTION_SUCCESS,
   fetchListingApplications,
   fetchMyListing,
   LISTING_APPLICATIONS_PAGE_SIZE,
@@ -142,20 +143,8 @@ export function ListingDetailContainer({
       acting={action.actingId === listingId}
       error={action.error?.message ?? readError}
       feedback={action.feedback?.message}
-      onClose={() =>
-        action.run(
-          listingId,
-          "close",
-          "Annonce clôturée. Les candidatures en cours ont été terminées.",
-        )
-      }
-      onCancel={() =>
-        action.run(
-          listingId,
-          "cancel",
-          "Annonce annulée. Les candidatures en cours ont été terminées.",
-        )
-      }
+      onClose={() => action.run(listingId, "close", ACTION_SUCCESS.close)}
+      onCancel={() => action.run(listingId, "cancel", ACTION_SUCCESS.cancel)}
     />
   );
 }

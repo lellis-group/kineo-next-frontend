@@ -7,7 +7,7 @@ import { MobileMenu } from "@/components/molecules/mobile-menu";
 import { UserMenu } from "@/components/molecules/user-menu";
 import { cn } from "@/lib/cn";
 import type { UserSummary } from "@/lib/dashboard";
-import { SITE_SHELL } from "@/lib/layout";
+import { HEADER_HEIGHT, HEADER_HEIGHT_SM, SITE_SHELL } from "@/lib/layout";
 import type { HeaderLink } from "@/lib/navigation";
 
 /**
@@ -69,10 +69,7 @@ export function SiteHeader({
       <div
         className={cn(
           SITE_SHELL,
-          // Slimmer than the 4.75rem this was: the reference's bar is one line of
-          // content in a band of little over 4rem, and on the console screens
-          // every pixel of height here is a pixel off the workspace below it.
-          "flex h-[calc(3.75rem+env(safe-area-inset-top))] items-center justify-between gap-2 pt-[env(safe-area-inset-top)] sm:h-[calc(4rem+env(safe-area-inset-top))] sm:gap-6",
+          `${HEADER_HEIGHT} items-center justify-between gap-2 pt-[env(safe-area-inset-top)] ${HEADER_HEIGHT_SM} sm:gap-6`,
         )}
       >
         <div className="flex min-w-0 items-center gap-6 lg:gap-10">

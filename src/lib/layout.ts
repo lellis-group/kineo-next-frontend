@@ -38,6 +38,12 @@ export const PAGE_TITLE = "text-2xl font-bold tracking-tight sm:text-3xl";
  */
 export const SITE_SHELL = "mx-auto w-full max-w-360 px-4 sm:px-8 lg:px-10";
 
+/** Header height, mobile: same band the skeleton reserves so nothing moves on hydration. */
+export const HEADER_HEIGHT = "h-[calc(3.75rem+env(safe-area-inset-top))]";
+
+/** Header height, small and up. */
+export const HEADER_HEIGHT_SM = "sm:h-[calc(4rem+env(safe-area-inset-top))]";
+
 /** One line under a page title, or under a section heading inside a page. */
 export const PAGE_SUBTITLE = "mt-1.5 text-sm leading-relaxed text-muted";
 
