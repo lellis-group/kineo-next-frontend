@@ -2,11 +2,11 @@ import type { ApiTransport } from "../api-client";
 import { awaitingDecisionCount, fetchApplicationsData } from "../applications";
 import { fetchMyListings, recruitingCount } from "../listings";
 import { fetchMyProfile } from "../profile-service";
-import { adaptActions } from "./actions";
+import { adaptActions } from "./action-links";
 import { ACTIVITY_FEED_SIZE, adaptActivity } from "./activity";
 import type { DashboardData } from "./contracts";
 import { adaptGreeting } from "./greeting";
-import { adaptReactivity } from "./reactivity";
+import { adaptReactivity } from "./response-rate";
 import { adaptStats } from "./stats";
 
 /**

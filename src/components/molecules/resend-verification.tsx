@@ -2,7 +2,7 @@
 
 import { InlineAlert } from "@/components/molecules/inline-alert";
 import { PendingButton } from "@/components/molecules/pending-button";
-import type { ResendStatus } from "@/lib/use-resend-verification";
+import type { ResendStatus } from "@/lib/hooks/use-resend-verification";
 
 export interface ResendVerificationProps {
   /** State from `useResendVerification`. */

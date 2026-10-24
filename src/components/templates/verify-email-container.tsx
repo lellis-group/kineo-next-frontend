@@ -3,13 +3,13 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
-  isAddressChangeFlow,
   type VerificationStage,
   VerifyEmailView,
 } from "@/components/templates/verify-email-view";
 import { checkAlreadyVerified, verifyEmail } from "@/lib/auth-client";
 import { mapVerificationError } from "@/lib/auth-errors";
-import { useResendVerification } from "@/lib/use-resend-verification";
+import { useResendVerification } from "@/lib/hooks/use-resend-verification";
+import { isAddressChangeFlow } from "@/lib/verification-flow";
 
 /** Shape of the fallback used when the verify call itself could not be made. */
 type AuthError = Parameters<typeof mapVerificationError>[0];

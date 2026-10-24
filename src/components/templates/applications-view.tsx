@@ -1,5 +1,3 @@
-"use client";
-
 import { FileTextIcon } from "@/components/atoms/icons";
 import { PageHeader } from "@/components/atoms/page-header";
 import { FilterChips } from "@/components/molecules/filter-chips";

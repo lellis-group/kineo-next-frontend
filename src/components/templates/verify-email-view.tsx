@@ -4,34 +4,12 @@ import { AuthScreen } from "@/components/molecules/auth-screen";
 import { InlineAlert } from "@/components/molecules/inline-alert";
 import { ResendVerification } from "@/components/molecules/resend-verification";
 import { AuthCard } from "@/components/organisms/auth-card";
-import type { ResendStatus } from "@/lib/use-resend-verification";
+import type { ResendStatus } from "@/lib/hooks/use-resend-verification";
+
+import type { VerificationFlow } from "@/lib/verification-flow";
+import { isAddressChangeFlow, isApprovalFlow } from "@/lib/verification-flow";
 
 export type VerificationStage = "verifying" | "success" | "error" | "invalid";
-
-/**
- * What the link is for, as the backend labelled it.
- *
- * The backend reads the flow off the token and puts it in the query string: a
- * change of address, the approval that releases it, and a sign-up all share this
- * page and nothing else on it.
- *
- * `change-email-approval` and `change-email` both withhold the resend for the
- * same reason — `sendVerificationEmail` re-issues a *sign-up* link, which never
- * advances either step of a change.
- */
-export type VerificationFlow = "change-email" | "change-email-approval";
-
-export function isAddressChangeFlow(
-  flow: string | null | undefined,
-): flow is VerificationFlow {
-  return flow === "change-email" || flow === "change-email-approval";
-}
-
-export function isApprovalFlow(
-  flow: string | null | undefined,
-): flow is "change-email-approval" {
-  return flow === "change-email-approval";
-}
 
 /**
  * Pure: the stage picks the screen, and the callbacks arrive as props.

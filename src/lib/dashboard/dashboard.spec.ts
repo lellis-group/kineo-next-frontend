@@ -8,7 +8,7 @@ import {
 import type { MyListingsData } from "../listings";
 import type { ApiApplicationStatusCounts } from "../types/api";
 import { ACTIVITY_FEED_SIZE, adaptActivity } from "./activity";
-import { adaptReactivity } from "./reactivity";
+import { adaptReactivity } from "./response-rate";
 import { adaptStats } from "./stats";
 
 const listingCounts = (

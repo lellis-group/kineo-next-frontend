@@ -16,7 +16,7 @@ import {
   normalizeEmail,
   PASSWORD_LENGTH_MESSAGE,
 } from "@/lib/auth-validation";
-import { useResendVerification } from "@/lib/use-resend-verification";
+import { useResendVerification } from "@/lib/hooks/use-resend-verification";
 
 /**
  * Orchestrator for /signup — the form, and the "check your mailbox" screen that
