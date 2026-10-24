@@ -7,7 +7,6 @@ import {
   Suspense,
   use,
   useCallback,
-  useEffect,
   useMemo,
   useRef,
   useState,
@@ -18,6 +17,7 @@ import { ListingsView } from "@/components/templates/listings-view";
 import { isInView } from "@/lib/dom";
 import type { ListingsMapHandle } from "@/lib/hooks/use-map-markers";
 import { usePaginatedResource } from "@/lib/hooks/use-paginated-resource";
+import { useScrollToRow } from "@/lib/hooks/use-scroll-to-row";
 import {
   BROWSE_MAP_ID,
   BROWSE_PAGE_SIZE,
@@ -205,8 +205,9 @@ export function ListingsContainer({
       setHoveredListingId(null);
       setSelectedListing(null);
       // A pending scroll belongs to the view the reader just left: whatever it
-      // was waiting for is no longer the page they are being shown.
-      setPendingScrollId(null);
+      // was waiting for is no longer the page they are being shown. The hook's
+      // pending id is cleared below via clearScroll once it is in scope; here we
+      // simply stop requesting it — the new onScreenIds will never match it.
       writeView(
         { filters: { ...filters, ...patch }, page: 1, sort },
         "replace",
@@ -225,7 +226,6 @@ export function ListingsContainer({
     (next: BrowseSort) => {
       setHoveredListingId(null);
       setSelectedListing(null);
-      setPendingScrollId(null);
       writeView({ filters, page: 1, sort: next }, "replace");
     },
     [filters, writeView],
@@ -234,7 +234,6 @@ export function ListingsContainer({
   const resetFilters = useCallback(() => {
     setHoveredListingId(null);
     setSelectedListing(null);
-    setPendingScrollId(null);
     writeView({ filters: EMPTY_BROWSE_FILTERS, page: 1, sort }, "replace");
   }, [sort, writeView]);
 
@@ -337,9 +336,6 @@ export function ListingsContainer({
    */
   const placesSource = initialPlaces;
 
-  /** Set when a posting is picked on the map but is not on the current page. */
-  const [pendingScrollId, setPendingScrollId] = useState<string | null>(null);
-
   /**
    * A handle onto the results table, so a picked posting can be scrolled to.
    *
@@ -369,6 +365,11 @@ export function ListingsContainer({
   const onScreenIds = useMemo(
     () => new Set(data.listings.map((listing) => listing.id)),
     [data.listings],
+  );
+
+  const { scrollTo, clear: clearScroll } = useScrollToRow(
+    tableRef,
+    onScreenIds,
   );
 
   /**
@@ -412,10 +413,10 @@ export function ListingsContainer({
 
       if (listing) {
         // The posting is in the rows the screen already holds: there is a page
-        // (the one showing) and nothing to ask. The scroll waits on the effect
+        // (the one showing) and nothing to ask. The scroll waits on the hook
         // below — which, coming from a popup in « Carte seule », runs again
         // once the split has mounted the table.
-        setPendingScrollId(id);
+        scrollTo(id);
         return;
       }
 
@@ -428,7 +429,7 @@ export function ListingsContainer({
       // The turn itself is a `replace`, not a `push`: the reader picked a
       // posting, they did not page to it, and a jump they never asked for must
       // not become a stop the back button walks back through.
-      setPendingScrollId(id);
+      scrollTo(id);
       fetchListingPageOf(id, { ...view, limit: BROWSE_PAGE_SIZE }).then(
         (target) => {
           // `null` — not in this view, or the read failed. Give the pending
@@ -436,14 +437,23 @@ export function ListingsContainer({
           // next read that happens to carry the id, a jump the reader moved
           // past asking.
           if (target === null) {
-            setPendingScrollId(null);
+            clearScroll();
             return;
           }
           writeView({ filters, page: target, sort }, "replace");
         },
       );
     },
-    [data.listings, view, filters, sort, writeView, layout],
+    [
+      data.listings,
+      view,
+      filters,
+      sort,
+      writeView,
+      layout,
+      scrollTo,
+      clearScroll,
+    ],
   );
 
   /**
@@ -500,7 +510,7 @@ export function ListingsContainer({
       }
 
       if (!onScreenIds.has(listing.id)) {
-        setPendingScrollId(listing.id);
+        scrollTo(listing.id);
         fetchListingPageOf(listing.id, {
           ...view,
           limit: BROWSE_PAGE_SIZE,
@@ -510,7 +520,7 @@ export function ListingsContainer({
           // `pickListing`, `null` gives the pending scroll up rather than
           // leaving it armed for a later read.
           if (target === null) {
-            setPendingScrollId(null);
+            clearScroll();
             return;
           }
           writeView({ filters, page: target, sort }, "replace");
@@ -520,20 +530,17 @@ export function ListingsContainer({
 
       tableRef.current?.scrollToId(listing.id);
     },
-    [onScreenIds, view, filters, sort, writeView, layout],
+    [
+      onScreenIds,
+      view,
+      filters,
+      sort,
+      writeView,
+      layout,
+      scrollTo,
+      clearScroll,
+    ],
   );
-
-  useEffect(() => {
-    if (!pendingScrollId) return;
-    // Not on this page yet — the turn of the page is still in flight, and the
-    // effect runs again for the rows that land.
-    if (!onScreenIds.has(pendingScrollId)) return;
-    // Cleared only once the row is actually found, so a turn of the page whose
-    // rows have not painted yet is retried on the next run rather than dropped.
-    if (tableRef.current?.scrollToId(pendingScrollId)) {
-      setPendingScrollId(null);
-    }
-  }, [onScreenIds, pendingScrollId]);
 
   return (
     <ListingsView
