@@ -1,9 +1,15 @@
+import { useRouter } from "next/navigation";
 import { Badge } from "@/components/atoms/badge";
 import { Card } from "@/components/atoms/card";
 import { CalendarIcon, MapPinIcon, UsersIcon } from "@/components/atoms/icons";
 import { SpecialtyIcon } from "@/components/molecules/specialty-icon";
 import { cn } from "@/lib/cn";
-import { type BrowseListing, listingBadge } from "@/lib/listings";
+import {
+  type BrowseListing,
+  type ListingSpotlight,
+  listingBadge,
+  spotlightClass,
+} from "@/lib/listings";
 import { SPECIALTY_LABELS } from "@/lib/profile";
 import { rowEnterStyle } from "@/lib/row-enter";
 
@@ -23,12 +29,15 @@ export function ListingCard({
   index,
   selectedListingId,
   onListingSelect,
+  spotlight,
 }: {
   listing: BrowseListing;
   /** Rank in the results list — drives the entrance stagger. */
   index?: number;
   /** True when this posting is the one the reader has chosen. */
   selectedListingId?: string | null;
+  /** The one-shot mark a pick on the map leaves on its card. */
+  spotlight?: ListingSpotlight | null;
   /**
    * Brings the posting to the map — the same choice the table's title button
    * makes. Present only for a posting with coordinates: a practice never
@@ -40,17 +49,31 @@ export function ListingCard({
   const badge = listingBadge(listing);
   const selected = listing.id === selectedListingId;
   const locatable = listing.location !== null;
+  const router = useRouter();
 
   return (
     <Card
       className={cn(
-        "card-lift row-enter p-4",
+        "card-lift row-enter cursor-pointer p-4 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary",
         // The chosen card keeps the tint its row would carry on a wide screen, so
         // the choice is the same colour on both halves of the screen.
         selected && "bg-surface-2 ring-1 ring-primary/30",
+        spotlightClass(spotlight, listing.id),
       )}
       style={rowEnterStyle(index ?? 0)}
       data-listing-id={listing.id}
+      tabIndex={0}
+      onClick={(event) => {
+        // The title is the map control; the rest of the card opens the posting.
+        if ((event.target as Element).closest("button, a")) return;
+        router.push(`/listings/${listing.id}`);
+      }}
+      onKeyDown={(event) => {
+        if (event.key !== "Enter" && event.key !== " ") return;
+        if ((event.target as Element).closest("button, a")) return;
+        event.preventDefault();
+        router.push(`/listings/${listing.id}`);
+      }}
     >
       <div className="flex items-start gap-3">
         <span className="icon-tilt grid size-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">

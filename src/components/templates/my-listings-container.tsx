@@ -3,11 +3,8 @@
 import { useMemo, useState } from "react";
 import { InlineRetryBanner } from "@/components/molecules/inline-retry-banner";
 import { MyListingsView } from "@/components/templates/my-listings-view";
-import { useExpandedCandidates } from "@/lib/hooks/use-expanded-candidates";
-import { useListingAction } from "@/lib/hooks/use-listing-action";
 import { usePaginatedResource } from "@/lib/hooks/use-paginated-resource";
 import {
-  ACTION_SUCCESS,
   fetchMyListings,
   LISTING_FILTERS,
   type ListingsFilter,
@@ -69,11 +66,13 @@ function loadListings(target: View) {
 }
 
 /**
- * Orchestrator for /listings/mine — buckets, listings and, on demand, candidates.
+ * Orchestrator for /listings/mine — buckets, listings and the pager.
  *
  * The unfiltered first page arrives from the server page, so a cold load shows the
  * listings rather than a skeleton. Switching bucket still fetches, and so does
- * re-reading after an action: both change which rows the chips describe.
+ * re-reading after a failed read: both change which rows the chips describe.
+ * Candidates and the close/cancel actions belong to `/listings/mine/[id]`, which
+ * every row and card opens.
  */
 export function MyListingsContainer({
   initialData,
@@ -93,9 +92,7 @@ export function MyListingsContainer({
     [page, filter, urgentOnly, pageSize],
   );
 
-  const candidates = useExpandedCandidates();
-
-  const { data, error, loading, reload, replace } = usePaginatedResource<
+  const { data, error, loading, reload } = usePaginatedResource<
     MyListingsData,
     View
   >({
@@ -106,20 +103,6 @@ export function MyListingsContainer({
     // part of what a page *is*, so a read asking for another one is a different
     // view — and a closure over the size would hide that from the hook.
     load: loadListings,
-    // The refetched rows are the truth; anything cached for them may describe an
-    // application that has since been withdrawn elsewhere.
-    onLoaded: candidates.clear,
-    onRestored: candidates.clear,
-  });
-
-  const action = useListingAction({
-    refresh: () => loadListings(view),
-    onSettled: (fresh, listingId) => {
-      replace(fresh);
-      // That listing's candidates just left the pipeline, so its cached panel is
-      // stale. The others are untouched — they did not change.
-      candidates.forget(listingId);
-    },
   });
 
   /**
@@ -153,49 +136,27 @@ export function MyListingsContainer({
         onFilterChange={(next) => {
           setFilter(next);
           setPage(1);
-          candidates.clear();
         }}
         urgentOnly={urgentOnly}
         onUrgentToggle={() => {
           setUrgentOnly((current) => !current);
           setPage(1);
-          candidates.clear();
         }}
         page={data.page}
         totalPages={data.totalPages}
-        onPageChange={(next) => {
-          setPage(next);
-          // The new page is a different set of listings: a panel left open on the
-          // old one would keep showing candidates beside a card that is gone.
-          candidates.clear();
-        }}
+        onPageChange={setPage}
         pageSize={pageSize}
         onPageSizeChange={(next) => {
           setPageSize(next);
           // Back to the first page: the reader asked for a different slice, and
-          // page 7 of 500 rows is not page 7 of what is on screen. The panels go
-          // with the rows.
+          // page 7 of 500 rows is not page 7 of what is on screen.
           setPage(1);
-          candidates.clear();
           // Written from the browser: the server page reads this on the next
           // visit, and a round trip to store four bytes would make the list show
           // the old size until it came back.
           rememberPageSize(next);
         }}
         loading={loading}
-        receivedByListing={candidates.receivedByListing}
-        expandedListingId={candidates.expandedListingId}
-        loadingListingId={candidates.loadingListingId}
-        actingListingId={action.actingId}
-        actionError={candidates.panelError ?? action.error}
-        actionFeedback={action.feedback}
-        onToggle={candidates.toggle}
-        onClose={(listingId) =>
-          action.run(listingId, "close", ACTION_SUCCESS.close)
-        }
-        onCancel={(listingId) =>
-          action.run(listingId, "cancel", ACTION_SUCCESS.cancel)
-        }
       />
     </>
   );

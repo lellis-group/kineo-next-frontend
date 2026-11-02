@@ -14,8 +14,6 @@ import { SITE_SHELL } from "@/lib/layout";
 import {
   countForFilter,
   LISTING_FILTERS,
-  type ListingApplicationsData,
-  type ListingMessage,
   type ListingStatusCounts,
   type ListingsFilter,
   type MyListing,
@@ -42,22 +40,6 @@ export interface MyListingsViewProps {
   onPageSizeChange: (size: MyListingsPageSize) => void;
   /** A read is in flight: the pager holds, so the reader cannot burst it. */
   loading: boolean;
-  /** Candidates per listing id, present only for the expanded listing. */
-  receivedByListing: Record<string, ListingApplicationsData>;
-  loadingListingId?: string;
-  expandedListingId?: string;
-  /**
-   * Failure, scoped to one listing. The id is part of the value so a row can
-   * only ever render the message that concerns it — a bare string here would be
-   * painted on every card in the list.
-   */
-  actionError?: ListingMessage | null;
-  /** Confirmation after a close/cancel, scoped the same way. */
-  actionFeedback?: ListingMessage | null;
-  actingListingId?: string;
-  onToggle: (listingId: string) => void;
-  onClose: (listingId: string) => void;
-  onCancel: (listingId: string) => void;
 }
 
 /**
@@ -102,15 +84,6 @@ export function MyListingsView({
   pageSize,
   onPageSizeChange,
   loading,
-  receivedByListing,
-  loadingListingId,
-  expandedListingId,
-  actionError,
-  actionFeedback,
-  actingListingId,
-  onToggle,
-  onClose,
-  onCancel,
 }: MyListingsViewProps) {
   /*
    * The buckets become the reference's tabs: one track with the active bucket as
@@ -214,31 +187,9 @@ export function MyListingsView({
                 </div>
               ) : (
                 <>
-                  <MyListingsTable
-                    listings={listings}
-                    receivedByListing={receivedByListing}
-                    expandedListingId={expandedListingId}
-                    loadingListingId={loadingListingId}
-                    actingListingId={actingListingId}
-                    actionError={actionError}
-                    actionFeedback={actionFeedback}
-                    onToggle={onToggle}
-                    onClose={onClose}
-                    onCancel={onCancel}
-                  />
+                  <MyListingsTable listings={listings} />
 
-                  <MyListingsMobileList
-                    listings={listings}
-                    receivedByListing={receivedByListing}
-                    expandedListingId={expandedListingId}
-                    loadingListingId={loadingListingId}
-                    actingListingId={actingListingId}
-                    actionError={actionError}
-                    actionFeedback={actionFeedback}
-                    onToggle={onToggle}
-                    onClose={onClose}
-                    onCancel={onCancel}
-                  />
+                  <MyListingsMobileList listings={listings} />
                 </>
               )}
             </div>

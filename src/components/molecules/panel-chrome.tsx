@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { ExpandIcon } from "@/components/atoms/icons";
+import { cn } from "@/lib/cn";
 
 /**
  * The expand mark the reference puts in the corner of every card it draws.
@@ -25,18 +26,32 @@ export function PanelExpand() {
  * label: in a column this wide, « Electronics 245kg » on one line leaves the
  * value stranded against the grid's gutter, while two lines let the label wrap
  * and let the figure be read at a size.
+ *
+ * A cell with `onClick` becomes a button, and a pressed one is drawn with the
+ * same tint the active filters use elsewhere. The browse rail uses this to turn
+ * its « Urgentes » figure into the filter it names — the number and the control
+ * are the same fact, so they are the same element.
  */
 export function StatChip({
   icon,
   label,
   value,
+  onClick,
+  pressed = false,
+  title,
 }: {
   icon: ReactNode;
   label: string;
   value: string;
+  /** Makes the cell a toggle. */
+  onClick?: () => void;
+  /** Whether the toggle is on. Ignored without `onClick`. */
+  pressed?: boolean;
+  /** The action in full, for a pointer that needs it. */
+  title?: string;
 }) {
-  return (
-    <div className="flex min-w-0 items-center gap-2 rounded-xl bg-white/[0.04] px-3 py-2.5">
+  const content = (
+    <>
       <span className="grid size-6 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
         {icon}
       </span>
@@ -48,6 +63,33 @@ export function StatChip({
           {value}
         </span>
       </span>
-    </div>
+    </>
+  );
+
+  const classes = cn(
+    "flex min-w-0 items-center gap-2 rounded-xl px-3 py-2.5 text-left",
+    pressed ? "bg-primary/15 ring-1 ring-primary/40" : "bg-white/[0.04]",
+    onClick &&
+      "cursor-pointer transition-colors hover:bg-white/[0.08] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
+  );
+
+  if (!onClick) {
+    return (
+      <div className={classes} title={title}>
+        {content}
+      </div>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={pressed}
+      title={title}
+      className={classes}
+    >
+      {content}
+    </button>
   );
 }

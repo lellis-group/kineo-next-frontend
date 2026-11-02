@@ -16,7 +16,7 @@
 import { toIsoDayBound } from "@/lib/format";
 import type { MapPlace, MapPlaceListing } from "@/lib/map/types";
 import { SPECIALTY_LABELS } from "@/lib/profile";
-import type { Specialty } from "@/lib/types/api";
+import type { ReplacementListingStatus, Specialty } from "@/lib/types/api";
 import type { BadgeTone } from "@/lib/ui-tokens";
 
 /** Where a listing sits, as the map needs it. */
@@ -52,6 +52,37 @@ export interface BrowseListing {
   /** Cap on simultaneous candidates; absent when the posting is uncapped. */
   maxApplications?: number;
   createdAt: string;
+}
+
+/**
+ * One posting, with everything its public detail page shows.
+ *
+ * `BrowseListing` is the row: the feed slims `description` away and never
+ * carries the backend status. The detail endpoint returns both, so this extends
+ * the row with the two fields the page needs and nothing else.
+ */
+export interface BrowseListingDetail extends BrowseListing {
+  status: ReplacementListingStatus;
+}
+
+/**
+ * The posting the reader has chosen, as the rail's selection panel draws it.
+ *
+ * A shape both a row and a map preview satisfy. The map's preview carries no
+ * specialty or urgency — the popup is about where a practice is, not what it
+ * pays — so those two are optional rather than borrowed from the row at the
+ * cost of a second request when the chosen posting is on another page.
+ */
+export interface BrowseSelection {
+  id: string;
+  title: string;
+  dateRange: string;
+  practiceName: string;
+  city: string;
+  specialty?: Specialty;
+  urgent?: boolean;
+  /** Where the posting sits, when it is known — the way back to its pin. */
+  location?: ListingLocation | null;
 }
 
 /**

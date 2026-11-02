@@ -1,10 +1,16 @@
+import { useRouter } from "next/navigation";
 import { forwardRef, useImperativeHandle, useRef } from "react";
 import { Badge } from "@/components/atoms/badge";
 import { CalendarIcon, MapPinIcon, UsersIcon } from "@/components/atoms/icons";
 import { SpecialtyIcon } from "@/components/molecules/specialty-icon";
 import { cn } from "@/lib/cn";
 import { formatDayMonth } from "@/lib/format";
-import { type BrowseListing, listingBadge } from "@/lib/listings";
+import {
+  type BrowseListing,
+  type ListingSpotlight,
+  listingBadge,
+  spotlightClass,
+} from "@/lib/listings";
 import { SPECIALTY_LABELS } from "@/lib/profile";
 import { rowEnterStyle } from "@/lib/row-enter";
 
@@ -49,6 +55,14 @@ interface ListingsTableProps {
   onListingSelect?: (listing: BrowseListing) => void;
   onActiveListingChange?: (id: string | null) => void;
   /**
+   * The posting a pick on the map just brought into view.
+   *
+   * Transient, and separate from `selectedListingId`: the selection is the
+   * choice, this is the one-shot signal that says which row changed under the
+   * reader. See `spotlightClass`.
+   */
+  spotlight?: ListingSpotlight | null;
+  /**
    * On the scrolling frame itself.
    *
    * The panel puts the dimming of a refresh here rather than around the table,
@@ -84,10 +98,18 @@ export const ListingsTable = forwardRef<
   ListingsTableHandle,
   ListingsTableProps
 >(function ListingsTable(
-  { listings, onHoveredChange, selectedListingId, onListingSelect, className },
+  {
+    listings,
+    onHoveredChange,
+    selectedListingId,
+    onListingSelect,
+    spotlight,
+    className,
+  },
   ref,
 ) {
   const tableRef = useRef<HTMLTableElement>(null);
+  const router = useRouter();
 
   useImperativeHandle(
     ref,
@@ -204,9 +226,26 @@ export const ListingsTable = forwardRef<
                 data-listing-id={listing.id}
                 data-selected={selected ? "" : undefined}
                 style={rowEnterStyle(index)}
-                className={cn("row-enter", selected && "is-selected")}
+                tabIndex={0}
+                className={cn(
+                  "row-enter cursor-pointer focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary",
+                  selected && "is-selected",
+                  spotlightClass(spotlight, listing.id),
+                )}
                 onMouseEnter={() => onHoveredChange?.(listing.id)}
                 onMouseLeave={() => onHoveredChange?.(null)}
+                onClick={(event) => {
+                  // The title is a map control, not a second way to open the
+                  // posting: a click on it must keep selecting the marker.
+                  if ((event.target as Element).closest("button, a")) return;
+                  router.push(`/listings/${listing.id}`);
+                }}
+                onKeyDown={(event) => {
+                  if (event.key !== "Enter" && event.key !== " ") return;
+                  if ((event.target as Element).closest("button, a")) return;
+                  event.preventDefault();
+                  router.push(`/listings/${listing.id}`);
+                }}
               >
                 <td>
                   <div className="flex items-start gap-[var(--cell-gap)]">

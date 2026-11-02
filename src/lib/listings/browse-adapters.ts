@@ -18,6 +18,7 @@ import type {
 import type {
   BrowseFacets,
   BrowseListing,
+  BrowseListingDetail,
   BrowsePlacesData,
   MapPlace,
   MapPlaceListing,
@@ -72,6 +73,22 @@ export function adaptBrowseListings(
   listings: ApiReplacementListing[],
 ): BrowseListing[] {
   return listings.map(adaptBrowseListing);
+}
+
+/**
+ * The public detail of one posting.
+ *
+ * The resource endpoint is the only browse read that carries `description` and
+ * the backend status — the feed slims the description away and never sends the
+ * status — so the detail page takes the row adapter and adds the status.
+ */
+export function adaptBrowseListingDetail(
+  listing: ApiReplacementListing,
+): BrowseListingDetail {
+  return {
+    ...adaptBrowseListing(listing),
+    status: listing.status,
+  };
 }
 
 /**

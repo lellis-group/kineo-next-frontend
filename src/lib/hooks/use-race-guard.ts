@@ -5,12 +5,11 @@ import { useCallback, useRef } from "react";
 /**
  * Guards a sequence of asynchronous requests so only the latest one may write.
  *
- * Both `usePaginatedResource` and `useExpandedCandidates` hand-rolled the same
- * pattern: a request id bumped per call, an `AbortController` whose signal is
- * forwarded to the fetch, and a `mine !== requestId.current` check before any
- * response is allowed to touch state. A late answer from a superseded request
- * is silently discarded, and the read it superseded is aborted rather than
- * left to race.
+ * `usePaginatedResource` hand-rolled the same pattern: a request id bumped per
+ * call, an `AbortController` whose signal is forwarded to the fetch, and a
+ * `mine !== requestId.current` check before any response is allowed to touch
+ * state. A late answer from a superseded request is silently discarded, and the
+ * read it superseded is aborted rather than left to race.
  *
  * Extracting it here means no call-site codes `requestId` + `AbortController`
  * by hand anymore — this is the single place that does.

@@ -14,6 +14,7 @@ import {
   toBrowseView,
 } from "./browse-contracts";
 import {
+  fetchBrowseListing,
   fetchBrowseListings,
   fetchBrowsePlaces,
   fetchListingPageOf,
@@ -375,6 +376,49 @@ describe("fetchListingPageOf", () => {
       Promise.resolve(new Response("", { status: 500 }));
 
     expect(await fetchListingPageOf("x", {}, transport)).toBeNull();
+  });
+});
+
+describe("fetchBrowseListing", () => {
+  it("reads the resource endpoint and keeps the fields the feed drops", async () => {
+    const paths: string[] = [];
+    const transport: ApiTransport = async (path) => {
+      paths.push(path);
+      return Response.json({
+        id: "l1",
+        practiceId: "p1",
+        practice: {
+          id: "p1",
+          name: "Cabinet du Parc",
+          city: "Lyon",
+          latitude: 45.76,
+          longitude: 4.83,
+        },
+        title: "Remplacement",
+        description: "Une description complète.",
+        startDate: "2026-10-01T08:00:00.000Z",
+        endDate: "2026-10-03T08:00:00.000Z",
+        status: "IN_DISCUSSION",
+        specialty: "GENERALIST",
+        urgent: true,
+        maxApplications: 5,
+        applicationsCount: 2,
+        createdAt: "2026-09-01T08:00:00.000Z",
+        updatedAt: "2026-09-02T08:00:00.000Z",
+      });
+    };
+
+    const listing = await fetchBrowseListing("l1", transport);
+
+    expect(paths).toEqual(["/replacement-listings/l1"]);
+    expect(listing).toMatchObject({
+      id: "l1",
+      practiceName: "Cabinet du Parc",
+      city: "Lyon",
+      description: "Une description complète.",
+      status: "IN_DISCUSSION",
+      urgent: true,
+    });
   });
 });
 

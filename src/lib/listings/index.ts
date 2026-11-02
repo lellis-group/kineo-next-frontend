@@ -65,6 +65,7 @@ export {
 
 export {
   adaptBrowseListing,
+  adaptBrowseListingDetail,
   adaptBrowseListings,
   adaptBrowsePlaces,
   adaptFacets,
@@ -78,7 +79,9 @@ export type {
   BrowseHorizon,
   BrowseLayout,
   BrowseListing,
+  BrowseListingDetail,
   BrowseListingsData,
+  BrowseSelection,
   BrowseView,
   HorizonBounds,
   ListingLocation,
@@ -104,6 +107,7 @@ export {
 } from "./browse-contracts";
 export {
   BROWSE_PAGE_SIZE,
+  fetchBrowseListing,
   fetchBrowseListings,
   fetchBrowsePlaces,
   fetchFacets,
@@ -111,3 +115,5 @@ export {
 } from "./browse-service";
 export type { CameraTarget } from "./map-camera";
 export { cameraTargetFor, distinctPoints } from "./map-camera";
+export type { ListingSpotlight } from "./spotlight";
+export { spotlightClass } from "./spotlight";

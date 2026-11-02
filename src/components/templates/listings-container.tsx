@@ -7,6 +7,7 @@ import {
   Suspense,
   use,
   useCallback,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -27,6 +28,7 @@ import {
   type BrowseListing,
   type BrowseListingsData,
   type BrowsePlacesData,
+  type BrowseSelection,
   type BrowseSort,
   type BrowseView,
   browseViewFromParams,
@@ -37,6 +39,8 @@ import {
   horizonBounds,
   horizonForBounds,
   isDefaultBrowseView,
+  type ListingSpotlight,
+  type MapPlaceListing,
   toBrowseView,
 } from "@/lib/listings";
 import { SPECIALTY_LABELS } from "@/lib/profile";
@@ -60,6 +64,35 @@ const ListingsMap = dynamic(
     ),
   },
 );
+
+/** How long the pick's glow lasts before the container lets it go. */
+const SPOTLIGHT_MS = 1_800;
+
+/**
+ * What a screen reader hears when the picked row is already on screen.
+ *
+ * The visual answer to « what changed » is the row's own glow; this is the same
+ * answer in words, and it never mentions the pager, because the pager did not
+ * move.
+ */
+function pickAnnouncement(listing: BrowseSelection): string {
+  const where = listing.city ? `, ${listing.city}` : "";
+  return `Annonce sélectionnée : ${listing.title}${where}.`;
+}
+
+/**
+ * Same, for the pick that turned the list.
+ *
+ * The pager's flash is colour alone, so the turn is named here — this is the
+ * only place the reader is told which page they were brought to.
+ */
+function pickMovedAnnouncement(
+  listing: BrowseSelection,
+  page: number,
+  totalPages: number,
+): string {
+  return `${pickAnnouncement(listing)} Page ${page} sur ${totalPages}.`;
+}
 
 /**
  * Owns the browse screen's state — and the state now lives in the URL.
@@ -150,6 +183,55 @@ export function ListingsContainer({
   } | null>(null);
 
   /**
+   * What the chosen posting is, as the rail's panel draws it.
+   *
+   * The coordinates above are for the map; this is the rest — title, place,
+   * period. It is filled from the map's own preview when the pick came from a
+   * pin, so the panel never asks the server about a posting the reader just
+   * clicked, and it survives a page turn that takes the row away.
+   */
+  const [selectedPreview, setSelectedPreview] =
+    useState<BrowseSelection | null>(null);
+
+  /**
+   * The one-shot mark a pick on the map leaves on its row.
+   *
+   * Not the selection: `selectedListing` lasts until dismissed, this lasts
+   * about two seconds. See `ListingSpotlight`.
+   */
+  const [spotlight, setSpotlight] = useState<ListingSpotlight | null>(null);
+
+  /**
+   * A pick whose row is on another page, waiting for the turn to land.
+   *
+   * The glow must not start at the click: at that moment the row is not in the
+   * DOM, so the reader would see a page turn and then a row that never lit. It
+   * starts in the effect below, once the row is really on screen.
+   */
+  const [pendingPick, setPendingPick] = useState<{
+    listing: BrowseSelection;
+    fromPage: number;
+  } | null>(null);
+
+  /**
+   * What a screen reader hears after a pick — the visual glow in words.
+   *
+   * The page turn is stated here because the pager's flash is colour only.
+   */
+  const [announcement, setAnnouncement] = useState("");
+
+  /**
+   * The kind of view write currently in flight.
+   *
+   * The rail's figures are aggregates of the collection: a filter or a sort
+   * changes them, a page does not. This is what tells the rail's busy state
+   * apart from the results panel's, which dims for both.
+   */
+  const [pendingWrite, setPendingWrite] = useState<"filters" | "page" | null>(
+    null,
+  );
+
+  /**
    * Which halves are on screen — a preference, held here and nowhere else.
    *
    * Client state, deliberately not in the URL: a layout change reflows the
@@ -174,15 +256,21 @@ export function ListingsContainer({
    * server — see the container's header — so there is no client fetch behind
    * this, only a navigation. Wrapped in a transition so the list can show its
    * pending state rather than freezing.
+   *
+   * `kind` names what the write is about, for the rail's busy state. It is not
+   * derivable from `method`: a page turn made on the reader's behalf (a pick
+   * whose row is elsewhere) is a `replace` and still a page, not a filter.
    */
   const writeView = useCallback(
     (
       next: { filters: BrowseFormFilters; page: number; sort: BrowseSort },
       method: "replace" | "push",
+      kind: "filters" | "page",
     ) => {
       const query = browseViewToParams(next.filters, next.page, next.sort);
       const search = query.toString();
       const url = search ? `${pathname}?${search}` : pathname;
+      setPendingWrite(kind);
       startTransition(() => {
         if (method === "push") router.push(url);
         else router.replace(url);
@@ -190,6 +278,18 @@ export function ListingsContainer({
     },
     [pathname, router],
   );
+
+  /**
+   * Drops the transient half of a choice: the glow, the pending turn, the words.
+   *
+   * The selection itself is cleared by the callers that want that; this is the
+   * part that must not survive a view the reader has left.
+   */
+  const clearTransientPick = useCallback(() => {
+    setSpotlight(null);
+    setPendingPick(null);
+    setAnnouncement("");
+  }, []);
 
   /**
    * Applies a filter change and returns to the first page.
@@ -204,6 +304,8 @@ export function ListingsContainer({
     (patch: Partial<BrowseFormFilters>) => {
       setHoveredListingId(null);
       setSelectedListing(null);
+      setSelectedPreview(null);
+      clearTransientPick();
       // A pending scroll belongs to the view the reader just left: whatever it
       // was waiting for is no longer the page they are being shown. The hook's
       // pending id is cleared below via clearScroll once it is in scope; here we
@@ -211,9 +313,10 @@ export function ListingsContainer({
       writeView(
         { filters: { ...filters, ...patch }, page: 1, sort },
         "replace",
+        "filters",
       );
     },
-    [filters, sort, writeView],
+    [filters, sort, writeView, clearTransientPick],
   );
 
   /**
@@ -226,26 +329,39 @@ export function ListingsContainer({
     (next: BrowseSort) => {
       setHoveredListingId(null);
       setSelectedListing(null);
-      writeView({ filters, page: 1, sort: next }, "replace");
+      setSelectedPreview(null);
+      clearTransientPick();
+      writeView({ filters, page: 1, sort: next }, "replace", "filters");
     },
-    [filters, writeView],
+    [filters, writeView, clearTransientPick],
   );
 
   const resetFilters = useCallback(() => {
     setHoveredListingId(null);
     setSelectedListing(null);
-    writeView({ filters: EMPTY_BROWSE_FILTERS, page: 1, sort }, "replace");
-  }, [sort, writeView]);
+    setSelectedPreview(null);
+    clearTransientPick();
+    writeView(
+      { filters: EMPTY_BROWSE_FILTERS, page: 1, sort },
+      "replace",
+      "filters",
+    );
+  }, [sort, writeView, clearTransientPick]);
 
   /**
    * Turns the page. A `push`, unlike a filter change, so the back button walks
    * the pages rather than leaving the feed.
+   *
+   * The glow and the pending turn are dropped: the row they were about is on the
+   * page the reader has just left, and a signal that reappears when they page
+   * back is a signal about the wrong gesture.
    */
   const changePage = useCallback(
     (next: number) => {
-      writeView({ filters, page: next, sort }, "push");
+      clearTransientPick();
+      writeView({ filters, page: next, sort }, "push", "page");
     },
-    [filters, sort, writeView],
+    [filters, sort, writeView, clearTransientPick],
   );
 
   /**
@@ -373,6 +489,33 @@ export function ListingsContainer({
   );
 
   /**
+   * The chosen posting's row, when it happens to be on the page on screen.
+   *
+   * Looked up, not stored: the row is already in the response the screen holds,
+   * and storing a second copy of it would be one more state that can drift from
+   * `data` as the reader pages. When the row is on another page this is null and
+   * the map's preview answers instead — which is how the rail's panel says what
+   * was chosen without any request the screen was not already making.
+   */
+  const selectedRow = useMemo(
+    (): BrowseSelection | null =>
+      (selectedListing &&
+        data.listings.find((listing) => listing.id === selectedListing.id)) ||
+      null,
+    [data.listings, selectedListing],
+  );
+
+  /**
+   * What the rail's selection panel draws.
+   *
+   * The row is preferred because it is the fuller fact — specialty, urgency —
+   * and only when the row is off the screen does the preview answer. The two
+   * name the same posting; when both exist they must, because both were made
+   * from the same pick.
+   */
+  const selection: BrowseSelection | null = selectedRow ?? selectedPreview;
+
+  /**
    * Turns the page to the one holding `id`, then scrolls to it.
    *
    * Shared by `pickListing` and `selectListing`: both need to send the reader to
@@ -380,19 +523,25 @@ export function ListingsContainer({
    * that read. A `replace`, not a `push`: the reader picked a posting, they did
    * not page to it, and a jump they never asked for must not become a stop the
    * back button walks back through.
+   *
+   * Resolves with the page it turned to, or null when the posting is no longer
+   * in the collection. The caller uses that to cancel a pending spotlight rather
+   * than leaving it armed against an id that will never arrive.
    */
   const turnToPage = useCallback(
-    (id: string) => {
+    (id: string): Promise<number | null> => {
       scrollTo(id);
-      fetchListingPageOf(id, { ...view, limit: BROWSE_PAGE_SIZE }).then(
-        (target) => {
-          if (target === null) {
-            clearScroll();
-            return;
-          }
-          writeView({ filters, page: target, sort }, "replace");
-        },
-      );
+      return fetchListingPageOf(id, {
+        ...view,
+        limit: BROWSE_PAGE_SIZE,
+      }).then((target) => {
+        if (target === null) {
+          clearScroll();
+          return null;
+        }
+        writeView({ filters, page: target, sort }, "replace", "page");
+        return target;
+      });
     },
     [view, filters, sort, writeView, scrollTo, clearScroll],
   );
@@ -414,9 +563,12 @@ export function ListingsContainer({
    * It also *chooses* the posting. Both doors into this screen — a marker and a
    * row — must land on the same state, or the reader learns that clicking a pin
    * and clicking a title do different things to the same posting.
+   *
+   * The pick brought the whole preview, not just an id: the rail's panel has to
+   * be able to name the posting before its row ever renders, without a request.
    */
   const pickListing = useCallback(
-    (id: string) => {
+    (listing: MapPlaceListing) => {
       // In « Carte seule » the list is not drawn, so scrolling a row into view has
       // nothing to scroll. The popup's action is « see this in the list », so the
       // honest answer is to reveal the list: switching to the split mounts it,
@@ -425,29 +577,44 @@ export function ListingsContainer({
         setLayout("split");
       }
 
-      setHoveredListingId(id);
+      setHoveredListingId(listing.id);
 
-      const listing = data.listings.find((row) => row.id === id);
-      if (listing?.location) {
-        setSelectedListing({
+      setSelectedListing({
+        id: listing.id,
+        latitude: listing.location.latitude,
+        longitude: listing.location.longitude,
+      });
+      setSelectedPreview(listing);
+
+      if (onScreenIds.has(listing.id)) {
+        // The row is already here: the glow can start now, and say which page
+        // the pick left the reader on (its own — so nothing about the pager).
+        setSpotlight((current) => ({
           id: listing.id,
-          latitude: listing.location.latitude,
-          longitude: listing.location.longitude,
-        });
-      }
-
-      if (listing) {
-        // The posting is in the rows the screen already holds: there is a page
-        // (the one showing) and nothing to ask. The scroll waits on the hook
-        // below — which, coming from a popup in « Carte seule », runs again
-        // once the split has mounted the table.
-        scrollTo(id);
+          nonce: (current?.nonce ?? 0) + 1,
+          fromPage: page,
+        }));
+        setAnnouncement(pickAnnouncement(listing));
+        scrollTo(listing.id);
         return;
       }
 
-      turnToPage(id);
+      /*
+        The row is on another page. The glow must not start at the click — at
+        that moment there is no row under the reader — so it is armed here and
+        lit by the effect below, once the turn has landed and `onScreenIds`
+        actually holds the id.
+      */
+      setPendingPick({ listing, fromPage: page });
+      turnToPage(listing.id).then((target) => {
+        if (target !== null) return;
+        // The posting is gone from the collection. Stand down rather than leave
+        // a glow armed against an id that will never arrive.
+        setPendingPick(null);
+        setAnnouncement(`Annonce introuvable : ${listing.title}.`);
+      });
     },
-    [data.listings, layout, scrollTo, turnToPage],
+    [layout, onScreenIds, page, scrollTo, turnToPage],
   );
 
   /**
@@ -464,10 +631,15 @@ export function ListingsContainer({
    *
    * A posting with no coordinates simply selects: its practice was never
    * geocoded, so there is nothing to fly to, and the row lights up on its own.
+   *
+   * No glow here, on purpose: the row was already on screen, so nothing changed
+   * under the reader, and a light on an unchanged row is noise.
    */
   const selectListing = useCallback(
     (listing: BrowseListing) => {
       setHoveredListingId(listing.id);
+      // The row is in hand — the panel keeps it through a later page turn.
+      setSelectedPreview(listing);
 
       if (!listing.location) {
         setSelectedListing(null);
@@ -513,9 +685,82 @@ export function ListingsContainer({
     [onScreenIds, layout, turnToPage],
   );
 
+  /**
+   * Drops the choice — Escape on the map, a click outside, the panel's close.
+   *
+   * The glow goes with it: a mark whose subject has been unchosen is a lie the
+   * next reader would read as an answer to a question nobody asked.
+   */
+  const clearSelection = useCallback(() => {
+    setSelectedListing(null);
+    setSelectedPreview(null);
+    setSpotlight(null);
+    setPendingPick(null);
+    setAnnouncement("");
+  }, []);
+
+  /** Brings the chosen posting's row back into view, from the rail's panel. */
+  const revealSelection = useCallback(() => {
+    if (!selection || !selection.location) return;
+    pickListing({ ...selection, location: selection.location });
+  }, [pickListing, selection]);
+
+  /*
+    Places a pending glow the moment its row is really on screen.
+
+    The page that turned to reach the row is part of the sentence, because the
+    visual signal for that turn is colour alone — and the pager's flash only
+    says *that* something changed, not what.
+  */
+  useEffect(() => {
+    if (!pendingPick) return;
+    if (!onScreenIds.has(pendingPick.listing.id)) return;
+
+    const turned = data.page !== pendingPick.fromPage;
+    setSpotlight((current) => ({
+      id: pendingPick.listing.id,
+      nonce: (current?.nonce ?? 0) + 1,
+      fromPage: pendingPick.fromPage,
+    }));
+    setAnnouncement(
+      turned
+        ? pickMovedAnnouncement(pendingPick.listing, data.page, data.totalPages)
+        : pickAnnouncement(pendingPick.listing),
+    );
+    setPendingPick(null);
+  }, [pendingPick, onScreenIds, data.page, data.totalPages]);
+
+  /**
+   * Ends the glow.
+   *
+   * The outline and sheen are transitions and an animation; without this timer
+   * the halo would stay lit until the next pick, and a second reader landing on
+   * the same screen would read the glow as live state rather than as the
+   * aftermath of a click that has already settled.
+   */
+  useEffect(() => {
+    if (!spotlight) return;
+    const timer = window.setTimeout(() => setSpotlight(null), SPOTLIGHT_MS);
+    return () => window.clearTimeout(timer);
+  }, [spotlight]);
+
   return (
+    /*
+      The rail's busy state, read off what is in flight: the panels are
+      aggregates of the collection, so a page turn — however it was asked for —
+      gives them nothing to recompute, and a filter or a sort does. The results
+      panel dims for both; this is the one that must not lie.
+    */
     <ListingsView
-      facets={facets}
+      rail={{
+        facets,
+        filters,
+        onFiltersChange: applyFilters,
+        selection,
+        onSelectionReveal: revealSelection,
+        onSelectionClear: clearSelection,
+        busy: isNavigating && pendingWrite === "filters",
+      }}
       toolbar={{
         filters,
         onFiltersChange: applyFilters,
@@ -544,6 +789,14 @@ export function ListingsContainer({
         onHoveredChange: setHoveredListingId,
         selectedListingId: selectedListing?.id ?? null,
         onListingSelect: selectListing,
+        // The mark itself, and the words about it, and the pager flash — the
+        // three answers to « what changed » one pick can make on this half.
+        spotlight,
+        announcement,
+        pageHighlight:
+          spotlight && data.page !== spotlight.fromPage
+            ? spotlight.nonce
+            : null,
         onResetFilters: resetFilters,
         tableRef,
       }}
@@ -562,8 +815,8 @@ export function ListingsContainer({
             hoveredListingId={hoveredListingId}
             onHoveredChange={setHoveredListingId}
             selectedListing={selectedListing}
-            onSelectionClear={() => setSelectedListing(null)}
-            onMarkerSelect={setSelectedListing}
+            onSelectionClear={clearSelection}
+            onMarkerSelect={pickListing}
             onListingPick={pickListing}
           />
         </Suspense>

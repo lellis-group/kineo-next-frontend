@@ -546,9 +546,12 @@
   }
 
   .card-lift {
+    outline: 2px solid transparent;
+    outline-offset: 2px;
     transition:
       transform 180ms ease,
-      box-shadow 240ms ease;
+      box-shadow 240ms ease,
+      outline-color 400ms ease;
   }
 
   .card-lift:hover {
@@ -562,6 +565,96 @@
 
   .card-lift:hover .icon-tilt {
     transform: rotate(-6deg) scale(1.08);
+  }
+
+  /*
+   * The card's half of the map → list spotlight.
+   *
+   * The same two layers as the table row: an outline that fades through a
+   * transition, and a sheen drawn on a pseudo-element. Neither touches the
+   * card's own `row-enter` animation, so clearing the spotlight cannot replay
+   * the entrance.
+   */
+  .card-lift.row-spotlight {
+    position: relative;
+    overflow: hidden;
+    outline-color: var(--primary);
+  }
+
+  .card-lift.row-spotlight::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(
+      100deg,
+      transparent 20%,
+      color-mix(in srgb, var(--primary) 14%, transparent) 50%,
+      transparent 80%
+    );
+    transform: translateX(-120%);
+    animation-duration: 900ms;
+    animation-timing-function: cubic-bezier(0.22, 0.68, 0.28, 1);
+    animation-fill-mode: both;
+  }
+
+  .card-lift.row-spotlight-a::after {
+    animation-name: kineo-spotlight-sheen-a;
+  }
+
+  .card-lift.row-spotlight-b::after {
+    animation-name: kineo-spotlight-sheen-b;
+  }
+
+  /*
+   * Two identical keyframe sets, one per modifier.
+   *
+   * CSS restarts an animation when its `animation-name` changes, not when a
+   * custom property or a class that keeps the same name changes. The pair is
+   * what makes a second pick of the same posting sweep again.
+   */
+  @keyframes kineo-spotlight-sheen-a {
+    from {
+      transform: translateX(-120%);
+    }
+    to {
+      transform: translateX(120%);
+    }
+  }
+
+  @keyframes kineo-spotlight-sheen-b {
+    from {
+      transform: translateX(-120%);
+    }
+    to {
+      transform: translateX(120%);
+    }
+  }
+
+  /*
+   * The pager's page count, when a pick turned the list to another page.
+   *
+   * The row is the main signal; this is the one other thing that changed, and
+   * naming it in the same gesture is what stops a reader from wondering why the
+   * table was replaced.
+   */
+  @keyframes kineo-pager-spotlight {
+    0% {
+      color: var(--primary);
+      text-shadow: 0 0 14px color-mix(in srgb, var(--primary) 40%, transparent);
+    }
+    55% {
+      color: var(--primary);
+      text-shadow: 0 0 6px color-mix(in srgb, var(--primary) 20%, transparent);
+    }
+    100% {
+      color: var(--muted);
+      text-shadow: 0 0 0 transparent;
+    }
+  }
+
+  .pager-spotlight {
+    animation: kineo-pager-spotlight 1.8s ease-out both;
   }
 
   @property --reveal-delay {
@@ -730,6 +823,85 @@
 
   .listings-table tbody tr.is-selected {
     background: var(--surface-2);
+  }
+
+  /*
+   * The row's half of the map → list spotlight.
+   *
+   * The outline and the background are transitions rather than animations, and
+   * the sheen lives on the cells' pseudo-element. Animating the row itself would
+   * change its `animation-name`, and removing the spotlight would then replay
+   * `row-enter` — a row that slides in a second time at the end of the glow.
+   *
+   * The outline is transparent at rest, so the row reserves no space for it and
+   * the table's geometry does not move when the glow arrives. `-2px` keeps it
+   * inside the scrolling frame, where an outer offset would be clipped.
+   */
+  .listings-table tbody tr {
+    outline: 2px solid transparent;
+    outline-offset: -2px;
+    transition:
+      background-color 300ms ease,
+      outline-color 400ms ease;
+  }
+
+  .listings-table tbody tr.row-spotlight {
+    outline-color: var(--primary);
+    background-color: color-mix(in srgb, var(--primary) 8%, var(--surface-2));
+  }
+
+  .listings-table tbody tr.row-spotlight td {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .listings-table tbody tr.row-spotlight td::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(
+      100deg,
+      transparent 20%,
+      color-mix(in srgb, var(--primary) 14%, transparent) 50%,
+      transparent 80%
+    );
+    transform: translateX(-120%);
+    animation-duration: 900ms;
+    animation-timing-function: cubic-bezier(0.22, 0.68, 0.28, 1);
+    animation-fill-mode: both;
+  }
+
+  /*
+   * A small stagger across the columns, so the sheen reads as one sweep over
+   * the row rather than six independent flashes.
+   */
+  .listings-table tbody tr.row-spotlight td:nth-child(2)::after {
+    animation-delay: 35ms;
+  }
+
+  .listings-table tbody tr.row-spotlight td:nth-child(3)::after {
+    animation-delay: 70ms;
+  }
+
+  .listings-table tbody tr.row-spotlight td:nth-child(4)::after {
+    animation-delay: 105ms;
+  }
+
+  .listings-table tbody tr.row-spotlight td:nth-child(5)::after {
+    animation-delay: 140ms;
+  }
+
+  .listings-table tbody tr.row-spotlight td:nth-child(6)::after {
+    animation-delay: 175ms;
+  }
+
+  .listings-table tbody tr.row-spotlight-a td::after {
+    animation-name: kineo-spotlight-sheen-a;
+  }
+
+  .listings-table tbody tr.row-spotlight-b td::after {
+    animation-name: kineo-spotlight-sheen-b;
   }
 
   /*
@@ -1039,5 +1211,15 @@
     transition-duration: 0s !important;
     /* biome-ignore lint/complexity/noImportantStyles: same — utilities win over plain media-query rules, the a11y guarantee needs !important */
     animation-duration: 0s !important;
+  }
+
+  /*
+   * The pager keeps a static tint instead of its flash: with every animation
+   * duration at zero, the keyframes' final colour would otherwise be applied
+   * immediately and the signal would disappear.
+   */
+  .pager-spotlight {
+    animation: none;
+    color: var(--primary);
   }
 }

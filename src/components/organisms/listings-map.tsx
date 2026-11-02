@@ -6,7 +6,7 @@ import { cn } from "@/lib/cn";
 import { useMapInstance } from "@/lib/hooks/use-map-instance";
 import type { ListingsMapHandle } from "@/lib/hooks/use-map-markers";
 import { useMapMarkers } from "@/lib/hooks/use-map-markers";
-import type { MapPlace } from "@/lib/listings";
+import type { MapPlace, MapPlaceListing } from "@/lib/listings";
 
 interface ListingsMapProps {
   places: MapPlace[];
@@ -34,12 +34,12 @@ interface ListingsMapProps {
    * A click on a pin is a *choice*, not a preview: its cream ring and its card
    * have to survive the pointer leaving, or the map's half of the screen could
    * never make a selection the way the table's now can.
+   *
+   * The whole preview travels, not just the id: the row it names may be on
+   * another page, and the screen needs its title and place to say what it just
+   * brought into view.
    */
-  onMarkerSelect?: (point: {
-    id: string;
-    latitude: number;
-    longitude: number;
-  }) => void;
+  onMarkerSelect?: (listing: MapPlaceListing) => void;
   /**
    * A posting chosen in a popup — the reader wants its row, not its marker.
    *
@@ -48,7 +48,7 @@ interface ListingsMapProps {
    * the list. Sharing one callback would make the mouse dragging across the table
    * scroll the page under the reader.
    */
-  onListingPick?: (id: string) => void;
+  onListingPick?: (listing: MapPlaceListing) => void;
   className?: string;
 }
 

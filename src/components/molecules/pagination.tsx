@@ -25,6 +25,14 @@ interface PaginationProps<C extends PageSize = PageSize> {
    */
   loading?: boolean;
   /**
+   * A pick on the map turned the list to another page — flashes the count.
+   *
+   * The value is the pick's nonce, not a boolean: the span is keyed on it, so a
+   * second page-changing pick remounts the element and replays the animation
+   * instead of leaving the first flash finished.
+   */
+  highlight?: number | null;
+  /**
    * The current page size, and the handler for a new one.
    *
    * The handler decides: a size control with nothing to change it to is a
@@ -78,6 +86,7 @@ export function Pagination<C extends PageSize = PageSize>({
   totalPages,
   onPageChange,
   loading = false,
+  highlight,
   pageSize,
   onPageSizeChange,
   choices = PAGE_SIZE_CHOICES as unknown as readonly C[],
@@ -119,7 +128,13 @@ export function Pagination<C extends PageSize = PageSize>({
             <span className="hidden min-[400px]:inline">Précédent</span>
           </button>
 
-          <span className="px-1.5 text-[0.8125rem] whitespace-nowrap text-muted tabular-nums">
+          <span
+            key={highlight ?? "page"}
+            className={cn(
+              "px-1.5 text-[0.8125rem] whitespace-nowrap text-muted tabular-nums",
+              highlight != null && "pager-spotlight",
+            )}
+          >
             {`Page ${currentPage} sur ${totalPages}`}
           </span>
 

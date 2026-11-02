@@ -6,7 +6,7 @@ import {
   keepPopupInView,
   POPUP_EDGE_MARGIN,
 } from "@/lib/map/keep-popup-in-view";
-import type { MapPlace } from "./types";
+import type { MapPlace, MapPlaceListing } from "./types";
 
 /**
  * The card a marker opens — the reference's marker card, and the one element on
@@ -43,13 +43,9 @@ export function openPopupForKey(
   popupRef: RefObject<maplibregl.Popup | null>,
   map: MapLibreMap,
   handlers: {
-    onPick?: (id: string) => void;
+    onPick?: (listing: MapPlaceListing) => void;
     onHover?: (id: string | null) => void;
-    onMarkerSelect?: (point: {
-      id: string;
-      latitude: number;
-      longitude: number;
-    }) => void;
+    onMarkerSelect?: (listing: MapPlaceListing) => void;
   },
 ) {
   const live = livePlaces.get(key);
@@ -92,7 +88,7 @@ export function openPopupForKey(
         live,
         map,
         () => popupRef.current?.remove(),
-        (id) => handlers.onPick?.(id),
+        (listing) => handlers.onPick?.(listing),
       ),
     )
     .addTo(map);
@@ -108,11 +104,7 @@ export function openPopupForKey(
   if (live.listings.length === 1) {
     const [only] = live.listings;
     handlers.onHover?.(only.id);
-    handlers.onMarkerSelect?.({
-      id: only.id,
-      latitude: only.location.latitude,
-      longitude: only.location.longitude,
-    });
+    handlers.onMarkerSelect?.(only);
   }
 }
 
@@ -138,7 +130,7 @@ export function openCardForSelected(
     | { id: string; latitude: number; longitude: number }
     | null
     | undefined,
-  onPick: ((id: string) => void) | undefined,
+  onPick: ((listing: MapPlaceListing) => void) | undefined,
 ) {
   if (!selected) return;
 
@@ -209,7 +201,7 @@ function popupContent(
   place: MapPlace,
   map: MapLibreMap,
   dismiss: () => void,
-  onPick: (id: string) => void,
+  onPick: (listing: MapPlaceListing) => void,
 ): HTMLElement {
   const root = document.createElement("div");
   root.className = "flex flex-col gap-1 text-left";
@@ -293,7 +285,7 @@ function popupContent(
     row.type = "button";
     row.className =
       "flex w-full cursor-pointer flex-col rounded-lg px-1.5 py-0.5 text-left transition-colors hover:bg-black/5";
-    row.addEventListener("click", () => onPick(listing.id));
+    row.addEventListener("click", () => onPick(listing));
     // Same handle as the table rows carry, so the two views of a posting can be
     // matched from the outside — by the map's own tests, and by anything else that
     // has to say which row a pin belongs to.

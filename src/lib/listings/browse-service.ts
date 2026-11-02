@@ -29,6 +29,7 @@ import type {
   ApiReplacementListing,
 } from "../types/api";
 import {
+  adaptBrowseListingDetail,
   adaptBrowseListings,
   adaptBrowsePlaces,
   adaptFacets,
@@ -36,6 +37,7 @@ import {
 import type {
   BrowseFacets,
   BrowseFilters,
+  BrowseListingDetail,
   BrowseListingsData,
   BrowsePlacesData,
 } from "./browse-contracts";
@@ -108,6 +110,29 @@ export async function fetchBrowseListings(
     totalPages: raw?.meta.totalPages ?? 0,
     total: raw?.meta.total ?? 0,
   };
+}
+
+/**
+ * GET /replacement-listings/:id — one posting, for its public detail page.
+ *
+ * The same resource endpoint the owner's page reads. Anonymous readers only
+ * reach postings still in circulation; a member reaches those too, and the
+ * route's `requireExisting` turns the 404 into the not-found page rather than a
+ * blank screen. Unlike the feed, this read carries the description and the
+ * backend status.
+ */
+export async function fetchBrowseListing(
+  id: string,
+  transport?: ApiTransport,
+  init?: RequestInit,
+): Promise<BrowseListingDetail> {
+  const raw = await apiFetch<ApiReplacementListing>(
+    `/replacement-listings/${id}`,
+    init,
+    transport,
+  );
+
+  return adaptBrowseListingDetail(raw);
 }
 
 /**

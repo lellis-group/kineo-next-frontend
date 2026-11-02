@@ -38,9 +38,8 @@ import { useRaceGuard } from "./use-race-guard";
  * (the listings map). `load` is handed a `RequestInit` carrying a signal, so a
  * view change cancels the read it supersedes rather than ignoring its answer.
  *
- * The cancellation guard itself now lives in `useRaceGuard`, shared with
- * `useExpandedCandidates` — no call-site codes `requestId` + `AbortController`
- * by hand anymore.
+ * The cancellation guard itself now lives in `useRaceGuard` — no call-site
+ * codes `requestId` + `AbortController` by hand anymore.
  */
 export function usePaginatedResource<T, V>({
   initialData,

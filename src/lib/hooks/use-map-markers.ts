@@ -10,7 +10,7 @@ import {
   useRef,
   useState,
 } from "react";
-import type { MapPlace } from "@/lib/listings";
+import type { MapPlace, MapPlaceListing } from "@/lib/listings";
 import { fitToPlaces, flyToPoint } from "@/lib/map/camera";
 import { clusterPlaces } from "@/lib/map/clustering";
 import { paintStates, rebuildMarkers } from "@/lib/map/markers";
@@ -96,17 +96,11 @@ export function useMapMarkers({
    * Called when a marker is chosen — a click on a pin, the mirror of the table's
    * title button.
    *
-   * The coordinates travel with the id for the same reason they do in
-   * `selectedListing`: the marker that has to be marked is the one standing *at*
-   * that point. Without it, clicking a pin would only preview — the cream ring
-   * would leave with the pointer, and a reader who clicked a marker would have
-   * made no choice at all.
+   * The whole preview travels, coordinates included: the marker that has to be
+   * marked is the one standing *at* that point, and the row may live on another
+   * page — so the screen needs the title and the place as well as the id.
    */
-  onMarkerSelect?: (point: {
-    id: string;
-    latitude: number;
-    longitude: number;
-  }) => void;
+  onMarkerSelect?: (listing: MapPlaceListing) => void;
   /**
    * A posting chosen in a popup: the reader wants its row, not its marker.
    *
@@ -114,7 +108,7 @@ export function useMapMarkers({
    * One drives a highlight the other drives a scroll, and merging them would make
    * the mouse moving across the table scroll the page under the reader.
    */
-  onListingPick?: (id: string) => void;
+  onListingPick?: (listing: MapPlaceListing) => void;
 }) {
   const markersRef = useRef<Map<string, Marker>>(new Map());
   const popupRef = useRef<maplibregl.Popup | null>(null);

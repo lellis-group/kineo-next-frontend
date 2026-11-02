@@ -4,7 +4,7 @@ import { ListingsResultsPanel } from "@/components/organisms/listings-results-pa
 import { ListingsToolbarCard } from "@/components/organisms/listings-toolbar-card";
 import { cn } from "@/lib/cn";
 import { SITE_SHELL } from "@/lib/layout";
-import type { BrowseFacets, BrowseLayout } from "@/lib/listings";
+import type { BrowseLayout } from "@/lib/listings";
 
 /**
  * The browse screen's shell — one screenful, no page scroll from `lg` up.
@@ -44,10 +44,11 @@ type ToolbarProps = Omit<
   ComponentProps<typeof ListingsToolbarCard>,
   "children"
 >;
+type RailProps = ComponentProps<typeof ListingsFacetsRail>;
 
 export interface ListingsViewProps {
-  /** The three panels down the left. */
-  facets: BrowseFacets;
+  /** The three panels down the left, and what they control. */
+  rail: RailProps;
   /** Everything the results section needs, passed straight through. */
   results: ResultsProps;
   /** Everything the filter card needs, passed straight through. */
@@ -80,7 +81,7 @@ export interface ListingsViewProps {
  * with it.
  */
 export function ListingsView({
-  facets,
+  rail,
   results,
   toolbar,
   map,
@@ -100,7 +101,7 @@ export function ListingsView({
       */}
       <div className="grid gap-3 lg:min-h-0 lg:flex-1 lg:grid-cols-[21rem_minmax(0,1fr)] lg:gap-3">
         <div className="order-2 lg:order-1 lg:flex lg:min-h-0 lg:flex-col lg:overflow-y-auto lg:pr-1">
-          <ListingsFacetsRail facets={facets} />
+          <ListingsFacetsRail {...rail} />
         </div>
 
         <div className="order-1 flex min-w-0 flex-col gap-3 lg:order-2 lg:min-h-0 lg:flex-1">

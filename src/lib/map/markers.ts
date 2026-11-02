@@ -4,7 +4,7 @@ import type { RefObject } from "react";
 import { cn } from "@/lib/cn";
 import { zoomToPlace } from "@/lib/map/camera";
 import { openPopupForKey } from "@/lib/map/popup";
-import type { MapPlace } from "./types";
+import type { MapPlace, MapPlaceListing } from "./types";
 
 /**
  * The markers themselves: the node MapLibre positions, what is drawn inside it,
@@ -74,12 +74,9 @@ export function rebuildMarkers(
    * page turn.
    */
   handlers: {
-    onPick: RefObject<((id: string) => void) | undefined>;
+    onPick: RefObject<((listing: MapPlaceListing) => void) | undefined>;
     onHover: RefObject<((id: string | null) => void) | undefined>;
-    onMarkerSelect: RefObject<
-      | ((point: { id: string; latitude: number; longitude: number }) => void)
-      | undefined
-    >;
+    onMarkerSelect: RefObject<((listing: MapPlaceListing) => void) | undefined>;
   },
 ) {
   const active = markers;

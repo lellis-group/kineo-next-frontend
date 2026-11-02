@@ -10,7 +10,11 @@ import {
   type ListingsTableHandle,
 } from "@/components/organisms/listings-table";
 import { cn } from "@/lib/cn";
-import type { BrowseHorizon, BrowseListing } from "@/lib/listings";
+import type {
+  BrowseHorizon,
+  BrowseListing,
+  ListingSpotlight,
+} from "@/lib/listings";
 
 interface BrowseHorizonOption {
   id: BrowseHorizon;
@@ -85,6 +89,27 @@ interface ListingsResultsPanelProps {
   selectedListingId?: string | null;
   onListingSelect?: (listing: BrowseListing) => void;
   /**
+   * The posting a pick on the map just brought into view, and the one-shot mark
+   * both presentations draw for it.
+   */
+  spotlight?: ListingSpotlight | null;
+  /**
+   * What a screen reader hears after a pick: the posting, and the page if the
+   * list had to turn to reach it.
+   *
+   * The glow is the visual answer to "what changed"; this is the same answer
+   * without relying on sight, and it is also the only place the page turn is
+   * stated in words.
+   */
+  announcement?: string;
+  /**
+   * The nonce of a pick that changed page — drives the pager's brief flash.
+   *
+   * Null when the pick landed on the page already on screen, which is most of
+   * the time and is exactly when the pager did not change.
+   */
+  pageHighlight?: number | null;
+  /**
    * A handle onto the table, so the screen can scroll a picked posting into
    * view. Passed down rather than reached for: the table owns the row markup,
    * so it — not the container — is what knows how to find a row by id.
@@ -116,6 +141,9 @@ export function ListingsResultsPanel({
   onHoveredChange,
   selectedListingId,
   onListingSelect,
+  spotlight,
+  announcement,
+  pageHighlight,
   onResetFilters,
   tableRef,
 }: ListingsResultsPanelProps) {
@@ -170,6 +198,16 @@ export function ListingsResultsPanel({
       }
     >
       <div className={cn("flex flex-col", RESULTS_BOX)}>
+        {/*
+          The visual spotlight says « this is the row »; this says it in words,
+          page turn included. Kept mounted whether the list has rows or not, so
+          a pick that lands on an empty page is still announced. `<output>`
+          carries an implicit `status` role — see the map's own live region.
+        */}
+        <output className="sr-only" aria-live="polite" aria-atomic="true">
+          {announcement}
+        </output>
+
         {listings.length === 0 ? (
           /*
            * Centred in the box rather than left at its own height, so that a
@@ -232,6 +270,7 @@ export function ListingsResultsPanel({
                     index={index}
                     selectedListingId={selectedListingId}
                     onListingSelect={onListingSelect}
+                    spotlight={spotlight}
                   />
                 </li>
               ))}
@@ -248,6 +287,7 @@ export function ListingsResultsPanel({
               onHoveredChange={onHoveredChange}
               selectedListingId={selectedListingId}
               onListingSelect={onListingSelect}
+              spotlight={spotlight}
             />
           </>
         )}
@@ -258,6 +298,7 @@ export function ListingsResultsPanel({
         totalPages={totalPages}
         onPageChange={onPageChange}
         loading={loading}
+        highlight={pageHighlight}
         /*
           Tighter than the flow margin, for the reason `Pagination` states in
           its `className` note and the same the mine table's pager carries: the
