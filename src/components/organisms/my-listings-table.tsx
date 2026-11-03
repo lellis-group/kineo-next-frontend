@@ -1,12 +1,12 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Badge } from "@/components/atoms/badge";
-import { CalendarIcon, UsersIcon } from "@/components/atoms/icons";
+import { CalendarIcon } from "@/components/atoms/icons";
+import { CapacityBar } from "@/components/molecules/capacity-bar";
 import { SpecialtyIcon } from "@/components/molecules/specialty-icon";
 import { MyListingCard } from "@/components/organisms/my-listing-card";
 import { formatDayMonth } from "@/lib/format";
 import {
-  formatCapacity,
   formatListingAge,
   LISTING_STATUS_META,
   type MyListing,
@@ -124,23 +124,16 @@ export function MyListingsTable({ listings }: MyListingsTableProps) {
 
                 <td>
                   {/*
-                    Candidates as « 3 / 5 » — the figure and the cap on one line,
-                    tabular so a column of them lines up. Uncapped postings show
-                    the figure alone rather than « 3 / ∞ ».
+                    Candidats, au trait de la maquette : le chiffre, la plage,
+                    et la barre qui les lit d'un coup d'œil (voir
+                    `CapacityBar`). Le plafond porte ici le sens que le filtre
+                    « Capacité atteinte » nomme : une barre pleine est l'état
+                    que le légende du badge décrit.
                   */}
-                  <span
-                    className="inline-flex items-center gap-[var(--cell-gap)] whitespace-nowrap leading-[var(--cell-icon)] text-muted tabular-nums"
-                    title={formatCapacity(
-                      listing.applicationsCount,
-                      listing.maxApplications,
-                    )}
-                  >
-                    <UsersIcon className="size-[var(--cell-icon)] shrink-0" />
-                    {listing.applicationsCount}
-                    {listing.maxApplications
-                      ? ` / ${listing.maxApplications}`
-                      : ""}
-                  </span>
+                  <CapacityBar
+                    count={listing.applicationsCount}
+                    max={listing.maxApplications}
+                  />
                 </td>
 
                 <td className="leading-[var(--cell-icon)] text-muted">

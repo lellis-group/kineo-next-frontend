@@ -1,7 +1,8 @@
 import { useRouter } from "next/navigation";
 import { forwardRef, useImperativeHandle, useRef } from "react";
 import { Badge } from "@/components/atoms/badge";
-import { CalendarIcon, MapPinIcon, UsersIcon } from "@/components/atoms/icons";
+import { CalendarIcon, MapPinIcon } from "@/components/atoms/icons";
+import { CapacityBar } from "@/components/molecules/capacity-bar";
 import { SpecialtyIcon } from "@/components/molecules/specialty-icon";
 import { cn } from "@/lib/cn";
 import { formatDayMonth } from "@/lib/format";
@@ -345,13 +346,15 @@ export const ListingsTable = forwardRef<
                   </span>
                 </td>
                 <td>
-                  <span className="inline-flex items-center gap-[var(--cell-gap)] whitespace-nowrap leading-[var(--cell-icon)] text-muted tabular-nums">
-                    <UsersIcon className="size-[var(--cell-icon)] shrink-0" />
-                    {listing.applicationsCount}
-                    {listing.maxApplications
-                      ? ` / ${listing.maxApplications}`
-                      : ""}
-                  </span>
+                  {/*
+                    Candidats, au trait de la maquette : le chiffre, la plage,
+                    et la barre qui les lit d'un coup d'œil (voir
+                    `CapacityBar`). Sans plafond, la barre n'existe pas.
+                  */}
+                  <CapacityBar
+                    count={listing.applicationsCount}
+                    max={listing.maxApplications}
+                  />
                 </td>
                 <td>
                   {/*

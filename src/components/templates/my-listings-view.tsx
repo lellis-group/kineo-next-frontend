@@ -163,6 +163,15 @@ export function MyListingsView({
                     icon={<FileTextIcon className="h-8 w-8 text-primary" />}
                     title="Aucune annonce publiée"
                     description="Vous n'avez pas encore d'annonce de remplacement. Publiez-en une pour recevoir des candidatures."
+                    /*
+                      The way out, on the one state that has nowhere to go: an
+                      empty board asks for its first posting, and the shelf the
+                      dashboard's « Publier une annonce » acts from is the same
+                      route. Without it this card is the one surface on the
+                      screen that ends in a wall.
+                    */
+                    actionLabel="Publier une annonce"
+                    actionHref="/listings/new"
                   />
                 </div>
               ) : listings.length === 0 ? (
