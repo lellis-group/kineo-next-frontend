@@ -219,18 +219,31 @@ export function isPasswordResetDisabled(failure: {
 }
 
 /** Maps a better-auth reset-password error to a user-friendly French message. */
-export function mapResetPasswordError(error: { message?: string }): string {
+export function mapResetPasswordError(error: {
+  code?: string | null;
+  message?: string | null;
+}): string {
+  const code = (error.code ?? "").toUpperCase();
   const message = (error.message ?? "").toUpperCase();
 
   if (
+    code === "INVALID_TOKEN" ||
+    code === "INVALID_RESET_PASSWORD_TOKEN" ||
     message.includes("INVALID_TOKEN") ||
     message.includes("INVALID VERIFICATION TOKEN") ||
     message.includes("INVALID_RESET_PASSWORD_TOKEN")
   ) {
     return "Ce lien a expiré ou a déjà été utilisé. Demandez un nouveau lien.";
   }
+  // Codes first, like `mapSignUpError`. The old check matched a French sentence
+  // ("8 ET 128 CARACTÈRES") that only this frontend writes — the reset form
+  // already validates the length before calling, so that branch could not fire
+  // on a real backend answer.
   if (
-    message.includes("8 ET 128 CARACTÈRES") ||
+    code === "PASSWORD_TOO_SHORT_OR_LONG" ||
+    code === "PASSWORD_TOO_SHORT" ||
+    code === "PASSWORD_TOO_LONG" ||
+    code === "INVALID_PASSWORD" ||
     message.includes("TOO_SHORT") ||
     message.includes("TOO_LONG")
   ) {
