@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { Chip } from "@/components/atoms/chip";
 import {
   AlertTriangleIcon,
@@ -168,21 +168,30 @@ export function ListingsToolbar({
   ].filter(Boolean).length;
 
   const [open, setOpen] = useState(false);
+  const panelId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open) return;
 
-    const dismiss = () => setOpen(false);
+    // Land a keyboard reader on the first field rather than leaving focus on the
+    // trigger: the panel is the reason the button was pressed. `select` first,
+    // so a phone does not raise its keyboard on open.
+    panelRef.current?.querySelector<HTMLElement>("select, input")?.focus();
 
     const onPointerDown = (event: MouseEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) dismiss();
+      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
     };
 
-    // Escape, without the focus trap a menu would need: the panel holds inputs,
-    // and closing on the way out has to return the reader to the button.
+    // Escape closes and hands focus back to the trigger. A click outside does
+    // not: the reader is already on their way somewhere else, and pulling focus
+    // back to this button would undo that.
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") dismiss();
+      if (event.key !== "Escape") return;
+      setOpen(false);
+      triggerRef.current?.focus();
     };
 
     document.addEventListener("mousedown", onPointerDown);
@@ -305,10 +314,13 @@ export function ListingsToolbar({
 
       <div ref={rootRef} className="relative shrink-0">
         <Chip
+          ref={triggerRef}
           size="md"
           active={open}
           className="shrink-0 whitespace-nowrap"
           aria-expanded={open}
+          aria-controls={panelId}
+          aria-haspopup="dialog"
           onClick={() => setOpen((current) => !current)}
         >
           <SlidersIcon className="mr-1 inline-block align-[-0.15em] size-3.5" />
@@ -329,6 +341,10 @@ export function ListingsToolbar({
 
         {open && (
           <div
+            ref={panelRef}
+            id={panelId}
+            role="dialog"
+            aria-label="Filtres de recherche"
             className={cn(
               "absolute top-[calc(100%+0.5rem)] right-0 z-30 w-[19rem] rounded-card border border-border bg-surface p-4",
               "shadow-[var(--shadow-pop)]",
