@@ -1,13 +1,13 @@
 "use client";
 
 import { useCallback, useMemo, useRef } from "react";
-import type { ListingsTableHandle } from "@/components/organisms/listings-table";
 import type { ListingsMapHandle } from "@/lib/hooks/use-map-markers";
 import {
   type BrowseListingsData,
   type BrowseView,
   fetchBrowseListings,
   isDefaultBrowseView,
+  type ListingsTableHandle,
 } from "@/lib/listings";
 import { usePaginatedResource } from "./use-paginated-resource";
 import { useScrollToRow } from "./use-scroll-to-row";

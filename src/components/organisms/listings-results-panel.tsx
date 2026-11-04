@@ -5,15 +5,13 @@ import { Panel } from "@/components/molecules/panel";
 import { SegmentedControl } from "@/components/molecules/segmented-control";
 import { EmptyState } from "@/components/organisms/empty-state";
 import { ListingCard } from "@/components/organisms/listing-card";
-import {
-  ListingsTable,
-  type ListingsTableHandle,
-} from "@/components/organisms/listings-table";
+import { ListingsTable } from "@/components/organisms/listings-table";
 import { cn } from "@/lib/cn";
 import type {
   BrowseHorizon,
   BrowseListing,
   ListingSpotlight,
+  ListingsTableHandle,
 } from "@/lib/listings";
 
 interface BrowseHorizonOption {

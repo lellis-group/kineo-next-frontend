@@ -119,3 +119,4 @@ export {
 } from "./browse-url";
 export type { ListingSpotlight } from "./spotlight";
 export { spotlightClass } from "./spotlight";
+export type { ListingsTableHandle } from "./table-handle";

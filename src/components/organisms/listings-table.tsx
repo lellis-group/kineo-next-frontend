@@ -9,30 +9,12 @@ import { formatDayMonth } from "@/lib/format";
 import {
   type BrowseListing,
   type ListingSpotlight,
+  type ListingsTableHandle,
   listingBadge,
   spotlightClass,
 } from "@/lib/listings";
 import { SPECIALTY_LABELS } from "@/lib/profile";
 import { rowEnterStyle } from "@/lib/row-enter";
-
-/**
- * What the table lets the screen do to its rows.
- *
- * The container scrolls a picked posting into view, but a row is the table's
- * own markup, not the container's business. It used to be reached with a
- * `document.querySelector("tbody tr[data-listing-id=…]")` living in the
- * container, which meant the container knew the shape of a section it only
- * arranges — and would break the day the table's structure changed. The lookup
- * now lives here, beside the markup it reads, and the container just asks.
- */
-export interface ListingsTableHandle {
-  /**
-   * Centers the row for `id`, when it is rendered. Returns whether the row was
-   * found, so the caller can tell "scrolled" from "not on this page" without
-   * reaching into the DOM itself.
-   */
-  scrollToId: (id: string) => boolean;
-}
 
 interface ListingsTableProps {
   listings: BrowseListing[];

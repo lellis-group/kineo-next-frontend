@@ -2,7 +2,6 @@
 
 import type { RefObject } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { ListingsTableHandle } from "@/components/organisms/listings-table";
 import { isInView } from "@/lib/dom";
 import type { ListingsMapHandle } from "@/lib/hooks/use-map-markers";
 import {
@@ -17,6 +16,7 @@ import {
   type BrowseView,
   fetchListingPageOf,
   type ListingSpotlight,
+  type ListingsTableHandle,
   type MapPlaceListing,
 } from "@/lib/listings";
 

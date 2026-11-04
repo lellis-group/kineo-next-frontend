@@ -2,7 +2,7 @@
 
 import type { RefObject } from "react";
 import { useCallback, useEffect, useState } from "react";
-import type { ListingsTableHandle } from "@/components/organisms/listings-table";
+import type { ListingsTableHandle } from "@/lib/listings";
 
 /**
  * Scrolls a listing row into view once it is rendered, without the container
