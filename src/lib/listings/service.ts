@@ -36,35 +36,6 @@ import type {
   ReceivedApplicationCounts,
 } from "./contracts";
 
-/**
- * The refusal codes the backend sends on a listing write, mirrored one for one.
- *
- * `common/refusal.ts` on the other side is the source; these are the listing
- * codes of its `REFUSAL_CODES` — the application and profile ones belong to
- * screens this module does not serve. The names follow the backend's *semantics*
- * rather than its internal keys, so a rename there reads here as a rename.
- *
- * The previous mirror had drifted: five of its seven entries named a code the
- * backend no longer sends (`LISTING_NOT_A_DRAFT` for `LISTING_NOT_DRAFT`,
- * `LISTING_INVALID_PERIOD` for `LISTING_INVALID_DATES`, and so on), which is
- * why every refusal had fallen back to parsing English prose. Only the two that
- * happened to survive — `NOT_MODIFIABLE` and `FILLED_CANNOT_BE_DELETED` — ever
- * reached a reader in French.
- *
- * `LISTING_HAS_THIRD_PARTY_APPLICATIONS` is deliberately absent: the backend
- * declares it but throws it as a bare `ConflictException` with no code
- * (`common/application-guard.ts:135`), so it is answered by status, below.
- */
-export const LISTING_TRANSITION_CODES = {
-  NOT_DRAFT: "LISTING_NOT_DRAFT",
-  NOT_MODIFIABLE: "LISTING_NOT_MODIFIABLE",
-  INVALID_DATES: "LISTING_INVALID_DATES",
-  NOT_CLOSEABLE: "LISTING_NOT_CLOSEABLE",
-  ALREADY_CLOSED: "LISTING_ALREADY_CLOSED",
-  FILLED_CANNOT_BE_DELETED: "LISTING_FILLED_CANNOT_BE_DELETED",
-  QUOTA_REACHED: "LISTING_QUOTA_REACHED",
-} as const;
-
 /** The owner actions on a listing this module performs. */
 export type ListingActionKind = "close" | "cancel";
 
