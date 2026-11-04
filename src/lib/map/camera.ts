@@ -1,6 +1,6 @@
 import type { Map as MapLibreMap } from "maplibre-gl";
 import * as maplibregl from "maplibre-gl";
-import { cameraTargetFor } from "@/lib/listings";
+import { cameraTargetFor } from "./camera-target";
 import type { MapPlace } from "./types";
 
 /**

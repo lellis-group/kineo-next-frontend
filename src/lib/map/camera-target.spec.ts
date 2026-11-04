@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test";
-import type { MapPlace, MapPlaceListing } from "./browse-contracts";
-import { cameraTargetFor, distinctPoints } from "./map-camera";
+import { cameraTargetFor, distinctPoints } from "./camera-target";
+import type { MapPlace, MapPlaceListing } from "./types";
 
 /** A preview at a coordinate; only the fields this module reads are set. */
 function listingAt(

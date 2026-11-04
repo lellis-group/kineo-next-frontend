@@ -117,7 +117,5 @@ export {
   isDefaultBrowseView,
   toBrowseView,
 } from "./browse-url";
-export type { CameraTarget } from "./map-camera";
-export { cameraTargetFor, distinctPoints } from "./map-camera";
 export type { ListingSpotlight } from "./spotlight";
 export { spotlightClass } from "./spotlight";
