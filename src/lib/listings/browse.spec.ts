@@ -3,22 +3,21 @@ import type { ApiListingPlace } from "@/lib/types/api";
 import type { ApiTransport } from "../api-client";
 import { toIsoDayBound } from "../format";
 import { adaptFacets } from "./browse-adapters";
-import {
-  browseViewFromParams,
-  browseViewToParams,
-  EMPTY_BROWSE_FILTERS,
-  horizonBounds,
-  horizonForBounds,
-  isDefaultBrowseView,
-  listingBadge,
-  toBrowseView,
-} from "./browse-contracts";
+import { listingBadge } from "./browse-badges";
+import { EMPTY_BROWSE_FILTERS } from "./browse-contracts";
+import { horizonBounds, horizonForBounds } from "./browse-horizon";
 import {
   fetchBrowseListing,
   fetchBrowseListings,
   fetchBrowsePlaces,
   fetchListingPageOf,
 } from "./browse-service";
+import {
+  browseViewFromParams,
+  browseViewToParams,
+  isDefaultBrowseView,
+  toBrowseView,
+} from "./browse-url";
 
 describe("adaptFacets", () => {
   it("gives every specialty a row, including those holding nothing", () => {
