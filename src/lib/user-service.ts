@@ -9,23 +9,19 @@ import type { ApiUser } from "./types/api";
 
 /** GET /get-session — returns the current user.
  *
- * Reads the same endpoint as `server-auth.ts` (the single get-session path),
- * so the session shape is parsed identically on both sides of the wire.
+ * Goes through the auth client rather than hand-parsing the endpoint: it is the
+ * same `get-session` read `server-auth.ts` performs, and letting the SDK own the
+ * shape means a session field cannot be spelled two ways on the two sides of
+ * the wire.
  */
 async function fetchUserInfo(): Promise<ApiUser> {
-  const response = await fetch("/api/auth/get-session", {
-    credentials: "include",
-    cache: "no-store",
-  });
-  if (!response.ok) {
-    throw new Error("Failed to fetch user info");
+  const { data, error } = await authClient.getSession();
+  if (error || !data?.user) {
+    throw error ?? new Error("Failed to fetch user info");
   }
-  const session = (await response.json()) as { user?: ApiUser } | null;
-  const user = session?.user;
-  if (!user) {
-    throw new Error("Failed to fetch user info");
-  }
-  return user;
+  // The SDK types `createdAt`/`updatedAt` as `Date`, but the wire carries ISO
+  // strings and nothing here revives them. `ApiUser` describes the wire.
+  return data.user as unknown as ApiUser;
 }
 
 /** POST /update-user — updates name and/or image. */
@@ -58,13 +54,19 @@ export async function changeEmail(newEmail: string): Promise<{
   if (error) {
     throw error;
   }
+  // `message` is better-auth's own enum, not prose: "Email updated" means the
+  // change applied immediately (verification off), "Verification email sent"
+  // means one of the two confirmation paths below.
+  const result = data as {
+    user?: ApiUser;
+    message?: "Email updated" | "Verification email sent";
+  } | null;
   const message =
-    (data as { message?: string }).message === "Email updated"
+    result?.message === "Email updated"
       ? "Email mis à jour."
       : "Demande enregistrée. Un email de confirmation part soit vers votre adresse actuelle pour approuver le changement, soit directement vers la nouvelle adresse si celle-ci n'a jamais été vérifiée. Le changement n'est appliqué qu'après ces confirmations.";
-  const user = (data as { user?: ApiUser }).user;
-  if (user) {
-    return { user: user as ApiUser, message };
+  if (result?.user) {
+    return { user: result.user, message };
   }
   return { user: await fetchUserInfo(), message };
 }
