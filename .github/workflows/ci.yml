@@ -27,5 +27,6 @@ jobs:
       # secrets to prerender.
       - run: bun run lint
       - run: bun run typecheck
+      - run: bun run knip
       - run: bun run test
       - run: bun run build
