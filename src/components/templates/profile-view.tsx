@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/atoms/button";
 import { FileTextIcon, ShieldIcon } from "@/components/atoms/icons";
 import { InlineAlert } from "@/components/molecules/inline-alert";
@@ -11,12 +10,6 @@ import { DeleteAccountSection } from "@/components/organisms/delete-account-sect
 import { ProfileHeaderCard } from "@/components/organisms/profile-header-card";
 import { PROSE_CONTAINER } from "@/lib/layout";
 import type { ApiProfile, ApiUser } from "@/lib/types/api";
-import {
-  changeEmail,
-  deleteAccount,
-  mapUserError,
-  updateUserInfo,
-} from "@/lib/user-service";
 
 /** Which success banner the redirect from the edit form left behind. */
 export type ProfileFeedback = "created" | "saved" | null;
@@ -24,11 +17,11 @@ export type ProfileFeedback = "created" | "saved" | null;
 /**
  * The /profile screen in view mode. Edit and create live on their own routes.
  *
- * This used to be a `ProfileContainer` and a `ProfileView` split across two
- * files, where the container existed only to hold the `"use client"` directive
- * and forward two handlers — one of which (`onDeleteAccount`) was already
- * owned by `DeleteAccountSection` below, which handles its own pending and error
- * state. Nothing was left for the split to protect.
+ * Markup only: the account writes, their error mapping and the post-success
+ * refresh all live in `ProfileContainer`. The split is not ceremony — every
+ * handler here takes a service rejection and turns it into a sentence, and a
+ * view that never imports the auth client is a view that can be rendered from
+ * fixed props.
  *
  * The profile and the account both arrive from the server page, including the
  * session user, which used to be read a second time here through the client auth
@@ -38,48 +31,22 @@ export function ProfileView({
   profile,
   user,
   feedback,
+  onEditProfile,
+  onUpdateInfo,
+  onChangeEmail,
+  onDeleteAccount,
 }: {
   profile: ApiProfile;
   user: ApiUser;
   feedback: ProfileFeedback;
-}) {
-  const router = useRouter();
-
-  /**
-   * Requests account erasure: better-auth emails a confirmation link and the
-   * account is anonymized only once that link is opened (see /goodbye).
-   * No sign-out here: the account stays active until confirmation — the panel
-   * switches itself to the « check your mailbox » state on success.
-   */
-  async function handleDeleteAccount() {
-    await deleteAccount();
-  }
-
-  async function handleUpdateInfo(values: {
+  onEditProfile: () => void;
+  onUpdateInfo: (values: {
     name: string;
     image: string | null;
-  }): Promise<string> {
-    try {
-      await updateUserInfo(values);
-    } catch (err) {
-      // better-auth rejects with a plain object, not an `Error`, so the wording
-      // has to be chosen here rather than by the row.
-      throw new Error(mapUserError(err));
-    }
-    router.refresh();
-    return "Informations mises à jour.";
-  }
-
-  async function handleChangeEmail(email: string): Promise<string> {
-    try {
-      const { message } = await changeEmail(email);
-      router.refresh();
-      return message;
-    } catch (err) {
-      throw new Error(mapUserError(err));
-    }
-  }
-
+  }) => Promise<string>;
+  onChangeEmail: (email: string) => Promise<string>;
+  onDeleteAccount: () => Promise<void>;
+}) {
   return (
     <div className={PROSE_CONTAINER}>
       {feedback === "created" && (
@@ -102,11 +69,9 @@ export function ProfileView({
         <ProfileHeaderCard
           user={user}
           profile={profile}
-          onEditProfile={() => {
-            router.push("/profile/edit");
-          }}
-          onUpdateInfo={handleUpdateInfo}
-          onChangeEmail={handleChangeEmail}
+          onEditProfile={onEditProfile}
+          onUpdateInfo={onUpdateInfo}
+          onChangeEmail={onChangeEmail}
         />
 
         <ProfileSection
@@ -154,7 +119,7 @@ export function ProfileView({
           />
         </ProfileSection>
 
-        <DeleteAccountSection onDeleteAccount={handleDeleteAccount} />
+        <DeleteAccountSection onDeleteAccount={onDeleteAccount} />
       </div>
     </div>
   );
