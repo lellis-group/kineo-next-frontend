@@ -25,6 +25,11 @@ export function useScrollToRow(
     setPendingId(id);
   }, []);
 
+  /** Drops a pending scroll — the view it belonged to is gone. */
+  const clear = useCallback(() => {
+    setPendingId(null);
+  }, []);
+
   useEffect(() => {
     if (!pendingId) return;
     // Not on this page yet — the page turn is still in flight, retry next render.
@@ -34,5 +39,5 @@ export function useScrollToRow(
     }
   }, [pendingId, onScreenIds, tableRef]);
 
-  return { scrollTo, clear: () => setPendingId(null) };
+  return { scrollTo, clear };
 }
