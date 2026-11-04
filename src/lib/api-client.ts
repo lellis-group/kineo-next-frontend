@@ -73,6 +73,30 @@ export interface FieldError {
 }
 
 /**
+ * Ceiling for one request.
+ *
+ * A backend that stops answering used to leave the screen loading until the
+ * reader navigated away, because the only signal in play was the race guard's
+ * — and that one fires when the *next* view starts, not when the current one
+ * hangs. Twenty seconds is well beyond any endpoint this app calls.
+ */
+const REQUEST_TIMEOUT_MS = 20_000;
+
+/**
+ * The caller's signal, if any, plus a deadline.
+ *
+ * `AbortSignal.any` keeps both reasons: the race guard can still cancel a
+ * superseded read, and the deadline can still end one nobody cancelled.
+ */
+function withTimeout(init: RequestInit | undefined): RequestInit {
+  const deadline = AbortSignal.timeout(REQUEST_TIMEOUT_MS);
+  const signal = init?.signal
+    ? AbortSignal.any([init.signal, deadline])
+    : deadline;
+  return { ...init, signal };
+}
+
+/**
  * Fetch through `transport`. Throws typed ApiError on non-OK so callers can
  * distinguish expected states (soft 404, see `notFoundAs`) from real failures.
  *
@@ -85,14 +109,17 @@ export async function apiFetch<T>(
   transport: ApiTransport = browserTransport,
 ): Promise<T> {
   const { headers, ...rest } = init ?? {};
-  const res = await transport(path, {
-    ...rest,
-    headers: {
-      Accept: "application/json",
-      ...(rest.body ? { "Content-Type": "application/json" } : undefined),
-      ...headers,
-    },
-  });
+  const res = await transport(
+    path,
+    withTimeout({
+      ...rest,
+      headers: {
+        Accept: "application/json",
+        ...(rest.body ? { "Content-Type": "application/json" } : undefined),
+        ...headers,
+      },
+    }),
+  );
 
   if (!res.ok) {
     // NestJS returns { message, error, statusCode } or, for Zod validation,

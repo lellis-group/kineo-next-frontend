@@ -101,6 +101,16 @@ export function classifyError(error: unknown): ErrorKind {
   const status = statusOf(error);
 
   if (status === undefined) {
+    // A deadline or an abort is also "no answer", and retrying is the only
+    // thing that can help — but unlike a cut connection it is not evidence that
+    // nothing is listening, so it reads as `unavailable` rather than
+    // `service-down`.
+    if (
+      error instanceof DOMException &&
+      (error.name === "TimeoutError" || error.name === "AbortError")
+    ) {
+      return "unavailable";
+    }
     // A thrown `TypeError` from `fetch` means the request never landed, which is
     // the same situation as a 502 by another route: nothing is on the other end.
     return error instanceof TypeError ? "service-down" : "unknown";
