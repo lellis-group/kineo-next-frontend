@@ -116,10 +116,12 @@ export function listingActionErrorMessage(
           "Vous n'êtes pas le propriétaire de cette annonce, ou votre adresse e-mail n'est pas validée.",
       });
     }
+    // The one 409 the backend sends without a code: third-party applications
+    // are still active on the listing (see the note on the code table above).
     if (error.status === 409) {
       return `Impossible de ${verb} l'annonce : des candidatures d'autres candidats lui sont encore actives.`;
     }
-    if (error.status === 400 || error.status === 409 || error.status === 422) {
+    if (error.status === 400 || error.status === 422) {
       return `Impossible de ${verb} l'annonce dans son état actuel.`;
     }
   }
