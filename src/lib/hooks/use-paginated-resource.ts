@@ -89,6 +89,17 @@ export function usePaginatedResource<T, V>({
   afterLoad.current = onLoaded;
   afterRestore.current = onRestored;
 
+  /**
+   * The default-view test is read through a ref for the same reason as the two
+   * callbacks above. Two of the three call sites pass it as an inline arrow, and
+   * it sits in this hook's effect dependencies: a fresh identity on every render
+   * would re-run the effect, which is a refetch storm on any non-default view.
+   * React Compiler happens to memoise those arrows today, but correctness must
+   * not depend on it.
+   */
+  const defaultView = useRef(isDefaultView);
+  defaultView.current = isDefaultView;
+
   /** Cancels in-flight reads, starts races, and stamps stale answers. */
   const raceGuard = useRaceGuard();
   const { start, isStale, settled, revoke } = raceGuard;
@@ -164,29 +175,21 @@ export function usePaginatedResource<T, V>({
       restore();
       return;
     }
-    if (isDefaultView(view)) {
+    if (defaultView.current(view)) {
       restore();
       return;
     }
     fetchView(view);
-  }, [
-    view,
-    initialData,
-    isDefaultView,
-    fetchView,
-    restore,
-    seedFromServer,
-    revoke,
-  ]);
+  }, [view, initialData, fetchView, restore, seedFromServer, revoke]);
 
   /** Re-runs the current view — the « Réessayer » button. */
   const reload = useCallback(() => {
-    if (isDefaultView(view)) {
+    if (defaultView.current(view)) {
       restore();
       return;
     }
     fetchView(view);
-  }, [view, isDefaultView, fetchView, restore]);
+  }, [view, fetchView, restore]);
 
   /**
    * Adopts an answer obtained elsewhere, without going through the view state.
