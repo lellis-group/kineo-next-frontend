@@ -318,9 +318,25 @@ export function useBrowsePicking({
 
   /** Brings the chosen posting's row back into view, from the rail's panel. */
   const revealSelection = useCallback(() => {
-    if (!selection || !selection.location) return;
-    pickListing({ ...selection, location: selection.location });
-  }, [pickListing, selection]);
+    if (!selection) return;
+    if (selection.location) {
+      pickListing({ ...selection, location: selection.location });
+      return;
+    }
+
+    /*
+      A practice that was never geocoded has no pin to fly to, but it still has
+      a row, and the panel's promise is « Voir dans la liste ». Going through
+      `pickListing` would return here — it needs coordinates — and leave the
+      button looking pressed and doing nothing. So reveal the row directly:
+      scroll to it when the page already holds it, turn to its page otherwise.
+    */
+    if (onScreenIds.has(selection.id)) {
+      scrollTo(selection.id);
+      return;
+    }
+    turnToPage(selection.id);
+  }, [pickListing, selection, onScreenIds, scrollTo, turnToPage]);
 
   /*
     Places a pending glow the moment its row is really on screen.
