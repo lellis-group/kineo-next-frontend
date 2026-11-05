@@ -94,20 +94,25 @@ export function groupByDistance(
   const clusters: MapPlace[] = [];
 
   for (let i = 0; i < points.length; i++) {
-    if (merged[i]) continue;
+    const head = points[i];
+    if (head === undefined || merged[i]) continue;
 
-    const members = [points[i].place];
+    const members = [head.place];
     merged[i] = true;
 
     for (let j = i + 1; j < points.length; j++) {
-      if (merged[j]) continue;
-      if (points[i].point.dist(points[j].point) < radius) {
-        members.push(points[j].place);
+      const candidate = points[j];
+      if (candidate === undefined || merged[j]) continue;
+      if (head.point.dist(candidate.point) < radius) {
+        members.push(candidate.place);
         merged[j] = true;
       }
     }
 
-    clusters.push(members.length === 1 ? members[0] : mergePlaces(members));
+    const [only] = members;
+    clusters.push(
+      members.length === 1 && only !== undefined ? only : mergePlaces(members),
+    );
   }
 
   return clusters;

@@ -145,9 +145,9 @@ describe("adaptReactivity", () => {
       respondedCount: 4,
     });
 
-    expect(stats[0].value).toBe("50%"); // 4 of 8, not 4 of 10
-    expect(stats[1].value).toBe("10");
-    expect(stats[2].value).toBe("3");
+    expect(stats[0]?.value).toBe("50%"); // 4 of 8, not 4 of 10
+    expect(stats[1]?.value).toBe("10");
+    expect(stats[2]?.value).toBe("3");
   });
 
   test("reports no rate rather than a division by zero", () => {
@@ -156,7 +156,7 @@ describe("adaptReactivity", () => {
       respondedCount: 0,
     });
 
-    expect(stats[0].value).toBe("0%");
+    expect(stats[0]?.value).toBe("0%");
   });
 });
 
@@ -176,6 +176,6 @@ describe("adaptActivity", () => {
     // its own title, so an activity line can no longer fall back to
     // « Titre d'annonce indisponible » for a posting outside the member's page.
     const [first] = adaptActivity([entry("1")]);
-    expect(first.message[1].text).toBe("Annonce 1");
+    expect(first?.message[1]?.text).toBe("Annonce 1");
   });
 });

@@ -499,8 +499,8 @@ describe("fetchBrowsePlaces", () => {
 
     const data = await fetchBrowsePlaces({}, transport);
 
-    expect(data?.places[0].count).toBe(3);
-    expect(data?.places[0].listings).toHaveLength(1);
+    expect(data?.places[0]?.count).toBe(3);
+    expect(data?.places[0]?.listings).toHaveLength(1);
   });
 
   it("drops a practice with no coordinates, rather than pinning it at 0,0", async () => {

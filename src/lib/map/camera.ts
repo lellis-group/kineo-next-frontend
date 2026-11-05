@@ -78,11 +78,12 @@ export function zoomToPlace(map: MapLibreMap, place: MapPlace) {
  * the reader pointed at, and street level would put four pins inside one block.
  */
 export function fitToPlaces(map: MapLibreMap, places: readonly MapPlace[]) {
-  if (places.length === 0) {
+  const [first] = places;
+  if (first === undefined) {
     return;
   }
   if (places.length === 1) {
-    map.flyTo({ center: [places[0].longitude, places[0].latitude], zoom: 12 });
+    map.flyTo({ center: [first.longitude, first.latitude], zoom: 12 });
     return;
   }
 

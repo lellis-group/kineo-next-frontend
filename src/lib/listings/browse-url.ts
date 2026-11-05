@@ -89,6 +89,9 @@ function readDate(raw: string): string {
   // survives the round-trip, a rolled-over one does not. Handing the feed an
   // impossible bound reads as a request that matched nothing.
   const [year, month, day] = raw.split("-").map(Number);
+  if (year === undefined || month === undefined || day === undefined) {
+    return "";
+  }
   const parsed = new Date(Date.UTC(year, month - 1, day));
   const isReal =
     parsed.getUTCFullYear() === year &&

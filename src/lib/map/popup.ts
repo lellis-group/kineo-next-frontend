@@ -103,8 +103,10 @@ export function openPopupForKey(
   // A group waits — the reader picks the entry.
   if (live.listings.length === 1) {
     const [only] = live.listings;
-    handlers.onHover?.(only.id);
-    handlers.onMarkerSelect?.(only);
+    if (only !== undefined) {
+      handlers.onHover?.(only.id);
+      handlers.onMarkerSelect?.(only);
+    }
   }
 }
 

@@ -3,7 +3,7 @@ import { rowEnterStyle } from "./row-enter";
 
 /** Reads the custom property back off the returned style object. */
 function delayOf(index: number): string {
-  return (rowEnterStyle(index) as Record<string, string>)["--row-delay"];
+  return (rowEnterStyle(index) as Record<string, string>)["--row-delay"] ?? "";
 }
 
 describe("rowEnterStyle", () => {
