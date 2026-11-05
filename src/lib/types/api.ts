@@ -363,8 +363,6 @@ export interface ApiListingPageOf {
 export interface ApiListingPlaces {
   places: ApiListingPlace[];
 
-  /** Every matching posting's id, in the ordering the reader asked for. */
-
   /** Matching postings whose practice was never geocoded. */
   unlocated: number;
 
