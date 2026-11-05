@@ -1,8 +1,6 @@
 import type { ReactNode } from "react";
-import {
-  ListingsToolbar,
-  type SpecialtyOption,
-} from "@/components/organisms/listings-toolbar";
+import type { SpecialtyOption } from "@/components/molecules/listings-filter-popover";
+import { ListingsToolbar } from "@/components/organisms/listings-toolbar";
 import { cn } from "@/lib/cn";
 import {
   BROWSE_MAP_ID,
