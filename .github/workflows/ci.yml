@@ -22,9 +22,9 @@ jobs:
       # clean tree. Gate it once Next is bumped past the fixed range instead of
       # baking a red build in.
       #
-      # No services and no env either: the two NEXT_PUBLIC_* vars fall back to
-      # localhost (see backend-proxy.ts, auth-client.ts), so `build` needs no
-      # secrets to prerender.
+      # No services and no env either: BACKEND_URL and NEXT_PUBLIC_FRONTEND_URL
+      # fall back to localhost (see backend-proxy.ts, auth-client.ts), so
+      # `build` needs no secrets to prerender.
       - run: bun run lint
       - run: bun run typecheck
       - run: bun run knip
