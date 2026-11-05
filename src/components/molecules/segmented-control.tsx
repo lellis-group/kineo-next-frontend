@@ -37,22 +37,29 @@ export function SegmentedControl<T extends string>({
   className,
 }: SegmentedControlProps<T>) {
   return (
-    <div
-      role="tablist"
-      aria-label={ariaLabel}
+    <fieldset
       className={cn(
-        "flex min-w-0 max-w-full flex-nowrap items-center gap-1 overflow-x-auto rounded-full bg-surface-2 p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+        "flex min-w-0 max-w-full flex-nowrap items-center gap-1 overflow-x-auto rounded-full border-0 bg-surface-2 p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
         className,
       )}
     >
+      {/*
+        A group of pressed toggles, not tabs: there is no `tabpanel` here, the
+        selection changes a filter rather than swapping a panel, and announcing
+        one would promise arrow-key navigation and a panel that never arrives.
+        A `fieldset` names the group without claiming any of that, and
+        `aria-pressed` is the honest answer to "which of these is on" — the same
+        contract `Chip` uses. The legend is visually hidden because the label is
+        for the screen reader, not a heading the track has room for.
+      */}
+      <legend className="sr-only">{ariaLabel}</legend>
       {options.map((option) => {
         const active = option.id === value;
         return (
           <button
             key={option.id}
             type="button"
-            role="tab"
-            aria-selected={active}
+            aria-pressed={active}
             onClick={() => onChange(option.id)}
             className={cn(
               // `py-1` rather than `py-1.5`: with `p-1` on the track this control
@@ -73,6 +80,6 @@ export function SegmentedControl<T extends string>({
           </button>
         );
       })}
-    </div>
+    </fieldset>
   );
 }
