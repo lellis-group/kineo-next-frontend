@@ -88,6 +88,7 @@ export type {
   ListingLocation,
   MapPlace,
   MapPlaceListing,
+  MapPoint,
   SpecialtyFacet,
 } from "./browse-contracts";
 export {

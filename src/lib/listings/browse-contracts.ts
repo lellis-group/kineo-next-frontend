@@ -15,7 +15,7 @@
  * `./browse-badges`.
  */
 
-import type { MapPlace, MapPlaceListing } from "@/lib/map/types";
+import type { MapPlace, MapPlaceListing, MapPoint } from "@/lib/map/types";
 import type { ReplacementListingStatus, Specialty } from "@/lib/types/api";
 
 /** Where a listing sits, as the map needs it. */
@@ -215,7 +215,7 @@ export interface BrowseFacets {
  * carry its coordinates, so one pin per posting stacks identical buttons on the
  * same pixel — the top one takes every click and the rest cannot be reached.
  */
-export type { MapPlace, MapPlaceListing };
+export type { MapPlace, MapPlaceListing, MapPoint };
 
 /**
  * Everything the map needs, in one answer.

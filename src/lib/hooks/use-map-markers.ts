@@ -15,6 +15,7 @@ import { fitToPlaces, flyToPoint } from "@/lib/map/camera";
 import { clusterPlaces } from "@/lib/map/clustering";
 import { paintStates, rebuildMarkers } from "@/lib/map/markers";
 import { openCardForSelected } from "@/lib/map/popup";
+import type { MapPoint } from "@/lib/map/types";
 
 /**
  * Everything the screen can ask of the map from outside it.
@@ -29,7 +30,7 @@ export interface ListingsMapHandle {
   /** Flies the camera to one posting's coordinates, street level. */
   focusOn: (point: { latitude: number; longitude: number }) => void;
   /** Frames every place given — a page of results, typically. */
-  framePlaces: (places: readonly MapPlace[]) => void;
+  framePlaces: (places: readonly MapPoint[]) => void;
 }
 
 /**
@@ -394,7 +395,7 @@ export function useMapMarkers({
    * at once, and the collection is larger than the page by construction.
    */
   const framePlaces = useCallback(
-    (frame: readonly MapPlace[]) => {
+    (frame: readonly MapPoint[]) => {
       const map = mapRef.current;
       if (!map) return;
       fitToPlaces(map, frame);

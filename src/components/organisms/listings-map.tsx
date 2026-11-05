@@ -6,10 +6,19 @@ import { cn } from "@/lib/cn";
 import { useMapInstance } from "@/lib/hooks/use-map-instance";
 import type { ListingsMapHandle } from "@/lib/hooks/use-map-markers";
 import { useMapMarkers } from "@/lib/hooks/use-map-markers";
-import type { MapPlace, MapPlaceListing } from "@/lib/listings";
+import type { MapPlace, MapPlaceListing, MapPoint } from "@/lib/listings";
 
 interface ListingsMapProps {
   places: MapPlace[];
+  /**
+   * The coordinates of the postings on the page the list is showing.
+   *
+   * Not derived from `places`: that set covers the whole filtered collection
+   * (the map has no pages), while « Cadrer les annonces de cette page » promises
+   * the ten rows under the reader. A practice with several postings arrives once
+   * per row; `fitToPlaces` dedupes before framing.
+   */
+  pagePoints: readonly MapPoint[];
   unlocated: number;
   /** Practices the filters matched, before the ceiling. */
   totalPlaces: number;
@@ -82,6 +91,7 @@ export const ListingsMap = forwardRef<ListingsMapHandle, ListingsMapProps>(
   function ListingsMap(
     {
       places,
+      pagePoints,
       unlocated,
       totalPlaces,
       truncated,
@@ -170,11 +180,11 @@ export const ListingsMap = forwardRef<ListingsMapHandle, ListingsMapProps>(
             type="button"
             aria-label="Cadrer les annonces de cette page"
             title="Cadrer les annonces de cette page"
-            // Disabled with nothing to frame: one page of ten postings all
-            // unpublished-as-place is possible, and a button that flies to France
-            // is worse than no button.
-            disabled={places.length === 0}
-            onClick={() => map.framePlaces(places)}
+            // Disabled with nothing to frame: a page whose practices were all
+            // never geocoded is possible, and a button that flies to France is
+            // worse than no button.
+            disabled={pagePoints.length === 0}
+            onClick={() => map.framePlaces(pagePoints)}
             className="grid size-9 cursor-pointer place-items-center rounded-full bg-white/90 text-map-ink shadow-[0_2px_10px_rgb(22_21_15/0.2)] backdrop-blur-sm transition-colors hover:bg-white disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
           >
             <CrosshairIcon className="size-4" />

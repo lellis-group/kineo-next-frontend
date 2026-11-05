@@ -1,7 +1,7 @@
 import type { Map as MapLibreMap } from "maplibre-gl";
 import * as maplibregl from "maplibre-gl";
 import { cameraTargetFor } from "./camera-target";
-import type { MapPlace } from "./types";
+import type { MapPlace, MapPoint } from "./types";
 
 /**
  * Every camera move the browse map makes, in one place.
@@ -77,18 +77,35 @@ export function zoomToPlace(map: MapLibreMap, place: MapPlace) {
  * taken from `PLACE_ZOOM`: a whole page is being framed here, not one posting
  * the reader pointed at, and street level would put four pins inside one block.
  */
-export function fitToPlaces(map: MapLibreMap, places: readonly MapPlace[]) {
-  const [first] = places;
+export function fitToPlaces(map: MapLibreMap, places: readonly MapPoint[]) {
+  /*
+    Deduplicated before framing, for the same reason `distinctPoints` dedupes
+    inside one place: two postings at the same practice are two entries with one
+    coordinate, and a `LngLatBounds` whose corners coincide is a zero-area
+    rectangle MapLibre refuses to zoom into. This matters more now that the
+    caller hands over the rows of a page rather than the practices the map
+    grouped: the same practice can appear once per posting.
+  */
+  const seen = new Set<string>();
+  const points: MapPoint[] = [];
+  for (const place of places) {
+    const key = `${place.latitude.toFixed(3)},${place.longitude.toFixed(3)}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    points.push(place);
+  }
+
+  const [first] = points;
   if (first === undefined) {
     return;
   }
-  if (places.length === 1) {
+  if (points.length === 1) {
     map.flyTo({ center: [first.longitude, first.latitude], zoom: 12 });
     return;
   }
 
   const bounds = new maplibregl.LngLatBounds();
-  for (const place of places) {
+  for (const place of points) {
     bounds.extend([place.longitude, place.latitude]);
   }
   map.fitBounds(bounds, { padding: 64, maxZoom: 14, duration: 600 });

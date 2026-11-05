@@ -6,6 +6,12 @@
  * a pin. Inverting the dependency: the map owns its own types, and the listings
  * domain re-exports them for its consumers.
  */
+/** The two coordinates a camera move needs — no place, no postings. */
+export interface MapPoint {
+  latitude: number;
+  longitude: number;
+}
+
 export interface MapPlaceListing {
   id: string;
   title: string;

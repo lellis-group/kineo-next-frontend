@@ -193,6 +193,9 @@ export function ListingsContainer({
           <ListingsMapSlot
             ref={resource.mapRef}
             places={initialPlaces}
+            pagePoints={resource.data.listings.flatMap((listing) =>
+              listing.location ? [listing.location] : [],
+            )}
             hoveredListingId={picking.hoveredListingId}
             onHoveredChange={picking.setHoveredListingId}
             selectedListing={picking.selectedListing}
