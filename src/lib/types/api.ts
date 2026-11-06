@@ -1,12 +1,17 @@
 /**
  * Raw API types — the shapes the Kineo backend answers with.
  *
- * Hand-written, not generated: `templates/api.json` documents the request DTOs
- * only, so every response shape here is transcribed from observed backend
- * output (and, for `ApiUser`, from the backend's Prisma model) rather than from
- * the OpenAPI document. A field added server-side will not appear here until
- * someone reads it off a real response — so treat a missing field as "unknown",
- * not "absent", and prefer a runtime fallback over `!`.
+ * Hand-written, not generated. The backend serves its OpenAPI document at
+ * `/api-json` outside a hardened environment, but the document is not checked
+ * into this repository and it describes the request DTOs rather than the
+ * response shapes — so every response here is transcribed from observed backend
+ * output (and, for `ApiUser`, from the backend's Prisma model). Generating this
+ * file would need the backend running and a generator dependency, and would
+ * still leave the responses hand-written; that is why it has not been done.
+ *
+ * A field added server-side will not appear here until someone reads it off a
+ * real response — so treat a missing field as "unknown", not "absent", and
+ * prefer a runtime fallback over `!`.
  *
  * Presentation types live beside the adapters that produce them, in
  * `lib/<domain>/contracts.ts`.
