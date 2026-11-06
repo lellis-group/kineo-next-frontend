@@ -36,7 +36,6 @@ interface ListingsTableProps {
    */
   selectedListingId?: string | null;
   onListingSelect?: (listing: BrowseListing) => void;
-  onActiveListingChange?: (id: string | null) => void;
   /**
    * The posting a pick on the map just brought into view.
    *
