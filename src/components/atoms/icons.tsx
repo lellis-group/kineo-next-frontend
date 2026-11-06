@@ -201,8 +201,7 @@ export function ExpandIcon(props: SVGProps<SVGSVGElement>) {
 export function CrosshairIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <Svg {...props}>
-      <circle cx="12" cy="12" r="10" />
-      <path d="M22 12h-4M6 12H2M12 6V2M12 22v-4" />
+      <path d="M4.37 10.39 19.63 3.61Q21 3 20.39 4.37L13.61 19.63Q13 21 12.64 19.55L11.24 13.97Q11 13 10.03 12.76L4.46 11.36Q3 11 4.37 10.39Z" />
     </Svg>
   );
 }
