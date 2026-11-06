@@ -326,10 +326,11 @@ export function useBrowsePicking({
 
     /*
       A practice that was never geocoded has no pin to fly to, but it still has
-      a row, and the panel's promise is « Voir dans la liste ». Going through
-      `pickListing` would return here — it needs coordinates — and leave the
-      button looking pressed and doing nothing. So reveal the row directly:
-      scroll to it when the page already holds it, turn to its page otherwise.
+      a row, and the panel's promise is « Voir dans la liste ». `pickListing`
+      needs coordinates to fly the camera, so it cannot carry this case; the
+      old guard simply returned and left the button doing nothing. Reveal the
+      row directly instead: scroll to it when the page already holds it, turn
+      to its page otherwise.
     */
     if (onScreenIds.has(selection.id)) {
       scrollTo(selection.id);
