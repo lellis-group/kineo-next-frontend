@@ -1,7 +1,12 @@
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { forwardRef, useImperativeHandle, useRef } from "react";
 import { Badge } from "@/components/atoms/badge";
-import { CalendarIcon, MapPinIcon } from "@/components/atoms/icons";
+import {
+  CalendarIcon,
+  CrosshairIcon,
+  MapPinIcon,
+} from "@/components/atoms/icons";
 import { CapacityBar } from "@/components/molecules/capacity-bar";
 import { SpecialtyIcon } from "@/components/molecules/specialty-icon";
 import { cn } from "@/lib/cn";
@@ -67,10 +72,10 @@ interface ListingsTableProps {
  *
  * Two states on a row, and neither is the other: pointing at one is a *preview*
  * that lights its marker on the map for as long as the pointer is there, and
- * choosing one is a *selection* that stays until it is dismissed. The choice is
- * made by the title button, which is also the keyboard path into the map — the
- * row itself carries no link, so without it a keyboard reader could reach the
- * map's markers and nothing else on this half of the screen.
+ * choosing one is a *selection* that stays until it is dismissed. The title is
+ * the link to the posting, and the crosshair beside it is the map control: the
+ * row's own click is a pointer convenience, not the accessible path, so a
+ * keyboard reader can do both without a focusable `<tr>`.
  *
  * Hidden below `sm:`, where `ListingCard` takes over — a six-column table on a
  * phone either scrolls sideways or squeezes every column into an unreadable
@@ -210,24 +215,17 @@ export const ListingsTable = forwardRef<
                 data-listing-id={listing.id}
                 data-selected={selected ? "" : undefined}
                 style={rowEnterStyle(index)}
-                tabIndex={0}
                 className={cn(
-                  "row-enter cursor-pointer focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary",
+                  "row-enter cursor-pointer",
                   selected && "is-selected",
                   spotlightClass(spotlight, listing.id),
                 )}
                 onMouseEnter={() => onHoveredChange?.(listing.id)}
                 onMouseLeave={() => onHoveredChange?.(null)}
                 onClick={(event) => {
-                  // The title is a map control, not a second way to open the
-                  // posting: a click on it must keep selecting the marker.
+                  // The title is a link and the crosshair is a map control; a
+                  // click on either must keep doing its own thing.
                   if ((event.target as Element).closest("button, a")) return;
-                  router.push(`/listings/${listing.id}`);
-                }}
-                onKeyDown={(event) => {
-                  if (event.key !== "Enter" && event.key !== " ") return;
-                  if ((event.target as Element).closest("button, a")) return;
-                  event.preventDefault();
                   router.push(`/listings/${listing.id}`);
                 }}
               >
@@ -257,33 +255,32 @@ export const ListingsTable = forwardRef<
                         first line: they all share one box height, so their text
                         sits at the same y across the whole row.
                       */}
-                      {locatable ? (
-                        /*
-                          A button, not a paragraph: this is the one affordance
-                          that makes the table half of the screen do something,
-                          and the only one a keyboard can reach. Enter or Space
-                          bring the map to the posting and open its card — the
-                          exact mirror of what clicking a marker does to the list.
-
-                          Styled as text so the column stays a column of titles
-                          rather than a column of buttons; the affordance is the
-                          colour on hover and the focus ring, both of which the
-                          table's own rows already answer to.
-                        */
-                        <button
-                          type="button"
-                          aria-label={`Voir ${listing.title} sur la carte`}
-                          aria-pressed={selected}
-                          onClick={() => onListingSelect?.(listing)}
-                          className="line-clamp-2 w-full cursor-pointer text-left font-medium leading-[var(--cell-icon)] text-foreground transition-colors hover:text-primary focus-visible:text-primary"
+                      <div className="flex min-w-0 items-start gap-1">
+                        <Link
+                          href={`/listings/${listing.id}`}
+                          className="line-clamp-2 min-w-0 flex-1 font-medium leading-[var(--cell-icon)] text-foreground transition-colors hover:text-primary focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                         >
                           {listing.title}
-                        </button>
-                      ) : (
-                        <p className="line-clamp-2 font-medium leading-[var(--cell-icon)] text-foreground">
-                          {listing.title}
-                        </p>
-                      )}
+                        </Link>
+                        {locatable && (
+                          /*
+                            The map control, beside the title rather than instead
+                            of it. The title used to be a button, which made the
+                            map reachable and the posting itself not: a keyboard
+                            reader could tab into the map's markers but never open
+                            the detail. Two actions need two controls.
+                          */
+                          <button
+                            type="button"
+                            aria-label={`Voir ${listing.title} sur la carte`}
+                            aria-pressed={selected}
+                            onClick={() => onListingSelect?.(listing)}
+                            className="mt-0.5 grid size-5 shrink-0 cursor-pointer place-items-center rounded-full text-faint transition-colors hover:bg-surface-hover hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                          >
+                            <CrosshairIcon className="size-3.5" />
+                          </button>
+                        )}
+                      </div>
                       <p className="text-xs text-muted">
                         {SPECIALTY_LABELS[listing.specialty]}
                       </p>

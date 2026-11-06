@@ -1,7 +1,13 @@
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Badge } from "@/components/atoms/badge";
 import { Card } from "@/components/atoms/card";
-import { CalendarIcon, MapPinIcon, UsersIcon } from "@/components/atoms/icons";
+import {
+  CalendarIcon,
+  CrosshairIcon,
+  MapPinIcon,
+  UsersIcon,
+} from "@/components/atoms/icons";
 import { SpecialtyIcon } from "@/components/molecules/specialty-icon";
 import { cn } from "@/lib/cn";
 import {
@@ -54,7 +60,7 @@ export function ListingCard({
   return (
     <Card
       className={cn(
-        "card-lift row-enter cursor-pointer p-4 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary",
+        "card-lift row-enter cursor-pointer p-4",
         // The chosen card keeps the tint its row would carry on a wide screen, so
         // the choice is the same colour on both halves of the screen.
         selected && "bg-surface-2 ring-1 ring-primary/30",
@@ -62,16 +68,10 @@ export function ListingCard({
       )}
       style={rowEnterStyle(index ?? 0)}
       data-listing-id={listing.id}
-      tabIndex={0}
       onClick={(event) => {
-        // The title is the map control; the rest of the card opens the posting.
+        // The title is a link and the crosshair is a map control; a click on
+        // either must keep doing its own thing.
         if ((event.target as Element).closest("button, a")) return;
-        router.push(`/listings/${listing.id}`);
-      }}
-      onKeyDown={(event) => {
-        if (event.key !== "Enter" && event.key !== " ") return;
-        if ((event.target as Element).closest("button, a")) return;
-        event.preventDefault();
         router.push(`/listings/${listing.id}`);
       }}
     >
@@ -81,19 +81,30 @@ export function ListingCard({
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
-            {locatable ? (
-              <button
-                type="button"
-                aria-label={`Voir ${listing.title} sur la carte`}
-                aria-pressed={selected}
-                onClick={() => onListingSelect?.(listing)}
-                className="cursor-pointer text-left font-medium text-foreground transition-colors hover:text-primary focus-visible:text-primary"
+            <div className="flex min-w-0 items-start gap-1">
+              <Link
+                href={`/listings/${listing.id}`}
+                className="font-medium text-foreground transition-colors hover:text-primary focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
               >
                 {listing.title}
-              </button>
-            ) : (
-              <h3 className="font-medium text-foreground">{listing.title}</h3>
-            )}
+              </Link>
+              {locatable && (
+                /*
+                  The map control, beside the title rather than instead of it.
+                  The title used to be a button, which left a keyboard reader no
+                  way to open the posting from this half of the screen.
+                */
+                <button
+                  type="button"
+                  aria-label={`Voir ${listing.title} sur la carte`}
+                  aria-pressed={selected}
+                  onClick={() => onListingSelect?.(listing)}
+                  className="grid size-5 shrink-0 cursor-pointer place-items-center rounded-full text-faint transition-colors hover:bg-surface-hover hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                >
+                  <CrosshairIcon className="size-3.5" />
+                </button>
+              )}
+            </div>
             <Badge tone={badge.tone}>{badge.label}</Badge>
           </div>
           <p className="mt-0.5 text-xs text-muted">
