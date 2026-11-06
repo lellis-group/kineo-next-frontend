@@ -109,6 +109,7 @@ export {
   fetchBrowsePlaces,
   fetchFacets,
   fetchListingPageOf,
+  type ListingPageOfResult,
 } from "./browse-service";
 export {
   browsePageClamp,

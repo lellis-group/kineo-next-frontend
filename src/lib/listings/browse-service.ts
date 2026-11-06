@@ -180,6 +180,19 @@ export async function fetchBrowsePlaces(
 }
 
 /**
+ * What `GET /replacement-listings/page-of` answered.
+ *
+ * Three outcomes, not two. "Not in this view" and "could not ask" both used to
+ * be `null`, which made the caller announce « Annonce introuvable » to a screen
+ * reader during an outage — a sentence about the posting when the fault was the
+ * connection.
+ */
+export type ListingPageOfResult =
+  | { status: "found"; page: number }
+  | { status: "missing" }
+  | { status: "unavailable" };
+
+/**
  * GET /replacement-listings/page-of — which page holds one posting.
  *
  * Asked when the reader picks a posting from a map popup and the list is not
@@ -190,18 +203,20 @@ export async function fetchBrowsePlaces(
  *
  * Sent the reader's filters, because a page is a position *within the filtered
  * collection*: a posting the current view does not show has no page in it, and
- * the answer is `null` rather than a page it is not on. Sent `limit` for the same
- * reason — a page number means nothing without the size it was counted against.
+ * the answer is `missing` rather than a page it is not on. Sent `limit` for the
+ * same reason — a page number means nothing without the size it was counted
+ * against.
  *
- * `null` on failure as well, for the same effect: turning the list to a wrong
- * page is worse than not turning it.
+ * Never throws. `unavailable` is the honest answer to a failed read: turning
+ * the list to a wrong page is worse than not turning it, and the caller can say
+ * that the lookup failed instead of pretending the posting is gone.
  */
 export async function fetchListingPageOf(
   id: string,
   filters: BrowseFilters & { limit?: number } = {},
   transport?: ApiTransport,
   init?: RequestInit,
-): Promise<number | null> {
+): Promise<ListingPageOfResult> {
   const query = buildQuery({
     id,
     specialty: filters.specialty,
@@ -214,13 +229,18 @@ export async function fetchListingPageOf(
     limit: filters.limit ?? BROWSE_PAGE_SIZE,
   });
 
-  const raw = await apiFetch<ApiListingPageOf>(
-    `/replacement-listings/page-of?${query}`,
-    init,
-    transport,
-  ).catch(() => null);
-
-  return raw?.page ?? null;
+  try {
+    const raw = await apiFetch<ApiListingPageOf>(
+      `/replacement-listings/page-of?${query}`,
+      init,
+      transport,
+    );
+    return raw.page === null
+      ? { status: "missing" }
+      : { status: "found", page: raw.page };
+  } catch {
+    return { status: "unavailable" };
+  }
 }
 
 /**

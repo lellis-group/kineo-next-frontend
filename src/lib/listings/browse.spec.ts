@@ -331,7 +331,7 @@ describe("fetchListingPageOf", () => {
     expect(paths).toHaveLength(1);
     expect(paths[0]).toContain("id=listing-9");
     expect(paths[0]).toContain("limit=10");
-    expect(page).toBe(7);
+    expect(page).toEqual({ status: "found", page: 7 });
   });
 
   /**
@@ -360,21 +360,25 @@ describe("fetchListingPageOf", () => {
   });
 
   /**
-   * `null` for "not in this view" and for "could not ask", which the caller acts
-   * on the same way: turn to no page rather than to a wrong one.
+   * Three outcomes, not two: "not in this view" and "could not ask" are told
+   * apart, because the caller says a different sentence for each.
    */
-  it("reads an absent page as null", async () => {
+  it("reads an absent page as missing", async () => {
     const transport: ApiTransport = () =>
       Promise.resolve(Response.json({ page: null }));
 
-    expect(await fetchListingPageOf("x", {}, transport)).toBeNull();
+    expect(await fetchListingPageOf("x", {}, transport)).toEqual({
+      status: "missing",
+    });
   });
 
-  it("reads a failed read as null rather than throwing", async () => {
+  it("reads a failed read as unavailable rather than throwing", async () => {
     const transport: ApiTransport = () =>
       Promise.resolve(new Response("", { status: 500 }));
 
-    expect(await fetchListingPageOf("x", {}, transport)).toBeNull();
+    expect(await fetchListingPageOf("x", {}, transport)).toEqual({
+      status: "unavailable",
+    });
   });
 });
 

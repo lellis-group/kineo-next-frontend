@@ -15,6 +15,7 @@ import {
   type BrowseSort,
   type BrowseView,
   fetchListingPageOf,
+  type ListingPageOfResult,
   type ListingSpotlight,
   type ListingsTableHandle,
   type MapPlaceListing,
@@ -162,23 +163,31 @@ export function useBrowsePicking({
    *
    * A `replace`, not a `push`: the reader picked a posting, they did not page to
    * it, and a jump they never asked for must not become a back-button stop.
-   * Resolves with the page it turned to, or null when the posting is no longer
-   * in the collection, so the caller can stand down a pending spotlight.
+   * Resolves with the `/page-of` answer: `found` means the URL write happened
+   * and the row is on its way; `missing` and `unavailable` are handed back
+   * untouched so the caller can say which one it was. The catch is for anything
+   * between the read and the write — this promise is not awaited by every
+   * caller, so it must not reject.
    */
   const turnToPage = useCallback(
-    (id: string): Promise<number | null> => {
+    (id: string): Promise<ListingPageOfResult> => {
       scrollTo(id);
       return fetchListingPageOf(id, {
         ...view,
         limit: BROWSE_PAGE_SIZE,
-      }).then((target) => {
-        if (target === null) {
+      })
+        .then((result) => {
+          if (result.status !== "found") {
+            clearScroll();
+            return result;
+          }
+          writeView({ filters, page: result.page, sort }, "replace", "page");
+          return result;
+        })
+        .catch((): ListingPageOfResult => {
           clearScroll();
-          return null;
-        }
-        writeView({ filters, page: target, sort }, "replace", "page");
-        return target;
-      });
+          return { status: "unavailable" };
+        });
     },
     [view, filters, sort, writeView, scrollTo, clearScroll],
   );
@@ -236,12 +245,18 @@ export function useBrowsePicking({
         actually holds the id.
       */
       setPendingPick({ listing, fromPage: page });
-      turnToPage(listing.id).then((target) => {
-        if (target !== null) return;
-        // The posting is gone from the collection. Stand down rather than leave
-        // a glow armed against an id that will never arrive.
+      turnToPage(listing.id).then((result) => {
+        if (result.status === "found") return;
+        // Stand down rather than leave a glow armed against a row that is not
+        // coming. The two failures are not the same sentence: a posting the
+        // filters no longer show is gone, while a failed lookup is the
+        // connection, and the reader can try again.
         setPendingPick(null);
-        setAnnouncement(`Annonce introuvable : ${listing.title}.`);
+        setAnnouncement(
+          result.status === "missing"
+            ? `Annonce introuvable : ${listing.title}.`
+            : `Impossible de localiser l'annonce : ${listing.title}. Réessayez.`,
+        );
       });
     },
     [layout, onScreenIds, page, scrollTo, setLayout, turnToPage],
