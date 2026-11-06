@@ -1,7 +1,13 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useMemo, useState, useTransition } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useTransition,
+} from "react";
 import {
   type BrowseFormFilters,
   type BrowseLayout,
@@ -50,6 +56,18 @@ export function useBrowseView() {
   const [pendingWrite, setPendingWrite] = useState<"filters" | "page" | null>(
     null,
   );
+
+  /**
+   * Forgets what the last write was about once it has landed.
+   *
+   * `pendingWrite` is only read while `isNavigating`, so a stale value never
+   * showed — but it stayed `"filters"` long after a filter change had settled,
+   * and the next reader of the field would have to know that. Cleared here, it
+   * means exactly one thing: the kind of write in flight.
+   */
+  useEffect(() => {
+    if (!isNavigating) setPendingWrite(null);
+  }, [isNavigating]);
 
   const view = useMemo(
     () => toBrowseView(filters, page, sort),
