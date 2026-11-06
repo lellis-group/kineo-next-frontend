@@ -1,6 +1,12 @@
 "use client";
 
-import { forwardRef, type RefObject, useImperativeHandle } from "react";
+import {
+  forwardRef,
+  type RefObject,
+  useEffect,
+  useImperativeHandle,
+  useState,
+} from "react";
 import { CrosshairIcon, ExpandIcon } from "@/components/atoms/icons";
 import { cn } from "@/lib/cn";
 import { useMapInstance } from "@/lib/hooks/use-map-instance";
@@ -251,6 +257,21 @@ function FullscreenToggle({
 }: {
   containerRef: RefObject<HTMLDivElement | null>;
 }) {
+  const [fullscreen, setFullscreen] = useState(false);
+
+  useEffect(() => {
+    /*
+      The browser owns this state, not the button: Escape, a swipe, or the
+      window manager can leave full screen without a click here. Reading
+      `fullscreenElement` on every change keeps `aria-pressed` true to what is
+      on screen instead of to what was last asked for.
+    */
+    const sync = () => setFullscreen(document.fullscreenElement !== null);
+    sync();
+    document.addEventListener("fullscreenchange", sync);
+    return () => document.removeEventListener("fullscreenchange", sync);
+  }, []);
+
   return (
     <button
       type="button"
@@ -262,14 +283,18 @@ function FullscreenToggle({
         the crosshair was the control that could not be pressed.
       */
       aria-label="Plein écran"
+      aria-pressed={fullscreen}
       className="grid size-9 cursor-pointer place-items-center rounded-full bg-white/90 text-map-ink shadow-[0_2px_10px_rgb(22_21_15/0.2)] backdrop-blur-sm transition-colors hover:bg-white"
       onClick={() => {
         const node = containerRef.current?.parentElement;
         if (!node) return;
         if (document.fullscreenElement) {
-          document.exitFullscreen();
+          // A refusal (permissions policy, a closing document) is not worth a
+          // console error: the button stays unpressed and the reader can try
+          // again.
+          document.exitFullscreen().catch(() => {});
         } else {
-          node.requestFullscreen?.();
+          node.requestFullscreen?.().catch(() => {});
         }
       }}
     >
