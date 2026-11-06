@@ -92,12 +92,18 @@ export function ListingSelectionPanel({
           </div>
 
           <dl className="flex flex-col gap-2 text-xs text-muted">
-            <div className="flex items-center gap-1.5">
-              <MapPinIcon className="size-3.5 shrink-0" />
+            <div className="flex min-w-0 items-center gap-1.5">
+              <dt className="flex items-center">
+                <MapPinIcon className="size-3.5 shrink-0" />
+                <span className="sr-only">Lieu</span>
+              </dt>
               <dd className="truncate">{selection.city || "—"}</dd>
             </div>
-            <div className="flex items-center gap-1.5">
-              <CalendarIcon className="size-3.5 shrink-0" />
+            <div className="flex min-w-0 items-center gap-1.5">
+              <dt className="flex items-center">
+                <CalendarIcon className="size-3.5 shrink-0" />
+                <span className="sr-only">Période</span>
+              </dt>
               <dd className="truncate">{selection.dateRange}</dd>
             </div>
           </dl>
