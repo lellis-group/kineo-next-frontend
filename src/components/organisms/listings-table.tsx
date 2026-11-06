@@ -100,8 +100,10 @@ export const ListingsTable = forwardRef<
         // Scoped to this table: the map's popup button carries the same
         // `data-listing-id`, and a document-wide query would find that button
         // and report a row on screen while the reader is pages short of it.
+        // `CSS.escape` keeps the id a value rather than selector syntax: an id
+        // is the backend's, and one quote in it would break the query.
         const row = tableRef.current?.querySelector<HTMLElement>(
-          `tbody tr[data-listing-id="${id}"]`,
+          `tbody tr[data-listing-id="${CSS.escape(id)}"]`,
         );
         if (!row) return false;
         row.scrollIntoView({ behavior: "smooth", block: "center" });
