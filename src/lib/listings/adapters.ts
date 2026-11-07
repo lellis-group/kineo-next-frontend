@@ -136,7 +136,7 @@ export function adaptReceivedApplication(
     rejectionReason: application.rejectionReason?.trim() || undefined,
     withdrawnReason: application.withdrawnReason?.trim() || undefined,
     viewed: Boolean(application.viewedAt),
-    viewedAt: application.viewedAt,
+    viewedAt: application.viewedAt ?? undefined,
     applicant,
     raw: application,
   };

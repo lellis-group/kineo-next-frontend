@@ -10,6 +10,7 @@
     "typecheck": "next typegen && tsc --noEmit",
     "format": "biome format --write",
     "knip": "knip",
+    "api:types": "openapi-typescript openapi.json -o src/lib/types/api.gen.ts",
     "test": "bun test src"
   },
   "dependencies": {
@@ -29,6 +30,7 @@
     "@types/react-dom": "^19.3.0",
     "babel-plugin-react-compiler": "1.0.0",
     "knip": "^6.41.0",
+    "openapi-typescript": "^7.13.0",
     "tailwindcss": "^4.3.3",
     "typescript": "^5.9.3"
   },

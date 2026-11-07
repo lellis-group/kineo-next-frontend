@@ -169,18 +169,20 @@ export async function apiFetch<T>(
  * `unknown` is not an error. A screen that can still show something useful from
  * an empty list should; that is each caller's decision.
  */
-export type CollectionShape<T> =
+export type CollectionShape<T, TMeta = ApiPaginated<T>["meta"]> =
   | { kind: "array"; rows: T[] }
-  | { kind: "envelope"; rows: T[]; meta: ApiPaginated<T>["meta"] }
+  | { kind: "envelope"; rows: T[]; meta: TMeta }
   /** Nothing readable came back — `rows` is empty so callers can spread it. */
   | { kind: "unknown"; rows: [] };
 
-export function unwrapCollection<T>(raw: unknown): CollectionShape<T> {
+export function unwrapCollection<T, TMeta = ApiPaginated<T>["meta"]>(
+  raw: unknown,
+): CollectionShape<T, TMeta> {
   if (Array.isArray(raw)) {
     return { kind: "array", rows: raw };
   }
   if (raw && typeof raw === "object" && "data" in raw && "meta" in raw) {
-    const envelope = raw as ApiPaginated<T>;
+    const envelope = raw as { data: T[]; meta: TMeta };
     return { kind: "envelope", rows: envelope.data ?? [], meta: envelope.meta };
   }
   return { kind: "unknown", rows: [] };

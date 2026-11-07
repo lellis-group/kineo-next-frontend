@@ -279,8 +279,8 @@ export function adaptApplicationEntry(
     rejectionReason: application.rejectionReason?.trim() || undefined,
     rejectionBucket: application.rejectionBucket ?? null,
     withdrawnReason: application.withdrawnReason?.trim() || undefined,
-    viewedAt: application.viewedAt,
-    respondedAt: application.respondedAt,
+    viewedAt: application.viewedAt ?? undefined,
+    respondedAt: application.respondedAt ?? undefined,
     listing: adaptListingInfo(application),
   };
 }

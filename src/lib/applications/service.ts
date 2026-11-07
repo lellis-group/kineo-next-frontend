@@ -102,7 +102,10 @@ async function fetchMyApplications(
     transport,
   ).catch(notFoundAs<unknown>(null));
 
-  const shape = unwrapCollection<ApiApplication>(raw);
+  const shape = unwrapCollection<
+    ApiApplication,
+    ApiApplicationPage<ApiApplication>["meta"]
+  >(raw);
 
   if (shape.kind === "envelope") {
     return { applications: shape.rows, meta: shape.meta };
@@ -208,10 +211,7 @@ export async function fetchApplicationsData(
     },
     // Server-computed totals — never derived from the loaded page. Completed
     // from a partial breakdown so a missing status reads 0, not undefined.
-    counts: withZeroCounts(
-      { total: meta.total, ...meta.counts },
-      COUNT_KEYS.applicationStatus,
-    ),
+    counts: withZeroCounts(meta.counts, COUNT_KEYS.applicationStatus),
     // Zeroed when absent, for the same reason as the status totals: a chip claiming
     // a situation exists when the backend confirmed nothing is worse than one that
     // shows nothing.
