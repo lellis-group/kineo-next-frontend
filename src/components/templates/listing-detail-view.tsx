@@ -27,6 +27,14 @@ export interface ListingDetailViewProps {
   feedback?: string;
   onClose: () => void;
   onCancel: () => void;
+  /** Decisions on one received application — write then re-read in one call. */
+  onApplicationViewed: (applicationId: string) => Promise<void>;
+  onApplicationShortlist: (applicationId: string) => Promise<void>;
+  onApplicationAccept: (applicationId: string) => Promise<void>;
+  onApplicationReject: (
+    applicationId: string,
+    reason: string | undefined,
+  ) => Promise<void>;
 }
 
 /**
@@ -49,6 +57,10 @@ export function ListingDetailView({
   feedback,
   onClose,
   onCancel,
+  onApplicationViewed,
+  onApplicationShortlist,
+  onApplicationAccept,
+  onApplicationReject,
 }: ListingDetailViewProps) {
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 sm:py-10">
@@ -133,7 +145,16 @@ export function ListingDetailView({
           <ul className="mt-6 space-y-5">
             {received.applications.map((application) => (
               <li key={application.id}>
-                <ReceivedApplicationCard application={application} />
+                <ReceivedApplicationCard
+                  application={application}
+                  actions={{
+                    onMarkViewed: () => onApplicationViewed(application.id),
+                    onShortlist: () => onApplicationShortlist(application.id),
+                    onAccept: () => onApplicationAccept(application.id),
+                    onReject: (reason) =>
+                      onApplicationReject(application.id, reason),
+                  }}
+                />
               </li>
             ))}
           </ul>

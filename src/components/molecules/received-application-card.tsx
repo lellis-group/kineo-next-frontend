@@ -3,6 +3,7 @@ import { Badge } from "@/components/atoms/badge";
 import { MapPinIcon } from "@/components/atoms/icons";
 import { InlineAlert } from "@/components/molecules/inline-alert";
 import { MetaRow, MetaRowItem } from "@/components/molecules/meta-row";
+import { ReceivedApplicationActions } from "@/components/molecules/received-application-actions";
 import { VerifiedBadge } from "@/components/molecules/verified-badge";
 import { cn } from "@/lib/cn";
 import { formatRelativeTime } from "@/lib/format";
@@ -31,9 +32,21 @@ import {
  */
 export function ReceivedApplicationCard({
   application,
+  actions,
   className,
 }: {
   application: ReceivedApplication;
+  /**
+   * Present only while the parent still lets the practice decide — a listing
+   * outside circulation shows no buttons at all, which is cheaper and more
+   * honest than a disabled row explaining itself five lines down.
+   */
+  actions?: {
+    onShortlist: () => Promise<void>;
+    onAccept: () => Promise<void>;
+    onReject: (reason: string | undefined) => Promise<void>;
+    onMarkViewed: () => Promise<void>;
+  };
   className?: string;
 }) {
   const { applicant } = application;
@@ -142,6 +155,18 @@ export function ReceivedApplicationCard({
           </MetaRowItem>
         )}
       </MetaRow>
+
+      {actions &&
+        (application.status === "PENDING" ||
+          application.status === "SHORTLISTED") && (
+          <ReceivedApplicationActions
+            application={application}
+            onShortlist={actions.onShortlist}
+            onAccept={actions.onAccept}
+            onReject={actions.onReject}
+            onMarkViewed={actions.onMarkViewed}
+          />
+        )}
     </article>
   );
 }

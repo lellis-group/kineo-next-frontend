@@ -8,14 +8,18 @@ import { useListingAction } from "@/lib/hooks/use-listing-action";
 import { usePaginatedResource } from "@/lib/hooks/use-paginated-resource";
 import {
   ACTION_SUCCESS,
+  acceptReceivedApplication,
   fetchListingApplications,
   fetchMyListing,
   LISTING_APPLICATIONS_PAGE_SIZE,
   type ListingApplicationsData,
   listingReadErrorMessage,
   type MyListing,
+  markApplicationViewed,
   RECEIVED_FILTERS,
   type ReceivedApplicationsFilter,
+  rejectReceivedApplication,
+  shortlistReceivedApplication,
 } from "@/lib/listings";
 import type { ApplicationStatus } from "@/lib/types/api";
 
@@ -112,6 +116,52 @@ export function ListingDetailContainer({
   });
 
   /**
+   * The decisions on one received application, made to look like one call: the
+   * write lands, then the bytes it invalidated come back before the button
+   * unlocks (the same re-read the listing actions make, since acceptance
+   * recomputes the listing status and settles the other candidates). No global
+   * feedback and no per-listing `acting`: the row moving status on the page is
+   * its own confirmation, and a refusal sentence is rendered by the card that
+   * has the row in front of it — the page banner cannot say which card was
+   * busy.
+   */
+  const refreshAfterDecision = useCallback(async () => {
+    const [freshListing, freshReceived] = await Promise.all([
+      fetchMyListing(listingId),
+      fetchListingApplications(listingId, {
+        status: statusForFilter(filter),
+        page,
+        limit: LISTING_APPLICATIONS_PAGE_SIZE,
+      }),
+    ]);
+    setListing(freshListing);
+    replace(freshReceived);
+  }, [listingId, filter, page, replace]);
+
+  const onApplicationViewed = useCallback(
+    (applicationId: string) =>
+      markApplicationViewed(applicationId).then(refreshAfterDecision),
+    [refreshAfterDecision],
+  );
+  const onApplicationShortlist = useCallback(
+    (applicationId: string) =>
+      shortlistReceivedApplication(applicationId).then(refreshAfterDecision),
+    [refreshAfterDecision],
+  );
+  const onApplicationAccept = useCallback(
+    (applicationId: string) =>
+      acceptReceivedApplication(applicationId).then(refreshAfterDecision),
+    [refreshAfterDecision],
+  );
+  const onApplicationReject = useCallback(
+    (applicationId: string, reason: string | undefined) =>
+      rejectReceivedApplication(applicationId, reason).then(
+        refreshAfterDecision,
+      ),
+    [refreshAfterDecision],
+  );
+
+  /**
    * One listing is in scope here, so the scoping the list screen needs (which
    * card shows the message) collapses to the message itself.
    *
@@ -145,6 +195,10 @@ export function ListingDetailContainer({
       feedback={action.feedback?.message}
       onClose={() => action.run(listingId, "close", ACTION_SUCCESS.close)}
       onCancel={() => action.run(listingId, "cancel", ACTION_SUCCESS.cancel)}
+      onApplicationViewed={onApplicationViewed}
+      onApplicationShortlist={onApplicationShortlist}
+      onApplicationAccept={onApplicationAccept}
+      onApplicationReject={onApplicationReject}
     />
   );
 }

@@ -38,11 +38,15 @@ import {
   fetchListingPageOf,
 } from "./listings/browse-service";
 import {
+  acceptReceivedApplication,
   cancelListing,
   closeListing,
   fetchListingApplications,
   fetchMyListing,
   fetchMyListings,
+  markApplicationViewed,
+  rejectReceivedApplication,
+  shortlistReceivedApplication,
 } from "./listings/service";
 import {
   createProfile,
@@ -139,6 +143,22 @@ const AUDITED: readonly AuditCase[] = [
     operation: "POST /applications",
     call: (t) => applyToListing("l0", undefined, t),
   },
+  {
+    operation: "PATCH /applications/{id}/view",
+    call: (t) => markApplicationViewed("a0", t),
+  },
+  {
+    operation: "PATCH /applications/{id}/shortlist",
+    call: (t) => shortlistReceivedApplication("a0", t),
+  },
+  {
+    operation: "PATCH /applications/{id}/accept",
+    call: (t) => acceptReceivedApplication("a0", t),
+  },
+  {
+    operation: "PATCH /applications/{id}/reject",
+    call: (t) => rejectReceivedApplication("a0", undefined, t),
+  },
 
   // Profile
   {
@@ -163,9 +183,6 @@ const AUDITED: readonly AuditCase[] = [
  * the list is a plan rather than an apology:
  *
  * - `GET /`, `/ping`, `/health` — welcome message and probes; no screen.
- * - `PATCH /applications/{id}/view|shortlist|accept|reject` — the practice
- *   decision screens are built against the live backend first (PLAN files at
- *   the repository root).
  * - `POST /replacement-listings`, `PATCH|DELETE /replacement-listings/{id}`,
  *   `PATCH /replacement-listings/{id}/publish` — the owner create, edit and
  *   publish screens, next consumers of the listings document.
@@ -178,10 +195,6 @@ const NOT_CONSUMED = [
   "GET /",
   "GET /ping",
   "GET /health",
-  "PATCH /applications/{id}/view",
-  "PATCH /applications/{id}/shortlist",
-  "PATCH /applications/{id}/accept",
-  "PATCH /applications/{id}/reject",
   "POST /replacement-listings",
   "PATCH /replacement-listings/{id}",
   "DELETE /replacement-listings/{id}",

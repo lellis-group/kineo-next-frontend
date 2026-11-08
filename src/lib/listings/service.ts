@@ -218,6 +218,72 @@ export async function fetchListingApplications(
 }
 
 /**
+ * PATCH /applications/:id — the decisions the listing's owner takes on one
+ * application it received.
+ *
+ * The views re-read both halves after a decision instead of patching a row
+ * locally, because accepting fills the listing and rejects the siblings in the
+ * same transaction — beyond anything a local row update could keep in step.
+ *
+ * Eligibility stays with the backend: it is what checks ownership (403), an
+ * application that moved between render and submit (400
+ * APPLICATION_NOT_SHORTLISTABLE / NOT_ACCEPTABLE / NOT_REJECTABLE), and a
+ * listing that left circulation before an acceptance landed (400
+ * APPLICATION_LISTING_NOT_ACCEPTING); `applicationDecisionErrorMessage` turns
+ * each into a French sentence. All four answer 200 with the stored row, and it
+ * is the re-read the reader sees — the body carries no new information.
+ */
+
+/** PATCH /applications/:id/view — marks a candidate's application as read. */
+export async function markApplicationViewed(
+  id: string,
+  transport?: ApiTransport,
+): Promise<void> {
+  await apiFetch(`/applications/${id}/view`, { method: "PATCH" }, transport);
+}
+
+/** PATCH /applications/:id/shortlist — pending → shortlisted. */
+export async function shortlistReceivedApplication(
+  id: string,
+  transport?: ApiTransport,
+): Promise<void> {
+  await apiFetch(
+    `/applications/${id}/shortlist`,
+    { method: "PATCH" },
+    transport,
+  );
+}
+
+/**
+ * PATCH /applications/:id/accept — fills the listing and rejects the other
+ * active applications server-side, so it must be confirmed by the reader: it
+ * is the one decision that changes lives beyond this row.
+ */
+export async function acceptReceivedApplication(
+  id: string,
+  transport?: ApiTransport,
+): Promise<void> {
+  await apiFetch(`/applications/${id}/accept`, { method: "PATCH" }, transport);
+}
+
+/** PATCH /applications/:id/reject — optional reason shared with the applicant. */
+export async function rejectReceivedApplication(
+  id: string,
+  reason: string | undefined,
+  transport?: ApiTransport,
+): Promise<void> {
+  const trimmed = reason?.trim();
+  await apiFetch(
+    `/applications/${id}/reject`,
+    {
+      method: "PATCH",
+      body: JSON.stringify(trimmed ? { rejectionReason: trimmed } : {}),
+    },
+    transport,
+  );
+}
+
+/**
  * One of the user's own listings, by id — the `/listings/mine/[id]` page.
  *
  * The resource endpoint answers for every status the owner can see, drafts and
