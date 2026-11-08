@@ -194,7 +194,6 @@ export async function fetchApplicationsData(
   transport?: ApiTransport,
 ): Promise<ApplicationsData> {
   const { applications, meta } = await fetchMyApplications(params, transport);
-
   // Newest submissions first — matches the backend orderBy, kept as a guard
   const entries: ApplicationEntry[] = applications
     .slice()
@@ -251,12 +250,17 @@ function echoedApplicationEntry(raw: unknown): ApplicationEntry | null {
 export async function withdrawApplication(
   id: string,
   withdrawnReason?: string,
+  transport?: ApiTransport,
 ): Promise<ApplicationEntry | null> {
   const trimmed = withdrawnReason?.trim();
-  const raw = await apiFetch<unknown>(`/applications/${id}/withdraw`, {
-    method: "PATCH",
-    body: JSON.stringify(trimmed ? { withdrawnReason: trimmed } : {}),
-  });
+  const raw = await apiFetch<unknown>(
+    `/applications/${id}/withdraw`,
+    {
+      method: "PATCH",
+      body: JSON.stringify(trimmed ? { withdrawnReason: trimmed } : {}),
+    },
+    transport,
+  );
 
   return echoedApplicationEntry(raw);
 }
@@ -269,11 +273,16 @@ export async function withdrawApplication(
 export async function updateApplicationMessage(
   id: string,
   message: string,
+  transport?: ApiTransport,
 ): Promise<ApplicationEntry | null> {
-  const raw = await apiFetch<unknown>(`/applications/${id}`, {
-    method: "PATCH",
-    body: JSON.stringify({ message: message.trim() }),
-  });
+  const raw = await apiFetch<unknown>(
+    `/applications/${id}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({ message: message.trim() }),
+    },
+    transport,
+  );
 
   return echoedApplicationEntry(raw);
 }

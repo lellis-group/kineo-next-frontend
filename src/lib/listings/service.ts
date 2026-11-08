@@ -254,13 +254,19 @@ export async function fetchMyListing(
  * a filled listing. The applicant reads the difference in their rejection
  * reason, which is why the confirmation copy spells it out.
  */
-export async function closeListing(id: string): Promise<void> {
-  await mutateListing(id, "close");
+export async function closeListing(
+  id: string,
+  transport?: ApiTransport,
+): Promise<void> {
+  await mutateListing(id, "close", transport);
 }
 
 /** PATCH /replacement-listings/:id/cancel — called off before it is filled. */
-export async function cancelListing(id: string): Promise<void> {
-  await mutateListing(id, "cancel");
+export async function cancelListing(
+  id: string,
+  transport?: ApiTransport,
+): Promise<void> {
+  await mutateListing(id, "cancel", transport);
 }
 
 /**
@@ -277,8 +283,11 @@ export async function cancelListing(id: string): Promise<void> {
 async function mutateListing(
   id: string,
   action: ListingActionKind,
+  transport?: ApiTransport,
 ): Promise<void> {
-  await apiFetch(`/replacement-listings/${id}/${action}`, {
-    method: "PATCH",
-  });
+  await apiFetch(
+    `/replacement-listings/${id}/${action}`,
+    { method: "PATCH" },
+    transport,
+  );
 }

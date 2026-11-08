@@ -47,22 +47,32 @@ export const fetchMyProfile = cache(
 /** POST /profile — creates the profile for the current user (201, 403, 409). */
 export async function createProfile(
   payload: ProfileFormData,
+  transport?: ApiTransport,
 ): Promise<ApiProfile> {
-  return apiFetch<ApiProfile>("/profile", {
-    method: "POST",
-    body: JSON.stringify(payload),
-  });
+  return apiFetch<ApiProfile>(
+    "/profile",
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+    transport,
+  );
 }
 
 /** PATCH /profile/{id} — partial update of an existing profile. */
 export async function updateProfile(
   id: string,
   payload: ProfileFormData,
+  transport?: ApiTransport,
 ): Promise<ApiProfile> {
-  return apiFetch<ApiProfile>(`/profile/${id}`, {
-    method: "PATCH",
-    body: JSON.stringify(payload),
-  });
+  return apiFetch<ApiProfile>(
+    `/profile/${id}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    },
+    transport,
+  );
 }
 
 /**
