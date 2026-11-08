@@ -1,3 +1,4 @@
+import { Chip } from "@/components/atoms/chip";
 import { cn } from "@/lib/cn";
 
 export interface FilterChipOption<T extends string> {
@@ -37,13 +38,9 @@ export function FilterChips<T extends string>({
       {options.map((option) => {
         const active = option.id === value;
         return (
-          <button
+          <Chip
             key={option.id}
-            type="button"
-            className={cn(
-              "chip shrink-0 whitespace-nowrap",
-              active && "is-active",
-            )}
+            className="shrink-0 whitespace-nowrap"
             aria-pressed={active}
             onClick={() => onChange(option.id)}
           >
@@ -51,7 +48,7 @@ export function FilterChips<T extends string>({
             {typeof option.count === "number" && (
               <span className="font-normal"> ({option.count})</span>
             )}
-          </button>
+          </Chip>
         );
       })}
     </fieldset>

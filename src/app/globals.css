@@ -1,13 +1,42 @@
 @import "tailwindcss";
+/*
+ * MapLibre GL's stylesheet, imported here so the map component carries no CSS
+ * import of its own: in the App Router a global import is reserved for the root.
+ *
+ * `layer(components)` is not cosmetic. Tailwind ranges its utilities across CSS
+ * layers, and a sheet imported without one arrives **outside** every layer —
+ * where it beats anything inside `@layer components`, whatever the specificity.
+ * Without this `layer()`, the handful of `.maplibregl-*` rules further down did
+ * not apply: the popup kept its white background and the zoom controls their
+ * light theme.
+ */
+@import "maplibre-gl/dist/maplibre-gl.css" layer(components);
 
 :root {
   color-scheme: dark;
 
-  --background: #11100f;
-  --surface: #201f1e;
-  --surface-2: #262523;
-  --surface-3: #2d2b28;
-  --surface-hover: #2a2826;
+  /*
+   * The page is lighter than the cards that sit on it.
+   *
+   * This is inverted from what this sheet used to carry — surface lighter than
+   * background — because the reference dashboard this product's console screens
+   * are built against draws it the other way round: the page is a warm dark
+   * grey and every card on it is a near-black box sitting *proud* of that grey,
+   * read from its own edge rather than from a border.
+   *
+   * With the old arrangement the cards were the lightest thing on the screen and
+   * the page read as a hole behind them, which is the reverse of the reference:
+   * there, the page is the surface and the cards are the objects.
+   *
+   * Warmth follows the palette rather than the previous neutral greys — the
+   * brand's cream (`--primary`) pulls its opposite, a brown-black, so the greys
+   * lean into it instead of sitting neutral beside it.
+   */
+  --background: #1c1a16;
+  --surface: #131211;
+  --surface-2: #1d1b18;
+  --surface-3: #252320;
+  --surface-hover: #201e1a;
 
   --foreground: #ffffff;
   --muted: #a6a29a;
@@ -15,11 +44,24 @@
 
   --primary: #d7d1b0;
   --primary-hover: #e3ddc4;
-  --primary-foreground: #11100f;
+  --primary-foreground: #131211;
 
   --border: rgb(255 255 255 / 7%);
   --border-strong: rgb(255 255 255 / 13%);
   --ring: rgb(215 209 176 / 35%);
+
+  /*
+   * The map's own paper.
+   *
+   * The console is dark and the reference map is not: it is a light warm sheet
+   * of streets, which is what makes it the one bright plane on the screen in the
+   * reference too. This is the colour behind the raster tiles and under the
+   * loading and failure states, so the map never flashes a dark rectangle
+   * before its tiles arrive — the surface token would be wrong here precisely
+   * because the map is not a surface.
+   */
+  --map-base: #e9e5d9;
+  --map-ink: #16150f;
 
   --danger: #f87171;
   --danger-hover: #f55757;
@@ -32,6 +74,22 @@
   --shadow-pop: 0 16px 40px rgb(0 0 0 / 45%);
 
   --radius-control: 0.75rem;
+
+  /*
+   * The radius every card-shaped box is drawn at.
+   *
+   * One token because the console's panels, the results table's frame, the map
+   * and the marketing cards are one family: the reference's cards are rounded far
+   * more generously than the `1rem` this used to be, and a single value is what
+   * keeps a panel and the map beside it reading as one screen rather than as
+   * boxes assembled from a scale.
+   *
+   * Larger than `--radius-control` on purpose. A control is a control at either
+   * size; a card is read as a card by how little of its corner the reader has to
+   * imagine, and at 20px on a 300px panel that is already a third of the half
+   * corner.
+   */
+  --radius-card: 1.25rem;
 }
 
 @theme inline {
@@ -49,6 +107,8 @@
   --color-border: var(--border);
   --color-border-strong: var(--border-strong);
   --color-ring: var(--ring);
+  --color-map-base: var(--map-base);
+  --color-map-ink: var(--map-ink);
   --color-danger: var(--danger);
   --color-danger-hover: var(--danger-hover);
   --color-danger-foreground: var(--danger-foreground);
@@ -57,28 +117,26 @@
   --color-info: var(--info);
 
   --radius-control: var(--radius-control);
+  --radius-card: var(--radius-card);
 
   /*
-   * Unité d'espacement de base.
+   * The base spacing unit.
    *
-   * Tailwind vaut 0.25rem par cran, et l'interface.data d'origine était écrite
-   * avec cette échelle : `gap-2` (8px), `mt-3` (12px), `p-4` (16px). Sur une
-   * pagemarketing avec de grandes images ça passe ; sur les écrans métier —
-   * listes de candidatures, fiches annonces, tableaux de bord — ça empile les
-   * blocs les uns sur les autres et il n'y a plus de respiration entre deux
-   * sous-composants.
+   * Tailwind steps by 0.25rem, and the original design system was written against
+   * that scale: `gap-2` (8px), `mt-3` (12px), `p-4` (16px). On a marketing page
+   * with large images that is fine; on the working screens — application lists,
+   * listing details, dashboards — it stacks the blocks on top of one another and
+   * leaves no breathing room between two sub-components.
    *
-   * Remonter l'unité ici plutôt que dans chaque composant est la seule façon
-   * que le changement soit cohérent : toutes les classes d'espacement
-   * existent déjà dans le code, elles sont simplement calculées à partir de ce
-   * token. Passer de 0.25rem à 0.3rem multiplie chaque espacement par 1.2 sans
-   * toucher une seule classe utilitaire — `gap-3` vaut 14.4px, `p-6` 28.8px,
-   * `space-y-5` 30px.
+   * Raising the unit here rather than in each component is the only way the change
+   * can be coherent: every spacing class already exists in the code, it is simply
+   * computed from this token. Going from 0.25rem to 0.3rem multiplies every
+   * spacing by 1.2 without touching a single utility class — `gap-3` is 14.4px,
+   * `p-6` 28.8px, `space-y-5` 30px.
    *
-   * Les valeurs en `rem` écrites à la main (`.chip`, `.badge`, `.field-input`,
-   * les rayons) ne suivent pas : elles sont ajustées dans le bloc
-   * `@layer components` ci-dessous, sinon les contrôles rétréciraient
-   * relativement à la mise en page qui les contient.
+   * Hand-written `rem` values (`.chip`, `.badge`, `.field-input`, the radii) do
+   * not follow: they are adjusted in the `@layer components` block below, or the
+   * controls would shrink relative to the layout holding them.
    */
   --spacing: 0.3rem;
 
@@ -102,8 +160,8 @@
       sans-serif;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
-    /* Garde-fou : aucun enfant ne doit créer de scroll horizontal de page.
-       Le scroll interne (ex. chips) reste géré par overflow-x-auto local. */
+    /* Guard rail: no child should create horizontal page scroll.
+       Local scrolling (chips, for one) stays handled by its own overflow-x-auto. */
     overflow-x: clip;
   }
 
@@ -185,14 +243,59 @@
     color: var(--primary-foreground);
   }
 
+  /*
+   * The three other sizes a chip is drawn at, and the only reason `Chip` exists
+   * rather than `className="chip"`.
+   *
+   * `.chip`'s own height is a touch target — 3rem of padding and a floor — and
+   * that is right for a filter row and wrong elsewhere: a chip beside another
+   * control on a toolbar wants to be shorter without losing it, a chip inside a
+   * popover has no room for a floor at all, and the one standing alone in that
+   * popover has a row to itself and the room to be comfortable in. All three were
+   * the same numbers written inline at three call sites.
+   *
+   * These are the theme's own numbers, spelled out: the call sites used `px-3` and
+   * `py-1.5` / `py-2`, which on this sheet's `--spacing` of 0.3rem are 0.9rem and
+   * 0.45 / 0.6rem — *not* the 0.75 / 0.375 / 0.5rem a reader of the source would
+   * assume. Writing those decimals instead is how the chips lost four pixels of
+   * padding each when this was extracted, so the scaled values are what is here,
+   * with the utilities they came from named beside them.
+   */
+  .chip-sm {
+    /* was: min-h-0 px-3 py-1.5 */
+    min-height: 0;
+    padding: 0.45rem 0.9rem;
+  }
+
+  .chip-md {
+    /* was: min-h-[2.375rem] px-3 py-1.5 */
+    min-height: 2.375rem;
+    padding: 0.45rem 0.9rem;
+  }
+
+  .chip-block {
+    /* was: min-h-0 w-full px-3 py-2 */
+    min-height: 0;
+    padding: 0.6rem 0.9rem;
+    width: 100%;
+  }
+
   .badge {
     display: inline-flex;
     align-items: center;
     gap: 0.375rem;
-    /* Same corner radius as the Button atom (rounded-[0.625rem]). */
-    border-radius: 0.625rem;
-    padding: 0.3125rem 0.75rem;
-    font-size: 0.8125rem;
+    /* A squarer chip, and a little wider than the pill it used to be.
+     *
+     * The old one was a pill (`border-radius: 9999px`) with a narrow padding,
+     * so a medium word like « En attente » still fit but the chip felt like a
+     * thin stripe and the text was tight inside its own border. The choice of
+     * `border-radius` follows the control scale rather than a pill radius, and
+     * the padding grows on both axes so the label has room to breathe without
+     * making the chip sprawling on a small toolbar. 
+     */ 
+    border-radius: 0.5rem;
+    padding: 0.375rem 0.875rem;
+    font-size: 0.75rem;
     font-weight: 500;
     line-height: 1.2;
     white-space: normal;
@@ -240,15 +343,30 @@
   .table thead th {
     text-align: left;
     font-weight: 500;
-    font-size: 0.8125rem;
+    /*
+     * 12px, and muted. The reference's column labels sit well under the row
+     * text and at the edge of legibility: they are there to name the column for
+     * a reader who is already looking at it, not to be read first.
+     */
+    font-size: 0.75rem;
     color: var(--muted);
-    padding: 0.75rem 1rem;
+    padding: 0.875rem 1rem;
     border-bottom: 1px solid var(--border);
     white-space: nowrap;
   }
 
   .table tbody td {
-    padding: 0.875rem 1rem;
+    /*
+     * The row height is the reference's: a two-line cell (title over specialty)
+     * with this much air above and below is what makes the rows read as rows
+     * rather than as a dense list.
+     *
+     * A literal `rem`, not a spacing step — this block is hand-written CSS and the
+     * theme's `--spacing` does not reach it. At this scale the pair is 14px of
+     * air on the header and 16px on a row, which is roughly the reference's own
+     * 12-to-18px.
+     */
+    padding: 1rem;
     border-bottom: 1px solid var(--border);
     vertical-align: middle;
   }
@@ -427,9 +545,12 @@
   }
 
   .card-lift {
+    outline: 2px solid transparent;
+    outline-offset: 2px;
     transition:
       transform 180ms ease,
-      box-shadow 240ms ease;
+      box-shadow 240ms ease,
+      outline-color 400ms ease;
   }
 
   .card-lift:hover {
@@ -443,6 +564,96 @@
 
   .card-lift:hover .icon-tilt {
     transform: rotate(-6deg) scale(1.08);
+  }
+
+  /*
+   * The card's half of the map → list spotlight.
+   *
+   * The same two layers as the table row: an outline that fades through a
+   * transition, and a sheen drawn on a pseudo-element. Neither touches the
+   * card's own `row-enter` animation, so clearing the spotlight cannot replay
+   * the entrance.
+   */
+  .card-lift.row-spotlight {
+    position: relative;
+    overflow: hidden;
+    outline-color: var(--primary);
+  }
+
+  .card-lift.row-spotlight::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(
+      100deg,
+      transparent 20%,
+      color-mix(in srgb, var(--primary) 14%, transparent) 50%,
+      transparent 80%
+    );
+    transform: translateX(-120%);
+    animation-duration: 900ms;
+    animation-timing-function: cubic-bezier(0.22, 0.68, 0.28, 1);
+    animation-fill-mode: both;
+  }
+
+  .card-lift.row-spotlight-a::after {
+    animation-name: kineo-spotlight-sheen-a;
+  }
+
+  .card-lift.row-spotlight-b::after {
+    animation-name: kineo-spotlight-sheen-b;
+  }
+
+  /*
+   * Two identical keyframe sets, one per modifier.
+   *
+   * CSS restarts an animation when its `animation-name` changes, not when a
+   * custom property or a class that keeps the same name changes. The pair is
+   * what makes a second pick of the same posting sweep again.
+   */
+  @keyframes kineo-spotlight-sheen-a {
+    from {
+      transform: translateX(-120%);
+    }
+    to {
+      transform: translateX(120%);
+    }
+  }
+
+  @keyframes kineo-spotlight-sheen-b {
+    from {
+      transform: translateX(-120%);
+    }
+    to {
+      transform: translateX(120%);
+    }
+  }
+
+  /*
+   * The pager's page count, when a pick turned the list to another page.
+   *
+   * The row is the main signal; this is the one other thing that changed, and
+   * naming it in the same gesture is what stops a reader from wondering why the
+   * table was replaced.
+   */
+  @keyframes kineo-pager-spotlight {
+    0% {
+      color: var(--primary);
+      text-shadow: 0 0 14px color-mix(in srgb, var(--primary) 40%, transparent);
+    }
+    55% {
+      color: var(--primary);
+      text-shadow: 0 0 6px color-mix(in srgb, var(--primary) 20%, transparent);
+    }
+    100% {
+      color: var(--muted);
+      text-shadow: 0 0 0 transparent;
+    }
+  }
+
+  .pager-spotlight {
+    animation: kineo-pager-spotlight 1.8s ease-out both;
   }
 
   @property --reveal-delay {
@@ -464,6 +675,531 @@
     opacity: 1;
     transform: translateY(0);
   }
+
+  /*
+   * The browse screen's results arriving.
+   *
+   * The same family as `.hero-enter`, played on rows rather than page blocks:
+   * this screen has no above-the-fold to unfold, it has a list replaced all at
+   * once on every page, filter or sort change — and that replacement is the
+   * thing worth signalling, or the list simply changes with nothing saying so.
+   *
+   * The delay steps by rank, capped in the component (`rowEnterStyle`) rather
+   * than here: a twenty-row page would hold its last row back by close to half a
+   * second, and the reader then watches the top of the table arrive first.
+   *
+   * `translateY(8px)` and not the hero's 14-16 px: on a 60px-tall table row a
+   * wider travel reads as the page scrolling rather than as an arrival.
+   */
+  @property --row-delay {
+    syntax: "<time>";
+    initial-value: 0ms;
+    inherits: false;
+  }
+
+  @keyframes kineo-row-enter {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .row-enter {
+    animation: kineo-row-enter 420ms cubic-bezier(0.22, 0.68, 0.28, 1) both;
+    animation-delay: var(--row-delay);
+  }
+
+  /*
+   * The browse table's columns: a header has to label the text, not the gutter.
+   *
+   * A cell whose value carries a leading icon starts that text one gutter in, and
+   * the header above it has to start there too. Measured on this table, both sides
+   * were set from the same padding and disagreed by 31px on the first column and
+   * 24px on the three icon columns carrying one — the header was labelling the
+   * gutter, and the reader was measuring the column against the wrong edge.
+   *
+   * The gutter is a variable that the cells' own icon and gap are sized from, so
+   * the two sides cannot drift. They have: with the padding and the icon each
+   * hard-coded to their own number, nothing failed until one icon changed size.
+   *
+   * `--cell-icon` doubles as the line-height of every icon-bearing line — each
+   * cell sets `leading-[var(--cell-icon)]` beside an icon of
+   * `size-[var(--cell-icon)]`. An icon whose box equals the line it sits in is
+   * centred on that line by construction: no per-column `mt`, no nudge that only
+   * held for one font size. This is the fix for icons that were neither centred
+   * on their text nor aligned across the row.
+   */
+  .listings-table {
+    --cell-icon: 1.25rem;
+    --cell-gap: 0.5rem;
+    --cell-gutter: calc(var(--cell-icon) + var(--cell-gap));
+  }
+
+  .listings-table thead th.has-gutter {
+    padding-left: calc(1rem + var(--cell-gutter));
+  }
+
+  /*
+   * The column labels, pinned to the top of the scrolling box.
+   *
+   * The table lives in a box of fixed height (`RESULTS_BOX` in
+   * `listings-results-panel`), so its rows scroll — and a reader
+   * scrolled to row eight was looking at six cells whose names they
+   * had left behind. The header is what makes a column a column.
+   *
+   * The background is not optional: a sticky `th` is transparent by
+   * default, so the rows sliding under it would show through their
+   * labels. It carries the panel's own `surface`, the colour the
+   * rows sit on, which is what "opaque" means here.
+   *
+   * Scoped to `.listings-table` on purpose. `.table` is shared by
+   * every list in the product, and most of those lists are short
+   * enough to never scroll: a sticky header on a table that fits is
+   * a border that never moves, painted over rows that are already in
+   * view.
+   */
+  .listings-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--surface);
+  }
+
+  /*
+   * Centred, where the rule this replaced kept every column's first line on
+   * one row.
+   *
+   * The `top` this was — set so a two-line title cell and its one-line
+   * neighbours opened on the same line — priced out the moment rows began to
+   * stretch: `fill` hands a short page's spare height to the rows themselves,
+   * and a top-aligned cell poured all of it under its text, so with two or
+   * three rows on screen the content lived in the top quarter of every cell
+   * over a stretch of nothing. Centred, the air splits above and below and the
+   * content owns the middle, which is what a tall row reads as.
+   *
+   * Rows of natural height don't move: there the content *is* the height, so
+   * top and middle coincide. The one body case that still diffs is a wrapped
+   * title, which now centres its single-line neighbours instead of leading
+   * them — a fair trade, the more so because the detail row keeps its
+   * `align-top`: a candidates panel opens from the top of its own row, it does
+   * not float into the middle of one.
+   */
+  .listings-table tbody td {
+    vertical-align: middle;
+  }
+
+  /*
+   * The chosen row of the listings table, and the bar that says so.
+   *
+   * Carried by `box-shadow` rather than a `border-left` or a positioned
+   * `::before`: both of those reserve room — the row would change height on
+   * selection and the cell's content would shift by a hair. An inset shadow
+   * reserves nothing, and it is the only one of the three that survives the
+   * table's `border-collapse` without an edge-merging artefact.
+   *
+   * It reads `is-selected`, not `:hover`: the bar now marks a *choice* made in
+   * the list, which has to outlive the pointer that made it. Hover still washes
+   * the row lightly, because a reader sweeping the table needs to know which row
+   * the pointer is on — but the wash is a wash and the bar is the bar, and the
+   * two must never be the same thing.
+   */
+  .listings-table tbody td:first-child {
+    box-shadow: inset 0 0 0 transparent;
+    transition: box-shadow 200ms ease;
+  }
+
+  .listings-table tbody tr:hover td:first-child {
+    box-shadow: inset 2px 0 0 var(--border-strong);
+  }
+
+  .listings-table tbody tr.is-selected td:first-child {
+    box-shadow: inset 2px 0 0 var(--primary);
+  }
+
+  .listings-table tbody tr.is-selected {
+    background: var(--surface-2);
+  }
+
+  /*
+   * The row's half of the map → list spotlight.
+   *
+   * The outline and the background are transitions rather than animations, and
+   * the sheen lives on the cells' pseudo-element. Animating the row itself would
+   * change its `animation-name`, and removing the spotlight would then replay
+   * `row-enter` — a row that slides in a second time at the end of the glow.
+   *
+   * The outline is transparent at rest, so the row reserves no space for it and
+   * the table's geometry does not move when the glow arrives. `-2px` keeps it
+   * inside the scrolling frame, where an outer offset would be clipped.
+   */
+  .listings-table tbody tr {
+    outline: 2px solid transparent;
+    outline-offset: -2px;
+    transition:
+      background-color 300ms ease,
+      outline-color 400ms ease;
+  }
+
+  .listings-table tbody tr.row-spotlight {
+    outline-color: var(--primary);
+    background-color: color-mix(in srgb, var(--primary) 8%, var(--surface-2));
+  }
+
+  .listings-table tbody tr.row-spotlight td {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .listings-table tbody tr.row-spotlight td::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(
+      100deg,
+      transparent 20%,
+      color-mix(in srgb, var(--primary) 14%, transparent) 50%,
+      transparent 80%
+    );
+    transform: translateX(-120%);
+    animation-duration: 900ms;
+    animation-timing-function: cubic-bezier(0.22, 0.68, 0.28, 1);
+    animation-fill-mode: both;
+  }
+
+  /*
+   * A small stagger across the columns, so the sheen reads as one sweep over
+   * the row rather than six independent flashes.
+   */
+  .listings-table tbody tr.row-spotlight td:nth-child(2)::after {
+    animation-delay: 35ms;
+  }
+
+  .listings-table tbody tr.row-spotlight td:nth-child(3)::after {
+    animation-delay: 70ms;
+  }
+
+  .listings-table tbody tr.row-spotlight td:nth-child(4)::after {
+    animation-delay: 105ms;
+  }
+
+  .listings-table tbody tr.row-spotlight td:nth-child(5)::after {
+    animation-delay: 140ms;
+  }
+
+  .listings-table tbody tr.row-spotlight td:nth-child(6)::after {
+    animation-delay: 175ms;
+  }
+
+  .listings-table tbody tr.row-spotlight-a td::after {
+    animation-name: kineo-spotlight-sheen-a;
+  }
+
+  .listings-table tbody tr.row-spotlight-b td::after {
+    animation-name: kineo-spotlight-sheen-b;
+  }
+
+  /*
+   * MapLibre's own chrome, on the map's own paper.
+   *
+   * The map is a light plane now, so these controls follow it rather than the
+   * page: MapLibre's light theme is close to what the reference draws, and the
+   * rules below are about matching that sheet — a white pill, dark glyphs, one
+   * hairline between the two buttons — rather than repainting a dark one.
+   *
+   * They live here rather than in a tag injected by the component: no style that
+   * exists only after the first effect (so no flash of unstyled chrome on load),
+   * and no `getElementById` guard to keep it from being injected twice.
+   */
+
+  /*
+   * The marker's own box: sized by the hook, positioned by MapLibre, and never
+   * animated. See the golden rule above — the element MapLibre writes its
+   * `translate(-50%, -50%) translate(x, y)` onto is off limits for anything that
+   * changes what the box measures.
+   *
+   * Deliberately no `transition` rule here. MapLibre's own stylesheet puts
+   * `transition: opacity .2s` on this element for its marker fades, and a
+   * `transition` declaration of ours would replace that whole shorthand rather
+   * than add to it — silently costing a third-party behaviour to animate a
+   * property nothing here changes.
+   */
+
+  /* Keyboard focus must stay visible even when the pointer does not move. */
+  .maplibregl-marker:focus-visible {
+    outline: 2px solid var(--map-ink);
+    outline-offset: 2px;
+  }
+
+  /*
+   * The dot drawn inside that box.
+   *
+   * The box keeps the size the hook gave it; the transformation happens here.
+   * That is what makes the entrance animation possible without breaking the
+   * golden rule: a `scale` on this child does not resize the box MapLibre
+   * centres, so the `translate`'s percentage keeps aiming at the same point of
+   * the marker while the disc grows inside it.
+   *
+   * A near-black disc on the map's light paper, which is the reference's marker
+   * exactly. The shadow carries it off the streets: on a light map a dark disc
+   * separates by contrast alone, and the shadow is what keeps it from looking
+   * printed onto the tiles rather than laid over them.
+   */
+  .maplibregl-marker .marker-dot {
+    box-shadow: 0 2px 6px rgb(0 0 0 / 35%);
+    transition: box-shadow 150ms ease;
+  }
+
+  .maplibregl-marker:hover .marker-dot,
+  .maplibregl-marker:focus-visible .marker-dot,
+  .maplibregl-marker.is-preview .marker-dot {
+    /*
+      * The preview — a row being pointed at. A wash of ink rather than a ring of
+      * it, because it is the state that appears and vanishes with the pointer:
+      * a strong ring here would make the map flicker as the mouse crosses the
+      * table, which is the most repeated gesture on this screen.
+      */
+    box-shadow:
+      0 0 0 3px rgb(22 21 15 / 22%),
+      0 2px 6px rgb(0 0 0 / 35%);
+  }
+
+  /*
+   * The row being pointed at in the table, and its marker.
+   *
+   * The state was set by the hook and had no style at all: pointing at a row
+   * highlighted a marker indistinguishable from any other. The solid ring, with
+   * none of the preview's translucency, says "this is the one" — cream here rather
+   * than ink, because a cream ring on a dark disc over light streets is a claim
+   * about the *marker*, while a dark ring would only restate the disc.
+   *
+   * It is the *selection*'s ring now, not the hover's. The two were one state
+   * here, so the cream ring meant "the mouse is on this row" and left the moment
+   * it moved — and a choice made in the table now has to outlive the pointer that
+   * made it.
+   */
+  .maplibregl-marker.is-active .marker-dot {
+    box-shadow:
+      0 0 0 3px var(--primary),
+      0 2px 6px rgb(0 0 0 / 35%);
+  }
+
+  /*
+   * The points gathering and splitting.
+   *
+   * A zoom recomputes the groups and the hook replaces the markers involved. The
+   * only honest animation is therefore a crossfade: the old dot contracts where
+   * it stood, the new one unfolds into place. Positions are not interpolated —
+   * MapLibre writes each marker's transform on every frame, so a CSS transition
+   * on the movement would be overwritten by the next frame of the same zoom.
+   *
+   * `scale(0.4)` and not a plain fade: a dot that merely disappears and reappears
+   * reads as two separate events, where one round contracting while another
+   * expands reads as a single group changing shape.
+   *
+   * Exit shorter than enter on purpose — the dot being replaced should clear out
+   * of the way before its replacement starts arriving, or the two overlap and the
+   * count appears to double on the way through.
+   */
+  @keyframes kineo-marker-exit {
+    from {
+      opacity: 1;
+      transform: scale(1);
+    }
+    to {
+      opacity: 0;
+      transform: scale(0.4);
+    }
+  }
+
+  @keyframes kineo-marker-enter {
+    from {
+      opacity: 0;
+      transform: scale(0.4);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .maplibregl-marker.is-entering .marker-dot {
+    animation: kineo-marker-enter 240ms cubic-bezier(0.22, 0.68, 0.28, 1) both;
+  }
+
+  .maplibregl-marker.is-leaving .marker-dot {
+    animation: kineo-marker-exit 180ms ease-in both;
+  }
+
+  /*
+   * The zoom pill: white, round, one hairline between its two halves.
+   *
+   * `overflow: hidden` is what turns the group's own square box into the pill —
+   * MapLibre puts the radius on the buttons, not on the group, so the group's
+   * corners are only rounded once its own corners are clipped. Buttons are
+   * widened past the 29px MapLibre ships so the pill reads as a control at the
+   * scale the rest of the console draws its controls.
+   */
+  .maplibregl-ctrl-group {
+    background: #ffffff;
+    border: none;
+    border-radius: 9999px;
+    box-shadow: 0 2px 10px rgb(22 21 15 / 20%);
+    overflow: hidden;
+  }
+
+  .maplibregl-ctrl-group button {
+    width: 2.25rem;
+    height: 2.25rem;
+  }
+
+  .maplibregl-ctrl-group button + button {
+    border-top: 1px solid rgb(22 21 15 / 12%);
+  }
+
+  .maplibregl-ctrl-group button:hover {
+    background: #f0eee6;
+  }
+
+  /*
+   * The attribution pill.
+   *
+   * The control is created in compact mode, and MapLibre then writes
+   * `.maplibregl-ctrl-attrib.maplibregl-compact`: two classes against one for the
+   * rule here, so its own won and the pill kept MapLibre's default. Both forms are
+   * targeted rather than playing on specificity. Light to match the map it credits.
+   */
+  .maplibregl-ctrl-attrib,
+  .maplibregl-ctrl-attrib.maplibregl-compact {
+    background: #ffffff;
+    color: #6b675e;
+    border-radius: 9999px;
+    font-size: 0.6875rem;
+    box-shadow: 0 2px 10px rgb(22 21 15 / 12%);
+  }
+
+  .maplibregl-ctrl-attrib a,
+  .maplibregl-ctrl-attrib a:visited {
+    color: #6b675e;
+  }
+
+  /*
+   * The popup: the reference's marker card.
+   *
+   * A white card with dark ink, sitting on the light map — which is what the
+   * reference draws for the place it has selected, and the one element on the
+   * screen allowed to be as bright as the streets. That is the whole reason it
+   * is light: on this map, a near-black card would be the darkest thing on the
+   * plane rather than a note pinned to it.
+   *
+   * MapLibre paints the surface on `.maplibregl-popup-content` and leaves the
+   * frame transparent, so its default theme has to be brought back to the
+   * product's here. Its padding is the only one: the component adds no `p-4` of
+   * its own, which used to double MapLibre's margins.
+   *
+   * `z-index` above the filter bar, which is a sibling of the map and therefore
+   * passes in front of everything the map contains. A popup opened near the top
+   * edge disappeared under the bar.
+   */
+  .maplibregl-popup {
+    z-index: 20;
+  }
+
+  /*
+   * The popup opening.
+   *
+   * On `.maplibregl-popup-content`, never on `.maplibregl-popup`: the wrapper is
+   * what carries the positioning transform MapLibre recomputes on every map
+   * move. Animating that node fights it — the popup drifts off its tip while it
+   * appears, or worse, freezes at the old spot.
+   *
+   * `scale` and not `translateY`: the wrapper has already placed the popup to
+   * the pixel, and a vertical offset on top of that makes it slide across its
+   * marker instead of settling onto it.
+   *
+   * 180 ms: long enough to be seen, too short to be waited for.
+   */
+  @keyframes kineo-popup-enter {
+    from {
+      opacity: 0;
+      transform: scale(0.96);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .maplibregl-popup-content {
+    animation: kineo-popup-enter 180ms cubic-bezier(0.22, 0.68, 0.28, 1) both;
+    transform-origin: center;
+    margin: 0;
+    padding: 0.75rem 0.875rem;
+    max-width: 17rem;
+    border-radius: var(--radius-card);
+    background: #ffffff;
+    border: 1px solid rgb(22 21 15 / 10%);
+    box-shadow: 0 12px 32px rgb(22 21 15 / 18%);
+    color: var(--map-ink);
+  }
+
+  .maplibregl-popup-close-button {
+    right: 0.375rem;
+    top: 0.375rem;
+    padding: 0 0.25rem;
+    font-size: 1rem;
+    line-height: 1;
+    color: rgb(22 21 15 / 45%);
+  }
+
+  .maplibregl-popup-close-button:hover {
+    background: transparent;
+    color: var(--map-ink);
+  }
+
+  /* A heading running onto two lines must not slide under the close cross. */
+  .maplibregl-popup-content :is(h3, p) {
+    padding-right: 1.125rem;
+  }
+
+  /*
+   * The postings inside a popup, and the focus ring they should not wear.
+   *
+   * The global `:focus-visible` paints every focusable element a 2px primary
+   * outline. On a posting entry inside a white card that reads as a gold box
+   * drawn around one row of a small panel — heavy, and at odds with the rest of
+   * the card. The outline is dropped, but the entries keep a focus affordance all
+   * the same: a faint ink wash, so keyboard focus stays visible even where the
+   * gold ring does not.
+   */
+  .maplibregl-popup-content ul > li > button:focus-visible {
+    outline: none;
+    background: rgb(22 21 15 / 6%);
+  }
+
+  /*
+   * The tip is a directional border: its colour has to follow the card's, or a
+   * light triangle detaches against the map's background.
+   */
+  .maplibregl-popup-anchor-bottom .maplibregl-popup-tip {
+    border-top-color: #ffffff;
+  }
+
+  .maplibregl-popup-anchor-top .maplibregl-popup-tip {
+    border-bottom-color: #ffffff;
+  }
+
+  .maplibregl-popup-anchor-left .maplibregl-popup-tip {
+    border-right-color: #ffffff;
+  }
+
+  .maplibregl-popup-anchor-right .maplibregl-popup-tip {
+    border-left-color: #ffffff;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -474,5 +1210,15 @@
     transition-duration: 0s !important;
     /* biome-ignore lint/complexity/noImportantStyles: same — utilities win over plain media-query rules, the a11y guarantee needs !important */
     animation-duration: 0s !important;
+  }
+
+  /*
+   * The pager keeps a static tint instead of its flash: with every animation
+   * duration at zero, the keyframes' final colour would otherwise be applied
+   * immediately and the signal would disappear.
+   */
+  .pager-spotlight {
+    animation: none;
+    color: var(--primary);
   }
 }

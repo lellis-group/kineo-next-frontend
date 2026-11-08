@@ -6,6 +6,7 @@
 import { formatDateRange, formatRelativeTime } from "../format";
 import type {
   ApiApplication,
+  ApiApplicationStatusCounts,
   ApplicationDecisionSource,
   ApplicationStatus,
 } from "../types/api";
@@ -160,13 +161,20 @@ export const WITHDRAWABLE_STATUSES: ReadonlySet<ApplicationStatus> = new Set([
 export const AWAITING_DECISION_STATUSES: ReadonlySet<ApplicationStatus> =
   new Set(["PENDING", "SHORTLISTED"]);
 
-/** How many applications are still awaiting the practice's decision. */
-export function countAwaitingDecision(
-  applications: ReadonlyArray<{ status: ApplicationStatus }>,
+/**
+ * How many applications are still awaiting the practice's decision.
+ *
+ * Sums the server's totals rather than counting rows: this is a figure about the
+ * whole collection, and a caller holding one page of it would report a page.
+ */
+export function awaitingDecisionCount(
+  counts: ApiApplicationStatusCounts,
 ): number {
-  return applications.filter((application) =>
-    AWAITING_DECISION_STATUSES.has(application.status),
-  ).length;
+  let total = 0;
+  for (const status of AWAITING_DECISION_STATUSES) {
+    total += counts[status];
+  }
+  return total;
 }
 
 /** Label shown when the targeted listing no longer resolves. */
@@ -271,8 +279,8 @@ export function adaptApplicationEntry(
     rejectionReason: application.rejectionReason?.trim() || undefined,
     rejectionBucket: application.rejectionBucket ?? null,
     withdrawnReason: application.withdrawnReason?.trim() || undefined,
-    viewedAt: application.viewedAt,
-    respondedAt: application.respondedAt,
+    viewedAt: application.viewedAt ?? undefined,
+    respondedAt: application.respondedAt ?? undefined,
     listing: adaptListingInfo(application),
   };
 }
@@ -320,7 +328,14 @@ export function countForBucket(
   option: ApplicationsFilterOption,
   data: ApplicationsData,
 ): number {
-  return option.id === "ALL"
-    ? data.counts.total
-    : (data.counts[option.id as keyof typeof data.counts] ?? 0);
+  if (option.id === "ALL") {
+    return data.counts.total;
+  }
+  // Every non-ALL bucket names a backend status, so `status` is set — and it is
+  // the status key (e.g. "REJECTED"), not the presentation id (e.g. "REFUSED"),
+  // that the server's totals are keyed by. Using `id` here read `counts["REFUSED"]`
+  // on an object keyed by `ApplicationStatus`, which is always 0.
+  const status = option.status;
+  if (status === undefined) return 0;
+  return data.counts[status] ?? 0;
 }

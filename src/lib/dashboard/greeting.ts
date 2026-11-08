@@ -1,11 +1,5 @@
-import { countAwaitingDecision } from "../applications";
-import { countRecruitingListings } from "../listings";
 import { SPECIALTY_LABELS } from "../profile";
-import type {
-  ApiApplication,
-  ApiProfile,
-  ApiReplacementListing,
-} from "../types/api";
+import type { ApiProfile } from "../types/api";
 import type { DashboardData } from "./contracts";
 
 function formatSpecialty(specialty: ApiProfile["specialty"]): string {
@@ -13,17 +7,21 @@ function formatSpecialty(specialty: ApiProfile["specialty"]): string {
 }
 
 /**
- * Sous-titre de bienvenue : dit où en est le membre, sans répéter les chiffres.
+ * The welcome subtitle: says where the member stands, without repeating figures.
  *
- * Un tableau de bord n'a besoin qu'une fois de chaque nombre. Le greeting dit
- * maintenant ce qui mérite l'attention ; les chiffres restent une ligne plus
- * bas, et il n'y a qu'une version.
+ * A dashboard needs each number once. The greeting now says what deserves
+ * attention; the figures stay one line lower down, and there is one version of
+ * them.
+ *
+ * The two booleans arrive rather than the collections they were counted from: the
+ * greeting only ever asked whether each figure was above zero, and it used to be
+ * handed both collections in order to find out — which is how a home screen came
+ * to depend on reading every listing and every application.
  */
 export function adaptGreeting(
   profile: ApiProfile | null,
   userName: string | undefined,
-  listings: ApiReplacementListing[],
-  applications: ApiApplication[],
+  activity: { recruiting: boolean; outstanding: boolean },
 ): DashboardData["greeting"] {
   const displayName =
     userName ||
@@ -38,8 +36,7 @@ export function adaptGreeting(
     : "";
 
   // Only used to pick the line, never printed: the cards are the figures.
-  const recruiting = countRecruitingListings(listings) > 0;
-  const outstanding = countAwaitingDecision(applications) > 0;
+  const { recruiting, outstanding } = activity;
 
   let subtitle: string;
   if (recruiting && outstanding) {

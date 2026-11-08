@@ -12,7 +12,7 @@
  * caller has to offer a different way out for each of them.
  */
 
-import { ApiError, apiFetch } from "./api-client";
+import { ApiError, type ApiTransport, apiFetch } from "./api-client";
 import { classifyError } from "./api-errors";
 import { authCallFailed } from "./auth-errors";
 
@@ -83,7 +83,10 @@ export class AccountDeletionError extends Error {
 }
 
 /** POST /account/confirm-deletion — confirms deletion with the email token, no session needed. */
-export async function confirmAccountDeletion(token: string): Promise<void> {
+export async function confirmAccountDeletion(
+  token: string,
+  transport?: ApiTransport,
+): Promise<void> {
   try {
     await apiFetch<{ success: boolean; message: string }>(
       "/account/confirm-deletion",
@@ -91,6 +94,7 @@ export async function confirmAccountDeletion(token: string): Promise<void> {
         method: "POST",
         body: JSON.stringify({ token }),
       },
+      transport,
     );
   } catch (error) {
     if (error instanceof AccountDeletionError) {

@@ -8,7 +8,18 @@
  * decided again.
  */
 export const RPPS_DIGITS = 11;
-export const RPPS_PATTERN = new RegExp(`^\\d{${RPPS_DIGITS}}$`);
+/**
+ * The rule as a pattern *source*, so the two consumers that cannot share a
+ * `RegExp` both read it from here.
+ *
+ * The input's `pattern` attribute takes a string and anchors it itself, so it
+ * wants the bare `\d{11}`; the validator wants the anchored `RegExp`. Writing
+ * the attribute inline instead — `d{11}` — made it match the literal letter
+ * `d` eleven times, so a real number was rejected by the browser's own
+ * constraint validation and a French message never appeared.
+ */
+export const RPPS_PATTERN_SOURCE = `\\d{${RPPS_DIGITS}}`;
+export const RPPS_PATTERN = new RegExp(`^${RPPS_PATTERN_SOURCE}$`);
 export const RPPS_ERROR_MESSAGE = `Le numéro RPPS doit contenir exactement ${RPPS_DIGITS} chiffres.`;
 
 /** Mirrors the backend's `city` bound (`textField(100, "City")`). */
@@ -16,13 +27,41 @@ export const CITY_MAX_LENGTH = 100;
 
 import type { ApiProfile, ProfileType, Specialty } from "./types/api";
 
-export const SPECIALTY_LABELS: Record<Specialty, string> = {
-  GENERALIST: "Médecine générale",
-  DENTIST: "Chirurgien-dentiste",
-  DERMATOLOGIST: "Dermatologie",
-  PSYCHIATRIST: "Psychiatrie",
-  OTHER: "Autre spécialité",
+/**
+ * The specialties, each with the name it takes wherever there is room and the
+ * name it takes in a fixed-width column.
+ *
+ * One table, not two. `Record<Specialty, …>` twice would type-check perfectly
+ * well as a pair and still drift the first time somebody adds a specialty to the
+ * short one only — the distribution panel would then read « undefined » where a
+ * specialty exists, and nothing would say so until a reader looked at it.
+ */
+export const SPECIALTY_NAMES: Record<
+  Specialty,
+  { long: string; short: string }
+> = {
+  GENERALIST: { long: "Médecine générale", short: "Généraliste" },
+  DENTIST: { long: "Chirurgien-dentiste", short: "Dentiste" },
+  DERMATOLOGIST: { long: "Dermatologie", short: "Dermatologie" },
+  PSYCHIATRIST: { long: "Psychiatrie", short: "Psychiatrie" },
+  OTHER: { long: "Autre spécialité", short: "Autre" },
 };
+
+export const SPECIALTY_LABELS: Record<Specialty, string> = Object.fromEntries(
+  Object.entries(SPECIALTY_NAMES).map(([id, name]) => [id, name.long]),
+) as Record<Specialty, string>;
+
+/**
+ * The names for a chart row.
+ *
+ * « Chirurgien-dentiste » and « Autre spécialité » are both wider than the column,
+ * and a truncated label in a distribution panel is worse than a terse one: the
+ * reader cannot tell which specialty the bar belongs to.
+ */
+export const SPECIALTY_SHORT_LABELS: Record<Specialty, string> =
+  Object.fromEntries(
+    Object.entries(SPECIALTY_NAMES).map(([id, name]) => [id, name.short]),
+  ) as Record<Specialty, string>;
 
 export const PROFILE_TYPE_LABELS: Record<ProfileType, string> = {
   INSTALLED: "Médecin installé",

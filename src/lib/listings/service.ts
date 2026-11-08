@@ -10,13 +10,11 @@
  */
 
 import {
-  ApiError,
   type ApiTransport,
   apiFetch,
   buildQuery,
   notFoundAs,
 } from "../api-client";
-import { errorMessage } from "../api-errors";
 import { COUNT_KEYS, withZeroCounts, zeroCounts } from "../counts";
 import type {
   ApiApplication,
@@ -38,31 +36,19 @@ import type {
   ReceivedApplicationCounts,
 } from "./contracts";
 
-/**
- * Machine-readable discriminators for the listing transition refusals.
- *
- * Mirrors the backend's `LISTING_TRANSITION_CODES`. Every one of these used to
- * reach this client as English prose only, and `translateStatusMessage` below
- * branched on the wording — "only open or filled", "already closed or
- * cancelled". Rewording a message server-side silently disabled the
- * translation, and a practice was told to "try again" for a refusal that has a
- * definite cause and a definite way out. That already happened once: the
- * backend reworded both messages when `close` became reachable from a listing
- * that was still recruiting, and the regexes stopped matching.
- *
- * The message text stays as a fallback for a backend one deploy behind, the
- * same way `account-deletion-service.ts` keeps its `blocked` case.
- */
-export const LISTING_TRANSITION_CODES = {
-  NOT_A_DRAFT: "LISTING_NOT_A_DRAFT",
-  NOT_MODIFIABLE: "LISTING_NOT_MODIFIABLE",
-  INVALID_PERIOD: "LISTING_INVALID_PERIOD",
-  FILLED_CANNOT_BE_DELETED: "LISTING_FILLED_CANNOT_BE_DELETED",
-  NOT_IN_CIRCULATION: "LISTING_NOT_IN_CIRCULATION",
-  FILLED_CANNOT_BE_CANCELLED: "LISTING_FILLED_CANNOT_BE_CANCELLED",
-  ALREADY_TERMINAL: "LISTING_ALREADY_TERMINAL",
-} as const;
+/** The owner actions on a listing this module performs. */
+export type ListingActionKind = "close" | "cancel";
 
+/**
+ * The French for each action: the infinitive the refusal sentences interpolate
+ * (« clôturer », « annuler »), and the past participle the outage sentence needs
+ * (« l'annonce n'a pas été clôturée »).
+ *
+ * English verbs once reached the reader through the generic fallback on every
+ * 403 and outage, because the two sentences that interpolate them were written
+ * at the call site. Deriving the participle from the infinitive instead —
+ * `${verb}e` — produces « clôturée » and « annuléee », so it is spelled out.
+ */
 /** The listings page: the filtered slice plus the totals behind the chips. */
 export interface MyListingsData {
   listings: MyListing[];
@@ -76,6 +62,25 @@ export interface MyListingsData {
    * bucket cannot change the numbers.
    */
   counts: ListingStatusCounts;
+  /**
+   * The soonest period still to come, among the postings that are in play, or
+   * null when there is none.
+   *
+   * Server-answered, because it cannot be answered from a page: it asks for the
+   * soonest start date across every posting the member owns, and a breakdown of
+   * statuses holds no dates. A client that had to find it would read every page
+   * and report the soonest among them — a wrong date rather than a missing one.
+   */
+  nextRecruitingListing: NextRecruitingListing | null;
+}
+
+/** What the server says about the member's next replacement to cover. */
+export interface NextRecruitingListing {
+  id: string;
+  title: string;
+  /** ISO instant — formatted in the reader's locale by `formatDateRange`. */
+  startDate: string;
+  endDate: string;
 }
 
 /**
@@ -88,16 +93,17 @@ function emptyCounts(): ListingStatusCounts {
 }
 
 /**
- * Page size for the listings list, server page and client container alike.
+ * Page size for the candidates received on one listing.
  *
- * Lives here, next to the endpoint, for the reason `APPLICATIONS_PAGE_SIZE` does
- * on the other side: the number the server rendered and the number the client
- * refetches have to be one number, or a filter change silently changes the
- * page size and the reader lands on a page that does not exist.
+ * Lives here, next to the endpoint, for the reason the number the server rendered
+ * and the number the client refetches have to be one: a filter change silently
+ * changing the page size would land the reader on a page that does not exist.
+ *
+ * The console lists that offer a choice — the practice's own listings and the
+ * member's applications — no longer have one number to agree on. Both the server
+ * page and the container read the reader's choice instead (`lib/page-size.ts`),
+ * which is why this constant is about the one screen that has no choice to offer.
  */
-export const MY_LISTINGS_PAGE_SIZE = 10;
-
-/** Same, for the candidates received on one listing. */
 export const LISTING_APPLICATIONS_PAGE_SIZE = 10;
 
 /**
@@ -116,7 +122,12 @@ export async function fetchMyListings(
   params: {
     statuses?: ReplacementListingStatus[];
     page?: number;
-    /** Page size, capped at 100 by the endpoint. */
+    /**
+     * Page size. The endpoint takes up to 500 (`MAX_PAGE_SIZE`), raised from 100
+     * so the console's own 500 choice is reachable; its other bound is
+     * `page × limit ≤ 10 000`, which at this size answers the first twenty
+     * pages.
+     */
     limit?: number;
     /** Narrow to postings flagged urgent, on top of the status bucket. */
     urgentOnly?: boolean;
@@ -131,7 +142,10 @@ export async function fetchMyListings(
   });
   const raw = await apiFetch<
     ApiPaginated<ApiReplacementListing> & {
-      meta: { counts?: Partial<ListingStatusCounts> };
+      meta: {
+        counts?: Partial<ListingStatusCounts>;
+        nextRecruitingListing?: NextRecruitingListing | null;
+      };
     }
   >(
     `/replacement-listings/mine${query ? `?${query}` : ""}`,
@@ -146,6 +160,7 @@ export async function fetchMyListings(
       totalPages: 0,
       total: 0,
       counts: emptyCounts(),
+      nextRecruitingListing: null,
     };
   }
 
@@ -157,6 +172,9 @@ export async function fetchMyListings(
     // Partial on the wire (a status the backend does not know about would be
     // absent), so it is completed rather than cast.
     counts: withZeroCounts(raw.meta.counts, COUNT_KEYS.listingStatus),
+    // Absent from a backend one release behind, which is "nothing to show" — the
+    // same thing it is when the member has nothing coming.
+    nextRecruitingListing: raw.meta.nextRecruitingListing ?? null,
   };
 }
 
@@ -169,6 +187,12 @@ export async function fetchListingApplications(
     status?: ApplicationStatus;
   } = {},
   transport?: ApiTransport,
+  /**
+   * Forwarded to the request, so a caller can cancel a read it has superseded —
+   * the panel behind an expanded card, which the reader collapses or replaces
+   * before the answer arrives.
+   */
+  init?: RequestInit,
 ): Promise<ListingApplicationsData> {
   const query = buildQuery({
     page: params.page ?? 1,
@@ -180,7 +204,7 @@ export async function fetchListingApplications(
     ApiPaginated<ApiApplication> & {
       meta: { counts?: Partial<ReceivedApplicationCounts> };
     }
-  >(`/applications/listing/${listingId}?${query}`, undefined, transport);
+  >(`/applications/listing/${listingId}?${query}`, init, transport);
 
   return {
     applications: raw.data
@@ -191,6 +215,72 @@ export async function fetchListingApplications(
     total: raw.meta.total,
     counts: withZeroCounts(raw.meta.counts, COUNT_KEYS.applicationStatus),
   };
+}
+
+/**
+ * PATCH /applications/:id — the decisions the listing's owner takes on one
+ * application it received.
+ *
+ * The views re-read both halves after a decision instead of patching a row
+ * locally, because accepting fills the listing and rejects the siblings in the
+ * same transaction — beyond anything a local row update could keep in step.
+ *
+ * Eligibility stays with the backend: it is what checks ownership (403), an
+ * application that moved between render and submit (400
+ * APPLICATION_NOT_SHORTLISTABLE / NOT_ACCEPTABLE / NOT_REJECTABLE), and a
+ * listing that left circulation before an acceptance landed (400
+ * APPLICATION_LISTING_NOT_ACCEPTING); `applicationDecisionErrorMessage` turns
+ * each into a French sentence. All four answer 200 with the stored row, and it
+ * is the re-read the reader sees — the body carries no new information.
+ */
+
+/** PATCH /applications/:id/view — marks a candidate's application as read. */
+export async function markApplicationViewed(
+  id: string,
+  transport?: ApiTransport,
+): Promise<void> {
+  await apiFetch(`/applications/${id}/view`, { method: "PATCH" }, transport);
+}
+
+/** PATCH /applications/:id/shortlist — pending → shortlisted. */
+export async function shortlistReceivedApplication(
+  id: string,
+  transport?: ApiTransport,
+): Promise<void> {
+  await apiFetch(
+    `/applications/${id}/shortlist`,
+    { method: "PATCH" },
+    transport,
+  );
+}
+
+/**
+ * PATCH /applications/:id/accept — fills the listing and rejects the other
+ * active applications server-side, so it must be confirmed by the reader: it
+ * is the one decision that changes lives beyond this row.
+ */
+export async function acceptReceivedApplication(
+  id: string,
+  transport?: ApiTransport,
+): Promise<void> {
+  await apiFetch(`/applications/${id}/accept`, { method: "PATCH" }, transport);
+}
+
+/** PATCH /applications/:id/reject — optional reason shared with the applicant. */
+export async function rejectReceivedApplication(
+  id: string,
+  reason: string | undefined,
+  transport?: ApiTransport,
+): Promise<void> {
+  const trimmed = reason?.trim();
+  await apiFetch(
+    `/applications/${id}/reject`,
+    {
+      method: "PATCH",
+      body: JSON.stringify(trimmed ? { rejectionReason: trimmed } : {}),
+    },
+    transport,
+  );
 }
 
 /**
@@ -230,156 +320,40 @@ export async function fetchMyListing(
  * a filled listing. The applicant reads the difference in their rejection
  * reason, which is why the confirmation copy spells it out.
  */
-export async function closeListing(id: string): Promise<void> {
-  // French verb: it is interpolated straight into the user-facing sentence,
-  // and the English one leaked through on every 403 and generic failure.
-  // `done` is the past participle, needed separately: deriving it as `${verb}e`
-  // would produce "clôturee" and "annulee" — the first over-accented, the
-  // second without the e the past tense needs.
-  await mutateListing(id, "close", "clôturer", "clôturée");
+export async function closeListing(
+  id: string,
+  transport?: ApiTransport,
+): Promise<void> {
+  await mutateListing(id, "close", transport);
 }
 
 /** PATCH /replacement-listings/:id/cancel — called off before it is filled. */
-export async function cancelListing(id: string): Promise<void> {
-  await mutateListing(id, "cancel", "annuler", "annulée");
+export async function cancelListing(
+  id: string,
+  transport?: ApiTransport,
+): Promise<void> {
+  await mutateListing(id, "cancel", transport);
 }
 
+/**
+ * The write behind both owner actions.
+ *
+ * It lets the `ApiError` through rather than catching it to build a sentence:
+ * the typed error carries the status and the refusal code, and
+ * `listingActionErrorMessage` below is what turns those into French — at the
+ * point where the reader is shown one. Re-wrapping here threw the type away and
+ * left the hook with `Error.message`, so a caller that did not format it
+ * displayed the raw `API 400 (…): Only a listing still in circulation can be
+ * closed`.
+ */
 async function mutateListing(
   id: string,
-  action: "close" | "cancel",
-  verb: string,
-  done: string,
+  action: ListingActionKind,
+  transport?: ApiTransport,
 ): Promise<void> {
-  try {
-    await apiFetch(`/replacement-listings/${id}/${action}`, {
-      method: "PATCH",
-    });
-  } catch (error) {
-    throw new Error(mapListingActionError(error, verb, done));
-  }
-}
-
-function mapListingActionError(
-  error: unknown,
-  verb: string,
-  done: string,
-): string {
-  if (error instanceof ApiError) {
-    if (error.status === 404) {
-      return "Cette annonce n'existe plus.";
-    }
-    if (error.status === 403) {
-      // Two unrelated refusals share this status since the backend widened
-      // `EmailVerifiedGuard` to every write: not the owner, or an address that
-      // has not been confirmed. The generic copy names both, and a signed-out
-      // reader is not told to retry a request that could never succeed.
-      return errorMessage(error, {
-        forbidden:
-          "Vous n'êtes pas le propriétaire de cette annonce, ou votre adresse e-mail n'est pas validée.",
-      });
-    }
-    if (error.status === 409) {
-      return `Impossible de ${verb} l'annonce : des candidatures d'autres candidats sont encore actives.`;
-    }
-    if (error.status === 400) {
-      return (
-        translateByCode(error.code, verb) ??
-        translateStatusMessage(error.apiMessage ?? "", verb)
-      );
-    }
-  }
-  // Everything else — including the 401 the branches above do not cover.
-  return errorMessage(error, {
-    unavailable: `Impossible de ${verb} l'annonce pour le moment. Veuillez réessayer.`,
-    "service-down": `Le service est hors service : l'annonce n'a pas été ${done}. Réessayez dans quelques minutes.`,
-  });
-}
-
-/**
- * The refusal, in French, from the backend's machine-readable code.
- *
- * Returns undefined for an unknown code so the caller falls back to the message
- * text rather than guessing: a new code from a newer backend must degrade to a
- * sentence, never to a wrong one.
- */
-function translateByCode(
-  code: string | undefined,
-  verb: string,
-): string | undefined {
-  switch (code) {
-    case LISTING_TRANSITION_CODES.NOT_A_DRAFT:
-      return "Seule une annonce en brouillon peut être publiée.";
-    case LISTING_TRANSITION_CODES.NOT_MODIFIABLE:
-      return "Cette annonce n'est plus modifiable : elle a quitté la diffusion.";
-    case LISTING_TRANSITION_CODES.INVALID_PERIOD:
-      return "La date de début doit précéder la date de fin.";
-    case LISTING_TRANSITION_CODES.FILLED_CANNOT_BE_DELETED:
-      return "Impossible de supprimer l'annonce : elle est pourvue. Clôturez-la à la place.";
-    case LISTING_TRANSITION_CODES.NOT_IN_CIRCULATION:
-      return `Impossible de ${verb} l'annonce : elle n'est plus en diffusion.`;
-    case LISTING_TRANSITION_CODES.FILLED_CANNOT_BE_CANCELLED:
-      return "Impossible d'annuler l'annonce : elle est pourvue. Clôturez-la à la place.";
-    case LISTING_TRANSITION_CODES.ALREADY_TERMINAL:
-      return "Cette annonce est déjà clôturée ou annulée.";
-    default:
-      return undefined;
-  }
-}
-
-/**
- * Fallback for a backend that sends no `code` — one deploy behind, or a route
- * that has not been converted yet.
- *
- * The backend states transition refusals in English ("Only a listing still in
- * circulation can be closed"). Rather than surface that to a French-speaking
- * practice, map the known ones and keep a generic fallback.
- *
- * Every pattern below is matched case-insensitively against the *current*
- * wording, and deliberately tolerates the older phrasing too: a reword must not
- * turn this into dead code, because the `code` path is the real contract and
- * this is only insurance against a rolling deploy.
- */
-function translateStatusMessage(message: string, verb: string): string {
-  if (/filled listing cannot be deleted/i.test(message)) {
-    return "Impossible de supprimer l'annonce : elle est pourvue. Clôturez-la à la place.";
-  }
-  if (/still in circulation|only open or filled/i.test(message)) {
-    return `Impossible de ${verb} l'annonce : elle n'est plus en diffusion.`;
-  }
-  if (/already closed or cancelled|already closed or canceled/i.test(message)) {
-    return "Cette annonce est déjà clôturée ou annulée.";
-  }
-  if (/filled listing cannot be cancelled/i.test(message)) {
-    return "Impossible d'annuler l'annonce : elle est pourvue. Clôturez-la à la place.";
-  }
-  if (/only draft listings can be published/i.test(message)) {
-    return "Seule une annonce en brouillon peut être publiée.";
-  }
-  if (/no longer be modified/i.test(message)) {
-    return "Cette annonce n'est plus modifiable : elle a quitté la diffusion.";
-  }
-  return `Impossible de ${verb} l'annonce pour le moment. Veuillez réessayer.`;
-}
-
-/**
- * A failed *read* on a listing, in French, with the 403 case spelled out.
- *
- * The sibling of `mapListingActionError`, and separate from it because the two
- * endpoints answer 403 for different reasons and the reader needs a different
- * way out of each.
- *
- * The candidates endpoint answers a bare English « You do not own this listing »
- * on a 403, which is the same string the service layer maps for the *write*
- * actions. Surfacing `err.message` instead put that sentence — plus the
- * `API 403 (/applications/listing/…):` prefix `apiFetch` builds — in front of a
- * French-speaking practice. `errorMessage` classifies the typed status; only the
- * 403 needed domain wording, because the generic « action non autorisée » copy
- * is about the unverified-email guard and would have sent them to check an
- * address that is fine.
- */
-export function listingReadErrorMessage(error: unknown): string {
-  return errorMessage(error, {
-    forbidden:
-      "Cette annonce ne vous appartient pas, ou elle n'existe plus. Retournez à vos annonces.",
-  });
+  await apiFetch(
+    `/replacement-listings/${id}/${action}`,
+    { method: "PATCH" },
+    transport,
+  );
 }

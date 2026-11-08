@@ -74,18 +74,20 @@ export function UserInfoFields({
           },
         ]}
         onSubmit={async (values) => {
+          const name = values.name ?? "";
+          const image = values.image ?? "";
           // Client-side mirror of the backend `before` hook validation, so the
           // obvious cases never cost a round trip. The backend still validates.
-          if (!isValidName(values.name)) {
+          if (!isValidName(name)) {
             throw new Error(NAME_ERROR_MESSAGE);
           }
-          if (values.image && !isValidHttpsUrl(values.image)) {
+          if (image && !isValidHttpsUrl(image)) {
             throw new Error(IMAGE_HTTPS_ERROR_MESSAGE);
           }
 
           return onUpdateInfo({
-            name: values.name,
-            image: values.image || null,
+            name,
+            image: image || null,
           });
         }}
       />
@@ -110,7 +112,7 @@ export function UserInfoFields({
           },
         ]}
         onSubmit={async (values) => {
-          const email = normalizeEmail(values.email);
+          const email = normalizeEmail(values.email ?? "");
           if (email.length > EMAIL_MAX_LENGTH) {
             throw new Error(EMAIL_ERROR_MESSAGE);
           }

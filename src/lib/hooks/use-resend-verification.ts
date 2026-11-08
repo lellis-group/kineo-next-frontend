@@ -1,5 +1,7 @@
+"use client";
+
 import { useState } from "react";
-import { sendVerificationEmail } from "./auth-client";
+import { sendVerificationEmail } from "../auth-client";
 
 export type ResendStatus = "idle" | "sending" | "sent" | "error";
 

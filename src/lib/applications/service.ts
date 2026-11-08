@@ -1,8 +1,10 @@
 /**
- * Fetches the user's own applications. The backend embeds each listing and its
- * practice, so a page loads in a single request (including listings otherwise
- * hidden by visibility rules). A soft 404 (empty list) is expected, not an
- * error.
+ * The applications data service — fetching the user's own applications,
+ * reading one, editing or withdrawing one, and applying to a listing.
+ *
+ * The backend embeds the listing of each row so a page loads in a single
+ * request (including listings otherwise hidden by visibility rules). A soft 404
+ * on the list (empty collection) is expected, not an error.
  */
 
 import {
@@ -24,7 +26,11 @@ import type {
   ApiApplicationStatusCounts,
   ApplicationRejectionBucket,
 } from "../types/api";
-import { adaptApplicationEntry, byNewestFirst } from "./adapters";
+import {
+  AWAITING_DECISION_STATUSES,
+  adaptApplicationEntry,
+  byNewestFirst,
+} from "./adapters";
 import type { ApplicationEntry, ApplicationsData } from "./contracts";
 
 /**
@@ -98,7 +104,10 @@ async function fetchMyApplications(
     transport,
   ).catch(notFoundAs<unknown>(null));
 
-  const shape = unwrapCollection<ApiApplication>(raw);
+  const shape = unwrapCollection<
+    ApiApplication,
+    ApiApplicationPage<ApiApplication>["meta"]
+  >(raw);
 
   if (shape.kind === "envelope") {
     return { applications: shape.rows, meta: shape.meta };
@@ -123,6 +132,18 @@ async function fetchMyApplications(
         bucketCounts[application.rejectionBucket] += 1;
       }
     }
+    // Same for the two counters a newer backend sends: every row is here, so they
+    // are counted rather than zeroed — a zero on a collection of thirty would be a
+    // claim the rows in hand already contradict.
+    const open = shape.rows.filter(
+      (application) =>
+        AWAITING_DECISION_STATUSES.has(application.status) &&
+        !application.viewedAt,
+    ).length;
+    const responded = shape.rows.filter(
+      (application) =>
+        application.status !== "WITHDRAWN" && application.respondedAt,
+    ).length;
     return {
       applications: shape.rows,
       meta: {
@@ -132,6 +153,8 @@ async function fetchMyApplications(
         totalPages: 1,
         counts,
         bucketCounts,
+        unseenOpenCount: open,
+        respondedCount: responded,
       },
     };
   }
@@ -145,6 +168,8 @@ async function fetchMyApplications(
       totalPages: 0,
       counts: statusCounts(0),
       bucketCounts: zeroBucketCounts(),
+      unseenOpenCount: 0,
+      respondedCount: 0,
     },
   };
 }
@@ -166,12 +191,46 @@ export async function fetchApplicationDetail(
   return adaptApplicationEntry(application);
 }
 
+/**
+ * POST /applications — applies to one listing with an optional message
+ * (trimmed server-side rules: 1-2000 chars when present).
+ *
+ * The 201 body is the created row, bare: no embedded listing or applicant, the
+ * reader was on the listing's page so there is nothing to show back that they do
+ * not already have. `adaptApplicationEntry` handles precisely that shape.
+ *
+ * Eligibility is decided by the backend, and only there: a not-yet-created
+ * profile (404), an installed practice profile (403), the applicant's own
+ * listing (403), a listing that left circulation (400
+ * APPLICATION_LISTING_NOT_ACCEPTING), or their candidate or listing quotas (400
+ * APPLICATION_QUOTA_REACHED / APPLICATION_LISTING_LIMIT_REACHED) — each mapped
+ * to a French sentence by `applyErrorMessage`, beside this module.
+ */
+export async function applyToListing(
+  listingId: string,
+  message: string | undefined,
+  transport?: ApiTransport,
+): Promise<ApplicationEntry> {
+  const trimmed = message?.trim();
+  const raw = await apiFetch<ApiApplication>(
+    "/applications",
+    {
+      method: "POST",
+      body: JSON.stringify({
+        listingId,
+        ...(trimmed ? { message: trimmed } : {}),
+      }),
+    },
+    transport,
+  );
+  return adaptApplicationEntry(raw);
+}
+
 export async function fetchApplicationsData(
   params: PaginationParams = { page: 1, limit: APPLICATIONS_PAGE_SIZE },
   transport?: ApiTransport,
 ): Promise<ApplicationsData> {
   const { applications, meta } = await fetchMyApplications(params, transport);
-
   // Newest submissions first — matches the backend orderBy, kept as a guard
   const entries: ApplicationEntry[] = applications
     .slice()
@@ -188,10 +247,7 @@ export async function fetchApplicationsData(
     },
     // Server-computed totals — never derived from the loaded page. Completed
     // from a partial breakdown so a missing status reads 0, not undefined.
-    counts: withZeroCounts(
-      { total: meta.total, ...meta.counts },
-      COUNT_KEYS.applicationStatus,
-    ),
+    counts: withZeroCounts(meta.counts, COUNT_KEYS.applicationStatus),
     // Zeroed when absent, for the same reason as the status totals: a chip claiming
     // a situation exists when the backend confirmed nothing is worse than one that
     // shows nothing.
@@ -199,6 +255,10 @@ export async function fetchApplicationsData(
       meta.bucketCounts,
       COUNT_KEYS.rejectionBucket,
     ) as ApplicationsData["bucketCounts"],
+    // `?? 0`, not derived: a backend one release behind sends neither, and these
+    // two describe the whole collection while the rows on hand are one page of it.
+    unseenOpenCount: meta.unseenOpenCount ?? 0,
+    respondedCount: meta.respondedCount ?? 0,
   };
 }
 
@@ -227,12 +287,17 @@ function echoedApplicationEntry(raw: unknown): ApplicationEntry | null {
 export async function withdrawApplication(
   id: string,
   withdrawnReason?: string,
+  transport?: ApiTransport,
 ): Promise<ApplicationEntry | null> {
   const trimmed = withdrawnReason?.trim();
-  const raw = await apiFetch<unknown>(`/applications/${id}/withdraw`, {
-    method: "PATCH",
-    body: JSON.stringify(trimmed ? { withdrawnReason: trimmed } : {}),
-  });
+  const raw = await apiFetch<unknown>(
+    `/applications/${id}/withdraw`,
+    {
+      method: "PATCH",
+      body: JSON.stringify(trimmed ? { withdrawnReason: trimmed } : {}),
+    },
+    transport,
+  );
 
   return echoedApplicationEntry(raw);
 }
@@ -245,11 +310,16 @@ export async function withdrawApplication(
 export async function updateApplicationMessage(
   id: string,
   message: string,
+  transport?: ApiTransport,
 ): Promise<ApplicationEntry | null> {
-  const raw = await apiFetch<unknown>(`/applications/${id}`, {
-    method: "PATCH",
-    body: JSON.stringify({ message: message.trim() }),
-  });
+  const raw = await apiFetch<unknown>(
+    `/applications/${id}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({ message: message.trim() }),
+    },
+    transport,
+  );
 
   return echoedApplicationEntry(raw);
 }

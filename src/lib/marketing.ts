@@ -135,8 +135,6 @@ export const joinCta = {
 };
 
 export const footerContent = {
-  description:
-    "La plateforme moderne dédiée à la mise en relation et à la simplification administrative du remplacement médical en France.",
   productLinks: [
     { label: "Fonctionnalités", href: "#features" },
     { label: "Comment ça marche", href: "#how-it-works" },

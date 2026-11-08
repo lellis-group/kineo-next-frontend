@@ -7,10 +7,15 @@
     "build": "next build",
     "start": "next start",
     "lint": "biome check",
-    "format": "biome format --write"
+    "typecheck": "next typegen && tsc --noEmit",
+    "format": "biome format --write",
+    "knip": "knip",
+    "api:types": "openapi-typescript openapi.json -o src/lib/types/api.gen.ts",
+    "test": "bun test src"
   },
   "dependencies": {
     "better-auth": "^1.7.6",
+    "maplibre-gl": "^6.13.0",
     "next": "16.3.3",
     "react": "19.2.8",
     "react-dom": "19.2.8",
@@ -19,10 +24,13 @@
   "devDependencies": {
     "@biomejs/biome": "2.4.2",
     "@tailwindcss/postcss": "^4.3.3",
+    "@types/bun": "^1.4.2",
     "@types/node": "^20.19.43",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "babel-plugin-react-compiler": "1.0.0",
+    "knip": "^6.41.0",
+    "openapi-typescript": "^7.13.0",
     "tailwindcss": "^4.3.3",
     "typescript": "^5.9.3"
   },

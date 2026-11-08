@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { signInOnExpiredSession } from "@/lib/session-redirect";
+import { useRaceGuard } from "./use-race-guard";
 
 /**
  * One resource, paged and filtered, seeded from the server payload.
@@ -28,6 +29,17 @@ import { signInOnExpiredSession } from "@/lib/session-redirect";
  * bucket you just left overwrites the rows for the bucket you are now looking at
  * — no error, and nothing for the reader to tell it apart. Every response is
  * therefore checked against a request id before it is allowed to write.
+ *
+ * ## What the request id does not do
+ *
+ * It discards the answer, and leaves the request running. Every discarded read
+ * still went to the backend, was answered, and was paid for by a reader who is
+ * no longer looking at it — which matters most where the read is most expensive
+ * (the listings map). `load` is handed a `RequestInit` carrying a signal, so a
+ * view change cancels the read it supersedes rather than ignoring its answer.
+ *
+ * The cancellation guard itself now lives in `useRaceGuard` — no call-site
+ * codes `requestId` + `AbortController` by hand anymore.
  */
 export function usePaginatedResource<T, V>({
   initialData,
@@ -36,6 +48,7 @@ export function usePaginatedResource<T, V>({
   load,
   onLoaded,
   onRestored,
+  seedFromServer,
 }: {
   /** The server's answer for the default view. */
   initialData: T;
@@ -43,11 +56,22 @@ export function usePaginatedResource<T, V>({
   view: V;
   isDefaultView: (view: V) => boolean;
   /** Fetches one view. Rejections surface as `error`, never as a throw. */
-  load: (view: V) => Promise<T>;
+  load: (view: V, init?: RequestInit) => Promise<T>;
   /** After a successful fetch — drop caches that described the previous rows. */
   onLoaded?: () => void;
   /** After restoring `initialData`, which is also a view change. */
   onRestored?: () => void;
+  /**
+   * True when the screen's URL is the source of truth and the server answers
+   * every view by re-rendering — `/listings`, whose filters and page live in the
+   * query string. Then `initialData` is never stale: it is always the server's
+   * answer for the current view, delivered on mount and again on every URL
+   * change, so the hook adopts each fresh `initialData` and never fetches
+   * client-side — the server already did. Left off, the hook behaves as it
+   * always has: `initialData` is the default view only, and every other view is
+   * client state that fetches. The three console screens leave it off.
+   */
+  seedFromServer?: boolean;
 }) {
   const router = useRouter();
   const [data, setData] = useState(initialData);
@@ -65,60 +89,107 @@ export function usePaginatedResource<T, V>({
   afterLoad.current = onLoaded;
   afterRestore.current = onRestored;
 
-  /** Bumped per request; a response with a stale id is discarded. */
-  const requestId = useRef(0);
+  /**
+   * The default-view test is read through a ref for the same reason as the two
+   * callbacks above. Two of the three call sites pass it as an inline arrow, and
+   * it sits in this hook's effect dependencies: a fresh identity on every render
+   * would re-run the effect, which is a refetch storm on any non-default view.
+   * React Compiler happens to memoise those arrows today, but correctness must
+   * not depend on it.
+   */
+  const defaultView = useRef(isDefaultView);
+  defaultView.current = isDefaultView;
+
+  /** Cancels in-flight reads, starts races, and stamps stale answers. */
+  const raceGuard = useRaceGuard();
+  const { start, isStale, settled, revoke } = raceGuard;
 
   const fetchView = useCallback(
     (target: V) => {
-      requestId.current += 1;
-      const mine = requestId.current;
+      const { controller, mine } = start();
 
       setError(null);
       setLoading(true);
 
-      load(target)
+      load(target, { signal: controller.signal })
         .then((loaded) => {
-          if (mine !== requestId.current) return;
+          if (isStale(mine)) return;
+          settled();
           setData(loaded);
           setLoading(false);
           afterLoad.current?.();
         })
         .catch((err) => {
-          if (mine !== requestId.current) return;
+          if (isStale(mine)) return;
+          settled();
           setLoading(false);
+          // The abort above, not a broken endpoint: nothing to show and nothing
+          // to say, because the reader is already looking at the next view's rows.
+          if (controller.signal.aborted) return;
           if (signInOnExpiredSession(err, router)) return;
           setError(err);
         });
     },
-    [load, router],
+    [start, isStale, settled, load, router],
   );
 
   const restore = useCallback(() => {
     // Invalidate any request still in flight: its answer describes a view the
     // reader has already left.
-    requestId.current += 1;
+    revoke();
     setData(initialData);
     setError(null);
     setLoading(false);
     afterRestore.current?.();
-  }, [initialData]);
+  }, [revoke, initialData]);
+
+  /**
+   * True once the hook has adopted the server's opening answer.
+   *
+   * Only used on the client-driven path (the three console screens). The first
+   * effect run always restores `initialData`, whatever the view is, because
+   * `initialData` is by contract the server's answer for the view this screen
+   * starts on — which on those screens is always the default one, so this
+   * replaces a `restore()` the `isDefaultView` branch would already have made,
+   * with no behaviour change. The server-seeded path below has no such branch.
+   */
+  const hydrated = useRef(false);
 
   useEffect(() => {
-    if (isDefaultView(view)) {
+    // Server-seeded: the URL is the source of truth and the server answered this
+    // exact view. Adopt its rows rather than refetching them over the wire. This
+    // runs on mount and again on every URL change, because each one re-renders
+    // the route with a fresh `initialData` — the reference is the signal that new
+    // rows have arrived, and there is never a client fetch on this path.
+    if (seedFromServer) {
+      revoke();
+      setData(initialData);
+      setError(null);
+      setLoading(false);
+      afterRestore.current?.();
+      return;
+    }
+
+    if (!hydrated.current) {
+      hydrated.current = true;
+      restore();
+      return;
+    }
+    if (defaultView.current(view)) {
       restore();
       return;
     }
     fetchView(view);
-  }, [view, isDefaultView, fetchView, restore]);
+  }, [view, initialData, fetchView, restore, seedFromServer, revoke]);
 
   /** Re-runs the current view — the « Réessayer » button. */
   const reload = useCallback(() => {
-    if (isDefaultView(view)) {
+    if (defaultView.current(view)) {
       restore();
       return;
     }
     fetchView(view);
-  }, [view, isDefaultView, fetchView, restore]);
+  }, [view, fetchView, restore]);
 
   /**
    * Adopts an answer obtained elsewhere, without going through the view state.
@@ -129,12 +200,15 @@ export function usePaginatedResource<T, V>({
    * It stays in this hook so that `restore` and `reload` remain the only things
    * that know about `initialData`.
    */
-  const replace = useCallback((fresh: T) => {
-    requestId.current += 1;
-    setData(fresh);
-    setError(null);
-    setLoading(false);
-  }, []);
+  const replace = useCallback(
+    (fresh: T) => {
+      revoke();
+      setData(fresh);
+      setError(null);
+      setLoading(false);
+    },
+    [revoke],
+  );
 
   return { data, error, loading, reload, replace };
 }

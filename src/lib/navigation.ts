@@ -12,6 +12,10 @@ export const publicNav: HeaderLink[] = [
 ];
 
 // English routes, French labels.
+//
+// No `/practices` entry: there is no such page on either side of the wire, so
+// the link only ever 404s. The practice side lives under `/listings/mine` for
+// now, and a nav item that does not resolve is worse than a missing one.
 const replacementNav: HeaderLink[] = [
   { label: "Accueil", href: "/" },
   { label: "Annonces", href: "/listings" },
@@ -22,7 +26,6 @@ const replacementNav: HeaderLink[] = [
 const installedNav: HeaderLink[] = [
   { label: "Accueil", href: "/" },
   { label: "Mes offres", href: "/listings/mine" },
-  { label: "Mes cabinets", href: "/practices" },
   { label: "Mon Profil", href: "/profile" },
 ];
 
@@ -31,7 +34,6 @@ const bothNav: HeaderLink[] = [
   { label: "Annonces", href: "/listings" },
   { label: "Mes offres", href: "/listings/mine" },
   { label: "Mes candidatures", href: "/applications" },
-  { label: "Mes cabinets", href: "/practices" },
   { label: "Mon Profil", href: "/profile" },
 ];
 

@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { ListSkeleton } from "@/components/molecules/list-skeleton";
+import { MyListingsSkeleton } from "@/components/molecules/my-listings-skeleton";
 import { MyListingsContainer } from "@/components/templates/my-listings-container";
 import { serverTransport } from "@/lib/api-transport.server";
-import { fetchMyListings, MY_LISTINGS_PAGE_SIZE } from "@/lib/listings";
+import { fetchMyListings } from "@/lib/listings";
+import { clampPageSize, MY_LISTINGS_PAGE_SIZE_CHOICES } from "@/lib/page-size";
+import { readServerPageSize } from "@/lib/page-size.server";
 import { requireMember } from "@/lib/require-member";
 
 export const metadata: Metadata = {
@@ -12,22 +14,28 @@ export const metadata: Metadata = {
     "Gérez vos annonces de remplacement et les candidatures que vous recevez : présélectionnez, acceptez ou refusez.",
 };
 
-/** Matches the placeholder's rhythm in `ListSkeleton`. */
-const SKELETON_CHIPS = 9;
-
 export default function MyListingsPage() {
   return (
-    <Suspense
-      fallback={<ListSkeleton chipCount={SKELETON_CHIPS} cardHeight="h-52" />}
-    >
+    // The workspace's own shape, so the first streaming block is the board the
+    // reader lands on rather than a stacked list that then rearranges itself.
+    <Suspense fallback={<MyListingsSkeleton />}>
       <MyListings />
     </Suspense>
   );
 }
 
 async function MyListings() {
-  const data = await requireMember(
-    fetchMyListings({ limit: MY_LISTINGS_PAGE_SIZE }, serverTransport),
+  // Seeded at the size the reader chose, so the cold load is the page they are
+  // coming back to rather than the default one they then have to grow into.
+  // Clamped to this screen's list for the symmetric reason: a 25 written by
+  // /applications stays valid here because it is on both lists.
+  const pageSize = clampPageSize(
+    await readServerPageSize(),
+    MY_LISTINGS_PAGE_SIZE_CHOICES,
   );
-  return <MyListingsContainer initialData={data} />;
+
+  const data = await requireMember(
+    fetchMyListings({ limit: pageSize }, serverTransport),
+  );
+  return <MyListingsContainer initialData={data} initialPageSize={pageSize} />;
 }

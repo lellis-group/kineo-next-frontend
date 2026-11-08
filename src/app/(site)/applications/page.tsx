@@ -3,10 +3,9 @@ import { Suspense } from "react";
 import { ListSkeleton } from "@/components/molecules/list-skeleton";
 import { ApplicationsContainer } from "@/components/templates/applications-container";
 import { serverTransport } from "@/lib/api-transport.server";
-import {
-  APPLICATIONS_PAGE_SIZE,
-  fetchApplicationsData,
-} from "@/lib/applications";
+import { fetchApplicationsData } from "@/lib/applications";
+import { APPLICATIONS_PAGE_SIZE_CHOICES, clampPageSize } from "@/lib/page-size";
+import { readServerPageSize } from "@/lib/page-size.server";
 import { requireMember } from "@/lib/require-member";
 
 export const metadata: Metadata = {
@@ -24,11 +23,19 @@ export default function ApplicationsPage() {
 }
 
 async function Applications() {
-  const data = await requireMember(
-    fetchApplicationsData(
-      { page: 1, limit: APPLICATIONS_PAGE_SIZE },
-      serverTransport,
-    ),
+  // Seeded at the size the reader chose, so the cold load is the page they are
+  // coming back to rather than the default one they then have to grow into.
+  // Clamped to this screen's list: the cookie is shared with /listings/mine,
+  // which still offers 500 — a size this pager never proposes.
+  const pageSize = clampPageSize(
+    await readServerPageSize(),
+    APPLICATIONS_PAGE_SIZE_CHOICES,
   );
-  return <ApplicationsContainer initialData={data} />;
+
+  const data = await requireMember(
+    fetchApplicationsData({ page: 1, limit: pageSize }, serverTransport),
+  );
+  return (
+    <ApplicationsContainer initialData={data} initialPageSize={pageSize} />
+  );
 }

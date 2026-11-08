@@ -4,7 +4,7 @@
  * anonymized candidate requires.
  */
 
-import { formatDateRange, formatRelativeTime, plural } from "../format";
+import { formatRelativeTime, plural } from "../format";
 import { SPECIALTY_LABELS } from "../profile";
 import type {
   ApiApplication,
@@ -15,34 +15,17 @@ import type {
 } from "../types/api";
 import type {
   ApplicationApplicant,
-  ListingStatusMeta,
+  ListingStatusCounts,
   MyListing,
   ReceivedApplication,
   ReceivedApplicationCounts,
   ReceivedApplicationsFilterOption,
 } from "./contracts";
 import { RECRUITING_STATUSES } from "./contracts";
+import { adaptListingBase } from "./shared";
 
 /** Shown in place of a name once the account is erased. */
 const ANONYMIZED_APPLICANT_NAME = "Candidat anonymisé";
-
-/** French labels + tone per listing status. */
-export const LISTING_STATUS_META: Record<
-  ReplacementListingStatus,
-  ListingStatusMeta
-> = {
-  DRAFT: { label: "Brouillon", tone: "neutral" },
-  OPEN: { label: "Ouverte", tone: "info" },
-  IN_DISCUSSION: { label: "Candidatures en cours", tone: "warning" },
-  FULL: { label: "Complet", tone: "warning" },
-  FILLED: { label: "Pourvue", tone: "success" },
-  CLOSED: { label: "Clôturée", tone: "neutral" },
-  CLOSED_NO_CANDIDATE: {
-    label: "Clôturée sans remplaçant",
-    tone: "neutral",
-  },
-  CANCELLED: { label: "Annulée", tone: "danger" },
-};
 
 /** French labels per application status, as seen by the receiving practice. */
 export const RECEIVED_STATUS_LABELS: Record<ApplicationStatus, string> = {
@@ -85,19 +68,10 @@ export function adaptMyListings(
 }
 
 export function adaptMyListing(listing: ApiReplacementListing): MyListing {
+  const base = adaptListingBase(listing);
   return {
-    id: listing.id,
-    title: listing.title,
+    ...base,
     status: listing.status,
-    specialty: listing.specialty,
-    dateRange: formatDateRange(listing.startDate, listing.endDate),
-    startDate: listing.startDate,
-    endDate: listing.endDate,
-    description: listing.description?.trim() || undefined,
-    urgent: listing.urgent,
-    applicationsCount: listing.applicationsCount ?? 0,
-    maxApplications: listing.maxApplications ?? undefined,
-    createdAt: listing.createdAt,
     updatedAt: listing.updatedAt,
   };
 }
@@ -162,7 +136,7 @@ export function adaptReceivedApplication(
     rejectionReason: application.rejectionReason?.trim() || undefined,
     withdrawnReason: application.withdrawnReason?.trim() || undefined,
     viewed: Boolean(application.viewedAt),
-    viewedAt: application.viewedAt,
+    viewedAt: application.viewedAt ?? undefined,
     applicant,
     raw: application,
   };
@@ -189,24 +163,44 @@ export function countForFilter(
 }
 
 /**
- * How many listings are still recruiting.
+ * How many of the listings *on hand* are still recruiting.
  *
  * Sourced from `RECRUITING_STATUSES` rather than spelled out, because the
  * concept already has a name and two other surfaces use it: the « En cours »
  * filter bucket on /listings/mine, and the gate that decides whether a listing
  * card offers close/cancel. The dashboard used to re-derive the count with
- * `OPEN` + `IN_DISCUSSION` written out by hand, in two places, which left a
- * FULL listing counted as "En cours" on one screen and absent from the homepage
+ * `OPEN` + `IN_DISCUSSION` written out by hand, in two places, which left a FULL
+ * listing counted as "En cours" on one screen and absent from the homepage
  * headline on the next.
  *
- * Takes raw payloads because the dashboard counts before adapting; a caller that
- * already holds `MyListing` can filter with the same set directly.
+ * Counts rows, so it answers about the rows and nothing else: a caller that needs
+ * the figure for the whole collection wants `recruitingCount` over the server's
+ * totals. The rail uses this one because its share is deliberately page-scoped —
+ * it divides by the listings on screen, not by the collection.
  */
 export function countRecruitingListings(
   listings: ReadonlyArray<{ status: ReplacementListingStatus }>,
 ): number {
   return listings.filter((listing) => RECRUITING_STATUSES.has(listing.status))
     .length;
+}
+
+/**
+ * How many listings are still recruiting, from the server's totals.
+ *
+ * Sums the breakdown rather than counting rows: the figure describes the whole
+ * collection, and a caller holding one page of it would report a page. The set
+ * stays `RECRUITING_STATUSES`, the same one the close/cancel gate uses — it used
+ * to be spelled out again here, and a status marked recruiting in the table but
+ * missing from that list counted as a FULL listing on one screen and as active on
+ * the next.
+ */
+export function recruitingCount(counts: ListingStatusCounts): number {
+  let total = 0;
+  for (const status of RECRUITING_STATUSES) {
+    total += counts[status];
+  }
+  return total;
 }
 
 /** « 3 candidatures actives » — the count that decides whether to act. */

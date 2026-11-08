@@ -5,15 +5,11 @@ import type { InlineAlertTone } from "@/lib/ui-tokens";
 /**
  * Alert treatment per tone.
  *
- * Note that `info` paints as `primary` here while the badge and the status
- * banner paint it as `info`. That is a real divergence between two components
- * sharing a tone name, kept because it is what ships today: the alerts sit in
- * forms, next to a primary submit button, where a distinct hue would read as a
- * second action. Worth settling deliberately — one way or the other — rather
- * than leaving it to whichever component was written last.
+ * `info` now paints as `info`, matching the badge and the status banner: a
+ * shared tone name should mean the same hue everywhere.
  */
 const TONE_CLASSES: Record<InlineAlertTone, string> = {
-  info: "border-primary/30 bg-primary/10",
+  info: "border-info/30 bg-info/10",
   success: "border-success/30 bg-success/10",
   warning: "border-warning/30 bg-warning/10",
   danger: "border-danger/25 bg-danger/10 text-danger",

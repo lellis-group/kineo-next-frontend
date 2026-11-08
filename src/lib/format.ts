@@ -3,7 +3,7 @@
  * pluralization. Kept free of React/Next imports so any module can rely on them.
  */
 
-/** Pluralise un suffixe français selon le nombre. */
+/** Appends a French plural suffix according to the count. */
 export function plural(count: number, suffix = "s"): string {
   return count > 1 ? suffix : "";
 }
@@ -44,8 +44,51 @@ export function formatRelativeTime(dateStr: string): string {
   return `il y a ${Math.floor(diffDays / 7)} semaines`;
 }
 
+/**
+ * A single day in French, without the year — « 15 sept. ».
+ *
+ * For the places that carry a period across two lines: a start day on the first
+ * and an end day under it reads as a range without the two halves having to be
+ * worded (« Du … au … » wraps, and a wrapped range is three lines where the
+ * reference has two). The year is dropped because every date in a listing that is
+ * open for taking now falls in the current or the coming year — and where it did
+ * not, the full date is one `title` away.
+ */
+export function formatDayMonth(dateStr: string): string {
+  return new Date(dateStr).toLocaleDateString("fr-FR", {
+    day: "numeric",
+    month: "short",
+  });
+}
+
+/**
+ * Widens a calendar date — what an `<input type="date">` gives — to the ISO
+ * instant an API validates.
+ *
+ * The input produces `YYYY-MM-DD`: no time, no zone. Reading that as midnight
+ * UTC is only right for the lower bound. For the upper bound it silently drops
+ * every posting published on the day the reader picked, so `endOfDay` lands on
+ * the last millisecond instead.
+ *
+ * Lives here rather than in a domain service because it is a date concern with
+ * no domain knowledge, and the browse contracts need it — which a contract
+ * importing a service to get it would be a dependency pointing the wrong way.
+ */
+export function toIsoDayBound(
+  date: string,
+  endOfDay = false,
+): string | undefined {
+  if (!date) {
+    return undefined;
+  }
+  const parsed = new Date(
+    `${date}${endOfDay ? "T23:59:59.999Z" : "T00:00:00.000Z"}`,
+  );
+  return Number.isNaN(parsed.getTime()) ? undefined : parsed.toISOString();
+}
+
 /** Absolute date in French — e.g. « 10 janv. 2026 ». */
-function formatDate(dateStr: string): string {
+export function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString("fr-FR", {
     day: "numeric",
     month: "short",

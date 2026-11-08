@@ -1,24 +1,31 @@
+import { Chip } from "@/components/atoms/chip";
 import { FileTextIcon, UsersIcon } from "@/components/atoms/icons";
-import { PageHeader } from "@/components/atoms/page-header";
-import { FilterChips } from "@/components/molecules/filter-chips";
 import { Pagination } from "@/components/molecules/pagination";
+import { Panel } from "@/components/molecules/panel";
+import { SegmentedControl } from "@/components/molecules/segmented-control";
 import { EmptyState } from "@/components/organisms/empty-state";
-import { MyListingCard } from "@/components/organisms/my-listing-card";
+import { MyListingsRail } from "@/components/organisms/my-listings-rail";
+import {
+  MyListingsMobileList,
+  MyListingsTable,
+} from "@/components/organisms/my-listings-table";
 import { cn } from "@/lib/cn";
-import { PAGE_CONTAINER } from "@/lib/layout";
-import type { ListingMessage } from "@/lib/listings";
+import { SITE_SHELL } from "@/lib/layout";
 import {
   countForFilter,
   LISTING_FILTERS,
-  type ListingApplicationsData,
   type ListingStatusCounts,
   type ListingsFilter,
   type MyListing,
 } from "@/lib/listings";
+import {
+  MY_LISTINGS_PAGE_SIZE_CHOICES,
+  type MyListingsPageSize,
+} from "@/lib/page-size";
 
 export interface MyListingsViewProps {
   listings: MyListing[];
-  /** Totals over the whole collection — the only source of the chip counters. */
+  /** Totals over the whole collection — the only source of the rail's aggregates. */
   counts: ListingStatusCounts;
   currentFilter: ListingsFilter;
   onFilterChange: (filter: ListingsFilter) => void;
@@ -28,24 +35,42 @@ export interface MyListingsViewProps {
   page: number;
   totalPages: number;
   onPageChange: (page: number) => void;
-  /** Candidates per listing id, present only for the expanded listing. */
-  receivedByListing: Record<string, ListingApplicationsData>;
-  loadingListingId?: string;
-  expandedListingId?: string;
-  /**
-   * Failure, scoped to one listing. The id is part of the value so a card can
-   * only ever render the message that concerns it — a bare string here would be
-   * painted on every card in the list.
-   */
-  actionError?: ListingMessage | null;
-  /** Confirmation after a close/cancel, scoped the same way. */
-  actionFeedback?: ListingMessage | null;
-  actingListingId?: string;
-  onToggle: (listingId: string) => void;
-  onClose: (listingId: string) => void;
-  onCancel: (listingId: string) => void;
+  /** Rows per page — 10/25/50/100/500 on this screen, see `Pagination`. */
+  pageSize: MyListingsPageSize;
+  onPageSizeChange: (size: MyListingsPageSize) => void;
+  /** A read is in flight: the pager holds, so the reader cannot burst it. */
+  loading: boolean;
 }
 
+/**
+ * The board's own shell: the same full-height geometry the browse feed uses.
+ *
+ * `py` kept to a minimum and the width widened past the console default, for the
+ * same reason there — the point of the screen is to show as much of the
+ * collection at once as the window allows. Below `lg` none of that holds: there
+ * is no height to fill and the rail would sit beside a squeezed table, so it is
+ * ordinary document flow — rail first, then the card — and the page scrolls.
+ */
+const SHELL = cn(
+  SITE_SHELL,
+  "flex flex-col gap-4 py-4",
+  "lg:h-full lg:min-h-0 lg:flex-1 lg:gap-3 lg:py-3",
+);
+
+/**
+ * The practice's board — the same shell as the browse feed, filled with what
+ * this screen owns.
+ *
+ * Three zones, the reference's own: a rail of summary panels down the left, and
+ * one card across the rest holding the buckets above the listings. The card is
+ * `flex-1` and carries the table, which scrolls inside it, so the page never
+ * scrolls and a practice with three postings and a practice with forty see the
+ * same board.
+ *
+ * The `PageHeader` this replaces is gone rather than restyled: the reference's
+ * main card carries its own title, and a page title above a card that is also
+ * titled is the same sentence twice on one screen.
+ */
 export function MyListingsView({
   listings,
   counts,
@@ -56,127 +81,149 @@ export function MyListingsView({
   page,
   totalPages,
   onPageChange,
-  receivedByListing,
-  loadingListingId,
-  expandedListingId,
-  actionError,
-  actionFeedback,
-  actingListingId,
-  onToggle,
-  onClose,
-  onCancel,
+  pageSize,
+  onPageSizeChange,
+  loading,
 }: MyListingsViewProps) {
+  /*
+   * The buckets become the reference's tabs: one track with the active bucket as
+   * a cream pill. The counts are already totals over the whole collection, so
+   * they belong to the tab and not to the page under it — the reader changes
+   * bucket *because* of the number on it.
+   *
+   * `SegmentedControl` rather than `FilterChips`: nine free-standing chips on a
+   * wrapping row is a bundle, where nine options inside one track with the
+   * selection filled reads as one control, and scrolls horizontally on a phone
+   * instead of taking four floors.
+   */
+  const buckets = LISTING_FILTERS.map((option) => ({
+    id: option.id,
+    label: option.label,
+    count: countForFilter(option, counts),
+  }));
+
   return (
-    <div className={PAGE_CONTAINER}>
-      <MyListingsHeader />
+    <div className={SHELL}>
+      <div className="grid gap-4 lg:min-h-0 lg:flex-1 lg:grid-cols-[21rem_minmax(0,1fr)] lg:gap-3">
+        <div className="order-2 lg:order-1 lg:flex lg:min-h-0 lg:flex-col lg:overflow-y-auto lg:pr-1">
+          <MyListingsRail listings={listings} counts={counts} />
+        </div>
 
-      {counts.total === 0 ? (
-        <EmptyState
-          icon={<FileTextIcon className="h-8 w-8 text-primary" />}
-          title="Aucune annonce publiée"
-          description="Vous n'avez pas encore d'annonce de remplacement. Publiez-en une pour recevoir des candidatures."
-        />
-      ) : (
-        <>
-          <FilterChips
-            ariaLabel="Filtrer les annonces par situation"
-            className="mt-6"
-            options={LISTING_FILTERS.map((option) => ({
-              ...option,
-              count: countForFilter(option, counts),
-            }))}
-            value={currentFilter}
-            onChange={onFilterChange}
-          />
+        <div className="order-1 flex min-w-0 flex-col lg:order-2 lg:min-h-0 lg:flex-1">
+          <Panel
+            fill
+            className="lg:flex-1"
+            title="Mes offres"
+            action={
+              <div className="flex min-w-0 flex-wrap items-center justify-end gap-3">
+                {/*
+                  Urgency is orthogonal to the status buckets — a posting can be
+                  urgent and closed — so it is a toggle beside the tabs rather
+                  than a tenth bucket. It carries no counter: the endpoint breaks
+                  its totals down by status only, and a « (0) » that meant « the
+                  server did not send this » would be worse than no number.
+                */}
+                <Chip
+                  size="sm"
+                  active={urgentOnly}
+                  className="shrink-0 whitespace-nowrap"
+                  aria-pressed={urgentOnly}
+                  onClick={onUrgentToggle}
+                >
+                  Urgentes
+                </Chip>
 
-          {/* Urgency is orthogonal to the status buckets — a posting can be
-              urgent and closed — so it is a toggle next to the row rather than
-              a tenth chip. It carries no counter: the endpoint breaks its totals
-              down by status only, and a « (0) » that meant "the server did not
-              send this" would be worse than no number at all. */}
-          <div className="mt-4 flex flex-wrap items-center gap-3">
-            <button
-              type="button"
-              className={cn("chip", urgentOnly && "is-active")}
-              aria-pressed={urgentOnly}
-              onClick={onUrgentToggle}
-            >
-              Urgentes seulement
-            </button>
-            {urgentOnly && (
-              <p className="text-xs text-muted">
-                Combiné avec «&nbsp;{bucketLabel(currentFilter)}&nbsp;».
-              </p>
-            )}
-          </div>
+                <SegmentedControl
+                  ariaLabel="Filtrer les annonces par situation"
+                  options={buckets}
+                  value={currentFilter}
+                  onChange={onFilterChange}
+                />
+              </div>
+            }
+          >
+            {/*
+              Two presentations, one removed by CSS: `display:none` also takes
+              it out of the accessibility tree, so a screen reader and a
+              keyboard never meet the copy that is not on screen.
 
-          {listings.length === 0 ? (
-            <EmptyState
-              icon={<UsersIcon className="h-8 w-8 text-primary" />}
-              title="Aucune annonce dans cette catégorie"
-              description={
-                urgentOnly
-                  ? "Aucune annonce urgente dans cette catégorie. Retirez le filtre « Urgentes seulement » pour voir les autres."
-                  : "Changez de filtre pour voir vos autres annonces."
-              }
-            />
-          ) : (
-            <ul className="mt-8 space-y-5">
-              {listings.map((listing) => (
-                <li key={listing.id}>
-                  <MyListingCard
-                    listing={listing}
-                    received={receivedByListing[listing.id]}
-                    loading={loadingListingId === listing.id}
-                    expanded={expandedListingId === listing.id}
-                    acting={actingListingId === listing.id}
-                    // Both messages are matched on their id: a card only ever
-                    // speaks about itself.
-                    error={
-                      actionError?.listingId === listing.id
-                        ? actionError.message
-                        : undefined
-                    }
-                    feedback={
-                      actionFeedback?.listingId === listing.id
-                        ? actionFeedback.message
-                        : undefined
-                    }
-                    onToggle={() => onToggle(listing.id)}
-                    onClose={() => onClose(listing.id)}
-                    onCancel={() => onCancel(listing.id)}
+              One region, then the pager — and the region takes the height the
+              card has at `lg`: the table frame inside it is `flex-1` too, so a
+              short page's spare room lives *inside* the frame, under its rows,
+              and the pager stays at the card's foot (see `my-listings-table`).
+              Below `lg` the screen is ordinary document flow: no floor on this
+              region, so the card hugs the rows and the pager follows them
+              instead of floating off across empty space.
+            */}
+            <div className="flex flex-col lg:min-h-0 lg:flex-1">
+              {counts.total === 0 ? (
+                <div className="flex flex-1 items-center">
+                  <EmptyState
+                    className="mt-0 w-full"
+                    icon={<FileTextIcon className="h-8 w-8 text-primary" />}
+                    title="Aucune annonce publiée"
+                    description="Vous n'avez pas encore d'annonce de remplacement. Publiez-en une pour recevoir des candidatures."
+                    /*
+                      The way out, on the one state that has nowhere to go: an
+                      empty board asks for its first posting, and the shelf the
+                      dashboard's « Publier une annonce » acts from is the same
+                      route. Without it this card is the one surface on the
+                      screen that ends in a wall.
+                    */
+                    actionLabel="Publier une annonce"
+                    actionHref="/listings/new"
                   />
-                </li>
-              ))}
-            </ul>
-          )}
+                </div>
+              ) : listings.length === 0 ? (
+                <div className="flex flex-1 items-center">
+                  <EmptyState
+                    className="mt-0 w-full"
+                    icon={<UsersIcon className="h-8 w-8 text-primary" />}
+                    title="Aucune annonce dans cette catégorie"
+                    description={
+                      urgentOnly
+                        ? "Aucune annonce urgente dans cette catégorie. Retirez le filtre « Urgentes » pour voir les autres."
+                        : "Changez de filtre pour voir vos autres annonces."
+                    }
+                    // The way out, offered on the state that needs it: the reader
+                    // who narrowed to urgent and found nothing has one filter to
+                    // undo, so the button says exactly that.
+                    actionLabel={
+                      urgentOnly ? "Retirer le filtre Urgentes" : undefined
+                    }
+                    onAction={urgentOnly ? onUrgentToggle : undefined}
+                  />
+                </div>
+              ) : (
+                <>
+                  <MyListingsTable listings={listings} />
 
-          {/* Hidden for single-page results. The list is the one collection
-              screen that had no way past its first twenty postings: a practice
-              with more could see them all on no page at all. */}
-          <Pagination
-            currentPage={page}
-            totalPages={totalPages}
-            onPageChange={onPageChange}
-          />
-        </>
-      )}
+                  <MyListingsMobileList listings={listings} />
+                </>
+              )}
+            </div>
+
+            <Pagination
+              currentPage={page}
+              totalPages={totalPages}
+              onPageChange={onPageChange}
+              pageSize={pageSize}
+              onPageSizeChange={onPageSizeChange}
+              choices={MY_LISTINGS_PAGE_SIZE_CHOICES}
+              loading={loading}
+              /*
+                Tighter than the flow margin: the table frame above is a
+                bordered region whose edge the pager reads against, so the
+                `mt-8` a flowing page needs is a second layer of air on the one
+                edge (`Pagination`, and its `className` note). A little stays,
+                because the frame's border still wants to breathe before its own
+                card ends.
+              */
+              className="mt-3 lg:mt-4"
+            />
+          </Panel>
+        </div>
+      </div>
     </div>
-  );
-}
-
-/** Label of the selected bucket, for the urgency reminder. */
-function bucketLabel(filter: ListingsFilter): string {
-  return (
-    LISTING_FILTERS.find((option) => option.id === filter)?.label ?? "Toutes"
-  );
-}
-
-function MyListingsHeader() {
-  return (
-    <PageHeader
-      title="Mes offres"
-      subtitle="Suivez vos annonces et traitez les candidatures qu&apos;elles reçoivent."
-    />
   );
 }

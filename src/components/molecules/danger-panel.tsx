@@ -1,5 +1,3 @@
-"use client";
-
 import type { ReactNode } from "react";
 import { Card } from "@/components/atoms/card";
 import { AlertIcon } from "@/components/atoms/icons";

@@ -1,11 +1,10 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import { ErrorState } from "@/components/organisms/error-state";
 import { MemberHome } from "@/components/templates/member-home";
 import { type DashboardData, fetchDashboardData } from "@/lib/dashboard";
-import { signInOnExpiredSession } from "@/lib/session-redirect";
+import { useReloadable } from "@/lib/hooks/use-reloadable";
 
 /**
  * Orchestrator for the logged-in page: delegates rendering to MemberHome.
@@ -23,31 +22,9 @@ export function DashboardContainer({
   userName?: string;
   initialData: DashboardData;
 }) {
-  const router = useRouter();
-  const [data, setData] = useState<DashboardData>(initialData);
-  const [error, setError] = useState<unknown>(null);
-  const [reloading, setReloading] = useState(false);
+  const load = useCallback(() => fetchDashboardData(userName), [userName]);
 
-  const reload = useCallback(() => {
-    setReloading(true);
-    setError(null);
-
-    fetchDashboardData(userName)
-      .then((dashboardData) => {
-        setData(dashboardData);
-        setReloading(false);
-      })
-      .catch((err) => {
-        // The home page itself renders PublicHome, but the client dashboard
-        // must not linger on an error.
-        if (signInOnExpiredSession(err, router)) {
-          setReloading(false);
-          return;
-        }
-        setError(err);
-        setReloading(false);
-      });
-  }, [router, userName]);
+  const { data, error, reloading, reload } = useReloadable(initialData, load);
 
   if (error) {
     return <ErrorState error={error} onRetry={reload} />;

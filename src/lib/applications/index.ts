@@ -5,8 +5,8 @@
 
 export {
   AWAITING_DECISION_STATUSES,
+  awaitingDecisionCount,
   byNewestFirst,
-  countAwaitingDecision,
   countForBucket,
   countForSituation,
   DECISION_SUMMARIES,
@@ -18,6 +18,11 @@ export {
   STATUS_META,
   WITHDRAWABLE_STATUSES,
 } from "./adapters";
+export {
+  APPLICATION_CREATE_CODES,
+  APPLY_SUCCESS,
+  applyErrorMessage,
+} from "./apply-errors";
 export type {
   ApplicationEntry,
   ApplicationListingInfo,
@@ -33,6 +38,7 @@ export {
 export type { PaginationParams } from "./service";
 export {
   APPLICATIONS_PAGE_SIZE,
+  applyToListing,
   fetchApplicationDetail,
   fetchApplicationsData,
   updateApplicationMessage,

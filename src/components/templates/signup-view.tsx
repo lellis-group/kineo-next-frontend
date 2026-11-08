@@ -1,5 +1,3 @@
-"use client";
-
 import Form from "next/form";
 import Link from "next/link";
 import { Button } from "@/components/atoms/button";
@@ -16,7 +14,7 @@ import {
   PASSWORD_MAX_LENGTH,
   PASSWORD_MIN_LENGTH,
 } from "@/lib/auth-validation";
-import type { ResendStatus } from "@/lib/use-resend-verification";
+import type { ResendStatus } from "@/lib/hooks/use-resend-verification";
 
 /**
  * The two screens signup has: the form, and the "check your mailbox"

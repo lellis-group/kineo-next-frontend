@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/atoms/button";
 import { AlertIcon } from "@/components/atoms/icons";
+import { StatusBlock } from "@/components/atoms/status-block";
 import { errorMessage, rawErrorText } from "@/lib/api-errors";
 
 /**
@@ -22,19 +23,19 @@ export function ErrorState({
 
   return (
     <div className="mx-auto flex min-h-[60vh] max-w-md flex-col items-center justify-center px-4 text-center">
-      <div className="mb-4 rounded-full bg-danger/10 p-4">
-        <AlertIcon className="h-8 w-8 text-danger" />
-      </div>
-      <h2 className="mb-2 text-lg font-semibold text-foreground">
-        Impossible de charger vos données
-      </h2>
-      <p className="mb-2 text-sm text-muted">{errorMessage(error)}</p>
-      {isDev && (
-        <p className="mb-4 max-w-sm wrap-break-word rounded bg-surface px-3 py-2 font-mono text-xs text-muted">
-          [dev] {rawErrorText(error)}
-        </p>
-      )}
-      <Button onClick={onRetry}>Réessayer</Button>
+      <StatusBlock
+        tone="danger"
+        icon={<AlertIcon className="h-8 w-8 text-danger" />}
+        title="Impossible de charger vos données"
+        description={errorMessage(error)}
+        action={<Button onClick={onRetry}>Réessayer</Button>}
+      >
+        {isDev && (
+          <p className="mt-2 max-w-sm wrap-break-word rounded bg-surface px-3 py-2 font-mono text-xs text-muted">
+            [dev] {rawErrorText(error)}
+          </p>
+        )}
+      </StatusBlock>
     </div>
   );
 }

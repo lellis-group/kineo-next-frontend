@@ -1,39 +1,27 @@
-import { type ApiTransport, fetchAllPages } from "../api-client";
+import type { ApiTransport } from "../api-client";
+import { awaitingDecisionCount, fetchApplicationsData } from "../applications";
+import { fetchMyListings, recruitingCount } from "../listings";
 import { fetchMyProfile } from "../profile-service";
-import type { ApiApplication, ApiReplacementListing } from "../types/api";
-import { adaptActions } from "./actions";
-import { adaptActivity } from "./activity";
+import { adaptActions } from "./action-links";
+import { ACTIVITY_FEED_SIZE, adaptActivity } from "./activity";
 import type { DashboardData } from "./contracts";
 import { adaptGreeting } from "./greeting";
-import { adaptReactivity } from "./reactivity";
+import { adaptReactivity } from "./response-rate";
 import { adaptStats } from "./stats";
 
 /**
- * Every page, not just the first: the greeting, the stats and the reactivity
- * panel all count over the whole collection, and a single request would cap them
- * at the server's default page size.
+ * Why the listings read asks for one row.
  *
- * These reads are deliberately *not* `fetchMyListings` / `fetchApplicationsData`
- * from the other domains: those return one filtered page plus server-computed
- * counts, which is what a list screen wants. The dashboard needs the rows
- * themselves, because it derives its own totals from them. Same endpoints, two
- * genuinely different shapes.
+ * Nothing on the home screen is derived from them: the counters come from the
+ * endpoint's own totals, and « Prochain remplacement » is answered beside them,
+ * over the whole collection, by the server. One row is what it takes to carry a
+ * page's worth of `meta`.
+ *
+ * This read used to page the member's whole collection — up to twenty requests,
+ * on every visit — to count figures the endpoints already count, and to compute
+ * them correctly only until the twentieth page.
  */
-async function fetchMyListings(
-  transport?: ApiTransport,
-): Promise<ApiReplacementListing[]> {
-  return fetchAllPages<ApiReplacementListing>(
-    "/replacement-listings/mine",
-    {},
-    transport,
-  );
-}
-
-async function fetchMyApplications(
-  transport?: ApiTransport,
-): Promise<ApiApplication[]> {
-  return fetchAllPages<ApiApplication>("/applications/mine", {}, transport);
-}
+const LISTINGS_LIMIT = 1;
 
 export async function fetchDashboardData(
   userName?: string,
@@ -43,15 +31,21 @@ export async function fetchDashboardData(
   // error) — the same soft-404 policy the other screens read it under.
   const [profile, listings, applications] = await Promise.all([
     fetchMyProfile(transport),
-    fetchMyListings(transport),
-    fetchMyApplications(transport),
+    fetchMyListings({ limit: LISTINGS_LIMIT }, transport),
+    fetchApplicationsData({ page: 1, limit: ACTIVITY_FEED_SIZE }, transport),
   ]);
 
+  const recruiting = recruitingCount(listings.counts);
+  const outstanding = awaitingDecisionCount(applications.counts);
+
   return {
-    greeting: adaptGreeting(profile, userName, listings, applications),
+    greeting: adaptGreeting(profile, userName, {
+      recruiting: recruiting > 0,
+      outstanding: outstanding > 0,
+    }),
     actions: adaptActions(profile?.profileType ?? null),
     stats: adaptStats(listings, applications),
-    activity: adaptActivity(applications, listings),
+    activity: adaptActivity(applications.applications),
     needsProfile: profile === null,
     reactivity: adaptReactivity(applications),
   };

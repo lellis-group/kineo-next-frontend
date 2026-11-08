@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { LoadingState } from "@/components/molecules/loading-state";
-import { ProfileView } from "@/components/templates/profile-view";
+import { ProfileContainer } from "@/components/templates/profile-container";
 import { passProfileGate } from "@/lib/profile-gate";
 
 export const metadata: Metadata = {
@@ -47,7 +47,7 @@ async function ProfileContent({
   ]);
 
   return (
-    <ProfileView
+    <ProfileContainer
       profile={profile}
       user={auth.user}
       feedback={created ? "created" : saved ? "saved" : null}

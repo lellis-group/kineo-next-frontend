@@ -1,30 +1,38 @@
-import {
-  AWAITING_DECISION_STATUSES,
-  countAwaitingDecision,
-} from "../applications";
+import type { ApplicationsData } from "../applications";
+import { awaitingDecisionCount } from "../applications";
 import { formatDateRange, plural } from "../format";
-import { countRecruitingListings, RECRUITING_STATUSES } from "../listings";
-import type { ApiApplication, ApiReplacementListing } from "../types/api";
+import type { MyListingsData } from "../listings";
+import { recruitingCount } from "../listings";
 import type { DashboardStat } from "./contracts";
 
+/**
+ * The three figures cards.
+ *
+ * Everything counted here comes from the server's totals rather than from the
+ * rows on hand, and that is the point of the exercise: the dashboard used to page
+ * the member's whole collection — up to twenty requests — to count it, and
+ * reported figures that were short past the last page.
+ *
+ * Nothing here reads a row. « Prochain remplacement » once did — it asks for the
+ * soonest period still to come, which no breakdown of statuses can answer — and
+ * the server now answers it beside the counts, over the whole collection rather
+ * than over the hundred most recent postings.
+ */
 export function adaptStats(
-  listings: ApiReplacementListing[],
-  applications: ApiApplication[],
+  listings: MyListingsData,
+  applications: ApplicationsData,
 ): DashboardStat[] {
-  // OPEN / IN_DISCUSSION / FULL — the same set the listings screen calls
-  // « En cours » and the listing card uses to offer close/cancel.
-  const activeListings = countRecruitingListings(listings);
+  const activeListings = recruitingCount(listings.counts);
 
-  const open = listings.filter((l) => l.status === "OPEN").length;
-  const discussion = listings.filter(
-    (l) => l.status === "IN_DISCUSSION",
-  ).length;
-  const full = listings.filter((l) => l.status === "FULL").length;
+  const open = listings.counts.OPEN;
+  const discussion = listings.counts.IN_DISCUSSION;
+  const full = listings.counts.FULL;
+
   // PENDING + SHORTLISTED — a shortlisted application is one the practice put
   // forward but has not yet decided on, so it is still outstanding. Counting
   // PENDING alone reported zero for anyone who had been shortlisted, which reads
   // as "nothing left to wait for" while the cabinet is still choosing.
-  const awaitingDecision = countAwaitingDecision(applications);
+  const awaitingDecision = awaitingDecisionCount(applications.counts);
 
   // The two statuses behind that total, broken out so the reader can tell a
   // request nobody has opened yet from one the practice has already put forward —
@@ -33,12 +41,8 @@ export function adaptStats(
   // Kept adjacent to `AWAITING_DECISION_STATUSES` on purpose. A status added to
   // that set counts in the headline whether or not it is named here, so this list
   // has to move with it; nothing enforces that today.
-  const pendingCount = applications.filter(
-    (a) => a.status === "PENDING",
-  ).length;
-  const shortlistedCount = applications.filter(
-    (a) => a.status === "SHORTLISTED",
-  ).length;
+  const pendingCount = applications.counts.PENDING;
+  const shortlistedCount = applications.counts.SHORTLISTED;
 
   const appsBreakdown = [
     // « en attente » is invariable — no plural suffix on either count.
@@ -47,34 +51,25 @@ export function adaptStats(
   ].filter((part) => !part.startsWith("0 "));
 
   // A subset of the figure above: the same statuses, narrowed to the ones the
-  // practice has not opened yet. Kept on the same set so « dont N » can never
-  // outnumber the total it qualifies.
-  const unseenApps = applications.filter(
-    (a) => !a.viewedAt && AWAITING_DECISION_STATUSES.has(a.status),
-  ).length;
+  // practice has not opened yet. Server-counted, so it describes every
+  // outstanding application and not the page of them that came back.
+  const unseenApps = applications.unseenOpenCount;
 
   // Every recruiting status, so the breakdown sums to the headline. Omitting a
-  // status the headline counts would show a number that does not add up, which
-  // is the same class of bug as the headline itself being wrong.
+  // status the headline counts would show a number that does not add up, which is
+  // the same class of bug as the headline itself being wrong.
   const breakdown = [
     `${open} ouverte${plural(open)}`,
     `${discussion} en discussion`,
     `${full} complet${plural(full)}`,
   ].filter((part) => !part.startsWith("0 "));
 
-  // Only a listing that is actually recruiting can be the next replacement to
-  // cover. The previous test was "not cancelled", which let a DRAFT (never
-  // published) or a CLOSED one — the replacement was found — surface here, and
-  // `RECRUITING_STATUSES` is the set that means what it says.
-  const now = new Date();
-  const upcoming = listings
-    .filter(
-      (l) => new Date(l.startDate) > now && RECRUITING_STATUSES.has(l.status),
-    )
-    .sort(
-      (a, b) =>
-        new Date(a.startDate).getTime() - new Date(b.startDate).getTime(),
-    )[0];
+  // Only a posting that is actually recruiting can be the next replacement to
+  // cover. The server draws that line — the statuses it considers in play, and
+  // `startDate` in the future — and answers with the soonest one, or with nothing
+  // when there is nothing to come. It used to be found here, by walking the
+  // member's postings and comparing dates.
+  const upcoming = listings.nextRecruitingListing;
 
   const nextReplacement: DashboardStat = upcoming
     ? {

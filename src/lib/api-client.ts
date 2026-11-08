@@ -73,6 +73,30 @@ export interface FieldError {
 }
 
 /**
+ * Ceiling for one request.
+ *
+ * A backend that stops answering used to leave the screen loading until the
+ * reader navigated away, because the only signal in play was the race guard's
+ * — and that one fires when the *next* view starts, not when the current one
+ * hangs. Twenty seconds is well beyond any endpoint this app calls.
+ */
+const REQUEST_TIMEOUT_MS = 20_000;
+
+/**
+ * The caller's signal, if any, plus a deadline.
+ *
+ * `AbortSignal.any` keeps both reasons: the race guard can still cancel a
+ * superseded read, and the deadline can still end one nobody cancelled.
+ */
+function withTimeout(init: RequestInit | undefined): RequestInit {
+  const deadline = AbortSignal.timeout(REQUEST_TIMEOUT_MS);
+  const signal = init?.signal
+    ? AbortSignal.any([init.signal, deadline])
+    : deadline;
+  return { ...init, signal };
+}
+
+/**
  * Fetch through `transport`. Throws typed ApiError on non-OK so callers can
  * distinguish expected states (soft 404, see `notFoundAs`) from real failures.
  *
@@ -85,14 +109,17 @@ export async function apiFetch<T>(
   transport: ApiTransport = browserTransport,
 ): Promise<T> {
   const { headers, ...rest } = init ?? {};
-  const res = await transport(path, {
-    ...rest,
-    headers: {
-      Accept: "application/json",
-      ...(rest.body ? { "Content-Type": "application/json" } : undefined),
-      ...headers,
-    },
-  });
+  const res = await transport(
+    path,
+    withTimeout({
+      ...rest,
+      headers: {
+        Accept: "application/json",
+        ...(rest.body ? { "Content-Type": "application/json" } : undefined),
+        ...headers,
+      },
+    }),
+  );
 
   if (!res.ok) {
     // NestJS returns { message, error, statusCode } or, for Zod validation,
@@ -140,22 +167,22 @@ export async function apiFetch<T>(
  * looks like — so the detection lives here once.
  *
  * `unknown` is not an error. A screen that can still show something useful from
- * an empty list should; that is each caller's decision, and `fetchAllPages`
- * treats it as an empty collection while the applications screen zeroes its
- * counters.
+ * an empty list should; that is each caller's decision.
  */
-export type CollectionShape<T> =
+export type CollectionShape<T, TMeta = ApiPaginated<T>["meta"]> =
   | { kind: "array"; rows: T[] }
-  | { kind: "envelope"; rows: T[]; meta: ApiPaginated<T>["meta"] }
+  | { kind: "envelope"; rows: T[]; meta: TMeta }
   /** Nothing readable came back — `rows` is empty so callers can spread it. */
   | { kind: "unknown"; rows: [] };
 
-export function unwrapCollection<T>(raw: unknown): CollectionShape<T> {
+export function unwrapCollection<T, TMeta = ApiPaginated<T>["meta"]>(
+  raw: unknown,
+): CollectionShape<T, TMeta> {
   if (Array.isArray(raw)) {
     return { kind: "array", rows: raw };
   }
   if (raw && typeof raw === "object" && "data" in raw && "meta" in raw) {
-    const envelope = raw as ApiPaginated<T>;
+    const envelope = raw as { data: T[]; meta: TMeta };
     return { kind: "envelope", rows: envelope.data ?? [], meta: envelope.meta };
   }
   return { kind: "unknown", rows: [] };
@@ -169,8 +196,6 @@ export function unwrapCollection<T>(raw: unknown): CollectionShape<T> {
  * it would make `urgentOnly: false` indistinguishable from not narrowing at all
  * at the call site that can only pass one of the two. Callers with a truthiness
  * rule (`urgentOnly || undefined`) say so themselves.
- *
- * Four call sites had this loop written out by hand.
  */
 export function buildQuery(
   params: Record<string, string | number | boolean | undefined | null>,
@@ -191,64 +216,4 @@ export function notFoundAs<T>(fallback: T) {
     }
     throw error;
   };
-}
-
-/** Largest page size the collection endpoints accept. */
-const MAX_PAGE_SIZE = 100;
-
-/**
- * Stops a runaway loop if a backend ever reports an unbounded `totalPages`.
- * At this page size it is far more collections than one member can own.
- */
-const MAX_PAGES = 20;
-
-/**
- * Reads every page of a paginated collection.
- *
- * The collection endpoints default to `limit=20`, so a single request returns
- * only the first page. Anything that *counts* over a collection must therefore
- * not use one request: the dashboard would report fewer listings and
- * applications than the member actually owns, silently, past the twentieth.
- *
- * A 404 is an empty collection (onboarding), not a failure, so the pages
- * collected so far are returned rather than thrown away.
- *
- * A bare array is accepted as a whole collection. `/applications/mine` is
- * documented to answer that way as well as with the `{ data, meta }` envelope,
- * and returning nothing for it would quietly empty the dashboard for anyone on
- * that shape.
- */
-export async function fetchAllPages<T>(
-  path: string,
-  params: Record<string, string | undefined> = {},
-  transport?: ApiTransport,
-): Promise<T[]> {
-  const collected: T[] = [];
-
-  for (let page = 1; page <= MAX_PAGES; page += 1) {
-    const query = buildQuery({
-      page,
-      limit: MAX_PAGE_SIZE,
-      ...params,
-    });
-
-    const raw = await apiFetch<unknown>(
-      `${path}?${query}`,
-      undefined,
-      transport,
-    ).catch(notFoundAs<unknown>(null));
-    if (!raw) return collected;
-
-    const shape = unwrapCollection<T>(raw);
-    collected.push(...shape.rows);
-
-    // A bare array is the whole collection — there is no next page to ask for.
-    // A shape we cannot read stops the walk too: continuing would re-request
-    // the first page until MAX_PAGES and then report a total nobody sent.
-    if (shape.kind !== "envelope") break;
-
-    if (page >= (shape.meta?.totalPages ?? 1)) break;
-  }
-
-  return collected;
 }
