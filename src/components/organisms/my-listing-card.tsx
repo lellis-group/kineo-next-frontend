@@ -50,8 +50,14 @@ export function MyListingCard({ listing }: { listing: MyListing }) {
           </div>
 
           <div className="flex flex-wrap items-center gap-2 sm:shrink-0">
-            {listing.urgent && <Badge tone="danger" size="md">Urgent</Badge>}
-            <Badge tone={status.tone} size="md">{status.label}</Badge>
+            {listing.urgent && (
+              <Badge tone="danger" size="md">
+                Urgent
+              </Badge>
+            )}
+            <Badge tone={status.tone} size="md">
+              {status.label}
+            </Badge>
           </div>
         </div>
 

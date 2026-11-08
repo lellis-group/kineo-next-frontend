@@ -27,7 +27,11 @@ export function ApplicationCard({
           </p>
           <ApplicationCardMeta application={application} />
         </div>
-        <Badge tone={meta.badgeTone} size="md" className="w-fit shrink-0 sm:w-auto">
+        <Badge
+          tone={meta.badgeTone}
+          size="md"
+          className="w-fit shrink-0 sm:w-auto"
+        >
           {meta.label}
         </Badge>
       </div>

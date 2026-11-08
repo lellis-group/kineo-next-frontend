@@ -105,7 +105,9 @@ export function ListingCard({
                 </button>
               )}
             </div>
-            <Badge tone={badge.tone} size="md">{badge.label}</Badge>
+            <Badge tone={badge.tone} size="md">
+              {badge.label}
+            </Badge>
           </div>
           <p className="mt-0.5 text-xs text-muted">
             {SPECIALTY_LABELS[listing.specialty]} · {listing.practiceName}

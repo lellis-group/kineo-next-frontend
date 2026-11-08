@@ -95,7 +95,9 @@ export function MyListingsTable({ listings }: MyListingsTableProps) {
 
                 <td>
                   <span className="flex h-[var(--cell-icon)] items-center">
-                    <Badge tone={status.tone} size="md">{status.label}</Badge>
+                    <Badge tone={status.tone} size="md">
+                      {status.label}
+                    </Badge>
                   </span>
                 </td>
 

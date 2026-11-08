@@ -292,7 +292,7 @@
      * `border-radius` follows the control scale rather than a pill radius, and
      * the padding grows on both axes so the label has room to breathe without
      * making the chip sprawling on a small toolbar. 
-     */ 
+     */
     border-radius: 0.5rem;
     padding: 0.375rem 0.875rem;
     font-size: 0.75rem;

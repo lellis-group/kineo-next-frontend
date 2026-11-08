@@ -35,9 +35,7 @@ export function Badge({
   children: ReactNode;
 }) {
   return (
-    <span
-      className={cn(TONE_CLASSES[tone], SIZE_CLASSES[size], className)}
-    >
+    <span className={cn(TONE_CLASSES[tone], SIZE_CLASSES[size], className)}>
       {children}
     </span>
   );
