@@ -64,7 +64,7 @@ export function RailVolume({
         </dt>
       </div>
 
-      <Badge tone="info" className="shrink-0 self-end">
+      <Badge tone="info" size="lg" className="shrink-0 self-end">
         {badge}
       </Badge>
     </dl>

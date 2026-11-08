@@ -2,10 +2,12 @@ import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
 import type { BadgeTone } from "@/lib/ui-tokens";
 
-/**
- * Tones map to the global badge classes of `globals.css` — the site's
- * canonical badge look: button-shaped chip with a tinted variant per tone.
- */
+/** Named sizes for the badge chip: `sm` is the original pill, the rest are
+ * wider and squarer so a medium label has room to breathe. */
+export type BadgeSize = "sm" | "md" | "lg";
+
+/** Tones map to the global badge classes of `globals.css` — the site's
+ * canonical badge look: a tinted chip with a tinted variant per tone. */
 const TONE_CLASSES: Record<BadgeTone, string> = {
   neutral: "badge",
   success: "badge badge-success",
@@ -14,14 +16,29 @@ const TONE_CLASSES: Record<BadgeTone, string> = {
   info: "badge badge-info",
 };
 
+const SIZE_CLASSES: Record<BadgeSize, string> = {
+  sm: "",
+  md: "px-2.5 py-1",
+  lg: "px-3.5 py-1.5",
+};
+
 export function Badge({
   tone = "neutral",
+  size = "sm",
   className,
   children,
 }: {
   tone?: BadgeTone;
+  /** Same `sm` as before; `md` and `lg` are wider and squarer. */
+  size?: BadgeSize;
   className?: string;
   children: ReactNode;
 }) {
-  return <span className={cn(TONE_CLASSES[tone], className)}>{children}</span>;
+  return (
+    <span
+      className={cn(TONE_CLASSES[tone], SIZE_CLASSES[size], className)}
+    >
+      {children}
+    </span>
+  );
 }

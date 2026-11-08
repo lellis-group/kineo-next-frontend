@@ -345,7 +345,7 @@ export const ListingsTable = forwardRef<
                     the icon columns. The overflow is absorbed by the cell padding.
                   */}
                   <span className="flex h-[var(--cell-icon)] items-center">
-                    <Badge tone={badge.tone}>{badge.label}</Badge>
+                    <Badge tone={badge.tone} size="md">{badge.label}</Badge>
                   </span>
                 </td>
               </tr>

@@ -84,6 +84,7 @@ export function ListingSelectionPanel({
             {selection.urgent !== undefined && (
               <Badge
                 tone={selection.urgent ? "danger" : "info"}
+                size="md"
                 className="shrink-0"
               >
                 {selection.urgent ? "Urgent" : "Ouverte"}

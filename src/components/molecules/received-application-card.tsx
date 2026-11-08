@@ -104,7 +104,7 @@ export function ReceivedApplicationCard({
         </div>
 
         <div className="flex min-w-0 flex-col items-end gap-2.5 sm:min-w-44">
-          <Badge tone={statusTone(application.status)}>
+          <Badge tone={statusTone(application.status)} size="md">
             {RECEIVED_STATUS_LABELS[application.status]}
           </Badge>
           {decision && (
