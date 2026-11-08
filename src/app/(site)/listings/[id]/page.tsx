@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Suspense } from "react";
 import { Badge } from "@/components/atoms/badge";
 import { Card } from "@/components/atoms/card";
@@ -13,6 +14,7 @@ import {
 import { BackLink } from "@/components/molecules/back-link";
 import { Fact, FactList } from "@/components/molecules/fact-list";
 import { LoadingState } from "@/components/molecules/loading-state";
+import { ApplyToListing } from "@/components/organisms/apply-to-listing";
 import { serverTransport } from "@/lib/api-transport.server";
 import { plural } from "@/lib/format";
 import {
@@ -23,6 +25,7 @@ import {
   specialtyLabel,
 } from "@/lib/listings";
 import { requireExisting } from "@/lib/require-member";
+import { fetchServerAuth } from "@/lib/server-auth";
 
 export const metadata: Metadata = {
   title: "Annonce — Kineo",
@@ -31,11 +34,65 @@ export const metadata: Metadata = {
 };
 
 /**
+ * The entry the listing detail page offers for applying.
+ *
+ * The backend decides eligibility against facts only it holds, but the page can
+ * already know who it is talking to, and hiding a button that the backend would
+ * refuse is the honest version of the decision: a reader who is not signed in
+ * gets the way in, a member without a profile gets the way to build one, and an
+ * installed-practice-only profile — the one type the backend refuses — gets
+ * nothing, because there is no sentence about applying that would be true for
+ * them. What the page cannot cheaply know (own listing, quotas, a listing that
+ * left circulation since) stays with the backend, and the refused apply says
+ * so in French.
+ */
+function ApplyEntry({ listingId }: { listingId: string }) {
+  return (
+    <Suspense fallback={null}>
+      <ApplyEntryInner listingId={listingId} />
+    </Suspense>
+  );
+}
+
+async function ApplyEntryInner({ listingId }: { listingId: string }) {
+  const auth = await fetchServerAuth();
+
+  switch (auth.status) {
+    case "anonymous":
+      return (
+        <p className="text-sm text-muted">
+          <Link
+            href="/signin"
+            className="font-bold underline underline-offset-2"
+          >
+            Connectez-vous
+          </Link>{" "}
+          pour postuler à cette annonce.
+        </p>
+      );
+    case "member":
+      if (auth.role === null) {
+        return (
+          <p className="text-sm text-muted">
+            <Link href="/profile/create" className="font-bold">
+              Créez votre profil
+            </Link>{" "}
+            pour postuler à cette annonce.
+          </p>
+        );
+      }
+      return auth.role === "INSTALLED" ? null : (
+        <ApplyToListing listingId={listingId} />
+      );
+  }
+}
+
+/**
  * Public detail of one posting.
  *
- * Deliberately small for now: the feed's row click lands here, and the page
- * shows the facts the feed cannot — description, cabinet, city and status. A
- * richer layout (map, apply flow, related postings) is noted in
+ * Reads the listing for everyone and the session beside it, so the apply entry
+ * matches who is reading; the section branches on that, and the actual write
+ * lives in `ApplyToListing`. A richer layout (map, related postings) is noted in
  * `PLAN-listings-detail-page.md` rather than built here.
  */
 export default function BrowseListingDetailPage({
@@ -110,6 +167,10 @@ async function BrowseListingDetailPageInner({
             {formatListingAge(listing)}
           </Fact>
         </FactList>
+
+        <div className="mt-8">
+          <ApplyEntry listingId={listing.id} />
+        </div>
 
         {listing.description && (
           <div className="mt-8 border-t border-border pt-6">

@@ -24,6 +24,7 @@ import { confirmAccountDeletion } from "./account-deletion-service";
 import type { ApiTransport } from "./api-client";
 import {
   APPLICATIONS_PAGE_SIZE,
+  applyToListing,
   fetchApplicationDetail,
   fetchApplicationsData,
   updateApplicationMessage,
@@ -134,6 +135,10 @@ const AUDITED: readonly AuditCase[] = [
     operation: "PATCH /applications/{id}",
     call: (t) => updateApplicationMessage("a0", "Hello", t),
   },
+  {
+    operation: "POST /applications",
+    call: (t) => applyToListing("l0", undefined, t),
+  },
 
   // Profile
   {
@@ -158,8 +163,7 @@ const AUDITED: readonly AuditCase[] = [
  * the list is a plan rather than an apology:
  *
  * - `GET /`, `/ping`, `/health` — welcome message and probes; no screen.
- * - `POST /applications` and the decision actions `PATCH /applications/{id}/view|
- *   shortlist|accept|reject` — the candidate apply flow and the practice
+ * - `PATCH /applications/{id}/view|shortlist|accept|reject` — the practice
  *   decision screens are built against the live backend first (PLAN files at
  *   the repository root).
  * - `POST /replacement-listings`, `PATCH|DELETE /replacement-listings/{id}`,
@@ -174,7 +178,6 @@ const NOT_CONSUMED = [
   "GET /",
   "GET /ping",
   "GET /health",
-  "POST /applications",
   "PATCH /applications/{id}/view",
   "PATCH /applications/{id}/shortlist",
   "PATCH /applications/{id}/accept",

@@ -15,8 +15,12 @@
 
 ## Ce qui restait à faire (non bloquant)
 
-- **Candidature** : aucun flux de candidature n'existe côté frontend. Ajouter un bouton
-  « Postuler » quand le parcours (formulaire, message, confirmation) sera défini.
+- **Candidature** : fait — section `ApplyToListing` sur la page détail
+  (`src/components/organisms/apply-to-listing.tsx`), servie par `POST
+  /applications` (`applyToListing` dans `lib/applications/service.ts`, messages
+  d'erreur dans `apply-errors.ts`). La page détail éclide qui voit quoi : lien
+  de connexion pour l'anonyme, lien « Créez votre profil » pour un membre sans
+  profil, rien pour un profil `INSTALLED`, formulaire pour les autres.
 - **Carte** : afficher la localisation du cabinet sur une carte (réutiliser
   `ListingsMap` ou un composant plus léger), avec un lien « Voir sur la carte ».
 - **Mise en page** : passer à une page plus riche (en-tête collant, sections

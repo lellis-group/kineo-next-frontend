@@ -1,8 +1,10 @@
 /**
- * Fetches the user's own applications. The backend embeds each listing and its
- * practice, so a page loads in a single request (including listings otherwise
- * hidden by visibility rules). A soft 404 (empty list) is expected, not an
- * error.
+ * The applications data service — fetching the user's own applications,
+ * reading one, editing or withdrawing one, and applying to a listing.
+ *
+ * The backend embeds the listing of each row so a page loads in a single
+ * request (including listings otherwise hidden by visibility rules). A soft 404
+ * on the list (empty collection) is expected, not an error.
  */
 
 import {
@@ -187,6 +189,41 @@ export async function fetchApplicationDetail(
     transport,
   );
   return adaptApplicationEntry(application);
+}
+
+/**
+ * POST /applications — applies to one listing with an optional message
+ * (trimmed server-side rules: 1-2000 chars when present).
+ *
+ * The 201 body is the created row, bare: no embedded listing or applicant, the
+ * reader was on the listing's page so there is nothing to show back that they do
+ * not already have. `adaptApplicationEntry` handles precisely that shape.
+ *
+ * Eligibility is decided by the backend, and only there: a not-yet-created
+ * profile (404), an installed practice profile (403), the applicant's own
+ * listing (403), a listing that left circulation (400
+ * APPLICATION_LISTING_NOT_ACCEPTING), or their candidate or listing quotas (400
+ * APPLICATION_QUOTA_REACHED / APPLICATION_LISTING_LIMIT_REACHED) — each mapped
+ * to a French sentence by `applyErrorMessage`, beside this module.
+ */
+export async function applyToListing(
+  listingId: string,
+  message: string | undefined,
+  transport?: ApiTransport,
+): Promise<ApplicationEntry> {
+  const trimmed = message?.trim();
+  const raw = await apiFetch<ApiApplication>(
+    "/applications",
+    {
+      method: "POST",
+      body: JSON.stringify({
+        listingId,
+        ...(trimmed ? { message: trimmed } : {}),
+      }),
+    },
+    transport,
+  );
+  return adaptApplicationEntry(raw);
 }
 
 export async function fetchApplicationsData(
