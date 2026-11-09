@@ -1,0 +1,4490 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/": {
+      "get": {
+        "operationId": "AppController_getRoot",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The application is answering",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get API welcome message",
+        "tags": [
+          "App"
+        ]
+      }
+    },
+    "/ping": {
+      "get": {
+        "operationId": "AppController_ping",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The process is answering",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Health check endpoint",
+        "tags": [
+          "App"
+        ]
+      }
+    },
+    "/account/confirm-deletion": {
+      "post": {
+        "operationId": "AccountDeletionController_confirmDeletion",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmAccountDeletionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The erasure summary, with the counts of what was anonymized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountDeletionResult"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Invalid or already used confirmation link",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "Expired link, or the account was already erased",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "DELETION_PEPPER is not configured",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Confirm account anonymization with the email link token",
+        "tags": [
+          "Account"
+        ]
+      }
+    },
+    "/profile": {
+      "post": {
+        "operationId": "ProfileController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProfileDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The profile, as created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Profile"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Email not verified",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Profile already exists or RPPS number already in use",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Create a professional profile for the current user",
+        "tags": [
+          "Profile"
+        ]
+      },
+      "get": {
+        "operationId": "ProfileController_findAll",
+        "parameters": [
+          {
+            "name": "specialty",
+            "required": false,
+            "in": "query",
+            "description": "Filter by medical specialty",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "GENERALIST",
+                "DENTIST",
+                "DERMATOLOGIST",
+                "PSYCHIATRIST",
+                "OTHER"
+              ]
+            }
+          },
+          {
+            "name": "profileType",
+            "required": false,
+            "in": "query",
+            "description": "Filter by profile status",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "INSTALLED",
+                "REPLACEMENT",
+                "BOTH"
+              ]
+            }
+          },
+          {
+            "name": "city",
+            "required": false,
+            "in": "query",
+            "description": "Filter by city",
+            "schema": {
+              "minLength": 1,
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number, starting at 1",
+            "schema": {
+              "minimum": 1,
+              "maximum": 10000,
+              "default": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of results per page, max 500",
+            "schema": {
+              "minimum": 1,
+              "maximum": 500,
+              "default": 20,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A page of public profiles",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedPublicProfiles"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Search public profiles",
+        "tags": [
+          "Profile"
+        ]
+      }
+    },
+    "/profile/me": {
+      "get": {
+        "operationId": "ProfileController_findMe",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The caller's own profile",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Profile"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No profile found for this user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get the current user's own profile",
+        "tags": [
+          "Profile"
+        ]
+      }
+    },
+    "/profile/{id}": {
+      "get": {
+        "operationId": "ProfileController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The profile, as visible to the caller",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicProfile"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Profile not found or not public",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get a profile by id",
+        "tags": [
+          "Profile"
+        ]
+      },
+      "patch": {
+        "operationId": "ProfileController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProfileDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The profile, as updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Profile"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not the owner of this profile",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Update a profile",
+        "tags": [
+          "Profile"
+        ]
+      },
+      "delete": {
+        "operationId": "ProfileController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The profile, as deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Profile"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not the owner of this profile",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Delete a profile",
+        "tags": [
+          "Profile"
+        ]
+      }
+    },
+    "/practices": {
+      "post": {
+        "operationId": "PracticesController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePracticeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The practice, as created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Practice"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Email not verified",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Create a practice owned by the current user's profile",
+        "tags": [
+          "Practices"
+        ]
+      },
+      "get": {
+        "operationId": "PracticesController_findAll",
+        "parameters": [
+          {
+            "name": "name",
+            "required": false,
+            "in": "query",
+            "description": "Filter by practice name (LIKE wildcards are literal)",
+            "schema": {
+              "minLength": 1,
+              "maxLength": 200,
+              "type": "string"
+            }
+          },
+          {
+            "name": "city",
+            "required": false,
+            "in": "query",
+            "description": "Filter by city (LIKE wildcards are literal)",
+            "schema": {
+              "minLength": 1,
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "name": "lat",
+            "required": false,
+            "in": "query",
+            "description": "Latitude for geographic radius search",
+            "schema": {
+              "minimum": -90,
+              "maximum": 90,
+              "type": "number"
+            }
+          },
+          {
+            "name": "lng",
+            "required": false,
+            "in": "query",
+            "description": "Longitude for geographic radius search",
+            "schema": {
+              "minimum": -180,
+              "maximum": 180,
+              "type": "number"
+            }
+          },
+          {
+            "name": "radiusKm",
+            "required": false,
+            "in": "query",
+            "description": "Search radius in kilometers",
+            "schema": {
+              "maximum": 500,
+              "exclusiveMinimum": true,
+              "type": "number",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number, starting at 1",
+            "schema": {
+              "minimum": 1,
+              "maximum": 10000,
+              "default": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of results per page, max 500",
+            "schema": {
+              "minimum": 1,
+              "maximum": 500,
+              "default": 20,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A page of public practices",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedPractices"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Search public practices, with optional geographic radius search",
+        "tags": [
+          "Practices"
+        ]
+      }
+    },
+    "/practices/mine": {
+      "get": {
+        "operationId": "PracticesController_findMine",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The practices owned by the caller",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Practice"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "List practices owned by the current user's profile",
+        "tags": [
+          "Practices"
+        ]
+      }
+    },
+    "/practices/{id}": {
+      "get": {
+        "operationId": "PracticesController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The practice, as visible to the caller",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Practice"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Practice not found or not public",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get a practice by id",
+        "tags": [
+          "Practices"
+        ]
+      },
+      "patch": {
+        "operationId": "PracticesController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePracticeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The practice, as updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Practice"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not the owner of this practice",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Update a practice",
+        "tags": [
+          "Practices"
+        ]
+      },
+      "delete": {
+        "operationId": "PracticesController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The practice, as deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Practice"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not the owner of this practice",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Delete a practice",
+        "tags": [
+          "Practices"
+        ]
+      }
+    },
+    "/replacement-listings": {
+      "post": {
+        "operationId": "ReplacementlistingsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateReplacementListingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The draft listing, as created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReplacementListing"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "You do not own this practice or email not verified",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Create a draft replacement listing for a practice you own",
+        "tags": [
+          "Replacement Listings"
+        ]
+      },
+      "get": {
+        "operationId": "ReplacementlistingsController_findAll",
+        "parameters": [
+          {
+            "name": "specialty",
+            "required": false,
+            "in": "query",
+            "description": "Filter by medical specialty",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "GENERALIST",
+                "DENTIST",
+                "DERMATOLOGIST",
+                "PSYCHIATRIST",
+                "OTHER"
+              ]
+            }
+          },
+          {
+            "name": "city",
+            "required": false,
+            "in": "query",
+            "description": "Filter by practice city",
+            "schema": {
+              "minLength": 1,
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "description": "Free-text match on the posting's title and description, case-insensitive",
+            "schema": {
+              "minLength": 1,
+              "maxLength": 200,
+              "type": "string"
+            }
+          },
+          {
+            "name": "urgent",
+            "required": false,
+            "in": "query",
+            "description": "Filter urgent listings only",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "true"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "false"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "description": "Filter by status. Only meaningful on the caller's own listings: the public feed is always the applicable set, OPEN and IN_DISCUSSION.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "DRAFT",
+                "OPEN",
+                "IN_DISCUSSION",
+                "FULL",
+                "FILLED",
+                "CLOSED",
+                "CLOSED_NO_CANDIDATE",
+                "CANCELLED"
+              ]
+            }
+          },
+          {
+            "name": "startDateFrom",
+            "required": false,
+            "in": "query",
+            "description": "Only listings starting on or after this date (ISO 8601)",
+            "schema": {
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "startDateTo",
+            "required": false,
+            "in": "query",
+            "description": "Only listings starting on or before this date (ISO 8601)",
+            "schema": {
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "description": "Ordering of the results",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "recent",
+                "urgent",
+                "startDate"
+              ]
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number, starting at 1",
+            "schema": {
+              "minimum": 1,
+              "maximum": 10000,
+              "default": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of results per page, max 500",
+            "schema": {
+              "minimum": 1,
+              "maximum": 500,
+              "default": 20,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A page of open listings, with its pagination metadata",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedReplacementListings"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Search open replacement listings",
+        "tags": [
+          "Replacement Listings"
+        ]
+      }
+    },
+    "/replacement-listings/facets": {
+      "get": {
+        "operationId": "ReplacementlistingsController_findFacets",
+        "parameters": [
+          {
+            "name": "specialty",
+            "required": false,
+            "in": "query",
+            "description": "Filter by medical specialty",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "GENERALIST",
+                "DENTIST",
+                "DERMATOLOGIST",
+                "PSYCHIATRIST",
+                "OTHER"
+              ]
+            }
+          },
+          {
+            "name": "city",
+            "required": false,
+            "in": "query",
+            "description": "Filter by practice city",
+            "schema": {
+              "minLength": 1,
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "description": "Free-text match on the posting's title and description, case-insensitive",
+            "schema": {
+              "minLength": 1,
+              "maxLength": 200,
+              "type": "string"
+            }
+          },
+          {
+            "name": "urgent",
+            "required": false,
+            "in": "query",
+            "description": "Filter urgent listings only",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "true"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "false"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "description": "Filter by status. Only meaningful on the caller's own listings: the public feed is always the applicable set, OPEN and IN_DISCUSSION.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "DRAFT",
+                "OPEN",
+                "IN_DISCUSSION",
+                "FULL",
+                "FILLED",
+                "CLOSED",
+                "CLOSED_NO_CANDIDATE",
+                "CANCELLED"
+              ]
+            }
+          },
+          {
+            "name": "startDateFrom",
+            "required": false,
+            "in": "query",
+            "description": "Only listings starting on or after this date (ISO 8601)",
+            "schema": {
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "startDateTo",
+            "required": false,
+            "in": "query",
+            "description": "Only listings starting on or before this date (ISO 8601)",
+            "schema": {
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "description": "Ordering of the results",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "recent",
+                "urgent",
+                "startDate"
+              ]
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number, starting at 1",
+            "schema": {
+              "minimum": 1,
+              "maximum": 10000,
+              "default": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of results per page, max 500",
+            "schema": {
+              "minimum": 1,
+              "maximum": 500,
+              "default": 20,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The counts the browse screen filters by",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListingFacets"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Counts for the browse screen: total, urgent, and the distribution per specialty",
+        "tags": [
+          "Replacement Listings"
+        ]
+      }
+    },
+    "/replacement-listings/places": {
+      "get": {
+        "operationId": "ReplacementlistingsController_findPlaces",
+        "parameters": [
+          {
+            "name": "specialty",
+            "required": false,
+            "in": "query",
+            "description": "Filter by medical specialty",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "GENERALIST",
+                "DENTIST",
+                "DERMATOLOGIST",
+                "PSYCHIATRIST",
+                "OTHER"
+              ]
+            }
+          },
+          {
+            "name": "city",
+            "required": false,
+            "in": "query",
+            "description": "Filter by practice city",
+            "schema": {
+              "minLength": 1,
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "description": "Free-text match on the posting's title and description, case-insensitive",
+            "schema": {
+              "minLength": 1,
+              "maxLength": 200,
+              "type": "string"
+            }
+          },
+          {
+            "name": "urgent",
+            "required": false,
+            "in": "query",
+            "description": "Filter urgent listings only",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "true"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "false"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "description": "Filter by status. Only meaningful on the caller's own listings: the public feed is always the applicable set, OPEN and IN_DISCUSSION.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "DRAFT",
+                "OPEN",
+                "IN_DISCUSSION",
+                "FULL",
+                "FILLED",
+                "CLOSED",
+                "CLOSED_NO_CANDIDATE",
+                "CANCELLED"
+              ]
+            }
+          },
+          {
+            "name": "startDateFrom",
+            "required": false,
+            "in": "query",
+            "description": "Only listings starting on or after this date (ISO 8601)",
+            "schema": {
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "startDateTo",
+            "required": false,
+            "in": "query",
+            "description": "Only listings starting on or before this date (ISO 8601)",
+            "schema": {
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "description": "Ordering of the results",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "recent",
+                "urgent",
+                "startDate"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The places the map is drawn from",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListingPlaces"
+                }
+              }
+            }
+          }
+        },
+        "summary": "The places the browse map is drawn from, over the whole matching collection",
+        "tags": [
+          "Replacement Listings"
+        ]
+      }
+    },
+    "/replacement-listings/page-of": {
+      "get": {
+        "operationId": "ReplacementlistingsController_findPageOf",
+        "parameters": [
+          {
+            "name": "specialty",
+            "required": false,
+            "in": "query",
+            "description": "Filter by medical specialty",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "GENERALIST",
+                "DENTIST",
+                "DERMATOLOGIST",
+                "PSYCHIATRIST",
+                "OTHER"
+              ]
+            }
+          },
+          {
+            "name": "city",
+            "required": false,
+            "in": "query",
+            "description": "Filter by practice city",
+            "schema": {
+              "minLength": 1,
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "description": "Free-text match on the posting's title and description, case-insensitive",
+            "schema": {
+              "minLength": 1,
+              "maxLength": 200,
+              "type": "string"
+            }
+          },
+          {
+            "name": "urgent",
+            "required": false,
+            "in": "query",
+            "description": "Filter urgent listings only",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "true"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "false"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "description": "Filter by status. Only meaningful on the caller's own listings: the public feed is always the applicable set, OPEN and IN_DISCUSSION.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "DRAFT",
+                "OPEN",
+                "IN_DISCUSSION",
+                "FULL",
+                "FILLED",
+                "CLOSED",
+                "CLOSED_NO_CANDIDATE",
+                "CANCELLED"
+              ]
+            }
+          },
+          {
+            "name": "startDateFrom",
+            "required": false,
+            "in": "query",
+            "description": "Only listings starting on or after this date (ISO 8601)",
+            "schema": {
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "startDateTo",
+            "required": false,
+            "in": "query",
+            "description": "Only listings starting on or before this date (ISO 8601)",
+            "schema": {
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "description": "Ordering of the results",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "recent",
+                "urgent",
+                "startDate"
+              ]
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "query",
+            "description": "The posting to place",
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of results per page, max 500",
+            "schema": {
+              "minimum": 1,
+              "maximum": 500,
+              "default": 20,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The page holding the posting, or null when the filters do not show it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListingPageOf"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Which page of the reader's ordering holds one posting, or null if the filters do not show it",
+        "tags": [
+          "Replacement Listings"
+        ]
+      }
+    },
+    "/replacement-listings/mine": {
+      "get": {
+        "operationId": "ReplacementlistingsController_findMine",
+        "parameters": [
+          {
+            "name": "specialty",
+            "required": false,
+            "in": "query",
+            "description": "Filter by medical specialty",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "GENERALIST",
+                "DENTIST",
+                "DERMATOLOGIST",
+                "PSYCHIATRIST",
+                "OTHER"
+              ]
+            }
+          },
+          {
+            "name": "city",
+            "required": false,
+            "in": "query",
+            "description": "Filter by practice city",
+            "schema": {
+              "minLength": 1,
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "description": "Free-text match on the posting's title and description, case-insensitive",
+            "schema": {
+              "minLength": 1,
+              "maxLength": 200,
+              "type": "string"
+            }
+          },
+          {
+            "name": "urgent",
+            "required": false,
+            "in": "query",
+            "description": "Filter urgent listings only",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "true"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "false"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "description": "Filter by status. Only meaningful on the caller's own listings: the public feed is always the applicable set, OPEN and IN_DISCUSSION.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "DRAFT",
+                "OPEN",
+                "IN_DISCUSSION",
+                "FULL",
+                "FILLED",
+                "CLOSED",
+                "CLOSED_NO_CANDIDATE",
+                "CANCELLED"
+              ]
+            }
+          },
+          {
+            "name": "startDateFrom",
+            "required": false,
+            "in": "query",
+            "description": "Only listings starting on or after this date (ISO 8601)",
+            "schema": {
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "startDateTo",
+            "required": false,
+            "in": "query",
+            "description": "Only listings starting on or before this date (ISO 8601)",
+            "schema": {
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "description": "Ordering of the results",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "recent",
+                "urgent",
+                "startDate"
+              ]
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number, starting at 1",
+            "schema": {
+              "minimum": 1,
+              "maximum": 10000,
+              "default": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of results per page, max 500",
+            "schema": {
+              "minimum": 1,
+              "maximum": 500,
+              "default": 20,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A page of the caller's own listings, any status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedReplacementListings"
+                }
+              }
+            }
+          }
+        },
+        "summary": "List all listings created by the current user, any status",
+        "tags": [
+          "Replacement Listings"
+        ]
+      }
+    },
+    "/replacement-listings/{id}": {
+      "get": {
+        "operationId": "ReplacementlistingsController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The listing, as visible to the caller",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReplacementListing"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Listing not found or not open",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get a listing by id",
+        "tags": [
+          "Replacement Listings"
+        ]
+      },
+      "patch": {
+        "operationId": "ReplacementlistingsController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateReplacementListingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The listing, as updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReplacementListing"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not the owner of this listing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Update a listing",
+        "tags": [
+          "Replacement Listings"
+        ]
+      },
+      "delete": {
+        "operationId": "ReplacementlistingsController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The listing, as deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReplacementListing"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not the owner of this listing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Delete a listing",
+        "tags": [
+          "Replacement Listings"
+        ]
+      }
+    },
+    "/replacement-listings/{id}/publish": {
+      "patch": {
+        "operationId": "ReplacementlistingsController_publish",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The listing, now open",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReplacementListing"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Listing is not a draft",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ApiValidationError"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not the owner of this listing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Publish a draft listing, making it publicly visible",
+        "tags": [
+          "Replacement Listings"
+        ]
+      }
+    },
+    "/replacement-listings/{id}/close": {
+      "patch": {
+        "operationId": "ReplacementlistingsController_close",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The listing, now closed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReplacementListing"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Listing is not open or filled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ApiValidationError"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not the owner of this listing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Close a listing once the replacement is completed",
+        "tags": [
+          "Replacement Listings"
+        ]
+      }
+    },
+    "/replacement-listings/{id}/cancel": {
+      "patch": {
+        "operationId": "ReplacementlistingsController_cancel",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The listing, now cancelled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReplacementListing"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Listing is already closed or cancelled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ApiValidationError"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not the owner of this listing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Cancel a listing before it is filled",
+        "tags": [
+          "Replacement Listings"
+        ]
+      }
+    },
+    "/applications": {
+      "post": {
+        "operationId": "ApplicationsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateApplicationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The application, as submitted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Application"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Already applied to this listing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Apply to a replacement listing",
+        "tags": [
+          "Applications"
+        ]
+      }
+    },
+    "/applications/mine": {
+      "get": {
+        "operationId": "ApplicationsController_findMine",
+        "parameters": [
+          {
+            "name": "listingId",
+            "required": false,
+            "in": "query",
+            "description": "Filter by listing id (Prisma cuid)",
+            "schema": {
+              "format": "cuid",
+              "pattern": "^[cC][0-9a-z]{6,}$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "description": "Filter by application status",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "PENDING",
+                "SHORTLISTED",
+                "ACCEPTED",
+                "REJECTED",
+                "WITHDRAWN"
+              ]
+            }
+          },
+          {
+            "name": "bucket",
+            "required": false,
+            "in": "query",
+            "description": "Filter by situation: another candidate retained, the posting ended, or refused by the practice",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "PASSED_OVER",
+                "POSTING_ENDED",
+                "REFUSED"
+              ]
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number, starting at 1",
+            "schema": {
+              "minimum": 1,
+              "maximum": 10000,
+              "default": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of results per page, max 500",
+            "schema": {
+              "minimum": 1,
+              "maximum": 500,
+              "default": 20,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A page of the caller's applications",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedApplications"
+                }
+              }
+            }
+          }
+        },
+        "summary": "List the current user's own applications",
+        "tags": [
+          "Applications"
+        ]
+      }
+    },
+    "/applications/listing/{listingId}": {
+      "get": {
+        "operationId": "ApplicationsController_findForListing",
+        "parameters": [
+          {
+            "name": "listingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "listingId",
+            "required": false,
+            "in": "query",
+            "description": "Filter by listing id (Prisma cuid)",
+            "schema": {
+              "format": "cuid",
+              "pattern": "^[cC][0-9a-z]{6,}$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "description": "Filter by application status",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "PENDING",
+                "SHORTLISTED",
+                "ACCEPTED",
+                "REJECTED",
+                "WITHDRAWN"
+              ]
+            }
+          },
+          {
+            "name": "bucket",
+            "required": false,
+            "in": "query",
+            "description": "Filter by situation: another candidate retained, the posting ended, or refused by the practice",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "PASSED_OVER",
+                "POSTING_ENDED",
+                "REFUSED"
+              ]
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number, starting at 1",
+            "schema": {
+              "minimum": 1,
+              "maximum": 10000,
+              "default": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of results per page, max 500",
+            "schema": {
+              "minimum": 1,
+              "maximum": 500,
+              "default": 20,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A page of applications received for the listing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedApplications"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not the owner of this listing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "summary": "List applications received for a listing you own",
+        "tags": [
+          "Applications"
+        ]
+      }
+    },
+    "/applications/{id}": {
+      "get": {
+        "operationId": "ApplicationsController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The application, as visible to the caller",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Application"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Application not found or no access",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get an application by id",
+        "tags": [
+          "Applications"
+        ]
+      },
+      "patch": {
+        "operationId": "ApplicationsController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateApplicationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The application, with its edited message",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Application"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Only pending applications can be edited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ApiValidationError"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "summary": "Edit the message of a pending application",
+        "tags": [
+          "Applications"
+        ]
+      }
+    },
+    "/applications/{id}/view": {
+      "patch": {
+        "operationId": "ApplicationsController_markAsViewed",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The application, now marked as viewed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Application"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not the owner of the listing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Mark an application as viewed",
+        "tags": [
+          "Applications"
+        ]
+      }
+    },
+    "/applications/{id}/shortlist": {
+      "patch": {
+        "operationId": "ApplicationsController_shortlist",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The application, now shortlisted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Application"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Application is not pending",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ApiValidationError"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "summary": "Shortlist a pending application",
+        "tags": [
+          "Applications"
+        ]
+      }
+    },
+    "/applications/{id}/accept": {
+      "patch": {
+        "operationId": "ApplicationsController_accept",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The application, now accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Application"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Application cannot be accepted in its current status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ApiValidationError"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "summary": "Accept an application, filling the listing and rejecting other candidates",
+        "tags": [
+          "Applications"
+        ]
+      }
+    },
+    "/applications/{id}/reject": {
+      "patch": {
+        "operationId": "ApplicationsController_reject",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RejectApplicationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The application, now rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Application"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Application cannot be rejected in its current status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ApiValidationError"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "summary": "Reject an application",
+        "tags": [
+          "Applications"
+        ]
+      }
+    },
+    "/applications/{id}/withdraw": {
+      "patch": {
+        "operationId": "ApplicationsController_withdraw",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WithdrawApplicationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The application, now withdrawn",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Application"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Application cannot be withdrawn in its current status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ApiValidationError"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "summary": "Withdraw your own application",
+        "tags": [
+          "Applications"
+        ]
+      }
+    },
+    "/health": {
+      "get": {
+        "operationId": "HealthController_check",
+        "parameters": [
+          {
+            "name": "deep",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "token",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The process is answering",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or wrong deep probe token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The database does not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Liveness probe, and readiness with ?deep=1",
+        "tags": [
+          "Health"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "Kineo API",
+    "description": "Kineo API documentation",
+    "version": "1.0",
+    "contact": {}
+  },
+  "tags": [
+    {
+      "name": "Kineo",
+      "description": ""
+    }
+  ],
+  "servers": [],
+  "components": {
+    "schemas": {
+      "ConfirmAccountDeletionDto": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512,
+            "description": "Single-use deletion confirmation token from the email link"
+          }
+        },
+        "required": [
+          "token"
+        ],
+        "additionalProperties": false
+      },
+      "AccountDeletionResult": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "The account has been anonymized",
+            "enum": [
+              true
+            ]
+          },
+          "anonymizedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+            "description": "When the account was anonymized"
+          },
+          "anonymizedListings": {
+            "type": "number",
+            "description": "Own listings taken out of circulation"
+          },
+          "detachedApplications": {
+            "type": "number",
+            "description": "Applications from other candidates, kept on a ghost listing because they are not ours to erase"
+          },
+          "settledApplications": {
+            "type": "number",
+            "description": "Own applications settled so their listings recalculate"
+          },
+          "protectedPlacements": {
+            "type": "number",
+            "description": "Listings holding an accepted placement, left untouched"
+          },
+          "message": {
+            "type": "string",
+            "description": "Confirmation message, in the language of the interface"
+          }
+        },
+        "required": [
+          "success",
+          "anonymizedAt",
+          "anonymizedListings",
+          "detachedApplications",
+          "settledApplications",
+          "protectedPlacements",
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "ApiError": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "description": "HTTP status of the answer, repeated in the body"
+          },
+          "message": {
+            "type": "string",
+            "description": "A sentence a human can read; 5xx answers always say “Internal server error”"
+          },
+          "code": {
+            "description": "Stable identifier for a refusal a client branches on — the values of REFUSAL_CODES (listing, application and profile refusals) and ERASURE_ERROR_CODES (erasure). Absent when the error has none",
+            "type": "string"
+          },
+          "path": {
+            "description": "Request path, without its query string",
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+            "description": "When the answer was sent"
+          }
+        },
+        "required": [
+          "statusCode",
+          "message",
+          "timestamp"
+        ]
+      },
+      "CreateProfileDto": {
+        "type": "object",
+        "properties": {
+          "specialty": {
+            "type": "string",
+            "enum": [
+              "GENERALIST",
+              "DENTIST",
+              "DERMATOLOGIST",
+              "PSYCHIATRIST",
+              "OTHER"
+            ],
+            "description": "Medical specialty of the profile"
+          },
+          "profileType": {
+            "type": "string",
+            "enum": [
+              "INSTALLED",
+              "REPLACEMENT",
+              "BOTH"
+            ],
+            "description": "Status: installed doctor, replacement doctor, or both"
+          },
+          "rppsNumber": {
+            "description": "11-digit RPPS number of the healthcare professional (spaces, dots and dashes are accepted)",
+            "type": "string",
+            "maxLength": 50
+          },
+          "city": {
+            "description": "Main city of practice",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "pattern": "^[A-Za-z\\u00C0-\\u00D6\\u00D8-\\u00F6\\u00F8-\\u00FF' -]+$"
+          },
+          "latitude": {
+            "description": "Latitude of the main practice location",
+            "type": "number",
+            "minimum": -90,
+            "maximum": 90
+          },
+          "longitude": {
+            "description": "Longitude of the main practice location",
+            "type": "number",
+            "minimum": -180,
+            "maximum": 180
+          },
+          "isPublic": {
+            "description": "Whether the profile is visible in the public directory",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "specialty",
+          "profileType"
+        ],
+        "additionalProperties": false
+      },
+      "Profile": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "string"
+          },
+          "rppsNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "specialty": {
+            "type": "string",
+            "enum": [
+              "GENERALIST",
+              "DENTIST",
+              "DERMATOLOGIST",
+              "PSYCHIATRIST",
+              "OTHER"
+            ]
+          },
+          "profileType": {
+            "type": "string",
+            "enum": [
+              "INSTALLED",
+              "REPLACEMENT",
+              "BOTH"
+            ]
+          },
+          "verified": {
+            "type": "boolean"
+          },
+          "isPublic": {
+            "type": "boolean"
+          },
+          "city": {
+            "type": "string",
+            "nullable": true
+          },
+          "latitude": {
+            "type": "number",
+            "nullable": true
+          },
+          "longitude": {
+            "type": "number",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          }
+        },
+        "required": [
+          "id",
+          "userId",
+          "rppsNumber",
+          "specialty",
+          "profileType",
+          "verified",
+          "isPublic",
+          "city",
+          "latitude",
+          "longitude",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "PaginatedPublicProfiles": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "specialty": {
+                  "type": "string",
+                  "enum": [
+                    "GENERALIST",
+                    "DENTIST",
+                    "DERMATOLOGIST",
+                    "PSYCHIATRIST",
+                    "OTHER"
+                  ]
+                },
+                "profileType": {
+                  "type": "string",
+                  "enum": [
+                    "INSTALLED",
+                    "REPLACEMENT",
+                    "BOTH"
+                  ]
+                },
+                "verified": {
+                  "type": "boolean"
+                },
+                "isPublic": {
+                  "type": "boolean"
+                },
+                "city": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "latitude": {
+                  "type": "number",
+                  "nullable": true
+                },
+                "longitude": {
+                  "type": "number",
+                  "nullable": true
+                },
+                "createdAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                },
+                "updatedAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                }
+              },
+              "required": [
+                "id",
+                "specialty",
+                "profileType",
+                "verified",
+                "isPublic",
+                "city",
+                "latitude",
+                "longitude",
+                "createdAt",
+                "updatedAt"
+              ]
+            }
+          },
+          "meta": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "number"
+              },
+              "page": {
+                "type": "number"
+              },
+              "limit": {
+                "type": "number"
+              },
+              "totalPages": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "total",
+              "page",
+              "limit",
+              "totalPages"
+            ]
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ]
+      },
+      "PublicProfile": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "specialty": {
+            "type": "string",
+            "enum": [
+              "GENERALIST",
+              "DENTIST",
+              "DERMATOLOGIST",
+              "PSYCHIATRIST",
+              "OTHER"
+            ]
+          },
+          "profileType": {
+            "type": "string",
+            "enum": [
+              "INSTALLED",
+              "REPLACEMENT",
+              "BOTH"
+            ]
+          },
+          "verified": {
+            "type": "boolean"
+          },
+          "isPublic": {
+            "type": "boolean"
+          },
+          "city": {
+            "type": "string",
+            "nullable": true
+          },
+          "latitude": {
+            "type": "number",
+            "nullable": true
+          },
+          "longitude": {
+            "type": "number",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          }
+        },
+        "required": [
+          "id",
+          "specialty",
+          "profileType",
+          "verified",
+          "isPublic",
+          "city",
+          "latitude",
+          "longitude",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "UpdateProfileDto": {
+        "type": "object",
+        "properties": {
+          "specialty": {
+            "type": "string",
+            "enum": [
+              "GENERALIST",
+              "DENTIST",
+              "DERMATOLOGIST",
+              "PSYCHIATRIST",
+              "OTHER"
+            ],
+            "description": "Medical specialty of the profile"
+          },
+          "profileType": {
+            "type": "string",
+            "enum": [
+              "INSTALLED",
+              "REPLACEMENT",
+              "BOTH"
+            ],
+            "description": "Status: installed doctor, replacement doctor, or both"
+          },
+          "rppsNumber": {
+            "description": "11-digit RPPS number of the healthcare professional (spaces, dots and dashes are accepted)",
+            "type": "string",
+            "maxLength": 50
+          },
+          "city": {
+            "description": "Main city of practice",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "pattern": "^[A-Za-z\\u00C0-\\u00D6\\u00D8-\\u00F6\\u00F8-\\u00FF' -]+$"
+          },
+          "latitude": {
+            "description": "Latitude of the main practice location",
+            "type": "number",
+            "minimum": -90,
+            "maximum": 90
+          },
+          "longitude": {
+            "description": "Longitude of the main practice location",
+            "type": "number",
+            "minimum": -180,
+            "maximum": 180
+          },
+          "isPublic": {
+            "description": "Whether the profile is visible in the public directory",
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreatePracticeDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "Name of the practice or clinic"
+          },
+          "address": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300,
+            "description": "Street address of the practice"
+          },
+          "city": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "pattern": "^[A-Za-z\\u00C0-\\u00D6\\u00D8-\\u00F6\\u00F8-\\u00FF' -]+$",
+            "description": "City where the practice is located"
+          },
+          "latitude": {
+            "description": "Latitude of the practice location",
+            "type": "number",
+            "minimum": -90,
+            "maximum": 90
+          },
+          "longitude": {
+            "description": "Longitude of the practice location",
+            "type": "number",
+            "minimum": -180,
+            "maximum": 180
+          },
+          "isPublic": {
+            "description": "Whether the practice is visible in the public directory",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name",
+          "address",
+          "city"
+        ],
+        "additionalProperties": false
+      },
+      "Practice": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "address": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "latitude": {
+            "type": "number",
+            "nullable": true
+          },
+          "longitude": {
+            "type": "number",
+            "nullable": true
+          },
+          "isPublic": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "address",
+          "city",
+          "latitude",
+          "longitude",
+          "isPublic",
+          "createdAt"
+        ]
+      },
+      "PaginatedPractices": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "address": {
+                  "type": "string"
+                },
+                "city": {
+                  "type": "string"
+                },
+                "latitude": {
+                  "type": "number",
+                  "nullable": true
+                },
+                "longitude": {
+                  "type": "number",
+                  "nullable": true
+                },
+                "isPublic": {
+                  "type": "boolean"
+                },
+                "createdAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "address",
+                "city",
+                "latitude",
+                "longitude",
+                "isPublic",
+                "createdAt"
+              ]
+            }
+          },
+          "meta": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "number"
+              },
+              "page": {
+                "type": "number"
+              },
+              "limit": {
+                "type": "number"
+              },
+              "totalPages": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "total",
+              "page",
+              "limit",
+              "totalPages"
+            ]
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ]
+      },
+      "UpdatePracticeDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "Name of the practice or clinic"
+          },
+          "address": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300,
+            "description": "Street address of the practice"
+          },
+          "city": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "pattern": "^[A-Za-z\\u00C0-\\u00D6\\u00D8-\\u00F6\\u00F8-\\u00FF' -]+$",
+            "description": "City where the practice is located"
+          },
+          "latitude": {
+            "description": "Latitude of the practice location",
+            "type": "number",
+            "minimum": -90,
+            "maximum": 90
+          },
+          "longitude": {
+            "description": "Longitude of the practice location",
+            "type": "number",
+            "minimum": -180,
+            "maximum": 180
+          },
+          "isPublic": {
+            "description": "Whether the practice is visible in the public directory",
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreateReplacementListingDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 150,
+            "description": "Public title of the listing, shown to replacement candidates"
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+            "description": "Start date of the replacement period (ISO 8601)"
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+            "description": "End date of the replacement period (ISO 8601)"
+          },
+          "specialty": {
+            "type": "string",
+            "enum": [
+              "GENERALIST",
+              "DENTIST",
+              "DERMATOLOGIST",
+              "PSYCHIATRIST",
+              "OTHER"
+            ],
+            "description": "Medical specialty required for this replacement"
+          },
+          "urgent": {
+            "description": "Marks the listing as a last-minute urgent replacement",
+            "type": "boolean"
+          },
+          "description": {
+            "description": "Free text details about the replacement",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "maxApplications": {
+            "description": "Optional cap on the number of active applications",
+            "type": "integer",
+            "exclusiveMinimum": true,
+            "maximum": 100,
+            "minimum": 0
+          },
+          "practiceId": {
+            "type": "string",
+            "format": "cuid",
+            "pattern": "^[cC][0-9a-z]{6,}$",
+            "description": "Id of the practice this listing belongs to (Prisma cuid)"
+          }
+        },
+        "required": [
+          "title",
+          "startDate",
+          "endDate",
+          "specialty",
+          "practiceId"
+        ],
+        "additionalProperties": false
+      },
+      "ReplacementListing": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "practiceId": {
+            "type": "string"
+          },
+          "practice": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "city": {
+                "type": "string"
+              },
+              "latitude": {
+                "type": "number",
+                "nullable": true
+              },
+              "longitude": {
+                "type": "number",
+                "nullable": true
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "city",
+              "latitude",
+              "longitude"
+            ]
+          },
+          "title": {
+            "type": "string"
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "specialty": {
+            "type": "string",
+            "enum": [
+              "GENERALIST",
+              "DENTIST",
+              "DERMATOLOGIST",
+              "PSYCHIATRIST",
+              "OTHER"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "DRAFT",
+              "OPEN",
+              "IN_DISCUSSION",
+              "FULL",
+              "FILLED",
+              "CLOSED",
+              "CLOSED_NO_CANDIDATE",
+              "CANCELLED"
+            ]
+          },
+          "urgent": {
+            "type": "boolean"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "maxApplications": {
+            "type": "number",
+            "nullable": true
+          },
+          "applicationsCount": {
+            "type": "number"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          }
+        },
+        "required": [
+          "id",
+          "practiceId",
+          "title",
+          "startDate",
+          "endDate",
+          "specialty",
+          "status",
+          "urgent",
+          "description",
+          "maxApplications",
+          "applicationsCount",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "PaginatedReplacementListings": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "practiceId": {
+                  "type": "string"
+                },
+                "practice": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "city": {
+                      "type": "string"
+                    },
+                    "latitude": {
+                      "type": "number",
+                      "nullable": true
+                    },
+                    "longitude": {
+                      "type": "number",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name",
+                    "city",
+                    "latitude",
+                    "longitude"
+                  ]
+                },
+                "title": {
+                  "type": "string"
+                },
+                "startDate": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                },
+                "endDate": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                },
+                "specialty": {
+                  "type": "string",
+                  "enum": [
+                    "GENERALIST",
+                    "DENTIST",
+                    "DERMATOLOGIST",
+                    "PSYCHIATRIST",
+                    "OTHER"
+                  ]
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "DRAFT",
+                    "OPEN",
+                    "IN_DISCUSSION",
+                    "FULL",
+                    "FILLED",
+                    "CLOSED",
+                    "CLOSED_NO_CANDIDATE",
+                    "CANCELLED"
+                  ]
+                },
+                "urgent": {
+                  "type": "boolean"
+                },
+                "maxApplications": {
+                  "type": "number",
+                  "nullable": true
+                },
+                "applicationsCount": {
+                  "type": "number"
+                },
+                "createdAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                },
+                "updatedAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                }
+              },
+              "required": [
+                "id",
+                "practiceId",
+                "title",
+                "startDate",
+                "endDate",
+                "specialty",
+                "status",
+                "urgent",
+                "maxApplications",
+                "applicationsCount",
+                "createdAt",
+                "updatedAt"
+              ]
+            }
+          },
+          "meta": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "number"
+              },
+              "page": {
+                "type": "number"
+              },
+              "limit": {
+                "type": "number"
+              },
+              "totalPages": {
+                "type": "number"
+              },
+              "counts": {
+                "type": "object",
+                "properties": {
+                  "total": {
+                    "type": "number"
+                  },
+                  "DRAFT": {
+                    "type": "number"
+                  },
+                  "OPEN": {
+                    "type": "number"
+                  },
+                  "IN_DISCUSSION": {
+                    "type": "number"
+                  },
+                  "FULL": {
+                    "type": "number"
+                  },
+                  "FILLED": {
+                    "type": "number"
+                  },
+                  "CLOSED": {
+                    "type": "number"
+                  },
+                  "CLOSED_NO_CANDIDATE": {
+                    "type": "number"
+                  },
+                  "CANCELLED": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "total",
+                  "DRAFT",
+                  "OPEN",
+                  "IN_DISCUSSION",
+                  "FULL",
+                  "FILLED",
+                  "CLOSED",
+                  "CLOSED_NO_CANDIDATE",
+                  "CANCELLED"
+                ]
+              },
+              "nextRecruitingListing": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "title": {
+                    "type": "string"
+                  },
+                  "startDate": {
+                    "type": "string"
+                  },
+                  "endDate": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "title",
+                  "startDate",
+                  "endDate"
+                ],
+                "nullable": true
+              }
+            },
+            "required": [
+              "total",
+              "page",
+              "limit",
+              "totalPages"
+            ]
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ]
+      },
+      "ListingFacets": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "number"
+          },
+          "urgent": {
+            "type": "number"
+          },
+          "bySpecialty": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number"
+            },
+            "required": [
+              "GENERALIST",
+              "DENTIST",
+              "DERMATOLOGIST",
+              "PSYCHIATRIST",
+              "OTHER"
+            ]
+          }
+        },
+        "required": [
+          "total",
+          "urgent",
+          "bySpecialty"
+        ]
+      },
+      "ListingPlaces": {
+        "type": "object",
+        "properties": {
+          "places": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "practiceId": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "city": {
+                  "type": "string"
+                },
+                "latitude": {
+                  "type": "number",
+                  "nullable": true
+                },
+                "longitude": {
+                  "type": "number",
+                  "nullable": true
+                },
+                "count": {
+                  "type": "number"
+                },
+                "listings": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "title": {
+                        "type": "string"
+                      },
+                      "startDate": {
+                        "type": "string",
+                        "format": "date-time",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                      },
+                      "endDate": {
+                        "type": "string",
+                        "format": "date-time",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "title",
+                      "startDate",
+                      "endDate"
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "practiceId",
+                "name",
+                "city",
+                "latitude",
+                "longitude",
+                "count",
+                "listings"
+              ]
+            }
+          },
+          "unlocated": {
+            "type": "number"
+          },
+          "totalPlaces": {
+            "type": "number"
+          },
+          "truncated": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "places",
+          "unlocated",
+          "totalPlaces",
+          "truncated"
+        ]
+      },
+      "ListingPageOf": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "number",
+            "nullable": true
+          }
+        },
+        "required": [
+          "page"
+        ]
+      },
+      "UpdateReplacementListingDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 150,
+            "description": "Public title of the listing, shown to replacement candidates"
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+            "description": "Start date of the replacement period (ISO 8601)"
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+            "description": "End date of the replacement period (ISO 8601)"
+          },
+          "specialty": {
+            "type": "string",
+            "enum": [
+              "GENERALIST",
+              "DENTIST",
+              "DERMATOLOGIST",
+              "PSYCHIATRIST",
+              "OTHER"
+            ],
+            "description": "Medical specialty required for this replacement"
+          },
+          "urgent": {
+            "description": "Marks the listing as a last-minute urgent replacement",
+            "type": "boolean"
+          },
+          "description": {
+            "description": "Free text details about the replacement",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "maxApplications": {
+            "description": "Optional cap on the number of active applications",
+            "type": "integer",
+            "exclusiveMinimum": true,
+            "maximum": 100,
+            "minimum": 0
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreateApplicationDto": {
+        "type": "object",
+        "properties": {
+          "listingId": {
+            "type": "string",
+            "format": "cuid",
+            "pattern": "^[cC][0-9a-z]{6,}$",
+            "description": "Id of the replacement listing (Prisma cuid)"
+          },
+          "message": {
+            "description": "Optional message to the practice owner",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          }
+        },
+        "required": [
+          "listingId"
+        ],
+        "additionalProperties": false
+      },
+      "Application": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "listingId": {
+            "type": "string"
+          },
+          "applicantId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "SHORTLISTED",
+              "ACCEPTED",
+              "REJECTED",
+              "WITHDRAWN"
+            ]
+          },
+          "decisionSource": {
+            "type": "string",
+            "enum": [
+              "PRACTICE_ACCEPTED",
+              "PRACTICE_REJECTED",
+              "CANDIDATE_WITHDREW",
+              "SYSTEM",
+              null
+            ],
+            "nullable": true
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "rejectionReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "rejectionBucket": {
+            "type": "string",
+            "enum": [
+              "PASSED_OVER",
+              "POSTING_ENDED",
+              "REFUSED",
+              null
+            ],
+            "nullable": true
+          },
+          "withdrawnReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "viewedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+            "nullable": true
+          },
+          "respondedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "listing": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              },
+              "startDate": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              },
+              "endDate": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              },
+              "specialty": {
+                "type": "string",
+                "enum": [
+                  "GENERALIST",
+                  "DENTIST",
+                  "DERMATOLOGIST",
+                  "PSYCHIATRIST",
+                  "OTHER"
+                ]
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "DRAFT",
+                  "OPEN",
+                  "IN_DISCUSSION",
+                  "FULL",
+                  "FILLED",
+                  "CLOSED",
+                  "CLOSED_NO_CANDIDATE",
+                  "CANCELLED"
+                ]
+              },
+              "urgent": {
+                "type": "boolean"
+              },
+              "description": {
+                "type": "string",
+                "nullable": true
+              },
+              "practice": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "address": {
+                    "type": "string"
+                  },
+                  "city": {
+                    "type": "string"
+                  },
+                  "latitude": {
+                    "type": "number",
+                    "nullable": true
+                  },
+                  "longitude": {
+                    "type": "number",
+                    "nullable": true
+                  }
+                },
+                "required": [
+                  "id",
+                  "name",
+                  "address",
+                  "city",
+                  "latitude",
+                  "longitude"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "title",
+              "startDate",
+              "endDate",
+              "specialty",
+              "status",
+              "urgent",
+              "description",
+              "practice"
+            ]
+          },
+          "applicant": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "specialty": {
+                "type": "string",
+                "enum": [
+                  "GENERALIST",
+                  "DENTIST",
+                  "DERMATOLOGIST",
+                  "PSYCHIATRIST",
+                  "OTHER"
+                ]
+              },
+              "profileType": {
+                "type": "string",
+                "enum": [
+                  "INSTALLED",
+                  "REPLACEMENT",
+                  "BOTH"
+                ]
+              },
+              "city": {
+                "type": "string",
+                "nullable": true
+              },
+              "verified": {
+                "type": "boolean"
+              },
+              "anonymized": {
+                "type": "boolean"
+              },
+              "user": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "image": {
+                    "type": "string",
+                    "nullable": true
+                  }
+                },
+                "required": [
+                  "name",
+                  "image"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "specialty",
+              "profileType",
+              "city",
+              "verified",
+              "anonymized",
+              "user"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "listingId",
+          "applicantId",
+          "status",
+          "decisionSource",
+          "message",
+          "rejectionReason",
+          "rejectionBucket",
+          "withdrawnReason",
+          "viewedAt",
+          "respondedAt",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "PaginatedApplications": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "listingId": {
+                  "type": "string"
+                },
+                "applicantId": {
+                  "type": "string"
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "PENDING",
+                    "SHORTLISTED",
+                    "ACCEPTED",
+                    "REJECTED",
+                    "WITHDRAWN"
+                  ]
+                },
+                "decisionSource": {
+                  "type": "string",
+                  "enum": [
+                    "PRACTICE_ACCEPTED",
+                    "PRACTICE_REJECTED",
+                    "CANDIDATE_WITHDREW",
+                    "SYSTEM",
+                    null
+                  ],
+                  "nullable": true
+                },
+                "message": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "rejectionReason": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "rejectionBucket": {
+                  "type": "string",
+                  "enum": [
+                    "PASSED_OVER",
+                    "POSTING_ENDED",
+                    "REFUSED",
+                    null
+                  ],
+                  "nullable": true
+                },
+                "withdrawnReason": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "viewedAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+                  "nullable": true
+                },
+                "respondedAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+                  "nullable": true
+                },
+                "createdAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                },
+                "updatedAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                },
+                "listing": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "startDate": {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                    },
+                    "endDate": {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                    },
+                    "specialty": {
+                      "type": "string",
+                      "enum": [
+                        "GENERALIST",
+                        "DENTIST",
+                        "DERMATOLOGIST",
+                        "PSYCHIATRIST",
+                        "OTHER"
+                      ]
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "DRAFT",
+                        "OPEN",
+                        "IN_DISCUSSION",
+                        "FULL",
+                        "FILLED",
+                        "CLOSED",
+                        "CLOSED_NO_CANDIDATE",
+                        "CANCELLED"
+                      ]
+                    },
+                    "urgent": {
+                      "type": "boolean"
+                    },
+                    "description": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "practice": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "address": {
+                          "type": "string"
+                        },
+                        "city": {
+                          "type": "string"
+                        },
+                        "latitude": {
+                          "type": "number",
+                          "nullable": true
+                        },
+                        "longitude": {
+                          "type": "number",
+                          "nullable": true
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "name",
+                        "address",
+                        "city",
+                        "latitude",
+                        "longitude"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "title",
+                    "startDate",
+                    "endDate",
+                    "specialty",
+                    "status",
+                    "urgent",
+                    "description",
+                    "practice"
+                  ]
+                },
+                "applicant": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "specialty": {
+                      "type": "string",
+                      "enum": [
+                        "GENERALIST",
+                        "DENTIST",
+                        "DERMATOLOGIST",
+                        "PSYCHIATRIST",
+                        "OTHER"
+                      ]
+                    },
+                    "profileType": {
+                      "type": "string",
+                      "enum": [
+                        "INSTALLED",
+                        "REPLACEMENT",
+                        "BOTH"
+                      ]
+                    },
+                    "city": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "verified": {
+                      "type": "boolean"
+                    },
+                    "anonymized": {
+                      "type": "boolean"
+                    },
+                    "user": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "image": {
+                          "type": "string",
+                          "nullable": true
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "image"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "specialty",
+                    "profileType",
+                    "city",
+                    "verified",
+                    "anonymized",
+                    "user"
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "listingId",
+                "applicantId",
+                "status",
+                "decisionSource",
+                "message",
+                "rejectionReason",
+                "rejectionBucket",
+                "withdrawnReason",
+                "viewedAt",
+                "respondedAt",
+                "createdAt",
+                "updatedAt"
+              ]
+            }
+          },
+          "meta": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "number"
+              },
+              "page": {
+                "type": "number"
+              },
+              "limit": {
+                "type": "number"
+              },
+              "totalPages": {
+                "type": "number"
+              },
+              "counts": {
+                "type": "object",
+                "properties": {
+                  "total": {
+                    "type": "number",
+                    "description": "Count across all statuses ('all' tab)"
+                  },
+                  "PENDING": {
+                    "type": "number"
+                  },
+                  "SHORTLISTED": {
+                    "type": "number"
+                  },
+                  "ACCEPTED": {
+                    "type": "number"
+                  },
+                  "REJECTED": {
+                    "type": "number"
+                  },
+                  "WITHDRAWN": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "total",
+                  "PENDING",
+                  "SHORTLISTED",
+                  "ACCEPTED",
+                  "REJECTED",
+                  "WITHDRAWN"
+                ]
+              },
+              "bucketCounts": {
+                "type": "object",
+                "properties": {
+                  "PASSED_OVER": {
+                    "type": "number"
+                  },
+                  "POSTING_ENDED": {
+                    "type": "number"
+                  },
+                  "REFUSED": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "PASSED_OVER",
+                  "POSTING_ENDED",
+                  "REFUSED"
+                ]
+              },
+              "unseenOpenCount": {
+                "type": "number"
+              },
+              "respondedCount": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "total",
+              "page",
+              "limit",
+              "totalPages",
+              "counts"
+            ]
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ]
+      },
+      "RejectApplicationDto": {
+        "type": "object",
+        "properties": {
+          "rejectionReason": {
+            "description": "Optional reason shared with the applicant",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          }
+        },
+        "additionalProperties": false
+      },
+      "WithdrawApplicationDto": {
+        "type": "object",
+        "properties": {
+          "withdrawnReason": {
+            "description": "Optional reason for withdrawing",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateApplicationDto": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000,
+            "description": "Updated message, only editable while the application is pending"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "Health": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "description": "The process answered",
+            "enum": [
+              "ok"
+            ]
+          },
+          "timestamp": {
+            "description": "Deep probe only",
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "uptime": {
+            "description": "Seconds since boot, deep probe only",
+            "type": "number"
+          },
+          "database": {
+            "description": "After a SELECT 1 answered, deep probe only",
+            "type": "string",
+            "enum": [
+              "connected"
+            ]
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "ApiValidationError": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "description": "Always 400",
+            "enum": [
+              400
+            ]
+          },
+          "message": {
+            "type": "string",
+            "description": "Constant",
+            "enum": [
+              "Validation failed"
+            ]
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "path": {
+                  "type": "array",
+                  "items": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ]
+                  },
+                  "description": "Where the value sat in the request, one step per array entry"
+                },
+                "message": {
+                  "type": "string",
+                  "description": "What the schema rejected about it"
+                }
+              },
+              "required": [
+                "path",
+                "message"
+              ]
+            },
+            "description": "One entry per rejected value"
+          }
+        },
+        "required": [
+          "statusCode",
+          "message",
+          "errors"
+        ]
+      }
+    }
+  }
+}
