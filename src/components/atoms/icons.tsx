@@ -192,16 +192,40 @@ export function ExpandIcon(props: SVGProps<SVGSVGElement>) {
 }
 
 /**
- * Crosshair — "come to me". The map's frame-this-page control.
+ * Crosshair — "centre on this". The map's frame-this-page control.
  *
- * Lucide's own geometry, like every other mark in this set, so the two controls
- * the reference puts in its map's corner share one stroke weight and one visual
- * density instead of being drawn twice by two hands.
+ * Lucide's own geometry — the circle with its four sights — like every other
+ * mark in this set, so the two controls the reference puts in its map's corner
+ * share one stroke weight and one visual density instead of being drawn twice
+ * by two hands. The name used to dress a paper-plane arrow; the geometry below
+ * is what a crosshair actually reads as, and « Cadrer » asks exactly this move.
  */
 export function CrosshairIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <Svg {...props}>
-      <path d="M4.37 10.39 19.63 3.61Q21 3 20.39 4.37L13.61 19.63Q13 21 12.64 19.55L11.24 13.97Q11 13 10.03 12.76L4.46 11.36Q3 11 4.37 10.39Z" />
+      <circle cx="12" cy="12" r="10" />
+      <line x1="22" y1="12" x2="18" y2="12" />
+      <line x1="6" y1="12" x2="2" y2="12" />
+      <line x1="12" y1="6" x2="12" y2="2" />
+      <line x1="12" y1="22" x2="12" y2="18" />
+    </Svg>
+  );
+}
+
+/**
+ * Map — the folded sheet, "see it on the map".
+ *
+ * The list rows' « voir sur la carte » control. A crosshair there read as the
+ * map's own move (frame, centre), an action the control does not take; the
+ * sheet names the destination, which is what the button promises. Lucide's own
+ * geometry, like every other mark in this set.
+ */
+export function MapIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Svg {...props}>
+      <path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z" />
+      <path d="M15 5.764v15" />
+      <path d="M9 3.236v15" />
     </Svg>
   );
 }

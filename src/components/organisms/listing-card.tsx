@@ -4,7 +4,7 @@ import { Badge } from "@/components/atoms/badge";
 import { Card } from "@/components/atoms/card";
 import {
   CalendarIcon,
-  CrosshairIcon,
+  MapIcon,
   MapPinIcon,
   UsersIcon,
 } from "@/components/atoms/icons";
@@ -69,7 +69,7 @@ export function ListingCard({
       style={rowEnterStyle(index ?? 0)}
       data-listing-id={listing.id}
       onClick={(event) => {
-        // The title is a link and the crosshair is a map control; a click on
+        // The title is a link and the map button is a map control; a click on
         // either must keep doing its own thing.
         if ((event.target as Element).closest("button, a")) return;
         router.push(`/listings/${listing.id}`);
@@ -101,7 +101,7 @@ export function ListingCard({
                   onClick={() => onListingSelect?.(listing)}
                   className="grid size-5 shrink-0 cursor-pointer place-items-center rounded-full text-faint transition-colors hover:bg-surface-hover hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                 >
-                  <CrosshairIcon className="size-3.5" />
+                  <MapIcon className="size-3.5" />
                 </button>
               )}
             </div>

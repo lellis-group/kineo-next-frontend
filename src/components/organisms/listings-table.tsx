@@ -2,11 +2,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { forwardRef, useImperativeHandle, useRef } from "react";
 import { Badge } from "@/components/atoms/badge";
-import {
-  CalendarIcon,
-  CrosshairIcon,
-  MapPinIcon,
-} from "@/components/atoms/icons";
+import { CalendarIcon, MapIcon, MapPinIcon } from "@/components/atoms/icons";
 import { CapacityBar } from "@/components/molecules/capacity-bar";
 import { SpecialtyIcon } from "@/components/molecules/specialty-icon";
 import { cn } from "@/lib/cn";
@@ -73,7 +69,7 @@ interface ListingsTableProps {
  * Two states on a row, and neither is the other: pointing at one is a *preview*
  * that lights its marker on the map for as long as the pointer is there, and
  * choosing one is a *selection* that stays until it is dismissed. The title is
- * the link to the posting, and the crosshair beside it is the map control: the
+ * the link to the posting, and the map button beside it is the map control: the
  * row's own click is a pointer convenience, not the accessible path, so a
  * keyboard reader can do both without a focusable `<tr>`.
  *
@@ -223,7 +219,7 @@ export const ListingsTable = forwardRef<
                 onMouseEnter={() => onHoveredChange?.(listing.id)}
                 onMouseLeave={() => onHoveredChange?.(null)}
                 onClick={(event) => {
-                  // The title is a link and the crosshair is a map control; a
+                  // The title is a link and the map button is a map control; a
                   // click on either must keep doing its own thing.
                   if ((event.target as Element).closest("button, a")) return;
                   router.push(`/listings/${listing.id}`);
@@ -277,7 +273,7 @@ export const ListingsTable = forwardRef<
                             onClick={() => onListingSelect?.(listing)}
                             className="mt-0.5 grid size-5 shrink-0 cursor-pointer place-items-center rounded-full text-faint transition-colors hover:bg-surface-hover hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                           >
-                            <CrosshairIcon className="size-3.5" />
+                            <MapIcon className="size-3.5" />
                           </button>
                         )}
                       </div>
