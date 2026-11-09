@@ -251,10 +251,10 @@ export const ListingsTable = forwardRef<
                         first line: they all share one box height, so their text
                         sits at the same y across the whole row.
                       */}
-                      <div className="flex min-w-0 items-start gap-1">
+                      <div className="flex min-w-0 items-start gap-[var(--cell-gap)]">
                         <Link
                           href={`/listings/${listing.id}`}
-                          className="line-clamp-2 min-w-0 flex-1 font-medium leading-[var(--cell-icon)] text-foreground transition-colors hover:text-primary focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                          className="line-clamp-2 min-w-0 font-medium leading-[var(--cell-icon)] text-foreground transition-colors hover:text-primary focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                         >
                           {listing.title}
                         </Link>
@@ -265,13 +265,30 @@ export const ListingsTable = forwardRef<
                             map reachable and the posting itself not: a keyboard
                             reader could tab into the map's markers but never open
                             the detail. Two actions need two controls.
+
+                            It follows the title at the cell's own gap — the
+                            button's position is the text's, not the column's
+                            (`flex-1` on the link used to fling it to the far
+                            edge on short titles and to butt against the wrapped
+                            text on long ones).
                           */
                           <button
                             type="button"
                             aria-label={`Voir ${listing.title} sur la carte`}
                             aria-pressed={selected}
                             onClick={() => onListingSelect?.(listing)}
-                            className="mt-0.5 grid size-5 shrink-0 cursor-pointer place-items-center rounded-full text-faint transition-colors hover:bg-surface-hover hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                            /*
+                              Centred on the title's first line by arithmetic,
+                              not by a font-size nudge: the line is 1.25rem
+                              (`--cell-icon`) and the button 1.5rem, so −2px of
+                              margin each side — exactly half the difference —
+                              puts the glyph's centre on the text's centre line
+                              while the 24px click target (WCAG's floor) stays.
+                              The negative margins also stop the button from
+                              stretching the line box the specialty line below
+                              follows.
+                            */
+                            className="-my-[0.125rem] grid size-5 shrink-0 cursor-pointer place-items-center rounded-full text-faint transition-colors hover:bg-surface-hover hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                           >
                             <MapIcon className="size-3.5" />
                           </button>
