@@ -377,8 +377,16 @@ export function paintStates(
       point.lng === selected.longitude &&
       point.lat === selected.latitude;
 
+    // A pressed pin announces its state the way the table's map button does
+    // (`aria-pressed` there): the cream ring paints a choice for the pointer,
+    // and this is the same choice in words. The hover stays a paint-only
+    // preview — it is not a state, it is the pointer, and « pressed » would
+    // lie about it exactly the way the old one-value pick did.
     marker.getElement().classList.toggle("is-preview", coversHovered);
     marker.getElement().classList.toggle("is-active", coversSelected);
+    marker
+      .getElement()
+      .setAttribute("aria-pressed", coversSelected ? "true" : "false");
   }
 }
 
