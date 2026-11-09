@@ -38,7 +38,7 @@
   },
   "overrides": [
     {
-      "includes": ["src/lib/types/api.gen.ts", "openapi.json"],
+      "includes": ["src/lib/types/api.gen.ts"],
       "linter": {
         "enabled": false
       },

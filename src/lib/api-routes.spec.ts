@@ -2,24 +2,24 @@
  * Route audit — does this frontend call the routes the backend publishes?
  *
  * Every service function is invoked with a transport that records the request
- * and rejects it; each recorded call is held against the generated document
- * (`openapi.json`): the method-path pair must be published there, and the call
- * must have gone exactly there. A backend rename, a typo in a template literal
- * or a route that drifted shows up as a failing test instead of a 404 in a
- * browser, after login.
+ * and rejects it; each recorded call is held against the generated contract
+ * (`api.gen.ts`, regenerated from the running backend's `/api-json` with
+ * `bun run api:types`): the method-path pair must be published there, and the
+ * call must have gone exactly there. A backend rename, a typo in a template
+ * literal or a route that drifted shows up as a failing test instead of a 404
+ * in a browser, after login.
  *
  * The audit goes both ways. A route the document gains must be either audited
- * on a call the frontend makes or named with a reason on `NOT_CONSUMED_ROUTES`
- * — an endpoint with no consumer is usually a screen half-built, and an
- * unexplained route would hide it. The better-auth session routes
- * (`/api/auth/*`) are not the backend's document and stay out, as do the probes
- * a screen has no reason to call.
+ * on a call the frontend makes or named with a reason on `NOT_CONSUMED` — an
+ * endpoint with no consumer is usually a screen half-built, and an unexplained
+ * route would hide it. The better-auth session routes (`/api/auth/*`) are not
+ * the backend's document and stay out, as do the probes a screen has no reason
+ * to call.
  *
  * Methods and paths are in scope; bodies and query parameters are the
  * call-site contract the service specs test beside each adapter.
  */
 import { describe, expect, it } from "bun:test";
-import spec from "../../openapi.json";
 import { confirmAccountDeletion } from "./account-deletion-service";
 import type { ApiTransport } from "./api-client";
 import {
@@ -53,13 +53,123 @@ import {
   fetchMyProfile,
   updateProfile,
 } from "./profile-service";
+import type { paths } from "./types/api.gen";
 
-/** Every operation the document publishes, as `METHOD /path`. */
-const PUBLISHED = new Set(
-  Object.entries(spec.paths).flatMap(([path, operations]) =>
-    Object.keys(operations).map((verb) => `${verb.toUpperCase()} ${path}`),
-  ),
-);
+/**
+ * The HTTP methods the backend document actually books — the operation keys of
+ * the path items, beside the path-level `parameters` a document can carry and
+ * which is not an operation.
+ */
+type HttpMethod = "get" | "post" | "put" | "patch" | "delete";
+
+/**
+ * Every operation the contract publishes, as `METHOD /path` — derived from the
+ * generated `paths`, so the names below are checked against the *live* truth.
+ *
+ * The generator emits every method key on every path item and types the
+ * unbooked ones `?: never` (and path-level `parameters` alongside them), so an
+ * entry is kept only when the thing it points at is actually declared there —
+ * required, and not `never`. The contract itself left the repository:
+ * `api.gen.ts` is its only resident copy, regenerated with `bun run api:types`
+ * against the dist the backend is serving. Nothing is imported at runtime —
+ * the union is built at type level, and it is what gives the audit its teeth:
+ *
+ * - `DOCUMENTED_ROUTES` below is checked element-against-`satisfies`: any name
+ *   the document does not publish (a typo, a removed route) is a compile error
+ *   on the offending line;
+ * - the counterpart `DOCUMENTED_COVERS_ALL` makes the written list *equal* the
+ *   derived union, so a route the freshly regenerated document gained cannot
+ *   slip past unaccounted — it surfaces as a compile error here, in this file,
+ *   before any test runs.
+ */
+type DocumentedRoute = {
+  [P in keyof paths & string]: {
+    [M in keyof paths[P] & HttpMethod]: [undefined] extends [paths[P][M]]
+      ? never
+      : `${Uppercase<M>} ${P}`;
+  }[keyof paths[P] & HttpMethod];
+}[keyof paths & string];
+
+/**
+ * Two types are identical when each extends the other; mutual assignability of
+ * a concrete literal union against the derived one is the strongest statement
+ * TypeScript offers for "no member left out, none invented".
+ */
+type Identical<_A, _B> = [_A] extends [_B]
+  ? [_B] extends [_A]
+    ? true
+    : false
+  : false;
+
+/**
+ * The document's routes, written out in full.
+ *
+ * The contract could be walked at runtime (it used to be a committed JSON), but
+ * `api.gen.ts` publishes only types, so the list exists as values here — and,
+ * constrained as above, it *is* the audit: both reductions funnel through the
+ * compiler, which is a stricter reader of the document than `Object.keys` ever
+ * was.
+ */
+const DOCUMENTED_ROUTES = [
+  // Probes and the welcome route — the document's own scaffolding.
+  "GET /",
+  "GET /ping",
+  "GET /health",
+
+  // Account erasure
+  "POST /account/confirm-deletion",
+
+  // Profile
+  "POST /profile",
+  "GET /profile",
+  "GET /profile/me",
+  "GET /profile/{id}",
+  "PATCH /profile/{id}",
+  "DELETE /profile/{id}",
+
+  // Practices — the public directory.
+  "POST /practices",
+  "GET /practices",
+  "GET /practices/mine",
+  "GET /practices/{id}",
+  "PATCH /practices/{id}",
+  "DELETE /practices/{id}",
+
+  // Replacement listings
+  "POST /replacement-listings",
+  "GET /replacement-listings",
+  "GET /replacement-listings/facets",
+  "GET /replacement-listings/places",
+  "GET /replacement-listings/page-of",
+  "GET /replacement-listings/mine",
+  "GET /replacement-listings/{id}",
+  "PATCH /replacement-listings/{id}",
+  "DELETE /replacement-listings/{id}",
+  "PATCH /replacement-listings/{id}/publish",
+  "PATCH /replacement-listings/{id}/close",
+  "PATCH /replacement-listings/{id}/cancel",
+
+  // Applications
+  "POST /applications",
+  "GET /applications/mine",
+  "GET /applications/listing/{listingId}",
+  "GET /applications/{id}",
+  "PATCH /applications/{id}",
+  "PATCH /applications/{id}/view",
+  "PATCH /applications/{id}/shortlist",
+  "PATCH /applications/{id}/accept",
+  "PATCH /applications/{id}/reject",
+  "PATCH /applications/{id}/withdraw",
+] as const satisfies readonly DocumentedRoute[];
+
+/** Proven in the suite below — completeness is a test, not a comment. */
+const DOCUMENTED_COVERS_ALL: Identical<
+  DocumentedRoute,
+  (typeof DOCUMENTED_ROUTES)[number]
+> = true;
+
+/** Every operation the document publishes, as a set. */
+const PUBLISHED = new Set<string>(DOCUMENTED_ROUTES);
 
 /** Verbatim records of the call each audit case must produce. */
 const METHOD_PATH = {
@@ -72,8 +182,8 @@ const METHOD_PATH = {
 type Method = keyof typeof METHOD_PATH;
 
 interface AuditCase {
-  /** The documented operation, written the way the document writes it. */
-  operation: `${Method} ${string}`;
+  /** The documented operation, written the way the contract writes it. */
+  operation: DocumentedRoute;
   /** The guarded call, transport already threaded into it. */
   call: (transport: ApiTransport) => Promise<unknown>;
 }
@@ -208,7 +318,7 @@ const NOT_CONSUMED = [
   "GET /practices/{id}",
   "PATCH /practices/{id}",
   "DELETE /practices/{id}",
-] as const;
+] as const satisfies readonly DocumentedRoute[];
 
 /** A payload past the shape gates — the audit never gets an answer back. */
 const PROFILE_PAYLOAD = {
@@ -236,7 +346,6 @@ async function audited({ operation, call }: AuditCase): Promise<void> {
   await call(transport).catch(() => {});
 
   expect(seen, `${operation}: exactly one audited request`).toHaveLength(1);
-  expect(PUBLISHED.has(operation), `${operation}: published`).toBe(true);
 
   const recorded = seen[0];
   expect(recorded?.path, `${operation}: the call went to that path`).toMatch(
@@ -252,6 +361,11 @@ describe("API routes", () => {
     for (const auditCase of AUDITED) {
       await audited(auditCase);
     }
+  });
+
+  it("the written contract list is the document, exactly", () => {
+    // Fails at typecheck first — this is the proof that runs when it does not.
+    expect(DOCUMENTED_COVERS_ALL, "list and generated paths agree").toBe(true);
   });
 
   it("accounts for every operation the document publishes", () => {

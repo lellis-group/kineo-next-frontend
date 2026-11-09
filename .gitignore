@@ -40,5 +40,9 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# API document — fetched live from the running backend (`bun run api:types`),
+# never committed: the generated api.gen.ts is the committed artefact
+/openapi.json
+
 # Design assets / mockups (root folder only — NOT src/components/templates)
 /templates
