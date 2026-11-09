@@ -19,6 +19,27 @@ const OSM_ATTRIBUTION =
   '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a>';
 
 /**
+ * The strings MapLibre itself writes, translated into the language this screen
+ * speaks.
+ *
+ * Without a `locale`, the library answers its defaults as they ship — the
+ * canvas announcing itself « Map », the popup's close button announcing « Close
+ * popup », the zoom controls « Zoom in / Zoom out » — inside a fully French
+ * interface, and the close button is the *first* thing a screen reader reads
+ * when a card opens. Only the IDs this map actually renders are listed: a full
+ * locale table would carry keys nothing here reads, so the sheet is grown exactly
+ * when a control is. The custom chrome (the « Cadrer » button, « Plein écran »)
+ * is already ours; these are only the faces the library owns.
+ */
+const MAP_LOCALE: Record<string, string> = {
+  "Map.Title": "Carte des cabinets",
+  "Popup.Close": "Fermer la fiche",
+  "NavigationControl.ZoomIn": "Zoom avant",
+  "NavigationControl.ZoomOut": "Zoom arrière",
+  "AttributionControl.ToggleAttribution": "Afficher l'attribution",
+};
+
+/**
  * The paper the map is drawn on, before any tile arrives.
  *
  * The literal counterpart of `--map-base` in `globals.css`, which the loading
@@ -88,6 +109,7 @@ export function useMapInstance() {
         center: FALLBACK_CENTER,
         zoom: 5.2,
         attributionControl: false,
+        locale: MAP_LOCALE,
       });
     } catch {
       // No WebGL, or the browser refused the context. The list still carries
