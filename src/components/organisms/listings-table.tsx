@@ -185,6 +185,12 @@ export const ListingsTable = forwardRef<
             <th scope="col" className="has-gutter">
               Annonce
             </th>
+            {/*
+              The map column: a control, not an icon, so no `has-gutter` — the
+              button sits on the cell's own left padding, exactly where this
+              label does.
+            */}
+            <th scope="col">Carte</th>
             <th scope="col">Cabinet</th>
             <th scope="col" className="has-gutter">
               Lieu
@@ -239,13 +245,12 @@ export const ListingsTable = forwardRef<
                       specialty={listing.specialty}
                       className="size-[var(--cell-icon)] shrink-0 text-primary"
                     />
-                    <div className="min-w-0 flex-1">
+                    <div className="min-w-0">
                       {/*
                         Clamped, so a long title cannot make one row taller than
                         the rest and lift its own column out of line with the
                         others. `min-w-0` on the wrapper is what lets the clamp
-                        engage instead of the text overflowing the cell — here
-                        against the map button that follows it as a column, below.
+                        engage instead of the text overflowing the cell.
 
                         `leading-[var(--cell-icon)]` is what lines this first line
                         up with the icon beside it, and with every other column's
@@ -262,40 +267,37 @@ export const ListingsTable = forwardRef<
                         {SPECIALTY_LABELS[listing.specialty]}
                       </p>
                     </div>
+                  </div>
+                </td>
+                <td>
+                  {/*
+                    The map control, in a column of its own.
+
+                    A title's length belongs to its row, so an icon taken to
+                    wherever the text had just ended sat at a different x on
+                    every row — and on a wrapped title the line rarely fills its
+                    box, so even a constant gap read as a moveable one. In its
+                    own cell, under the « Carte » label, the control is one x —
+                    a column of the table like any other.
+
+                    Like the badge's cell, the control is taller than a text
+                    line, so it stands in a box of exactly `--cell-icon`: its
+                    middle lands level with the title's first line and with the
+                    icon columns, whatever the row's height.
+                  */}
+                  <span className="flex h-[var(--cell-icon)] items-center">
                     {locatable && (
-                      /*
-                        The map control, beside the title rather than instead of
-                        it. The title used to be a button, which made the map
-                        reachable and the posting itself not: a keyboard reader
-                        could tab into the map's markers but never open the
-                        detail. Two actions need two controls.
-
-                        Anchored as the last item of the cell rather than taken to
-                        the end of the text: a title's length belongs to its row,
-                        so an icon that sat where the text had just ended sat at a
-                        different x on every row — that read as an accident. At the
-                        cell's edge it is one aligned column of controls, and the
-                        cell's gap is a floor a wrapped first line can never run
-                        the button down through.
-
-                        Centred on the title's first line by arithmetic, not by a
-                        font-size nudge: the line is 1.25rem (`--cell-icon`) and
-                        the button 1.5rem, so −2px of margin each side — exactly
-                        half the difference — puts the glyph's centre on the
-                        text's centre line while the 24px click target (WCAG's
-                        floor) stays.
-                      */
                       <button
                         type="button"
                         aria-label={`Voir ${listing.title} sur la carte`}
                         aria-pressed={selected}
                         onClick={() => onListingSelect?.(listing)}
-                        className="-my-[0.125rem] grid size-5 shrink-0 cursor-pointer place-items-center rounded-full text-faint transition-colors hover:bg-surface-hover hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                        className="grid size-5 shrink-0 cursor-pointer place-items-center rounded-full text-faint transition-colors hover:bg-surface-hover hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                       >
                         <MapIcon className="size-3.5" />
                       </button>
                     )}
-                  </div>
+                  </span>
                 </td>
                 <td className="leading-[var(--cell-icon)] text-muted">
                   {listing.practiceName}
