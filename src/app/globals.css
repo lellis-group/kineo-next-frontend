@@ -873,7 +873,7 @@
 
   /*
    * A small stagger across the columns, so the sheen reads as one sweep over
-   * the row rather than six independent flashes.
+   * the row rather than seven independent flashes.
    */
   .listings-table tbody tr.row-spotlight td:nth-child(2)::after {
     animation-delay: 35ms;
@@ -893,6 +893,10 @@
 
   .listings-table tbody tr.row-spotlight td:nth-child(6)::after {
     animation-delay: 175ms;
+  }
+
+  .listings-table tbody tr.row-spotlight td:nth-child(7)::after {
+    animation-delay: 210ms;
   }
 
   .listings-table tbody tr.row-spotlight-a td::after {

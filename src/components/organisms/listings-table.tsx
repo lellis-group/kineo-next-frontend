@@ -60,21 +60,21 @@ interface ListingsTableProps {
 /**
  * The results, as a table on a wide screen.
  *
- * Six columns, because that is what fits above the fold at this width and each
- * one answers a question a locum asks before applying: what, where, when, for
- * how many, and how contested the posting already is. Dropping the applicant
- * count to make room for something prettier would lose the column that most
- * changes what a reader does.
+ * Seven columns, because each answers a question a locum asks before applying:
+ * what, where, when, for how many, how contested the posting already is, and —
+ * the seventh — where on the map it is. Dropping the applicant count to make
+ * room for something prettier would lose the column that most changes what a
+ * reader does.
  *
  * Two states on a row, and neither is the other: pointing at one is a *preview*
  * that lights its marker on the map for as long as the pointer is there, and
  * choosing one is a *selection* that stays until it is dismissed. The title is
- * the link to the posting, and the map button beside it is the map control: the
- * row's own click is a pointer convenience, not the accessible path, so a
- * keyboard reader can do both without a focusable `<tr>`.
+ * the link to the posting, and the map button is its own column (under its
+ * « Carte » label): the row's own click is a pointer convenience, not the
+ * accessible path, so a keyboard reader can do both without a focusable `<tr>`.
  *
- * Hidden below `sm:`, where `ListingCard` takes over — a six-column table on a
- * phone either scrolls sideways or squeezes every column into an unreadable
+ * Hidden below `sm:`, where `ListingCard` takes over — a seven-column table on
+ * a phone either scrolls sideways or squeezes every column into an unreadable
  * few pixels, and both are worse than showing the same rows as cards.
  */
 export const ListingsTable = forwardRef<
