@@ -239,65 +239,62 @@ export const ListingsTable = forwardRef<
                       specialty={listing.specialty}
                       className="size-[var(--cell-icon)] shrink-0 text-primary"
                     />
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                       {/*
                         Clamped, so a long title cannot make one row taller than
                         the rest and lift its own column out of line with the
                         others. `min-w-0` on the wrapper is what lets the clamp
-                        engage instead of the text overflowing the cell.
+                        engage instead of the text overflowing the cell — here
+                        against the map button that follows it as a column, below.
 
                         `leading-[var(--cell-icon)]` is what lines this first line
                         up with the icon beside it, and with every other column's
                         first line: they all share one box height, so their text
                         sits at the same y across the whole row.
                       */}
-                      <div className="flex min-w-0 items-start gap-[var(--cell-gap)]">
-                        <Link
-                          href={`/listings/${listing.id}`}
-                          className="line-clamp-2 min-w-0 font-medium leading-[var(--cell-icon)] text-foreground transition-colors hover:text-primary focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-                        >
-                          {listing.title}
-                        </Link>
-                        {locatable && (
-                          /*
-                            The map control, beside the title rather than instead
-                            of it. The title used to be a button, which made the
-                            map reachable and the posting itself not: a keyboard
-                            reader could tab into the map's markers but never open
-                            the detail. Two actions need two controls.
-
-                            It follows the title at the cell's own gap — the
-                            button's position is the text's, not the column's
-                            (`flex-1` on the link used to fling it to the far
-                            edge on short titles and to butt against the wrapped
-                            text on long ones).
-                          */
-                          <button
-                            type="button"
-                            aria-label={`Voir ${listing.title} sur la carte`}
-                            aria-pressed={selected}
-                            onClick={() => onListingSelect?.(listing)}
-                            /*
-                              Centred on the title's first line by arithmetic,
-                              not by a font-size nudge: the line is 1.25rem
-                              (`--cell-icon`) and the button 1.5rem, so −2px of
-                              margin each side — exactly half the difference —
-                              puts the glyph's centre on the text's centre line
-                              while the 24px click target (WCAG's floor) stays.
-                              The negative margins also stop the button from
-                              stretching the line box the specialty line below
-                              follows.
-                            */
-                            className="-my-[0.125rem] grid size-5 shrink-0 cursor-pointer place-items-center rounded-full text-faint transition-colors hover:bg-surface-hover hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-                          >
-                            <MapIcon className="size-3.5" />
-                          </button>
-                        )}
-                      </div>
+                      <Link
+                        href={`/listings/${listing.id}`}
+                        className="line-clamp-2 font-medium leading-[var(--cell-icon)] text-foreground transition-colors hover:text-primary focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                      >
+                        {listing.title}
+                      </Link>
                       <p className="text-xs text-muted">
                         {SPECIALTY_LABELS[listing.specialty]}
                       </p>
                     </div>
+                    {locatable && (
+                      /*
+                        The map control, beside the title rather than instead of
+                        it. The title used to be a button, which made the map
+                        reachable and the posting itself not: a keyboard reader
+                        could tab into the map's markers but never open the
+                        detail. Two actions need two controls.
+
+                        Anchored as the last item of the cell rather than taken to
+                        the end of the text: a title's length belongs to its row,
+                        so an icon that sat where the text had just ended sat at a
+                        different x on every row — that read as an accident. At the
+                        cell's edge it is one aligned column of controls, and the
+                        cell's gap is a floor a wrapped first line can never run
+                        the button down through.
+
+                        Centred on the title's first line by arithmetic, not by a
+                        font-size nudge: the line is 1.25rem (`--cell-icon`) and
+                        the button 1.5rem, so −2px of margin each side — exactly
+                        half the difference — puts the glyph's centre on the
+                        text's centre line while the 24px click target (WCAG's
+                        floor) stays.
+                      */
+                      <button
+                        type="button"
+                        aria-label={`Voir ${listing.title} sur la carte`}
+                        aria-pressed={selected}
+                        onClick={() => onListingSelect?.(listing)}
+                        className="-my-[0.125rem] grid size-5 shrink-0 cursor-pointer place-items-center rounded-full text-faint transition-colors hover:bg-surface-hover hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                      >
+                        <MapIcon className="size-3.5" />
+                      </button>
+                    )}
                   </div>
                 </td>
                 <td className="leading-[var(--cell-icon)] text-muted">
