@@ -13,7 +13,7 @@ import {
   fetchFacets,
   toBrowseView,
 } from "@/lib/listings";
-import { fetchServerAuth } from "@/lib/server-auth";
+import { requireMember } from "@/lib/require-member";
 
 export const metadata: Metadata = {
   title: "Annonces — Kineo",
@@ -25,14 +25,10 @@ export const metadata: Metadata = {
  * The member-only feed, resolved on the server.
  *
  * Guarded like every other member route, on two layers: `src/proxy.ts` bounces a
- * signed-out reader before the route runs, and the session is resolved for real
- * here so an expired cookie still lands on `/signin`.
- *
- * `fetchServerAuth` rather than `requireMember`, and that is not a preference.
- * `requireMember` redirects only on a 401, and the browse endpoints are anonymous
- * on the backend — a signed-out reader gets a 200 with the openings, never a 401,
- * so `requireMember` would sail straight past. Reading the session state is the
- * only check that actually answers "is this reader signed in".
+ * signed-out reader before the route runs, and the backend — which requires a
+ * session on every browse endpoint — answers an expired cookie with a 401 that
+ * `requireMember` turns into `/signin`. The reads are the check: no separate
+ * session round-trip stands in front of them.
  *
  * The URL is the source of truth, and the server answers whatever view it names.
  * `searchParams` is parsed once here into a view, and all three reads are seeded
@@ -76,13 +72,6 @@ async function Listings({
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  // The authoritative check: a cookie the backend refuses reads as anonymous,
-  // which is exactly the reader the proxy's fast path is there to catch early.
-  const auth = await fetchServerAuth();
-  if (auth.status !== "member") {
-    redirect("/signin");
-  }
-
   // The view the URL names, parsed once and widened once. `toBrowseView` widens
   // the date fields to ISO bounds and omits every unset filter, so the same view
   // the client will read back off the URL is the one every read is seeded with —
@@ -102,16 +91,18 @@ async function Listings({
   const { filters, page, sort } = browseViewFromParams(params);
   const view = toBrowseView(filters, page, sort);
 
-  const [data, facets] = await Promise.all([
-    fetchBrowseListings(view, serverTransport),
-    // A separate read from the rows, and still right to await together: the
-    // panels depend on a subset of the filters (never the specialty, never the
-    // page, never the ordering — `fetchFacets` drops them), and the first paint
-    // should not arrive without its summary. On a page turn the server re-runs
-    // this route, but `fetchFacets` answers the same collection it answered
-    // before, so the panels hold their numbers.
-    fetchFacets(view, serverTransport),
-  ]);
+  const [data, facets] = await requireMember(
+    Promise.all([
+      fetchBrowseListings(view, serverTransport),
+      // A separate read from the rows, and still right to await together: the
+      // panels depend on a subset of the filters (never the specialty, never the
+      // page, never the ordering — `fetchFacets` drops them), and the first paint
+      // should not arrive without its summary. On a page turn the server re-runs
+      // this route, but `fetchFacets` answers the same collection it answered
+      // before, so the panels hold their numbers.
+      fetchFacets(view, serverTransport),
+    ]),
+  );
 
   // A shared or hand-edited link can name a page past the end of the collection
   // — `browseViewFromParams` accepts any positive integer, and the honest answer

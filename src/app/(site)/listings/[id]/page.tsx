@@ -38,11 +38,14 @@ export const metadata: Metadata = {
  *
  * The backend decides eligibility against facts only it holds, but the page can
  * already know who it is talking to, and hiding a button that the backend would
- * refuse is the honest version of the decision: a reader who is not signed in
- * gets the way in, a member without a profile gets the way to build one, and an
- * installed-practice-only profile — the one type the backend refuses — gets
- * nothing, because there is no sentence about applying that would be true for
- * them. What the page cannot cheaply know (own listing, quotas, a listing that
+ * refuse is the honest version of the decision: a member without a profile
+ * gets the way to build one, and an installed-practice-only profile — the one
+ * type the backend refuses — gets nothing, because there is no sentence about
+ * applying that would be true for them. There is no signed-out reader to
+ * address: the listing itself is a members-only read, so by the time this
+ * renders the backend has accepted the session. `anonymous` can only mean the
+ * session read failed on its own, and then the entry stays out rather than
+ * inviting a member to sign in again. What the page cannot cheaply know (own listing, quotas, a listing that
  * left circulation since) stays with the backend, and the refused apply says
  * so in French.
  */
@@ -59,17 +62,7 @@ async function ApplyEntryInner({ listingId }: { listingId: string }) {
 
   switch (auth.status) {
     case "anonymous":
-      return (
-        <p className="text-sm text-muted">
-          <Link
-            href="/signin"
-            className="font-bold underline underline-offset-2"
-          >
-            Connectez-vous
-          </Link>{" "}
-          pour postuler à cette annonce.
-        </p>
-      );
+      return null;
     case "member":
       if (auth.role === null) {
         return (
