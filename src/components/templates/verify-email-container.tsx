@@ -9,23 +9,11 @@ import {
 import { checkAlreadyVerified, verifyEmail } from "@/lib/auth-client";
 import { mapVerificationError } from "@/lib/auth-errors";
 import { useResendVerification } from "@/lib/hooks/use-resend-verification";
+import { safeInternalPath } from "@/lib/safe-redirect";
 import { isAddressChangeFlow } from "@/lib/verification-flow";
 
 /** Shape of the fallback used when the verify call itself could not be made. */
 type AuthError = Parameters<typeof mapVerificationError>[0];
-
-/**
- * Accepts only an internal path (single leading "/"), to prevent an open redirect:
- * `callbackURL` arrives from the query string and is used verbatim in a
- * navigation, so `//evil.example` would otherwise walk a freshly verified reader
- * straight off the site.
- */
-function safeCallbackURL(raw: string | null): string {
-  if (raw?.startsWith("/") && !raw.startsWith("//")) {
-    return raw;
-  }
-  return "/";
-}
 
 /**
  * Orchestrator for /verify-email.
@@ -37,7 +25,7 @@ export function VerifyEmailContainer() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
-  const callbackURL = safeCallbackURL(searchParams.get("callbackURL"));
+  const callbackURL = safeInternalPath(searchParams.get("callbackURL"));
   const email = searchParams.get("email");
   // The backend reads the flow off the token and labels the link with it: a
   // change of address and a sign-up land on the same page, and only the server
