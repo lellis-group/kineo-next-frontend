@@ -108,18 +108,15 @@ export async function apiFetch<T>(
   init?: RequestInit,
   transport: ApiTransport = browserTransport,
 ): Promise<T> {
-  const { headers, ...rest } = init ?? {};
-  const res = await transport(
-    path,
-    withTimeout({
-      ...rest,
-      headers: {
-        Accept: "application/json",
-        ...(rest.body ? { "Content-Type": "application/json" } : undefined),
-        ...headers,
-      },
-    }),
-  );
+  const { headers: callerHeaders, ...rest } = init ?? {};
+  // One `Headers`, so a caller's value replaces a default whatever its case or
+  // shape — an object spread would drop a `Headers` instance entirely.
+  const headers = new Headers({ Accept: "application/json" });
+  if (rest.body) headers.set("Content-Type", "application/json");
+  new Headers(callerHeaders).forEach((value, name) => {
+    headers.set(name, value);
+  });
+  const res = await transport(path, withTimeout({ ...rest, headers }));
 
   if (!res.ok) {
     // NestJS returns { message, error, statusCode } or, for Zod validation,
