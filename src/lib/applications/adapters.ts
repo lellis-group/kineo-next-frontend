@@ -5,7 +5,7 @@
 
 import { formatDateRange, formatRelativeTime } from "../format";
 import type {
-  ApiApplication,
+  ApiApplicationRow,
   ApiApplicationStatusCounts,
   ApplicationDecisionSource,
   ApplicationStatus,
@@ -227,7 +227,9 @@ function visibleField(value: string | undefined | null): string | undefined {
  * Resolves an application's listing from the data embedded server-side — no
  * extra fetches, works for listings hidden to the user.
  */
-function adaptListingInfo(application: ApiApplication): ApplicationListingInfo {
+function adaptListingInfo(
+  application: ApiApplicationRow,
+): ApplicationListingInfo {
   const embedded = application.listing;
 
   if (!embedded) {
@@ -250,14 +252,18 @@ function adaptListingInfo(application: ApiApplication): ApplicationListingInfo {
     dateRange: isSingleDay
       ? undefined
       : formatDateRange(embedded.startDate, embedded.endDate),
-    description: embedded.description?.trim() || undefined,
+    // On the single read only: a list row's listing carries no paragraph.
+    description:
+      "description" in embedded && typeof embedded.description === "string"
+        ? embedded.description.trim() || undefined
+        : undefined,
     practiceName: visibleField(embedded.practice.name),
     practiceCity: visibleField(embedded.practice.city),
   };
 }
 
 export function adaptApplicationEntry(
-  application: ApiApplication,
+  application: ApiApplicationRow,
 ): ApplicationEntry {
   const message = application.message?.trim();
 

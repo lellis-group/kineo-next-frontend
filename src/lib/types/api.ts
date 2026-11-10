@@ -106,6 +106,17 @@ export type ApiListingPageOf = Wire["ListingPageOf"];
  */
 export type ApiApplication = Wire["Application"];
 
+/**
+ * One application as a paginated read answers it — `GET /applications/mine`
+ * and the candidates of one listing.
+ *
+ * Narrower than `ApiApplication`: the embedded listing has no `description`,
+ * and its practice is only `id`, `name` and `city`. The paragraph and the
+ * street address are the single read's. A full `ApiApplication` is assignable
+ * to this, so code that serves both takes this type.
+ */
+export type ApiApplicationRow = Wire["PaginatedApplications"]["data"][number];
+
 export const APPLICATION_STATUSES = [
   "PENDING",
   "SHORTLISTED",

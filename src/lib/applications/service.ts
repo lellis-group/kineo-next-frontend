@@ -23,6 +23,7 @@ import {
 import type {
   ApiApplication,
   ApiApplicationPage,
+  ApiApplicationRow,
   ApiApplicationStatusCounts,
   ApplicationRejectionBucket,
 } from "../types/api";
@@ -75,8 +76,8 @@ async function fetchMyApplications(
   params: PaginationParams,
   transport?: ApiTransport,
 ): Promise<{
-  applications: ApiApplication[];
-  meta: ApiApplicationPage<ApiApplication>["meta"];
+  applications: ApiApplicationRow[];
+  meta: ApiApplicationPage<ApiApplicationRow>["meta"];
 }> {
   // The filtering stays server-side, so the counters keep describing the whole
   // collection rather than the page that came back. "ALL" is the no-filter case,
@@ -104,8 +105,8 @@ async function fetchMyApplications(
   ).catch(notFoundAs<unknown>(null));
 
   const shape = unwrapCollection<
-    ApiApplication,
-    ApiApplicationPage<ApiApplication>["meta"]
+    ApiApplicationRow,
+    ApiApplicationPage<ApiApplicationRow>["meta"]
   >(raw);
 
   if (shape.kind === "envelope") {

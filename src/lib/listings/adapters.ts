@@ -7,7 +7,7 @@
 import { formatRelativeTime, plural } from "../format";
 import { SPECIALTY_LABELS } from "../profile";
 import type {
-  ApiApplication,
+  ApiApplicationRow,
   ApiReplacementListing,
   ApplicationDecisionSource,
   ApplicationStatus,
@@ -84,7 +84,7 @@ export function adaptMyListing(listing: ApiReplacementListing): MyListing {
  * to show a location at all.
  */
 export function adaptApplicant(
-  application: ApiApplication,
+  application: ApiApplicationRow,
 ): ApplicationApplicant | null {
   const applicant = application.applicant;
 
@@ -114,7 +114,7 @@ export function adaptApplicant(
 }
 
 export function adaptReceivedApplication(
-  application: ApiApplication,
+  application: ApiApplicationRow,
 ): ReceivedApplication | null {
   const applicant = adaptApplicant(application);
 

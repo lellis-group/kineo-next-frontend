@@ -7,7 +7,7 @@
  */
 
 import type {
-  ApiApplication,
+  ApiApplicationRow,
   ApplicationDecisionSource,
   ApplicationStatus,
   ProfileType,
@@ -176,7 +176,7 @@ export interface ReceivedApplication {
   viewedAt?: string;
   applicant: ApplicationApplicant;
   /** Raw application, for the actions the backend still allows. */
-  raw: ApiApplication;
+  raw: ApiApplicationRow;
 }
 
 /**

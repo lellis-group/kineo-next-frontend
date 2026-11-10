@@ -16,7 +16,7 @@ import {
 } from "../api-client";
 import { COUNT_KEYS, withZeroCounts, zeroCounts } from "../counts";
 import type {
-  ApiApplication,
+  ApiApplicationRow,
   ApiPaginated,
   ApiReplacementListing,
   ApplicationStatus,
@@ -200,7 +200,7 @@ export async function fetchListingApplications(
   });
 
   const raw = await apiFetch<
-    ApiPaginated<ApiApplication> & {
+    ApiPaginated<ApiApplicationRow> & {
       meta: { counts?: Partial<ReceivedApplicationCounts> };
     }
   >(

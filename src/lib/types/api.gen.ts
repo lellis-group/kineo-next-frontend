@@ -962,14 +962,10 @@ export interface components {
                     /** @enum {string} */
                     status: "DRAFT" | "OPEN" | "IN_DISCUSSION" | "FULL" | "FILLED" | "CLOSED" | "CLOSED_NO_CANDIDATE" | "CANCELLED";
                     urgent: boolean;
-                    description: string | null;
                     practice: {
                         id: string;
                         name: string;
-                        address: string;
                         city: string;
-                        latitude: number | null;
-                        longitude: number | null;
                     };
                 };
                 applicant?: {

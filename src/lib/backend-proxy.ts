@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { slimForTarget, slimListPayload } from "@/lib/list-slimming";
+import { backendUrl as configuredBackendUrl } from "@/lib/backend-url.server";
 
 /**
  * Headers that belong to one hop, not to the message.
@@ -85,21 +85,13 @@ function rewriteLocation(headers: Headers, backendUrl: string): void {
  * `rewrite` maps the incoming path onto the backend path; `label` names the
  * service in the 502 body, so a failure says which half of the API is down.
  *
- * List slimming (see `lib/list-slimming.ts`): the two heavy list reads are
- * buffered and re-emitted without the fields their cards never render
- * (`listing.description`, practice address/coords, full `message`), so every
- * page size benefits — including today's. Detail reads pass through untouched.
+ * A pure relay: the body streams through untouched. What a list row carries is
+ * the backend's decision (its list DTOs), not something re-cut here.
  */
 export async function proxyToBackend(
   request: NextRequest,
   rewrite: (pathname: string) => string,
   label: string,
-  /** Slimming table: which backend path wants which row slimming, or null to stream. */
-  slimForTargetFn: (
-    target: string,
-  ) =>
-    | ((row: Record<string, unknown>) => Record<string, unknown>)
-    | null = slimForTarget,
 ): Promise<NextResponse> {
   if (!ALLOWED_METHODS.has(request.method)) {
     return NextResponse.json(
@@ -111,7 +103,7 @@ export async function proxyToBackend(
     );
   }
 
-  const backendUrl = process.env.BACKEND_URL || "http://localhost:3000";
+  const backendUrl = configuredBackendUrl();
   const target = rewrite(request.nextUrl.pathname);
   const url = `${backendUrl}${target}${request.nextUrl.search}`;
 
@@ -126,8 +118,11 @@ export async function proxyToBackend(
   headers.set("x-forwarded-proto", request.nextUrl.protocol.replace(":", ""));
   // `x-forwarded-for` is deliberately left as it arrived, by copying every
   // incoming header and rewriting only the two above. It is what the backend
-  // keys its rate limiter on, so rewriting or dropping it here would fold every
-  // reader behind this app into one bucket. Do not "tidy" it away with the rest.
+  // keys its rate limiter on, so dropping it here would fold every reader behind
+  // this app into one bucket. It is only as true as whoever wrote it: Next fills
+  // it from the socket when it is absent and keeps a client's own value when it
+  // is not, so a deployment must put a reverse proxy in front that overwrites
+  // it (see `.env.example`). Do not "tidy" it away with the rest.
 
   let body: BodyInit | undefined;
   if (request.method !== "GET" && request.method !== "HEAD") {
@@ -144,14 +139,6 @@ export async function proxyToBackend(
       redirect: "manual",
       signal: AbortSignal.timeout(PROXY_TIMEOUT_MS),
     });
-
-    const slimmed = await maybeSlimListResponse(
-      request,
-      target,
-      response,
-      slimForTargetFn,
-    );
-    if (slimmed) return slimmed;
 
     const responseHeaders = new Headers(response.headers);
     stripHopByHop(responseHeaders);
@@ -177,41 +164,4 @@ export async function proxyToBackend(
       { status: timedOut ? 504 : 502 },
     );
   }
-}
-
-/**
- * Buffers, slims and re-emits the two heavy list reads, or null to stream.
- *
- * Strictly `GET /applications/mine` and `GET /replacement-listings/mine`:
- * detail reads, writes and every other route return null and keep streaming
- * untouched. Non-JSON or unparsable answers fall through the same way, so a
- * slimming path that cannot parse never breaks a response it did not
- * understand — and an unknown future shape falls back to streaming rather
- * than to a broken page.
- */
-async function maybeSlimListResponse(
-  request: NextRequest,
-  target: string,
-  upstream: Response,
-  slimForTargetFn: (
-    target: string,
-  ) => ((row: Record<string, unknown>) => Record<string, unknown>) | null,
-): Promise<NextResponse | null> {
-  if (request.method !== "GET" || !upstream.ok) return null;
-  const slim = slimForTargetFn(target);
-  if (!slim) return null;
-  const contentType = upstream.headers.get("content-type") ?? "";
-  if (!contentType.includes("application/json")) return null;
-  let raw: unknown;
-  try {
-    raw = (await upstream.json()) as unknown;
-  } catch {
-    return null;
-  }
-  const slimmed = slimListPayload(raw, slim);
-  if (slimmed === null) return null;
-  return NextResponse.json(slimmed, {
-    status: upstream.status,
-    statusText: upstream.statusText,
-  });
 }
