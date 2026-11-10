@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { signInOnExpiredSession } from "@/lib/session-redirect";
 
 /**
@@ -18,16 +18,23 @@ export function useReloadable<T>(initialData: T, load: () => Promise<T>) {
   const [error, setError] = useState<unknown>(null);
   const [reloading, setReloading] = useState(false);
 
+  // Only the latest reload may write: two reloads in quick succession can
+  // answer out of order, and the older answer must not land last.
+  const latest = useRef(0);
+
   const reload = useCallback(() => {
+    const mine = ++latest.current;
     setReloading(true);
     setError(null);
 
     load()
       .then((fresh) => {
+        if (mine !== latest.current) return;
         setData(fresh);
         setReloading(false);
       })
       .catch((err) => {
+        if (mine !== latest.current) return;
         if (signInOnExpiredSession(err, router)) {
           setReloading(false);
           return;

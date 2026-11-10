@@ -85,6 +85,10 @@ export function usePaginatedResource<T, V>({
   const raceGuard = useRaceGuard();
   const { start, isStale, settled, revoke } = raceGuard;
 
+  // Leaving the screen cancels the read in flight: its answer has nowhere to
+  // go, and `onLoaded` must not run for a view that is no longer mounted.
+  useEffect(() => revoke, [revoke]);
+
   const fetchView = useCallback(
     (target: V) => {
       const { controller, mine } = start();
