@@ -15,9 +15,8 @@ export interface ResendVerificationProps {
 /**
  * "Renvoyer l'email de vérification" with its three states.
  *
- * The same block was written out twice — on /signup and on /verify-email — down
- * to the spinner classes, so a wording change had to be made in both places and
- * they had already drifted apart on the success copy.
+ * One block for /signup and /verify-email, down to the spinner classes, so a
+ * wording change is made once and the success copy cannot drift.
  *
  * Deliberately says an email went out rather than that one exists: whether an
  * account is registered for the address is not something this screen can know.

@@ -69,10 +69,9 @@ interface ListingsToolbarProps {
  * The map's own control row: a search, a sort, and the rest one click away.
  *
  * Two controls on the line, which is what the reference draws — a round-ended
- * search field and a sort beside it — and everything else behind « Filtres ». The
- * five controls this used to be would not fit the reference's row at any width,
- * and a row that cannot fit its controls is a row that wraps, which is what this
- * bar spent its last revision fighting.
+ * search field and a sort beside it — and everything else behind « Filtres ».
+ * More controls on the line would not fit the reference's row at any width, and
+ * a row that cannot fit its controls is a row that wraps.
  *
  * The panel is a popover rather than an expansion below the row: it must not
  * resize the map, which is the one element on this screen whose height is worth

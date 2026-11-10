@@ -9,9 +9,9 @@ import { BACK_LINK } from "@/lib/layout";
  *
  * A component rather than a className constant because the whole thing is
  * three parts that have to stay together: the arrow, the weight and the hover
- * state. Written out by hand twice, it had already picked up a difference — one
- * copy was nudged out of alignment with the arrow on the other — which is
- * exactly what a token cannot prevent and a component can.
+ * state. Two hand-written copies drift — one nudged out of alignment with the
+ * arrow on the other — which is exactly what a token cannot prevent and a
+ * component can.
  */
 export function BackLink({
   href,

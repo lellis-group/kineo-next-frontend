@@ -17,10 +17,9 @@ export interface LoadingStateProps {
  *
  * The reserved height is this component's own business, not a shared token: the
  * error screen that sits beside it on the same routes wants a slightly taller
- * box, and the two had drifted to `50vh` and `60vh` respectively. Putting both
- * numbers in one place looked like a unification and was actually the opposite —
- * it silently moved four Suspense fallbacks by 10vh. Two components, two
- * intentions, two numbers.
+ * box (`60vh` against this one's `50vh`). Putting both numbers in one place
+ * would look like a unification and be the opposite — it would silently move
+ * four Suspense fallbacks by 10vh. Two components, two intentions, two numbers.
  */
 export function LoadingState({
   label = "Chargement",

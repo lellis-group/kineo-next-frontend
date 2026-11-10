@@ -127,7 +127,7 @@ describe("adaptStats", () => {
 
   test("says « Aucun » when the server found nothing coming", () => {
     // A period that has passed, a DRAFT that was never published, a posting that
-    // left circulation: all of it is the server's answer now, and « nothing » is an
+    // left circulation: all of it is the server's answer, and « nothing » is an
     // answer rather than a missing field.
     const stats = adaptStats(
       listings(listingCounts({ total: 1, OPEN: 1 }), null),
@@ -172,9 +172,9 @@ describe("adaptActivity", () => {
   });
 
   test("names the posting from the listing the application embeds", () => {
-    // No listing map is passed in any more, and none is needed: the row carries
-    // its own title, so an activity line can no longer fall back to
-    // « Titre d'annonce indisponible » for a posting outside the member's page.
+    // No listing map is needed: the row carries its own title, so an activity
+    // line never falls back to « Titre d'annonce indisponible » for a posting
+    // outside the member's page.
     const [first] = adaptActivity([entry("1")]);
     expect(first?.message[1]?.text).toBe("Annonce 1");
   });

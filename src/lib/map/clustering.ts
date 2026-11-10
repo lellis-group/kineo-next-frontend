@@ -49,8 +49,8 @@ interface ScreenPoint {
  * rounded coordinates. But that is a fact about the practices and says nothing
  * about the current zoom: two cabinets 2.5km apart are one marker's distance
  * apart at country scale and two markers apart once the reader is over the city.
- * Measured at the zoom this map opens on, a pair was stacked on the same pixel —
- * the upper one took every click and the lower one could not be opened at all.
+ * At the zoom this map opens on, such a pair stacks on the same pixel — the
+ * upper one takes every click and the lower one cannot be opened at all.
  *
  * The test is therefore a distance in *pixels*, recomputed whenever the viewport
  * settles. Zoom out and the pair merges again behind a count; zoom in over

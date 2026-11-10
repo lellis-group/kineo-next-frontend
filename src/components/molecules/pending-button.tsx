@@ -11,8 +11,8 @@ import { Spinner } from "@/components/atoms/spinner";
  * The spinner border colour per button variant.
  *
  * A spinner inherits `currentColor`, so the border has to name the *foreground*
- * of the variant it sits on. Eight call sites were hand-picking these strings,
- * and a new variant would have inherited whatever the last one happened to use.
+ * of the variant it sits on. Keyed by variant so no call site hand-picks these
+ * strings, and a new variant cannot inherit whatever the last one used.
  */
 const SPINNER_BORDER: Record<ButtonVariant, string> = {
   primary: "border-primary-foreground/30 border-t-primary-foreground",

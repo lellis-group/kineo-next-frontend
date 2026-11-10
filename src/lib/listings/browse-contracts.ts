@@ -41,9 +41,9 @@ export interface BrowseListing {
   /**
    * Null when the practice has never been geocoded.
    *
-   * Not a rare case to be handled at the edges: the coordinates were nullable in
-   * the database long before the feed could reach them, so every listing published
-   * before its practice got an address sits here. The listing is still real and
+   * Not a rare case to be handled at the edges: the coordinates are nullable in
+   * the database, so every listing published before its practice got an address
+   * sits here. The listing is still real and
    * still belongs in the list — it simply cannot take a pin.
    */
   location: ListingLocation | null;
@@ -221,11 +221,11 @@ export type { MapPlace, MapPlaceListing, MapPoint };
  * Everything the map needs, in one answer.
  *
  * No ordering of the collection, and no listing ids. The popup can name a
- * posting the list is not showing — the places are ordered by population and each
- * holds four previews of its own — and turning the list to it is now a question
- * asked when the reader asks it (`fetchListingPageOf`). It used to travel here,
- * as the id of every matching posting: a rare click paid for on every page
- * render, on every filter change, and on every reordering.
+ * posting the list is not showing — the places are ordered by population and
+ * each holds four previews of its own — and turning the list to it is a
+ * question asked when the reader asks it (`fetchListingPageOf`): carrying the
+ * id of every matching posting here would be a rare click paid for on every
+ * page render, every filter change and every reordering.
  */
 export interface BrowsePlacesData {
   places: MapPlace[];
@@ -262,9 +262,9 @@ export interface BrowseListingsData {
  * A horizon and the bounds it produces are the same filter expressed two ways:
  * the row is the quick way in, the two date fields are the exact one, and both
  * write the same `from` **and `to`**. A horizon names a *period*, not a lower
- * bound — the lone `from` this used to write was how « Ce mois » read as « from
- * the 1st of the month after next's-before » and silently dropped every posting
- * starting this month, which is the one month the chip is named for.
+ * bound — writing only a `from` reads « Ce mois » as « from the 1st of next
+ * month » and silently drops every posting starting this month, which is the
+ * one month the chip is named for.
  */
 export type BrowseHorizon = "ALL" | "WEEK" | "MONTH" | "LATER";
 

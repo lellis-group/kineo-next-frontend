@@ -8,7 +8,7 @@ import { SiteShell } from "@/components/templates/site-shell";
 /**
  * The shared `(site)` chrome: header, body, footer.
  *
- * A server component, as it was. The shell it hands off to (`SiteShell`) is a
+ * A server component. The shell it hands off to (`SiteShell`) is a
  * client component — it reads `usePathname()` to pick the layout shape — so it
  * sits inside a `<Suspense>` boundary: that dynamic hook is only available at
  * runtime, and without the boundary it would block the prerender of every
@@ -18,7 +18,7 @@ import { SiteShell } from "@/components/templates/site-shell";
  *
  * Only `/listings` opts out of the scrolling-document shape and into the
  * full-height workspace; that decision lives in `SiteShell`, so every other
- * page under this layout keeps exactly the behaviour it had.
+ * page under this layout keeps the scrolling-document shape.
  */
 export default function SiteLayout({ children }: { children: ReactNode }) {
   return (

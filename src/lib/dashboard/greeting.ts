@@ -9,14 +9,14 @@ function formatSpecialty(specialty: ApiProfile["specialty"]): string {
 /**
  * The welcome subtitle: says where the member stands, without repeating figures.
  *
- * A dashboard needs each number once. The greeting now says what deserves
+ * A dashboard needs each number once. The greeting says what deserves
  * attention; the figures stay one line lower down, and there is one version of
  * them.
  *
- * The two booleans arrive rather than the collections they were counted from: the
- * greeting only ever asked whether each figure was above zero, and it used to be
- * handed both collections in order to find out — which is how a home screen came
- * to depend on reading every listing and every application.
+ * The two booleans arrive rather than the collections they were counted from:
+ * the greeting only ever asked whether each figure was above zero, and being
+ * handed both collections made a home screen depend on reading every listing
+ * and every application.
  */
 export function adaptGreeting(
   profile: ApiProfile | null,

@@ -82,9 +82,8 @@ interface ListingsMapProps {
  *
  * The two behaviours live in `useMapInstance` — the WebGL context, the style, the
  * lifecycle — and `useMapMarkers`, which owns what sits on top. They are split
- * because exactly one of them changes with the data; folding them together was
- * what made this file hard to change, since a fix to the pins meant re-reading
- * how the context is built and vice versa.
+ * because exactly one of them changes with the data; folded together, a fix to
+ * the pins would mean re-reading how the context is built and vice versa.
  *
  * The root carries `size-full`, not only its inner container. MapLibre measures
  * the element it is handed, which is that inner container; with the height only

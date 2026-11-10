@@ -4,9 +4,9 @@ import { AlertIcon } from "@/components/atoms/icons";
 import { cn } from "@/lib/cn";
 
 /**
- * The panel used to warn before something irreversible — the three screens that
- * need it (closing a listing, withdrawing an application, deleting an account)
- * were carrying byte-identical danger chrome, down to the icon-chip classes.
+ * The panel that warns before something irreversible — one danger chrome, down
+ * to the icon-chip classes, for the three screens that need it (closing a
+ * listing, withdrawing an application, deleting an account).
  *
  * `title` is optional because one caller uses the shell purely as a danger
  * notice, with no heading of its own. `headingLevel` is a prop because the panel

@@ -20,20 +20,20 @@ export interface EditableField {
 /**
  * A read-only value with an edit button that becomes a small inline form.
  *
- * The profile page has two of these — name and email — and they were written out
- * separately, down to a duplicated `<form>` wrapper and a duplicated cancel row.
+ * The profile page has two of these — name and email — both drawn here, down to
+ * the `<form>` wrapper and the cancel row.
  *
  * Each row owns its own editing, error and success state, which is the part worth
- * having a component for. They used to share one `error` and one `success` string
- * between them, and both leaked:
+ * having a component for. One `error` and one `success` string shared between
+ * them would leak both ways:
  *
- *  - a failed email change left its message sitting in the *name* form, because
- *    switching rows is one click on a button that is still on screen and nothing
- *    cleared the error on the way;
- *  - the success banner rendered above whichever row happened to be first, so a
- *    name update reported itself inside the email block.
+ *  - a failed email change would leave its message sitting in the *name* form,
+ *    because switching rows is one click on a button that is still on screen and
+ *    nothing clears the error on the way;
+ *  - the success banner would render above whichever row happens to be first, so
+ *    a name update would report itself inside the email block.
  *
- * Nothing needed to be invalid for either to happen.
+ * Nothing needs to be invalid for either to happen.
  */
 export function EditableRow({
   label,

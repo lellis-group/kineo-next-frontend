@@ -31,8 +31,8 @@ import { cn } from "@/lib/cn";
  *
  * The radius is the bow, and the reference gauge's bow is small: measured off the
  * mock, its curve lifts about 2.4% of its own width, which reads as almost a
- * straight line. R 102 — where this started — lifts 12.5%, five times that, so it
- * was the "obvious arc" rather than the template. R 200 lands at 6%: visibly
+ * straight line. R 102 lifts 12.5%, five times that — the "obvious arc" rather
+ * than the template. R 200 lands at 6%: visibly
  * curved, and a small multiple of the reference. Exact fidelity would be R 500,
  * at which point the curve stops curving and the marker has nothing to ride.
  */
@@ -52,10 +52,10 @@ const ARC_CY =
 /**
  * Where the curve is at a given percent, in viewBox units.
  *
- * The marker rides this instead of sitting at a fixed height, which is what the
- * template does and what the previous version did not: pinned to one `top`, the
- * dot happened to touch the curve near the middle and floated 16px above it at
- * both ends — the ends being where a value first gets read.
+ * The marker rides this instead of sitting at a fixed height, as the template
+ * does: pinned to one `top`, the dot would touch the curve near the middle and
+ * float 16px above it at both ends — the ends being where a value first gets
+ * read.
  */
 function arcYAt(percent: number): number {
   const x = ARC.x0 + (ARC.x1 - ARC.x0) * (percent / 100);
@@ -67,10 +67,9 @@ function arcYAt(percent: number): number {
  * The SVG is pinned to the bottom of the box, so where it starts is whatever the
  * box leaves over — which is why this is derived rather than written down.
  *
- * It was a literal once, and the box was styled `h-16` in the markup: the two
- * agreed only until one of them changed. They disagreed by 4px, which put the
- * marker off the curve and left 1px between the line and the end labels — the two
- * looking like one.
+ * A literal here and an `h-16` on the box in the markup would agree only until
+ * one of them changed — and 4px of disagreement puts the marker off the curve
+ * and leaves 1px between the line and the end labels.
  */
 const BOX = 68;
 const SVG_HEIGHT = 40;
@@ -85,8 +84,8 @@ const BADGE = 25;
  *
  * Five pixels, which is what turns a scale from a hairline into an arc. On the
  * reference the gauge is a thick band with the figure riding on it, and a 2px
- * stroke reads as a graph rather than as the gauge on a card — the curve was
- * legible but it was not the object the panel is about.
+ * stroke reads as a graph rather than as the gauge on a card — legible, but not
+ * the object the panel is about.
  */
 const STROKE = 5;
 

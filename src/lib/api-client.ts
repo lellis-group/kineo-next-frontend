@@ -75,10 +75,10 @@ export interface FieldError {
 /**
  * Ceiling for one request.
  *
- * A backend that stops answering used to leave the screen loading until the
- * reader navigated away, because the only signal in play was the race guard's
- * — and that one fires when the *next* view starts, not when the current one
- * hangs. Twenty seconds is well beyond any endpoint this app calls.
+ * The race guard's signal fires when the *next* view starts, not when the
+ * current one hangs — so a backend that stops answering would leave the screen
+ * loading until the reader navigated away. Twenty seconds is well beyond any
+ * endpoint this app calls.
  */
 const REQUEST_TIMEOUT_MS = 20_000;
 

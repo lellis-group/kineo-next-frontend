@@ -17,9 +17,9 @@ import { adaptStats } from "./stats";
  * over the whole collection, by the server. One row is what it takes to carry a
  * page's worth of `meta`.
  *
- * This read used to page the member's whole collection — up to twenty requests,
- * on every visit — to count figures the endpoints already count, and to compute
- * them correctly only until the twentieth page.
+ * This read asks for one row, not the member's whole collection — which would
+ * be up to twenty requests per visit to count figures the endpoints already
+ * count, correctly only until the twentieth page.
  */
 const LISTINGS_LIMIT = 1;
 

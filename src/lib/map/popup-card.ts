@@ -186,7 +186,7 @@ export function popupContent(
  * for a group, the mean of the practices it covers — which is exactly where the
  * markers it describes are about to separate into. Left open, the box lands on
  * top of the markers the reader just asked to see, and what they wanted revealed
- * is the one thing now hidden.
+ * is the one thing hidden.
  *
  * Dismissed before the camera moves rather than after. A popup still in the DOM
  * is repositioned on every `move` frame, so one left to the end of the flight

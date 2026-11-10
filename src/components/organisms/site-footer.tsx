@@ -30,10 +30,9 @@ function BetaBadge() {
 /**
  * A link in the footer.
  *
- * One shape for every link, and it is the plainest one. It used to come in two
- * — pills on a wash for the legal cluster, bare text for the product list — so
- * the two groups sitting side by side read as two different kinds of thing, and
- * the pills read as the console's filter chips dropped into a footer. A quiet
+ * One shape for every link, and it is the plainest one: two shapes side by side
+ * read as two different kinds of thing, and pills read as the console's filter
+ * chips dropped into a footer. A quiet
  * line of text, washed to the brand cream on hover, is the whole vocabulary: the
  * hairline above the band and the colour under it are what make the group read
  * as a footer rather than as a row of buttons.
@@ -65,10 +64,10 @@ function FooterLink({ href, label }: { href: string; label: string }) {
  * so the signpost is never mistaken for one more link that goes nowhere.
  *
  * Its links are stacked, one per line, so the two groups read as the columns a
- * footer is made of. They were a single row that wraps, which put « Tarifs » and
- * « Console Live » side by side under one heading: the list kept the shape of a
- * sentence rather than of a column, and on a wide screen the two groups drifted
- * apart because one was two lines long and the other one. A column is also the
+ * footer is made of. A single row that wraps would put « Tarifs » and « Console
+ * Live » side by side under one heading — the shape of a sentence rather than of
+ * a column — and on a wide screen the two groups would drift apart whenever one
+ * is two lines long and the other one. A column is also the
  * shape the rest of the page uses whenever a list is read rather than scanned —
  * the console's side panels, the legal pages' section outlines.
  */
@@ -105,11 +104,11 @@ function FooterLinkGroup({
  * the zones, so the layout keeps the row height the brand column needs and no
  * more.
  *
- * The band is `bg-background` and not `bg-surface`, which is the change that
+ * The band is `bg-background` and not `bg-surface`, which is the choice that
  * matters most. The footer is chrome, not a card: on the near-black surface it
- * sat directly under the `bg-surface` call-to-action band with only a hairline
- * between them, so the two merged into one black slab at the foot of every page
- * and the footer had no edge of its own. In the page's colour it is the header's
+ * would sit directly under the `bg-surface` call-to-action band with only a
+ * hairline between them, the two merging into one black slab at the foot of
+ * every page with no edge of its own. In the page's colour it is the header's
  * counterpart — a hairline and nothing else, at the other end of the document —
  * and the cream hairline under the CTA above it is what ends that band.
  *

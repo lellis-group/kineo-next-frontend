@@ -15,10 +15,10 @@ const DOT_TONES: Record<MetaDotTone, string> = {
  *
  * Everything on the product that shows "where, when, how many" goes through
  * here, which is what makes two cards written by different people look like they
- * belong to the same screen. The rhythm used to be retyped at every call site —
- * `h-4` next to `text-sm` on one card, `h-3.5` next to `text-[13px]` on the
- * next — so the same calendar icon was drawn at two sizes between a card and the
- * detail page it links to, and nothing lined up.
+ * belong to the same screen. Retyping the rhythm at every call site — `h-4` next
+ * to `text-sm` on one card, `h-3.5` next to `text-[13px]` on the next — draws the
+ * same calendar icon at two sizes between a card and the detail page it links
+ * to, and nothing lines up.
  */
 export function MetaRow({
   children,

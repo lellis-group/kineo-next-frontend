@@ -21,13 +21,9 @@ export type { ListingActionKind };
  * screens this module does not serve. The names follow the backend's *semantics*
  * rather than its internal keys, so a rename there reads here as a rename.
  *
- * This is the only copy. It was mirrored in `./service` too, which is exactly
- * how a mirror drifts: the previous table named a code the backend no longer
- * sends for five of its seven entries (`LISTING_NOT_A_DRAFT` for
- * `LISTING_NOT_DRAFT`, `LISTING_INVALID_PERIOD` for `LISTING_INVALID_DATES`,
- * and so on), so every refusal fell back to parsing English prose. Only the two
- * that happened to survive — `NOT_MODIFIABLE` and `FILLED_CANNOT_BE_DELETED` —
- * ever reached a reader in French.
+ * This is the only copy. A second mirror elsewhere is how a mirror drifts: a
+ * table naming codes the backend does not send makes every refusal fall back to
+ * parsing English prose, and the reader never sees the French.
  *
  * `LISTING_HAS_THIRD_PARTY_APPLICATIONS` is deliberately absent: the backend
  * declares it but throws it as a bare `ConflictException` with no code

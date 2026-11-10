@@ -41,10 +41,8 @@ const BROWSE_HORIZONS: readonly BrowseHorizonOption[] = [
  *
  * Below `lg` the screen is ordinary document flow, and the box carries no floor:
  * there is no bounded height to fill, so the panel hugs the rows and the pager
- * follows them. The `min-h` this used to keep existed to give the box a shape of
- * its own, and it was exactly the shape of the feature — a region of empty
- * surface between the last row and the pager, on every screen short pages are
- * short on.
+ * follows them. A `min-h` would give the box a shape of its own — a region of
+ * empty surface between the last row and the pager, on every short page.
  */
 const RESULTS_BOX = "lg:min-h-0 lg:flex-1";
 
@@ -56,7 +54,7 @@ const RESULTS_BOX = "lg:min-h-0 lg:flex-1";
  * transition *from*, so the list would go dim instantly and then fade back in on
  * its own. Both states need the class for the pair to interpolate.
  *
- * It is a value rather than markup because the two presentations below are now
+ * It is a value rather than markup because the two presentations below are
  * siblings rather than two children of one wrapper — see the note at the list.
  */
 const REFRESHING = "transition-opacity duration-200 ease-out";

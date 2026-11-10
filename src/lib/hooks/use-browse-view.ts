@@ -60,10 +60,10 @@ export function useBrowseView() {
   /**
    * Forgets what the last write was about once it has landed.
    *
-   * `pendingWrite` is only read while `isNavigating`, so a stale value never
-   * showed — but it stayed `"filters"` long after a filter change had settled,
-   * and the next reader of the field would have to know that. Cleared here, it
-   * means exactly one thing: the kind of write in flight.
+   * `pendingWrite` is only read while `isNavigating`, so a stale value would
+   * never show — but left alone it would stay `"filters"` long after a filter
+   * change settled, and the next reader of the field would have to know that.
+   * Cleared here, it means exactly one thing: the kind of write in flight.
    */
   useEffect(() => {
     if (!isNavigating) setPendingWrite(null);

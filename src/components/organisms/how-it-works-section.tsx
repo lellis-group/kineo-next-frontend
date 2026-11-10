@@ -13,7 +13,7 @@ const STEP_ICONS = {
 
 /**
  * The `#how-it-works` anchor the public nav scrolls to — without this section on
- * the page, that link had no target.
+ * the page, that link has no target.
  */
 export function HowItWorksSection() {
   return (

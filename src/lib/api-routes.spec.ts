@@ -104,11 +104,9 @@ type Identical<_A, _B> = [_A] extends [_B]
 /**
  * The document's routes, written out in full.
  *
- * The contract could be walked at runtime (it used to be a committed JSON), but
  * `api.gen.ts` publishes only types, so the list exists as values here — and,
  * constrained as above, it *is* the audit: both reductions funnel through the
- * compiler, which is a stricter reader of the document than `Object.keys` ever
- * was.
+ * compiler, which is a stricter reader of the document than `Object.keys`.
  */
 const DOCUMENTED_ROUTES = [
   // Probes and the welcome route — the document's own scaffolding.

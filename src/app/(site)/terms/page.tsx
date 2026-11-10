@@ -17,9 +17,9 @@ export const metadata: Metadata = {
  * production. Stating what the page does not yet say is better than shipping
  * placeholder terms that read as final.
  *
- * The prose is the privacy policy's, from `legal-primitives` — this page used to
- * carry its own paragraph measure and its own bullet rows, which is how two
- * documents on the same site ended up on two different widths.
+ * The prose is the privacy policy's, from `legal-primitives` — no paragraph
+ * measure or bullet rows of its own, so the two documents on the site share one
+ * width.
  */
 export default function TermsPage() {
   return (

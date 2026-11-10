@@ -39,12 +39,10 @@ export interface RailDistributionRow {
 /**
  * A ranked list of categories: mark, name, count, bar, percentage.
  *
- * The panel both rails are built around — the reference's distribution card. It
- * was written out twice, once per rail, and the two copies had begun to differ:
- * one put the full name on the row, the other on the label, so the same tooltip
- * appeared over two different widths. This is the one row, and the `title` sits
- * on the `<li>` — over the whole row rather than over the truncated word, which
- * is where a reader reaches for it anyway.
+ * The panel both rails are built around — the reference's distribution card,
+ * written once so the two rails cannot drift apart. The `title` sits on the
+ * `<li>` — over the whole row rather than over the truncated word, which is
+ * where a reader reaches for it anyway.
  *
  * A molecule: it composes the atom `SegmentedBar` and nothing else, and it
  * carries no wording — the caller owns the labels, because what a row is named

@@ -41,7 +41,7 @@ export async function requireMember<T>(work: Promise<T>): Promise<T> {
  * Order matters: 401 is checked first so an unauthenticated reader is not told
  * whether the id they guessed exists. This is a real 404, not an outage — the
  * application was deleted, or belongs to somebody else — and the container's
- * generic error card used to describe that as a temporary service failure.
+ * generic error card would describe that as a temporary service failure.
  *
  * 403 is folded into the same page, and that is the whole point of checking it
  * here. The backend is not consistent about how it says "this is not yours":

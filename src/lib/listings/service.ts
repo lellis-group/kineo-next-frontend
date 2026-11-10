@@ -3,10 +3,9 @@
  * published, the candidates who applied to them, and the actions the backend
  * allows on a listing.
  *
- * Every route here is already implemented and documented server-side; this
- * module is the client that had never been written. `notFoundAs` is used on
- * the reads because a member without a profile has no listings yet, which is
- * an empty list rather than an error.
+ * Every route here is implemented and documented server-side; this module is
+ * the client. `notFoundAs` is used on the reads because a member without a
+ * profile has no listings yet, which is an empty list rather than an error.
  */
 
 import {
@@ -44,10 +43,10 @@ export type ListingActionKind = "close" | "cancel";
  * (« clôturer », « annuler »), and the past participle the outage sentence needs
  * (« l'annonce n'a pas été clôturée »).
  *
- * English verbs once reached the reader through the generic fallback on every
- * 403 and outage, because the two sentences that interpolate them were written
- * at the call site. Deriving the participle from the infinitive instead —
- * `${verb}e` — produces « clôturée » and « annuléee », so it is spelled out.
+ * Both forms live here rather than at the call site, so no English verb can
+ * reach the reader through the generic fallback. Deriving the participle from
+ * the infinitive — `${verb}e` — produces « clôturée » and « annuléee », so it is
+ * spelled out.
  */
 /** The listings page: the filtered slice plus the totals behind the chips. */
 export interface MyListingsData {
@@ -100,7 +99,7 @@ function emptyCounts(): ListingStatusCounts {
  * changing the page size would land the reader on a page that does not exist.
  *
  * The console lists that offer a choice — the practice's own listings and the
- * member's applications — no longer have one number to agree on. Both the server
+ * member's applications — have no fixed number to agree on. Both the server
  * page and the container read the reader's choice instead (`lib/page-size.ts`),
  * which is why this constant is about the one screen that has no choice to offer.
  */
@@ -292,12 +291,11 @@ export async function rejectReceivedApplication(
  * are the 404 page, which is the honest answer either way.
  *
  * It is deliberately not assembled from `/replacement-listings/mine` by scanning
- * the owner's pages for a matching id. That was tried first, on the assumption
- * that the endpoint only serves postings still in circulation — the OpenAPI
- * summary says « not found or not open », and the backend does gate on `status`
- * — but it relaxes that gate for the owner, so the fallback never ran and only
- * cost a full collection read on the 404 path, which is the one request where a
- * wrong answer matters most.
+ * the owner's pages for a matching id. The OpenAPI summary says « not found or
+ * not open », and the backend does gate on `status` — but it relaxes that gate
+ * for the owner, so such a fallback would never run and would only cost a full
+ * collection read on the 404 path, the one request where a wrong answer matters
+ * most.
  */
 export async function fetchMyListing(
   id: string,
@@ -341,10 +339,10 @@ export async function cancelListing(
  * It lets the `ApiError` through rather than catching it to build a sentence:
  * the typed error carries the status and the refusal code, and
  * `listingActionErrorMessage` below is what turns those into French — at the
- * point where the reader is shown one. Re-wrapping here threw the type away and
- * left the hook with `Error.message`, so a caller that did not format it
- * displayed the raw `API 400 (…): Only a listing still in circulation can be
- * closed`.
+ * point where the reader is shown one. Re-wrapping here would throw the type
+ * away and leave the hook with `Error.message`, so a caller that does not format
+ * it would display the raw `API 400 (…): Only a listing still in circulation can
+ * be closed`.
  */
 async function mutateListing(
   id: string,

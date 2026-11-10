@@ -59,8 +59,8 @@ export const serverTransport: ApiTransport = async (path, init) => {
   //
   // Without it the backend counts every server-rendered request under this
   // server's own address: the self-request below is a fresh `fetch` carrying no
-  // headers of its own, so the one identifying the reader was dropped exactly
-  // where it mattered. Rate limits then apply platform-wide instead of per
+  // headers of its own, so the one identifying the reader is dropped exactly
+  // where it matters. Rate limits then apply platform-wide instead of per
   // reader — and since the browse page resolves two endpoints per render, a few
   // simultaneous readers are enough to trip a per-address limit and blank every
   // map at once.

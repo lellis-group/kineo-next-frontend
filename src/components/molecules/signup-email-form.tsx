@@ -12,9 +12,9 @@ export interface SignupEmailFormProps {
  * A plain GET form, not a scripted one: the whole job is to navigate to
  * `/signup?email=…`, which is exactly what the browser does natively — so the
  * landing page needs no JavaScript for its call to action, and the field keeps
- * working before hydration. It was a client component with `useState` and
- * `useRouter` doing this by hand, which also meant the address it produced had
- * to be re-read on the far side.
+ * working before hydration. A client component doing it by hand with
+ * `useState` and `useRouter` would also produce an address that has to be
+ * re-read on the far side.
  */
 export function SignupEmailForm({
   placeholder = "prenom.nom@exemple.fr",

@@ -41,11 +41,10 @@ export const deleteAccount = {
  * The pepper that produces them never reaches the database, so neither can be
  * turned back into either value.
  *
- * This sentence was written out five times across the erasure screens and the
- * privacy policy, and the copies had drifted into saying one fingerprint, or
- * « some fingerprints », or two. A statement about what a company retains after
- * erasing someone is not a thing to say five ways, and the two that said one were
- * the ones a person reads right before deleting their account.
+ * Five places say it — the erasure screens and the privacy policy — and all
+ * read it from here. A statement about what a company retains after erasing
+ * someone is not a thing to say five ways, least of all on the screens a person
+ * reads right before deleting their account.
  */
 export const ERASURE_RETENTION_FACT =
   "deux empreintes non réversibles — une sur votre identifiant, une sur votre adresse e-mail — ainsi que les dates de la demande";

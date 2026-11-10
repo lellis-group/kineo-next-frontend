@@ -19,9 +19,8 @@ export const config = {
     "/profile/:path*",
     "/applications",
     "/applications/:path*",
-    // The whole `/listings` prefix is guarded, browse feed included. It used to
-    // be the one public route — a locum landing on it to find a replacement — but
-    // the feed is now member-only. `/listings/:path*` already covers
+    // The whole `/listings` prefix is guarded, browse feed included: the feed is
+    // member-only. `/listings/:path*` already covers
     // `/listings/mine` and its detail pages, so the practice side needs no entry
     // of its own. No `/practices` entry either: there is no such route, and a
     // matcher for a page that does not exist guards nothing.

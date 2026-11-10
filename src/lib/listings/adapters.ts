@@ -40,12 +40,11 @@ export const RECEIVED_STATUS_LABELS: Record<ApplicationStatus, string> = {
  * Why the practice ruled the way it did, in its own vocabulary.
  *
  * The mirror of `DECISION_SUMMARIES` on the applicant side, and for the same
- * reason: `REJECTED` covers four histories, and only one of them is a judgement
- * of the candidate. A practice reading its own list used to see « Refusé » on a
- * row it never refused — the posting was cancelled, or it closed with nobody
- * kept, or the candidate withdrew — which reads as a decision it took and did
- * not. The label is per row, from that row's own `decisionSource`, so it costs
- * no extra aggregate to be exact.
+ * reason: `REJECTED` covers four histories, but only one of them is a judgement
+ * of the candidate — the posting was cancelled, or it closed with nobody kept,
+ * or the candidate withdrew. Printing a flat « Refusé » on such a row reads as a
+ * decision the practice took and did not, so the label is per row, from that
+ * row's own `decisionSource`. The same rule runs on the applicant side.
  *
  * From the practice's point of view the candidate withdrew, so this file says
  * « a retiré sa candidature » where the applicant screen says « vous avez retiré
@@ -168,10 +167,9 @@ export function countForFilter(
  * Sourced from `RECRUITING_STATUSES` rather than spelled out, because the
  * concept already has a name and two other surfaces use it: the « En cours »
  * filter bucket on /listings/mine, and the gate that decides whether a listing
- * card offers close/cancel. The dashboard used to re-derive the count with
- * `OPEN` + `IN_DISCUSSION` written out by hand, in two places, which left a FULL
- * listing counted as "En cours" on one screen and absent from the homepage
- * headline on the next.
+ * card offers close/cancel. Writing `OPEN` + `IN_DISCUSSION` out by hand would
+ * count a FULL listing as "En cours" on one screen and leave it out of the
+ * homepage headline on the next.
  *
  * Counts rows, so it answers about the rows and nothing else: a caller that needs
  * the figure for the whole collection wants `recruitingCount` over the server's
@@ -262,8 +260,8 @@ export function formatListingAge(listing: {
 /**
  * Why the practice ruled the way it did, when it has.
  *
- * Only a decided application has one. The open statuses used to fall back to
- * « À traiter », printed right under the badge that already reads « En attente »
+ * Only a decided application has one. A fallback like « À traiter » on the open
+ * statuses would print right under the badge that already reads « En attente »
  * or « Présélectionné » — the same fact twice, in two sizes, on the row a
  * practice scans the fastest. There is nothing to add while nobody has ruled:
  * the badge is the whole of it.

@@ -124,14 +124,13 @@ export const ListingsTable = forwardRef<
      * stretches it*. It is a flex item of whatever box renders it, so a caller
      * whose panel is a bounded card passes `lg:flex-1` and the frame takes the
      * card's height; one in ordinary document flow passes nothing and the
-     * frame is exactly its rows. It used to be `h-full` everywhere, so a page
-     * of two rows was a frame as tall as the panel — a bordered box whose
-     * lower half was nothing but empty surface, with the pager sent to the far
-     * end of it.
+     * frame is exactly its rows. `h-full` everywhere would make a page of two
+     * rows a frame as tall as the panel — a bordered box whose lower half is
+     * nothing but empty surface, with the pager sent to the far end of it.
      *
-     * Stretched, the frame no longer keeps the spare room for itself, and
-     * neither does the void-swap that once put it between the rows and the
-     * pager: the table inside is `lg:h-full`, and a table reads its own
+     * Stretched, the frame does not keep the spare room for itself, nor put it
+     * between the rows and the pager: the table inside is `lg:h-full`, and a
+     * table reads its own
      * height as a *minimum* — so a short page's extra height is distributed
      * to the rows (never squeezing them, never leaving them a stretch of
      * bordered nothing under them), and a long page overflows into the
@@ -146,18 +145,16 @@ export const ListingsTable = forwardRef<
      * rows inside. A short page is its own height in flow, the box's when
      * stretched. See `RESULTS_BOX` in `listings-results-panel`.
      *
-     * There used to be a `[scrollbar-gutter: stable]` on this very scroller —
-     * the whole fix for a panel that resized as the reader paged, on a table
-     * whose min-content width is a property of the page on screen (709px of
-     * short postings, 825px of one long title, so the overflow came and went
-     * by the page and took 10–15px of column width with it). It was taken off
-     * to match `MyListingsTable`, where the same reasoning was tried and
-     * priced out as a permanent band of dead surface inside the border on
-     * every short page — the state most of this table's pages sit in. Its
-     * purchase now: the columns re-flow by a scrollbar's width on the pages
-     * that do overflow, which is a transition, not a layout broke mid-reader.
+     * No `[scrollbar-gutter: stable]` on this scroller, as on
+     * `MyListingsTable`. The table's min-content width is a property of the
+     * page on screen (709px of short postings, 825px of one long title), so the
+     * overflow comes and goes by the page and takes 10–15px of column width
+     * with it — but a reserved gutter is a permanent band of dead surface
+     * inside the border on every short page, the state most pages sit in. The
+     * price instead: the columns re-flow by a scrollbar's width on the pages
+     * that do overflow, which is a transition, not a layout broken mid-reader.
      *
-     * And the frame, which is what the scrolling region is for. Now that the
+     * And the frame, which is what the scrolling region is for. Because the
      * rows move inside a box rather than the panel growing to hold them, the
      * table has edges a reader can see: the panel says « here is a panel », the
      * frame says « this much of it is the list ».
@@ -166,10 +163,10 @@ export const ListingsTable = forwardRef<
      * itself outlined in `border`, and a stronger inner edge would read as the
      * more important of two boundaries that are not.
      *
-     * It also happens to finish the table properly. `.table` drops the last
-     * row's own bottom border, which used to be right when the rows ended the
-     * panel and the panel's padding closed the list — from here they end at a
-     * scroll edge, and this is the line that closes them.
+     * It also finishes the table properly. `.table` drops the last row's own
+     * bottom border, which suits rows that end a panel whose padding closes the
+     * list — here they end at a scroll edge, and this is the line that closes
+     * them.
      */
     <div
       className={cn(

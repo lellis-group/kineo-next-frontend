@@ -1,9 +1,9 @@
 /**
  * The RPPS number's rule, in one place.
  *
- * It was written five times: as a regex here, as a `pattern` and a `maxLength`
- * in the form, and as two different French sentences in the validator and the
- * error translator. `maxLength` cannot read a regex, so `RPPS_DIGITS` exists for
+ * Five consumers read it: the regex here, the form's `pattern` and `maxLength`,
+ * and the one French sentence the validator and the error translator share.
+ * `maxLength` cannot read a regex, so `RPPS_DIGITS` exists for
  * it — and the length the form allows is derived from the pattern rather than
  * decided again.
  */
@@ -14,9 +14,9 @@ export const RPPS_DIGITS = 11;
  *
  * The input's `pattern` attribute takes a string and anchors it itself, so it
  * wants the bare `\d{11}`; the validator wants the anchored `RegExp`. Writing
- * the attribute inline instead — `d{11}` — made it match the literal letter
- * `d` eleven times, so a real number was rejected by the browser's own
- * constraint validation and a French message never appeared.
+ * the attribute inline — where the backslash is easily lost to `d{11}` — makes
+ * it match the literal letter `d` eleven times, so a real number is rejected by
+ * the browser's own constraint validation and no French message appears.
  */
 export const RPPS_PATTERN_SOURCE = `\\d{${RPPS_DIGITS}}`;
 export const RPPS_PATTERN = new RegExp(`^${RPPS_PATTERN_SOURCE}$`);

@@ -37,8 +37,8 @@ export const metadata: Metadata = {
  * The URL is the source of truth, and the server answers whatever view it names.
  * `searchParams` is parsed once here into a view, and all three reads are seeded
  * with it, so a shared or bookmarked link paints its exact results — filters,
- * page and ordering — rather than the default view the route used to render
- * regardless of the query string. The client reads the same string and never
+ * page and ordering — rather than the default view whatever the query string
+ * says. The client reads the same string and never
  * refetches, which is why the rows it shows are the rows the server just sent.
  * One exception to "answers whatever it names": a page past the end of the
  * collection is clamped, by a redirect that rewrites the URL rather than a
@@ -50,8 +50,8 @@ export const metadata: Metadata = {
  * the screen, and the map is drawn by a client-only chunk that arrives after the
  * HTML anyway. Held as a promise, it is unwrapped behind a `<Suspense>` boundary
  * inside the container, so it cannot hold up the list. Awaiting it here — the
- * obvious shape, and what this did — made the whole page wait for a map nobody
- * has scrolled to.
+ * obvious shape — would make the whole page wait for a map nobody has scrolled
+ * to.
  *
  * The map's promise is also the only one that cannot fail loudly:
  * `fetchBrowsePlaces` answers `null` rather than throwing, and the `.catch`
@@ -77,7 +77,7 @@ async function Listings({
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   // The authoritative check: a cookie the backend refuses reads as anonymous,
-  // which is exactly the reader the proxy's fast path was there to catch early.
+  // which is exactly the reader the proxy's fast path is there to catch early.
   const auth = await fetchServerAuth();
   if (auth.status !== "member") {
     redirect("/signin");

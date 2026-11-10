@@ -63,9 +63,9 @@ export const BROWSE_PAGE_SIZE = 10;
  *
  * Rows and nothing else. The panels' counts are a second read, asked for by
  * whoever owns them, because they depend on a subset of the filters the page
- * does (never `specialty`, never `sort`, never the page) and were being asked
- * again on every page turn and every reordering while unchanged — three
- * requests behind a click that moved ten rows. See `fetchFacets`.
+ * does (never `specialty`, never `sort`, never the page) — asking them with the
+ * rows would repeat them, unchanged, on every page turn and every reordering.
+ * See `fetchFacets`.
  *
  * `city` is matched by the backend on the practice's city, and the date bounds
  * are inclusive lower/upper bounds on `startDate`. Omitted entirely when unset:
@@ -182,9 +182,9 @@ export async function fetchBrowsePlaces(
 /**
  * What `GET /replacement-listings/page-of` answered.
  *
- * Three outcomes, not two. "Not in this view" and "could not ask" both used to
- * be `null`, which made the caller announce « Annonce introuvable » to a screen
- * reader during an outage — a sentence about the posting when the fault was the
+ * Three outcomes, not two. Folding "not in this view" and "could not ask" into
+ * one `null` would make the caller announce « Annonce introuvable » to a screen
+ * reader during an outage — a sentence about the posting when the fault is the
  * connection.
  */
 export type ListingPageOfResult =
@@ -196,10 +196,10 @@ export type ListingPageOfResult =
  * GET /replacement-listings/page-of — which page holds one posting.
  *
  * Asked when the reader picks a posting from a map popup and the list is not
- * already showing it, which is the only moment a position is worth anything. It
- * used to be delivered with every map read, as the id of every matching posting,
- * so that a rare click could do an `indexOf` over a list the reader had been
- * paying for since the page loaded.
+ * already showing it, which is the only moment a position is worth anything —
+ * not delivered with every map read as the id of every matching posting, a list
+ * the reader would pay for since the page loaded so a rare click could do an
+ * `indexOf`.
  *
  * Sent the reader's filters, because a page is a position *within the filtered
  * collection*: a posting the current view does not show has no page in it, and

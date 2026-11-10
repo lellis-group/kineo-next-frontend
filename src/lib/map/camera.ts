@@ -69,8 +69,8 @@ export function zoomToPlace(map: MapLibreMap, place: MapPlace) {
  * Frames every place on the map.
  *
  * `fitBounds` rather than a fixed centre: the reader opened the page to see where
- * the work is, and a map centred on Paris because the default view was written
- * there says nothing about a posting in Nantes. Guarded against a single place —
+ * the work is, and a map centred on Paris by default says nothing about a
+ * posting in Nantes. Guarded against a single place —
  * `fitBounds` on one point leaves the camera at an undefined zoom.
  *
  * The guard against one place is also why the zoom is written out rather than

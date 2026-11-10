@@ -11,9 +11,8 @@ import { cn } from "@/lib/cn";
  * provide the row; and `block` is the one standing alone in that popover, which
  * has a row to itself and the room to be comfortable in.
  *
- * A size rather than padding at each call site: these overrides were the same
- * numbers written three times over, and a fourth chip would have written them
- * again. `block` carries `width: 100%` for the same reason — a chip that claims
+ * A size rather than padding at each call site: the same numbers written at
+ * three call sites, and again at a fourth. `block` carries `width: 100%` for the same reason — a chip that claims
  * the popover's whole row is a different chip, not a layout tweak the caller
  * should keep remembering.
  */

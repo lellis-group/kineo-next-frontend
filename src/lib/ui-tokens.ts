@@ -1,11 +1,10 @@
 /**
  * Visual vocabulary shared between the service layer and the components.
  *
- * These unions used to live on the components they name — `BadgeTone` on the
- * badge, `ButtonVariant` on the button — which forced `lib` to import from
- * `components` in order to type a status tone. That is the dependency running
- * backwards: the adapters decide what a status looks like, and the components
- * render it, so the vocabulary belongs below both.
+ * The type unions live below `components` on purpose: the adapters decide what
+ * a status looks like and the components render it, so the vocabulary belongs
+ * below both — `lib` importing a tone from `components` is the dependency
+ * running backwards.
  *
  * One vocabulary, several renderings. A chip, a bordered banner, a dot and an
  * alert are four different components with four different CSS treatments, so

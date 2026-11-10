@@ -14,11 +14,10 @@ import { cn } from "@/lib/cn";
  * callback it forwards arrives from `AppHeader`, which is itself on the client,
  * and a menu that cannot close itself is not a menu.
  *
- * The name and the role are the point of the plate. They were both dropped in the
- * navbar (`showText={false}`, avatar alone) with a separate sign-out button
- * carrying the account's only label — so the bar said « here is a person » and
- * « leave » and nothing else, while the reference says who is signed in and what
- * they do, with every action one click away behind the chevron.
+ * The name and the role are the point of the plate. An avatar alone beside a
+ * sign-out button would say « here is a person » and « leave » and nothing else,
+ * while the reference says who is signed in and what they do, with every action
+ * one click away behind the chevron.
  *
  * Closes on Escape, on a click outside, and after a choice — each on the
  * document rather than on the plate, because a click that starts inside the menu

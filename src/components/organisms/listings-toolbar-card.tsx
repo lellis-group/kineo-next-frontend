@@ -41,7 +41,7 @@ interface ListingsToolbarCardProps {
   /**
    * Height and width the layout hands the card.
    *
-   * The card no longer decides how tall it is: from `lg` up it sits in a
+   * The card does not decide how tall it is: from `lg` up it sits in a
    * full-height shell beside the facets rail and above the results table, and the
    * page's height is the viewport's — so a fixed `min-h` here would either waste
    * the space the table needs or push the table off screen. The parent sizes it;

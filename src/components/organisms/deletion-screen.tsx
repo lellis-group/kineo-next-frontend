@@ -20,8 +20,7 @@ export type DeletionScreenStatus = DeletionOutcome;
  * thing worth protecting is the mapping from an outcome to a screen — which lives
  * with the flow and is exhaustive rather than a chain of conditionals: a failure
  * the service can report but that map does not cover would otherwise fall through
- * to a generic screen, which is how a retryable 429 once ended up with no retry
- * button on it.
+ * to a generic screen — a retryable 429 with no retry button on it.
  *
  * `already-erased` and `success` read alike — same title, same « recréer un
  * compte » button — but they are not one screen: the first is reached because the

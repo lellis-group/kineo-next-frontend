@@ -94,10 +94,10 @@ export function adaptBrowseListingDetail(
 /**
  * The map's places, as one entry per practice.
  *
- * The endpoint already grouped them, so there is nothing to group here. The
- * client used to round coordinates to three decimals — about a hundred metres —
- * and two openings written for the same address rounded apart drew as two pins
- * stacked on one pixel. `practiceId` is exact.
+ * The endpoint already grouped them, so there is nothing to group here — and
+ * grouping by `practiceId` is exact, where rounding coordinates (three decimals,
+ * about a hundred metres) would let two openings at the same address round apart
+ * and draw as two pins stacked on one pixel.
  *
  * A place with no coordinates is dropped rather than drawn at 0,0, which is in
  * the Gulf of Guinea. The endpoint counts those postings and the map says how

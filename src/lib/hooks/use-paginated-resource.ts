@@ -9,7 +9,7 @@ import { useRaceGuard } from "./use-race-guard";
  * One resource, paged and filtered, seeded from the server payload — the shape
  * the three console screens share.
  *
- * Two rules found the hard way, both now structural:
+ * Two rules, both structural:
  *
  * - the default view is fetched like any other. Skipping the fetch when the
  *   filters are back at their default means the *reset* of the previous view
@@ -48,8 +48,8 @@ export function usePaginatedResource<T, V>({
    * query string. Then `initialData` is never stale: it is always the server's
    * answer for the current view, delivered on mount and again on every URL
    * change, so the hook adopts each fresh `initialData` and never fetches
-   * client-side — the server already did. Left off, the hook behaves as it
-   * always has: `initialData` is the default view only, and every other view is
+   * client-side — the server already did. Left off, `initialData` is the
+   * default view only, and every other view is
    * client state that fetches. The three console screens leave it off.
    */
   seedFromServer?: boolean;

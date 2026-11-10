@@ -53,9 +53,9 @@ describe("listingActionErrorMessage", () => {
   });
 
   test("ignores the English message and reads the code alone", () => {
-    // The wording changed on the server when `close` became reachable from a
-    // listing still recruiting; a client matching the prose stopped translating
-    // and told the practice to retry a posting that was already terminal.
+    // The server rewords its prose; a client matching it stops translating the
+    // day it does, and tells the practice to retry a posting that is already
+    // terminal.
     const reworded = refusal(
       LISTING_TRANSITION_CODES.NOT_CLOSEABLE,
       "Only a listing still in circulation can be closed",
@@ -69,9 +69,9 @@ describe("listingActionErrorMessage", () => {
   });
 
   test("covers the terminal statuses a cancel is refused for, without advice that would be wrong for one of them", () => {
-    // `LISTING_ALREADY_CLOSED` is what the backend answers for a filled listing
-    // now, where it once sent its own code; « Clôturez-la à la place » would be
-    // nonsense on a listing that is already closed.
+    // `LISTING_ALREADY_CLOSED` is what the backend answers for a filled listing;
+    // « Clôturez-la à la place » would be nonsense on a listing that is already
+    // closed.
     const message = listingActionErrorMessage(
       refusal(LISTING_TRANSITION_CODES.ALREADY_CLOSED),
       "cancel",

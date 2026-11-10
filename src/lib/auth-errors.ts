@@ -12,11 +12,10 @@ import {
  * Two things worth separating, because they answer different questions:
  *
  *  - *What kind of failure was this?* That is `api-errors.ts`'s job, and this
- *    module asks it rather than re-deciding. It used to carry its own
- *    `!status || status >= 500` rule, which quietly disagreed with the main
- *    classifier — a status-less failure was "unavailable" here and
- *    `service-down` there — so the same outage could be described two ways
- *    depending on which screen hit it first.
+ *    module asks it rather than re-deciding: a rule of its own (say
+ *    `!status || status >= 500`) would quietly disagree with the main
+ *    classifier, and the same outage would be described two ways depending on
+ *    which screen hit it first.
  *  - *What does better-auth actually say?* That stays here, because better-auth
  *    answers with string `code`s (`EMAIL_NOT_VERIFIED`, `USER_ALREADY_EXISTS`…)
  *    rather than HTTP statuses, and those codes are specific to the auth
@@ -47,8 +46,8 @@ export const AUTH_SERVICE_UNAVAILABLE_MESSAGE =
  * worth settling on purpose rather than by accident — but they are not obviously
  * interchangeable: this one is written for a reader who is mid-form and does not
  * know the auth service exists, so it names what they can act on ("votre
- * connexion") instead of naming a subsystem. Left as-is, and now a constant
- * rather than three literals that could drift.
+ * connexion") instead of naming a subsystem. A constant rather than three
+ * literals that could drift.
  */
 export const AUTH_UNREACHABLE_MESSAGE =
   "Impossible de contacter le serveur. Réessayez plus tard.";
@@ -56,10 +55,8 @@ export const AUTH_UNREACHABLE_MESSAGE =
 /**
  * The sentence for "the call did not get through", for whichever action it was.
  *
- * Six screens each typed their own, swapping only the leading verb — and the verbs
- * are the part that drifts: the reset-password one already reordered its second
- * clause, with nothing recording why. One template now, so the wording of a
- * network blip is the same everywhere it is shown.
+ * Six screens use it, swapping only the leading verb — the rest is one template,
+ * so the wording of a network blip is the same everywhere it is shown.
  */
 export function authCallFailed(action: string): string {
   return `${action} impossible pour le moment. Vérifiez votre connexion, puis réessayez.`;
@@ -151,12 +148,10 @@ export function mapSignUpError(error: {
     };
   }
 
-  // Field-level rejections, matched on the code. All three used to be matched on
-  // a *sentence* — and on a French one, which the backend has never emitted: it
-  // answers in English, and its own copy has been reworded since. Every one of
-  // these branches was unreachable, so a name or password the server refused
-  // fell through to "vérifiez votre connexion" below, which is a sentence about
-  // the network for someone who mistyped their name.
+  // Field-level rejections, matched on the code, never on a sentence: the backend
+  // answers in English and rewords its copy, and a branch that misses falls
+  // through to "vérifiez votre connexion" below — a sentence about the network
+  // for someone who mistyped their name.
   //
   // The password codes come from our own `before` hook (`PASSWORD_TOO_SHORT_OR_LONG`)
   // or from better-auth's own length check, depending on which got there first;
@@ -201,9 +196,9 @@ export function mapSignUpError(error: {
  * Whether this instance has password reset switched off.
  *
  * Lives here rather than in the container, because it is a reading of what
- * better-auth says — which is this module's whole subject — and the container was
- * the only one of five doing its own. A code added here from now on reaches this
- * screen too, instead of being handled on four and missed on the fifth.
+ * better-auth says — which is this module's whole subject. A code added here
+ * reaches this screen too, instead of being handled on four screens and missed
+ * on the fifth.
  */
 export function isPasswordResetDisabled(failure: {
   code?: string | null;

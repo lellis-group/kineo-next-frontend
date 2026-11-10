@@ -10,10 +10,8 @@ import { STRIP_CONTAINER } from "@/lib/layout";
  * throw that view away. Replacing a working list with an error card would also
  * hide the chips that would let the reader navigate out of the broken state.
  *
- * Two screens had this written out identically down to the className, with one
- * word of the sentence differing — which is the failure mode: the next person to
- * need one copies the copy too, and now two screens disagree about what a
- * failed refresh says about the data underneath it.
+ * Written once because copies drift: two screens with their own banner end up
+ * disagreeing about what a failed refresh says about the data underneath it.
  *
  * `message` is the noun-specific half; the surrounding sentence is not, so it
  * lives here.

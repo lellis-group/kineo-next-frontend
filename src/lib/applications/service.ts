@@ -60,7 +60,7 @@ export interface PaginationParams {
    * Which situation, among the rejected applications. Sent only alongside
    * `status: "REJECTED"`, which is the chip row it belongs to.
    *
-   * Distinct from `decisionSource`, which nothing sends any more: a situation is
+   * Distinct from `decisionSource`, which is never sent: a situation is
    * read by the backend off fields it already stores, and it is named by the
    * backend rather than guessed here.
    */
@@ -82,10 +82,9 @@ async function fetchMyApplications(
   // collection rather than the page that came back. "ALL" is the no-filter case,
   // and sending it would narrow to rows that do not exist.
   //
-  // `decisionSource` is gone rather than left dormant: the backend's query schema
-  // is strict and rejects it, so the one chip that used to send it was relying on a
-  // parameter that no longer worked. The situations it selected are `bucket` now,
-  // which the backend computes off fields it already stores.
+  // No `decisionSource`: the backend's query schema is strict and rejects it. The
+  // situations it would select are `bucket`, which the backend computes off
+  // fields it already stores.
   const narrowed = params.status !== "ALL";
   const query = buildQuery({
     page: params.page,

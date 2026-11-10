@@ -35,8 +35,8 @@ function isDefaultView(
   seededPageSize: ApplicationsPageSize,
 ): boolean {
   // `"ALL"`, not `null`, for the situation: the state is initialised to « Toutes »,
-  // so testing it against null meant this was never true — the default view was
-  // refetched on every visit instead of adopting the page the server had already
+  // so testing it against null would never be true — the default view would be
+  // refetched on every visit instead of adopting the page the server already
   // sent.
   return (
     view.page === 1 &&

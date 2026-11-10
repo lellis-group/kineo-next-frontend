@@ -124,22 +124,16 @@ export type ApplicationStatus = (typeof APPLICATION_STATUSES)[number];
  * was erased — and they read nothing alike. `WITHDRAWN` mixes a self-service
  * withdrawal with one written by the account erasure too.
  *
- * These four are what the backend's `DecisionSource` enum holds, and they are
- * the only four it can ever send. This list used to hold nine, and the extra
- * five were worse than unused: reading it as the vocabulary, the code believed
- * it could name outcomes the database had no way of expressing — another
- * candidate retained, the posting closed or cancelled, a practice that closed
- * its account — while the value the database *does* produce for an erased
- * account had no entry at all, and indexing the label table with it threw.
- * Nobody noticed because the two sides were never compared.
+ * These four are a mirror of the backend's `DecisionSource` enum, and the
+ * only four it can ever send — the code reads by this value, so a name the
+ * database cannot produce is dead weight and a gap it *does* produce is a
+ * crash at read time. Complete, and nothing else. Const array, not a bare
+ * union — see `REPLACEMENT_LISTING_STATUSES`.
  *
  * Which account was erased is not in this value: `SYSTEM` covers both, and the
  * status tells them apart — `WITHDRAWN` when the candidate erased their own,
- * `REJECTED` when the practice's account went.
- *
- * Null while the application is still open: nobody has decided yet.
- *
- * Const array, not a bare union — see `REPLACEMENT_LISTING_STATUSES`.
+ * `REJECTED` when the practice's account went. Null while the application is
+ * still open: nobody has decided yet.
  */
 export const APPLICATION_DECISION_SOURCES = [
   "CANDIDATE_WITHDREW",

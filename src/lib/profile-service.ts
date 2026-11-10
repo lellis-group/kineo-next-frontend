@@ -20,22 +20,20 @@ import type { ApiProfile } from "./types/api";
  * GET /profile/me — soft 404 when the profile does not exist yet (documented
  * by the API); returns null so callers can show the create form instead.
  *
- * Cached per request. `fetchServerAuth` reads this same row to resolve the role
- * for the header, and the profile and dashboard routes read it for the page
- * itself, so every one of those renders used to ask the backend twice. React
- * dedupes on the arguments and the `serverTransport` a server component passes
- * is a module constant, so those call sites collapse into a single request.
+ * Cached per request. `fetchServerAuth` reads this same row to resolve the
+ * role for the header, and the profile and dashboard routes read it for the
+ * page itself; React dedupes on the arguments and the `serverTransport` a
+ * server component passes is a module constant, so those call sites collapse
+ * into a single request. Only the two callers that pass the same transport
+ * share a result — the header reads it from a client component with no
+ * transport at all, and gets its own.
  *
- * Only the two callers that pass the same transport share a result — the header
- * reads it from a client component with no transport at all, and gets its own.
- *
- * The soft 404 stays exactly as narrow as it was. This function is best-effort
- * for the header's sake, but a page still has to be able to tell "no profile
- * yet" apart from "the backend is down", and it can: only a 404 resolves to
- * null, everything else still throws. Reading the profile out of
- * `fetchServerAuth` instead would have collapsed precisely those two cases — its
- * own read swallows any failure and reports `null` — and turned an outage into
- * a redirect to the onboarding form.
+ * The soft 404 stays exactly this narrow. The function is best-effort for the
+ * header's sake, but a page still has to tell « no profile yet » apart from
+ * « the backend is down », and it can: only a 404 resolves to null, everything
+ * else still throws. Reading the profile out of `fetchServerAuth` instead
+ * would collapse precisely those two cases — that read swallows any failure
+ * and reports `null` — and turn an outage into a redirect to onboarding.
  */
 export const fetchMyProfile = cache(
   async (transport?: ApiTransport): Promise<ApiProfile | null> =>
@@ -90,8 +88,8 @@ export function mapProfileError(error: unknown): string {
         "City must contain only letters, spaces, hyphens or apostrophes":
           "ne peut contenir que des lettres, espaces, tirets ou apostrophes.",
         // Keyed on better-auth's English zod message, and rendered with the
-        // same sentence the client-side validator uses. It used to be its own
-        // phrasing, so the same mistake was described two ways.
+        // same sentence the client-side validator uses: the same mistake has
+        // exactly one description.
         "String must be 11 digits": `doit contenir exactement ${RPPS_DIGITS} chiffres.`,
         "latitude and longitude must be provided together":
           "la latitude et la longitude doivent être renseignées ensemble.",
@@ -101,11 +99,9 @@ export function mapProfileError(error: unknown): string {
       return "Ce numéro RPPS est déjà utilisé par un autre profil.";
     }
     if (error.status === 403) {
-      // `PATCH /profile/:id` used to be reachable without a verified address:
-      // `EmailVerifiedGuard` only sat on the four `POST` handlers, so an
-      // unverified account could create a profile and then edit it freely. The
-      // backend now gates every write, which is right — and means the sentence
-      // has to name the address, not only the ownership the user cannot fix.
+      // The backend gates every profile write on a verified email — so the
+      // sentence has to name the address, not only the ownership the user
+      // cannot fix.
       return "Vous n'êtes pas le propriétaire de ce profil, ou votre adresse e-mail n'est pas validée.";
     }
   }

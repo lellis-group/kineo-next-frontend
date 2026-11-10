@@ -4,11 +4,9 @@ import { ChevronDownIcon } from "@/components/atoms/icons";
 /**
  * The prose vocabulary the long-form legal documents are written in.
  *
- * These six were private to `app/(site)/privacy/page.tsx`, which meant the terms
- * page — the other document, in the same language, on the same screen — rewrote
- * three of them inline instead. Two paragraphs written a few lines apart ended
- * up on two different measures, and the bullet rows drifted: `mt-2 h-1 w-1` in
- * one, `mt-1.5 h-1.5 w-1.5` in the other, for the same list.
+ * Shared by the privacy policy and the terms — two documents in the same
+ * language, on the same screen — so their paragraphs share one measure and
+ * their bullet rows one geometry, instead of each page rewriting them inline.
  *
  * They are here rather than in `legal-document.tsx` because that file is the
  * shell — the title, the logo, the back link — and these are the body. A document
@@ -19,8 +17,8 @@ import { ChevronDownIcon } from "@/components/atoms/icons";
 /**
  * Paragraph measure: ~70 characters, where French prose reads comfortably.
  *
- * One value, because the two legal pages had each invented their own and the
- * difference showed as a visible seam when a reader went from one to the other.
+ * One value for both legal pages: two measures would show as a visible seam
+ * when a reader goes from one to the other.
  */
 export const LEGAL_PROSE = "max-w-[70ch] text-[0.925rem] leading-relaxed";
 

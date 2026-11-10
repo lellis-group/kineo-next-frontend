@@ -4,9 +4,9 @@
  * A horizon and the bounds it produces are the same filter expressed two ways:
  * the chip row is the quick way in, the two date fields are the exact one, and
  * both write the same `from` **and `to`**. A horizon names a *period*, not a
- * lower bound — the lone `from` this used to write was how « Ce mois » read as
- * « from the 1st of the month after next's-before » and silently dropped every
- * posting starting this month, which is the one month the chip is named for.
+ * lower bound — a lone `from` reads « Ce mois » as « from the 1st of next
+ * month » and silently drops every posting starting this month, the very one
+ * the chip is named for.
  */
 
 import type { BrowseHorizon, HorizonBounds } from "./browse-contracts";
@@ -35,9 +35,9 @@ export function horizonBoundsFor(
 ): HorizonBounds {
   switch (horizon) {
     case "WEEK":
-      // Monday through Sunday of the current week. « From today » was the
-      // original reading and it had to unlight again every midnight; the exact
-      // "from now on" tool is the date field beside the chips, not the chip.
+      // Monday through Sunday of the current week. « From today » would have to
+      // unlight again every midnight; the exact "from now on" tool is the date
+      // field beside the chips, not the chip.
       return {
         from: toIsoDate(
           new Date(
@@ -55,8 +55,8 @@ export function horizonBoundsFor(
         ),
       };
     case "MONTH":
-      // The 1st through the last day of the month — the month the chip is
-      // named for, not the month that follows the one it used to skip over.
+      // The 1st through the last day of the month — the whole month the chip
+      // is named for, tail included.
       return {
         from: toIsoDate(new Date(now.getFullYear(), now.getMonth(), 1)),
         to: toIsoDate(new Date(now.getFullYear(), now.getMonth() + 1, 0)),
@@ -88,8 +88,8 @@ function toIsoDate(date: Date): string {
 /**
  * The horizon a pair of date fields corresponds to, or `ALL`.
  *
- * Used to keep the segmented row honest about the date fields: typing a range
- * that no longer matches any option has to clear the selection, otherwise the row
+ * Keeps the segmented row honest about the date fields: typing a range that
+ * does not match any option has to clear the selection, otherwise the row
  * would claim a narrowing the results do not have.
  *
  * Each horizon is matched against the exact pair it produces, rather than

@@ -46,8 +46,8 @@ export function ForgotPasswordContainer() {
           setStage("not-enabled");
         } else {
           setStage("form");
-          // A 5xx used to be reported with the same words as a refused request.
-          // It is not the reader's address that is at fault, so it now says so.
+          // A 5xx is not a refused request: it is not the reader's address that
+          // is at fault, so the sentence says so.
           setError(
             isAuthServiceUnavailable(failure)
               ? AUTH_SERVICE_UNAVAILABLE_MESSAGE

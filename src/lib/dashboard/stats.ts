@@ -9,14 +9,13 @@ import type { DashboardStat } from "./contracts";
  * The three figures cards.
  *
  * Everything counted here comes from the server's totals rather than from the
- * rows on hand, and that is the point of the exercise: the dashboard used to page
- * the member's whole collection — up to twenty requests — to count it, and
- * reported figures that were short past the last page.
+ * rows on hand — paging the member's whole collection to count it would be
+ * twenty requests and figures that are short past the last page.
  *
- * Nothing here reads a row. « Prochain remplacement » once did — it asks for the
- * soonest period still to come, which no breakdown of statuses can answer — and
- * the server now answers it beside the counts, over the whole collection rather
- * than over the hundred most recent postings.
+ * Nothing here reads a row. « Prochain remplacement » is the one thing no
+ * breakdown of statuses can answer — it asks for the soonest period still to
+ * come — and the server answers it beside the counts, over the whole
+ * collection rather than over the hundred most recent postings.
  */
 export function adaptStats(
   listings: MyListingsData,
@@ -29,9 +28,8 @@ export function adaptStats(
   const full = listings.counts.FULL;
 
   // PENDING + SHORTLISTED — a shortlisted application is one the practice put
-  // forward but has not yet decided on, so it is still outstanding. Counting
-  // PENDING alone reported zero for anyone who had been shortlisted, which reads
-  // as "nothing left to wait for" while the cabinet is still choosing.
+  // forward but has not yet decided on, so it is still outstanding. Counts are
+  // server-side totals, so the review-by-count must be a total too.
   const awaitingDecision = awaitingDecisionCount(applications.counts);
 
   // The two statuses behind that total, broken out so the reader can tell a
@@ -56,8 +54,8 @@ export function adaptStats(
   const unseenApps = applications.unseenOpenCount;
 
   // Every recruiting status, so the breakdown sums to the headline. Omitting a
-  // status the headline counts would show a number that does not add up, which is
-  // the same class of bug as the headline itself being wrong.
+  // status the headline counts would show a number that does not add up — the
+  // same class of bug as the headline itself being wrong.
   const breakdown = [
     `${open} ouverte${plural(open)}`,
     `${discussion} en discussion`,
@@ -66,9 +64,8 @@ export function adaptStats(
 
   // Only a posting that is actually recruiting can be the next replacement to
   // cover. The server draws that line — the statuses it considers in play, and
-  // `startDate` in the future — and answers with the soonest one, or with nothing
-  // when there is nothing to come. It used to be found here, by walking the
-  // member's postings and comparing dates.
+  // `startDate` in the future — and answers with the soonest one, or with
+  // nothing when there is nothing to come.
   const upcoming = listings.nextRecruitingListing;
 
   const nextReplacement: DashboardStat = upcoming
@@ -96,8 +93,8 @@ export function adaptStats(
       value: `${activeListings}`,
       // The label states what the figure means, not what the noun is: "Mes
       // annonces" above already says which noun, so repeating it left the line
-      // reading like a fragment. And it is written for zero, where the earlier
-      // version described 0 as "annonce active · en recherche de remplaçant".
+      // reading like a fragment. And it is written for zero, rather than
+      // describing 0 as "annonce active · en recherche de remplaçant".
       label:
         activeListings > 0
           ? "en recherche d'un remplaçant"

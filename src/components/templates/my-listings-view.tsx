@@ -67,9 +67,9 @@ const SHELL = cn(
  * scrolls and a practice with three postings and a practice with forty see the
  * same board.
  *
- * The `PageHeader` this replaces is gone rather than restyled: the reference's
- * main card carries its own title, and a page title above a card that is also
- * titled is the same sentence twice on one screen.
+ * No `PageHeader`: the reference's main card carries its own title, and a page
+ * title above a card that is also titled is the same sentence twice on one
+ * screen.
  */
 export function MyListingsView({
   listings,

@@ -17,9 +17,8 @@ import {
  *
  * The whole card is the link to the posting's own page: the list is for
  * scanning, and every action on a posting — candidates, close, cancel — lives
- * on that page. The card used to hold a disclosure panel and two terminal
- * actions of its own, which made it a second, narrower version of the page it
- * could already open.
+ * on that page. Actions of its own would make the card a second, narrower
+ * version of the page it already opens.
  */
 export function MyListingCard({ listing }: { listing: MyListing }) {
   const status = LISTING_STATUS_META[listing.status];

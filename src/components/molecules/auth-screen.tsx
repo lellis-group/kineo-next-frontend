@@ -7,10 +7,9 @@ import type { InlineAlertTone } from "@/lib/ui-tokens";
  * A terminal auth screen: the outcome, and the one way out of it.
  *
  * Six of these across the auth and erasure flows — the email that was sent, the
- * reset link that expired, the password that is now active, the address that is
- * now verified — and all six were the same three things written out separately:
- * a `space-y-6` stack, a message, and a full-width primary button underneath.
- * Two of them were byte-identical apart from one word of copy and one tone.
+ * reset link that expired, the password that is active, the address that is
+ * verified — and all six are the same three things: a `space-y-6` stack, a
+ * message, and a full-width primary button underneath.
  *
  * `children` sits between the message and the action, for the one thing that
  * needs to go there (the resend control on a failed verification). Kept as a slot

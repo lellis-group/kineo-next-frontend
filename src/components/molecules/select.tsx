@@ -10,10 +10,9 @@ import { cn } from "@/lib/cn";
  * shared `ChevronDownIcon`, so this affordance and every disclosure on the app
  * are drawn from one geometry.
  *
- * It sat in `atoms/` until the browse toolbar needed it: an atom that composes
- * other atoms is a molecule by definition, and leaving it where it was would
- * have meant importing a component out of the layer that is supposed to hold
- * none.
+ * An atom that composes other atoms is a molecule by definition; filing it in
+ * `atoms/` would mean importing a component out of the layer that is supposed
+ * to hold none.
  */
 export interface SelectProps extends ComponentProps<"select"> {
   label?: ReactNode;

@@ -14,11 +14,9 @@ export const ACTIVITY_FEED_SIZE = 4;
 /**
  * The activity feed: the member's own applications, most recent first.
  *
- * Titles come from the listing each application embeds, so nothing here needs the
- * member's listings at all. It used to build a title map out of every listing the
- * practice owns and fall back to « Titre d'annonce indisponible » for any
- * application whose posting was not in it — which, on a bounded read, is most of
- * the older ones.
+ * Titles come from the listing each application embeds, so nothing here needs
+ * the member's listings at all — no title map over every listing the practice
+ * owns, no « Titre d'annonce indisponible » for the older entries.
  */
 export function adaptActivity(
   applications: readonly ApplicationEntry[],

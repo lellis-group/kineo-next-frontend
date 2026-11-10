@@ -77,8 +77,8 @@ function rewriteLocation(headers: Headers, backendUrl: string): void {
  * Forwards a request to the Kineo backend and streams the answer back.
  *
  * Shared by both proxy routes (`/api/[...path]` for data, `/api/auth/[...all]`
- * for auth), which were otherwise byte-identical apart from how they rewrote the
- * path and what they called the failure. One implementation means the header
+ * for auth), which differ only in how they rewrite the path and what they call
+ * the failure. One implementation means the header
  * handling, the body forwarding and the hop-by-hop stripping cannot drift
  * between the two.
  *

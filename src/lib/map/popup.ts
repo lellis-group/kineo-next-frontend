@@ -25,8 +25,8 @@ import type { MapPlace, MapPlaceListing } from "./types";
 /**
  * Opens the card for one marker, whichever door the reader came through.
  *
- * Extracted out of the marker's click handler because the same thing now happens
- * from the list: a posting chosen in the table comes with its card on the map,
+ * Not inside the marker's click handler because the same thing happens from the
+ * list: a posting chosen in the table comes with its card on the map,
  * which is the reference's arrangement and the only way the two halves ever read
  * as one screen. Two doors, one body — the alternative is a second copy of the
  * popup's construction, and the two would drift the first time a field moved.

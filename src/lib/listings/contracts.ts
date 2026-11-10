@@ -37,27 +37,23 @@ export interface ListingStatusMeta {
 }
 
 /**
- * Everything the product knows about a listing status, in one row each.
+ * Everything the product knows about a listing status, in one row each: the
+ * label, the tone, the shorter rail label, and whether it still receives
+ * applications.
  *
- * This was five tables: the label and tone in `./adapters`, the short labels in
- * the board's rail, the display order in that rail again, the recruiting set in
- * this file, and the icon as a `switch` beside it. Adding a status meant editing
- * five files, and the two of them that claimed to be exhaustive — both typed
- * `Record<keyof typeof LISTING_STATUS_META, …>` — were not: a key added to this
- * table compiled fine and rendered `undefined` where its label was read.
+ * One table, keyed by status — never a second table claiming to cover the
+ * same keys, which is the shape `satisfies` guards against: an entry the type
+ * forgets is a *type* error at here, and `as const` keeps each field literal
+ * so `LISTING_STATUS.OPEN.tone` is `"info"` and not `BadgeTone`. The two are a
+ * pair for that reason.
  *
- * `satisfies` is what fixes that, and it is the reason for `as const` alongside
- * it: the first makes an entry the type forgets a *type* error, the second keeps
- * each entry's own fields literal so `LISTING_STATUS.OPEN.tone` is `"info"` and
- * not `BadgeTone`.
+ * Key order is the display order — the rail draws the statuses in the
+ * sequence a posting moves through them, and a separate array saying so would
+ * be one more thing to forget to update.
  *
- * Key order is the display order — the rail draws the statuses in the sequence a
- * posting moves through them, and a separate array saying so would be one more
- * thing to forget to update.
- *
- * The icon is deliberately absent: it is a React component, and this module is
- * imported by everything including the server. It stays beside the rail that
- * draws it.
+ * The icon is deliberately absent: it is a React component, and this module
+ * is imported by everything including the server. It stays beside the rail
+ * that draws it.
  */
 export const LISTING_STATUS_META = {
   DRAFT: {
@@ -202,11 +198,10 @@ export const RECRUITING_STATUSES: ReadonlySet<ReplacementListingStatus> =
  * The same reasoning as the applications screen, applied to the practice side.
  * The backend has eight listing statuses, but a practice does not think in
  * them: what it wants is « which ones can still take someone », « which one did
- * I fill », « which ones died without a replacement ». The first cut of this row
- * had five buckets and threw three of those situations into « En cours » and two
- * into « Terminées » — `FULL` (capacity reached) and `IN_DISCUSSION` (candidates
- * coming in) are not the same morning, and a posting that ended with nobody
- * retained is not the same as one that was cancelled before it started.
+ * I fill », « which ones died without a replacement ». Coarser buckets would
+ * lump situations together — `FULL` (capacity reached) and `IN_DISCUSSION`
+ * (candidates coming in) are not the same morning, and a posting that ended with
+ * nobody retained is not the same as one that was cancelled before it started.
  *
  * So the buckets cut the statuses the way the applicant screen cuts `REJECTED`:
  * one chip per situation, each naming the statuses behind it, and a counter that
@@ -328,10 +323,9 @@ export interface ListingApplicationsData {
  * The outcome of one owner action, bound to the listing it concerns.
  *
  * A domain contract rather than a prop shape: the container produces it from a
- * mutation and the view keys its feedback banner off it. It used to be declared
- * on the view and imported *by* the container — the dependency pointing at the
- * presentation component from the orchestrator, which is the way round this
- * module exists to prevent.
+ * mutation and the view keys its feedback banner off it. Living on the view
+ * would point the dependency at the presentation component *from* the
+ * orchestrator — the direction this module exists to prevent.
  */
 export interface ListingMessage {
   listingId: string;

@@ -238,9 +238,9 @@ export function useMapMarkers({
      *
      * Every server navigation hands this effect a fresh array — the places read
      * arrives as a promise and is unwrapped per navigation — so an identity
-     * gate (`places !== lastFramed`) never saw the second render of the same
-     * collection and the camera was refitted, dragging the reader's own pan
-     * and zoom away with it, on every page turn and every reordering. The key
+     * gate (`places !== lastFramed`) would never see the second render of the
+     * same collection and would refit the camera, dragging the reader's own
+     * pan and zoom away with it, on every page turn and every reordering. The key
      * is the content itself: identical practices at identical points read as
      * the same frame.
      */

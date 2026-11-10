@@ -51,8 +51,7 @@ import type { Specialty } from "@/lib/types/api";
  *
  * The three panel bodies are molecules shared with the browse feed
  * (`RailGauge`, `RailDistribution`, `RailVolume`): the two rails are the same
- * column of panels filled from different numbers, and they used to be written
- * out twice.
+ * column of panels filled from different numbers, written once.
  */
 export function MyListingsRail({
   listings,

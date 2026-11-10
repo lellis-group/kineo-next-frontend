@@ -6,13 +6,13 @@ import { PROSE_CONTAINER } from "@/lib/layout";
 /**
  * Shell for the long-form legal documents.
  *
- * Two things this fixes, both of which every legal page was doing its own way:
+ * Two things it leaves out, so no legal page decides them its own way:
  *
  * - it renders no `<main>`. The `(site)` layout already provides the page's
  *   single `main`, and a second one inside it is invalid HTML and gives assistive
  *   technology two landmarks to choose between.
- * - it renders no site header or footer. The layout has both; the pages were
- *   repeating the logo and a "back" link on top, so a reader saw two navbars.
+ * - it renders no site header or footer. The layout has both; repeating the logo
+ *   and a "back" link on top would show a reader two navbars.
  */
 export function LegalDocument({
   title,

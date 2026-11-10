@@ -10,9 +10,9 @@ interface ListSkeletonProps {
   /** Pages whose layout is not the console list: the browse feed leads with a map. */
   mapFirst?: boolean;
   /**
-   * The title + subtitle block. Off for the browse feed, which dropped its page
+   * The title + subtitle block. Off for the browse feed, which has no page
    * header: a placeholder for a heading that never arrives would draw it, then
-   * pull the whole list up when the real content replaced it.
+   * pull the whole list up when the real content replaces it.
    */
   titleBlock?: boolean;
   className?: string;
@@ -22,8 +22,8 @@ interface ListSkeletonProps {
  * Loading placeholder for the collection screens (`/applications`,
  * `/listings/mine` and the `/listings` feed).
  *
- * Those were writing this out separately, differing only in the card height, so
- * they drift on every later edit. It reproduces the real page rhythm — title,
+ * One placeholder for all three, differing only in the card height, so they
+ * cannot drift apart. It reproduces the real page rhythm — title,
  * subtitle, chips, cards at the `space-y-5` gap — so the swap when data lands
  * does not shift the layout under the reader.
  *

@@ -40,13 +40,13 @@ import { SPECIALTY_SHORT_LABELS } from "@/lib/profile";
  * numbers about a search the reader changed somewhere else.
  *
  * The last panel is the one thing the rail can say that is not an aggregate: the
- * posting the reader just chose, with the way back to its row. It replaces the
- * old « Volume de la recherche », which restated the first panel's totals and
- * the specialty bars in a second shape.
+ * posting the reader just chose, with the way back to its row — not a volume
+ * panel restating the first panel's totals and the specialty bars in a second
+ * shape.
  *
  * The first two panel bodies are molecules shared with the practice's board
  * (`RailGauge`, `RailDistribution`): the two rails are the same column of
- * panels filled from different numbers, and they used to be written out twice.
+ * panels filled from different numbers, written once.
  * The third is this rail's alone, because it is about a choice, not a count.
  */
 

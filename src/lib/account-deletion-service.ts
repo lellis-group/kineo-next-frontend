@@ -38,9 +38,9 @@ export const ERASURE_ERROR_CODES = {
  * quarter hour). What *is* shared with every other endpoint is the transport
  * verdict underneath, and that is delegated to `classifyError` below.
  *
- * `blocked` is legacy: the backend no longer refuses an erasure over other
- * candidates' applications, it detaches them so the request can go through. It
- * survives only so a link confirmed against a backend one deploy behind still
+ * `blocked` names a backend that still refuses an erasure over other
+ * candidates' applications instead of detaching them — a version behind the
+ * current one. It survives so a link confirmed against such a backend still
  * produces a real French sentence rather than an empty error.
  * `no-pending-request` looks like a conflict but is not — nothing is in the way
  * and retrying cannot help. `invalid` means the token itself was refused.
@@ -111,13 +111,13 @@ function mapConfirmDeletionError(error: unknown): {
   message: string;
 } {
   if (error instanceof ApiError) {
-    // The backend discriminates the two conflicts, so the status no longer has
-    // to. The French copy stays here because these bodies are still English.
+    // The backend discriminates the two conflicts, so the HTTP status does not
+    // have to. The French copy stays here because these bodies are still English.
     if (error.code === ERASURE_ERROR_CODES.THIRD_PARTY_APPLICATIONS) {
       // Only reachable against a backend one deploy behind, which still
-      // refuses instead of detaching. It maps to `blocked`, which the goodbye
-      // screen now treats as a generic retryable error: the honest answer when
-      // the server is the thing that changed is to try again.
+      // refuses where the current one detaches. It maps to `blocked`, which
+      // the goodbye screen treats as a generic retryable error: the honest
+      // answer when the server is the thing that changed is to try again.
       return {
         failure: "blocked",
         message:

@@ -17,9 +17,9 @@ import { ProfileFormPage } from "./profile-form-page";
 
 /**
  * What differs between the create and edit screens. Five values change between
- * them, which is what a single component parameterised by a mode is for — and
- * the risk was not the duplication itself but the drift: the day one of the two
- * gained an error path, the other would quietly keep the old behaviour.
+ * them, which is what a single component parameterised by a mode is for — the
+ * risk is not duplication but drift: the day one of two copies gains an error
+ * path, the other quietly keeps the old behaviour.
  */
 const MODES = {
   create: {
@@ -52,7 +52,7 @@ const MODES = {
  * anyway to decide whether the route is reachable at all — a member without a
  * profile belongs on the create form, one with a profile on the edit form — so
  * it is passed in rather than fetched here. Fetching it again from a `useEffect`
- * is how that redirect used to happen a beat late.
+ * would make that redirect happen a beat late.
  *
  * Reaching `create` therefore already means there is no profile to edit, and
  * reaching `edit` already means there is one.

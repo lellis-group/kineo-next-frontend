@@ -253,10 +253,10 @@ describe("fetchBrowseListings", () => {
   /**
    * The rows and the panels are two reads, not one.
    *
-   * The panels were fetched alongside the rows, which meant every page turn and
-   * every reordering asked for a distribution the filter they just changed could
-   * not have touched — the facets endpoint is given no `specialty`, no `sort`
-   * and no page. This pins that the rows read asks for the rows and nothing
+   * Fetching the panels alongside the rows would make every page turn and every
+   * reordering ask for a distribution the filter they just changed cannot have
+   * touched — the facets endpoint is given no `specialty`, no `sort` and no
+   * page. This pins that the rows read asks for the rows and nothing
    * else, so the panels stay where they belong: a separate read, with its own
    * trigger.
    */
@@ -525,8 +525,8 @@ describe("fetchBrowsePlaces", () => {
     const data = await fetchBrowsePlaces({}, transport);
 
     // Not an empty set. An empty set is what "the filters matched nothing" looks
-    // like, and returning it for a failed refresh meant a 429 or a dropped
-    // connection blanked the map while the reader was told nothing.
+    // like, and returning it for a failed refresh would let a 429 or a dropped
+    // connection blank the map while the reader is told nothing.
     expect(data).toBeNull();
   });
 

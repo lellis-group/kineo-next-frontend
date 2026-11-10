@@ -32,9 +32,9 @@ const myApplicationsAction: DashboardAction = {
 /**
  * Home actions, filtered by `profileType`.
  *
- * Nothing here points at a page that does not exist: `/practices` had an action
- * of its own for an installed practice, and it 404s on both sides of the wire —
- * the practice side is `/listings/mine` until a real practice screen is built.
+ * Nothing here points at a page that does not exist: there is no `/practices`
+ * on either side of the wire — the practice side is `/listings/mine` until a
+ * real practice screen is built.
  */
 export function adaptActions(
   profileType?: ProfileType | null,

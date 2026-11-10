@@ -69,11 +69,10 @@ interface PaginationProps<C extends PageSize = PageSize> {
  * a single line, each element on the same vertical centre — dressed in the
  * site's pill kit: the turn lives in a recessed track, the container
  * `SegmentedControl` draws, and the size choice is an outlined pill beside it,
- * reading as the small field it is next to the bigger controls above. The one
- * lesson this row keeps from its predecessor: the buttons are `inline-flex`
- * *deliberately* — an icon in an undressed `<button>` stacks itself over (or
- * under) the word, which is how the row once read as three misaligned
- * fragments.
+ * reading as the small field it is next to the bigger controls above. The
+ * buttons are `inline-flex` *deliberately*: an icon in an undressed `<button>`
+ * stacks itself over (or under) the word, and the row reads as three
+ * misaligned fragments.
  *
  * Below 400px the arrows' words give way and the icons answer alone; the row
  * never wraps, and `aria-label` carries what the icons stand for.

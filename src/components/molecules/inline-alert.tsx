@@ -5,7 +5,7 @@ import type { InlineAlertTone } from "@/lib/ui-tokens";
 /**
  * Alert treatment per tone.
  *
- * `info` now paints as `info`, matching the badge and the status banner: a
+ * `info` paints as `info`, matching the badge and the status banner: a
  * shared tone name should mean the same hue everywhere.
  */
 const TONE_CLASSES: Record<InlineAlertTone, string> = {

@@ -7,8 +7,8 @@ import { MapIcon } from "@/components/atoms/icons";
  * One control, two homes — the table's « Carte » column and the mobile card's
  * title row — so it is written once: the size (a 24 px circle, the height of a
  * first text line on either presentation), the faint ink that darkens to
- * primary on hover, and the accessible name are a single fact now, not two
- * copies that could disagree.
+ * primary on hover, and the accessible name are a single fact, not two copies
+ * that could disagree.
  *
  * `aria-pressed` announces the choice the same way the map's own pins do: the
  * cream ring and the pressed state are one selection in two languages. The

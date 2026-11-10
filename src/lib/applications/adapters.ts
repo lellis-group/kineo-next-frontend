@@ -155,8 +155,8 @@ export const WITHDRAWABLE_STATUSES: ReadonlySet<ApplicationStatus> = new Set([
  *
  * `SHORTLISTED` belongs here: being put forward is the practice responding, but
  * it has not yet chosen anyone, so the candidate is still waiting. Counting only
- * `PENDING` reported zero applications outstanding for anyone who had been
- * shortlisted, which read as "nothing to wait for".
+ * `PENDING` would report zero outstanding for anyone who has been shortlisted,
+ * which reads as "nothing to wait for".
  */
 export const AWAITING_DECISION_STATUSES: ReadonlySet<ApplicationStatus> =
   new Set(["PENDING", "SHORTLISTED"]);
@@ -183,19 +183,15 @@ export const LISTING_FALLBACK_TITLE = "Titre d'annonce indisponible";
 /**
  * "Practice · City", or whichever of the two is known.
  *
- * The card and the detail header both built this by hand, which is how they came
- * to disagree about a missing name: the card fell back to when the application
- * was sent, the header rendered nothing at all. The fallback belongs to each
- * screen — it is a layout choice, not a fact about the listing — so this only
- * answers the label.
+ * The card and the detail header both ask here, so they agree on the label. The
+ * fallback for a missing name belongs to each screen — it is a layout choice,
+ * not a fact about the listing — so this only answers the label.
  */
 /**
  * Newest first, on `createdAt`.
  *
- * Two screens sorted this identically — same expression, same direction — and
- * nothing said so; the dashboard's copy even noted the copy it had to make
- * before sorting. Both now ask here, so a change of "most recent" cannot leave
- * one screen behind.
+ * Two screens sort this way, and both ask here, so a change of "most recent"
+ * cannot leave one screen behind.
  */
 export function byNewestFirst<T extends { createdAt: string }>(
   a: T,
@@ -289,8 +285,7 @@ export function adaptApplicationEntry(
  * Counter for one bucket.
  *
  * Lives here beside `countForFilter` and `countForReceivedFilter` on the listings
- * side, which answer the same question for the other two screens. It was the
- * only one of the three living in a component.
+ * side, which answer the same question for the other two screens.
  *
  * Every status bucket is exactly one status, so the status totals answer it. The
  * situations are the opposite: they are all one status, which is why they need the

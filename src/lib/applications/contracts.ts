@@ -25,10 +25,8 @@ import type {
  * Each bucket names a status the backend filters on directly, so a bucket is
  * never assembled in the browser from a page of results.
  *
- * Only statuses, though. These buckets used to name decision sources as well,
- * which the backend rejects as an unrecognised key, and which named four
- * outcomes its `DecisionSource` enum cannot express. There were three buckets
- * involved and none of them worked.
+ * Only statuses, though. The backend rejects a decision source as an
+ * unrecognised filter key, so no bucket can name one.
  */
 export type ApplicationsFilter =
   | "ALL"
@@ -60,11 +58,9 @@ export const APPLICATION_FILTERS: readonly ApplicationsFilterOption[] = [
   {
     // Label says « refused », not « refused by the practice»: the backend has no
     // decision-source filter, so this bucket is every rejected application and
-    // cannot promise which of them were a judgement of the applicant. It used to
-    // claim the narrower thing and send a `decisionSource` the backend rejects —
-    // the chips above it were worse, filtering on sources the database has no
-    // value for. Each row carries its own reason, which is where that
-    // distinction is actually readable.
+    // cannot promise which of them were a judgement of the applicant. Each row
+    // carries its own reason, which is where that distinction is actually
+    // readable.
     id: "REFUSED",
     label: "Refusées",
     status: "REJECTED",

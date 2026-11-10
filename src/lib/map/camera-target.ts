@@ -44,7 +44,7 @@ export function distinctPoints(place: MapPlace): Array<[number, number]> {
  * documented way to end up with a camera that never moves.
  *
  * Ordered longitude-first, because that is the order every GeoJSON and
- * MapLibre call in this codebase has used since the map was written.
+ * MapLibre call in this codebase uses.
  */
 export function cameraTargetFor(place: MapPlace): CameraTarget {
   const points = distinctPoints(place);

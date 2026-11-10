@@ -24,8 +24,8 @@ export type ProfileFeedback = "created" | "saved" | null;
  * fixed props.
  *
  * The profile and the account both arrive from the server page, including the
- * session user, which used to be read a second time here through the client auth
- * client and cast into place. Nothing here fetches on mount.
+ * session user — not read a second time here through the client auth client.
+ * Nothing here fetches on mount.
  */
 export function ProfileView({
   profile,

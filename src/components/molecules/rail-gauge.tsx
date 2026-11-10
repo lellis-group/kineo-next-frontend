@@ -6,9 +6,9 @@ import { ProgressCurve } from "@/components/atoms/progress-curve";
  * share of them in one glance.
  *
  * The two screens that carry a rail — the browse feed and the practice's own
- * board — each open with four numbers and an arc under them, and each had
- * written it out. They are the same panel: the reference's category card, drawn
- * twice. This is that card, so a change to one reaches the other.
+ * board — each open with four numbers and an arc under them. They are the same
+ * panel, the reference's category card, so it is drawn here once and a change to
+ * one reaches the other.
  *
  * The cells are the caller's because which figures they are is the panel's
  * business — the browse feed states a collection, the board states the page in

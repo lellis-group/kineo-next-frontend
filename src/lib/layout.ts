@@ -26,12 +26,11 @@ export const PAGE_TITLE = "text-2xl font-bold tracking-tight sm:text-3xl";
  * the header, the working content, and the footer.
  *
  * One `max-width` and one horizontal padding, so those three bands line up on
- * the same left and right edges instead of each picking its own width. They
- * used to drift apart on wide screens: the header ran to `max-w-360`, the
- * console content to `max-w-[100rem]` and the footer only to `max-w-7xl`, so
- * past ~1700px the content overhung the footer and the header overhung the
- * content. This is the header's geometry, kept as the shared value because it
- * is already the widest — and a working screen wants every pixel of width.
+ * the same left and right edges instead of each picking its own width — past
+ * ~1700px the content would otherwise overhang the footer and the header
+ * overhang the content. This is the header's geometry, kept as the shared
+ * value because it is already the widest — and a working screen wants every
+ * pixel of width.
  *
  * `max-w-360` resolves against the theme's spacing unit (0.3rem), so it is
  * 108rem. Drawn from the same unit as the padding so the pair scales together.

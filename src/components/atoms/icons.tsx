@@ -197,8 +197,8 @@ export function ExpandIcon(props: SVGProps<SVGSVGElement>) {
  * Lucide's own geometry — the circle with its four sights — like every other
  * mark in this set, so the two controls the reference puts in its map's corner
  * share one stroke weight and one visual density instead of being drawn twice
- * by two hands. The name used to dress a paper-plane arrow; the geometry below
- * is what a crosshair actually reads as, and « Cadrer » asks exactly this move.
+ * by two hands. The geometry is what a crosshair actually reads as, and
+ * « Cadrer » asks exactly this move.
  */
 export function CrosshairIcon(props: SVGProps<SVGSVGElement>) {
   return (
