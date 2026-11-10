@@ -1,9 +1,10 @@
 "use client";
 
 import type { RefObject } from "react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { isInView } from "@/lib/dom";
 import type { ListingsMapHandle } from "@/lib/hooks/use-map-markers";
+import { usePickLanding } from "@/lib/hooks/use-pick-landing";
 import {
   BROWSE_MAP_ID,
   BROWSE_PAGE_SIZE,
@@ -16,39 +17,9 @@ import {
   type BrowseView,
   fetchListingPageOf,
   type ListingPageOfResult,
-  type ListingSpotlight,
   type ListingsTableHandle,
   type MapPlaceListing,
 } from "@/lib/listings";
-
-/** How long the pick's glow lasts before the screen lets it go. */
-const SPOTLIGHT_MS = 1_800;
-
-/**
- * What a screen reader hears when the picked row is already on screen.
- *
- * The visual answer to « what changed » is the row's own glow; this is the same
- * answer in words, and it never mentions the pager, because the pager did not
- * move.
- */
-function pickAnnouncement(listing: BrowseSelection): string {
-  const where = listing.city ? `, ${listing.city}` : "";
-  return `Annonce sélectionnée : ${listing.title}${where}.`;
-}
-
-/**
- * Same, for the pick that turned the list.
- *
- * The pager's flash is colour alone, so the turn is named here — this is the
- * only place the reader is told which page they were brought to.
- */
-function pickMovedAnnouncement(
-  listing: BrowseSelection,
-  page: number,
-  totalPages: number,
-): string {
-  return `${pickAnnouncement(listing)} Page ${page} sur ${totalPages}.`;
-}
 
 /** A view write, as the URL hook exposes it. */
 type WriteView = (
@@ -72,7 +43,6 @@ type WriteView = (
 export function useBrowsePicking({
   view,
   filters,
-  page,
   sort,
   writeView,
   layout,
@@ -86,7 +56,6 @@ export function useBrowsePicking({
 }: {
   view: BrowseView;
   filters: BrowseFormFilters;
-  page: number;
   sort: BrowseSort;
   writeView: WriteView;
   layout: BrowseLayout;
@@ -106,34 +75,6 @@ export function useBrowsePicking({
   } | null>(null);
   const [selectedPreview, setSelectedPreview] =
     useState<BrowseSelection | null>(null);
-
-  /**
-   * The one-shot mark a pick leaves on its row. Not the selection: the
-   * selection lasts until dismissed, this lasts about two seconds.
-   */
-  const [spotlight, setSpotlight] = useState<ListingSpotlight | null>(null);
-
-  /**
-   * A pick whose row is on another page, waiting for the turn to land. The glow
-   * must not start at the click: at that moment the row is not in the DOM.
-   */
-  const [pendingPick, setPendingPick] = useState<{
-    listing: BrowseSelection;
-    fromPage: number;
-  } | null>(null);
-
-  /** What a screen reader hears after a pick — the visual glow in words. */
-  const [announcement, setAnnouncement] = useState("");
-
-  /**
-   * Drops the transient half of a choice: the glow, the pending turn, the words.
-   * The selection itself is cleared by the callers that want that.
-   */
-  const clearTransientPick = useCallback(() => {
-    setSpotlight(null);
-    setPendingPick(null);
-    setAnnouncement("");
-  }, []);
 
   /**
    * The chosen posting's row, when it happens to be on the page on screen.
@@ -193,6 +134,20 @@ export function useBrowsePicking({
   );
 
   /**
+   * The after-motion of a pick — the glow, the waited-for page turn, the
+   * sentence a screen reader hears — is `usePickLanding`'s. This hook calls it
+   * at the moment of the pick and delegates the two drops: a page turn keeps
+   * the choice and clears the landing only, while a dismissed choice takes
+   * both.
+   */
+  const landing = usePickLanding({
+    page: data.page,
+    totalPages: data.totalPages,
+    onScreenIds,
+    turnToPage,
+  });
+
+  /**
    * Brings a posting picked on the map to the reader in the list.
    *
    * The two halves of this screen are one set of rows seen two ways, and the map
@@ -225,41 +180,15 @@ export function useBrowsePicking({
       });
       setSelectedPreview(listing);
 
-      if (onScreenIds.has(listing.id)) {
-        // The row is already here: the glow can start now, and say which page
-        // the pick left the reader on (its own — so nothing about the pager).
-        setSpotlight((current) => ({
-          id: listing.id,
-          nonce: (current?.nonce ?? 0) + 1,
-          fromPage: page,
-        }));
-        setAnnouncement(pickAnnouncement(listing));
+      // The glow and the words are `usePickLanding`'s — this hook adds only the
+      // scroll that goes with them: when the row is already on screen it is
+      // scrolled to now; when it is elsewhere the landing has turned the page
+      // and its own effect waits for the row to really arrive.
+      if (landing.landPick(listing)) {
         scrollTo(listing.id);
-        return;
       }
-
-      /*
-        The row is on another page. The glow must not start at the click — at
-        that moment there is no row under the reader — so it is armed here and
-        lit by the effect below, once the turn has landed and `onScreenIds`
-        actually holds the id.
-      */
-      setPendingPick({ listing, fromPage: page });
-      turnToPage(listing.id).then((result) => {
-        if (result.status === "found") return;
-        // Stand down rather than leave a glow armed against a row that is not
-        // coming. The two failures are not the same sentence: a posting the
-        // filters no longer show is gone, while a failed lookup is the
-        // connection, and the reader can try again.
-        setPendingPick(null);
-        setAnnouncement(
-          result.status === "missing"
-            ? `Annonce introuvable : ${listing.title}.`
-            : `Impossible de localiser l'annonce : ${listing.title}. Réessayez.`,
-        );
-      });
     },
-    [layout, onScreenIds, page, scrollTo, setLayout, turnToPage],
+    [layout, landing, scrollTo, setLayout],
   );
 
   /**
@@ -321,15 +250,13 @@ export function useBrowsePicking({
 
   /**
    * Drops the choice — Escape on the map, a click outside, the panel's close.
-   * The glow goes with it: a mark whose subject has been unchosen is a lie.
+   * The landing goes with it: the glow, the pending turn, the words.
    */
   const clearSelection = useCallback(() => {
     setSelectedListing(null);
     setSelectedPreview(null);
-    setSpotlight(null);
-    setPendingPick(null);
-    setAnnouncement("");
-  }, []);
+    landing.clear();
+  }, [landing]);
 
   /** Brings the chosen posting's row back into view, from the rail's panel. */
   const revealSelection = useCallback(() => {
@@ -354,53 +281,17 @@ export function useBrowsePicking({
     turnToPage(selection.id);
   }, [pickListing, selection, onScreenIds, scrollTo, turnToPage]);
 
-  /*
-    Places a pending glow the moment its row is really on screen.
-
-    The page that turned to reach the row is part of the sentence, because the
-    visual signal for that turn is colour alone — and the pager's flash only
-    says *that* something changed, not what.
-  */
-  useEffect(() => {
-    if (!pendingPick) return;
-    if (!onScreenIds.has(pendingPick.listing.id)) return;
-
-    const turned = data.page !== pendingPick.fromPage;
-    setSpotlight((current) => ({
-      id: pendingPick.listing.id,
-      nonce: (current?.nonce ?? 0) + 1,
-      fromPage: pendingPick.fromPage,
-    }));
-    setAnnouncement(
-      turned
-        ? pickMovedAnnouncement(pendingPick.listing, data.page, data.totalPages)
-        : pickAnnouncement(pendingPick.listing),
-    );
-    setPendingPick(null);
-  }, [pendingPick, onScreenIds, data.page, data.totalPages]);
-
-  /**
-   * Ends the glow. Without this timer the halo would stay lit until the next
-   * pick, and a second reader would read the glow as live state rather than as
-   * the aftermath of a click that has already settled.
-   */
-  useEffect(() => {
-    if (!spotlight) return;
-    const timer = window.setTimeout(() => setSpotlight(null), SPOTLIGHT_MS);
-    return () => window.clearTimeout(timer);
-  }, [spotlight]);
-
   return {
     hoveredListingId,
     setHoveredListingId,
     selectedListing,
     selection,
-    spotlight,
-    announcement,
+    spotlight: landing.spotlight,
+    announcement: landing.announcement,
     pickListing,
     selectListing,
     clearSelection,
     revealSelection,
-    clearTransientPick,
+    clearTransientPick: landing.clear,
   };
 }

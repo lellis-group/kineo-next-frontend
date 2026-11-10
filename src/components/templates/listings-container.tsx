@@ -72,7 +72,6 @@ export function ListingsContainer({
   const picking = useBrowsePicking({
     view: browse.view,
     filters: browse.filters,
-    page: browse.page,
     sort: browse.sort,
     writeView: browse.writeView,
     layout: browse.layout,
