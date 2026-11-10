@@ -127,7 +127,7 @@ export async function fetchBrowseListing(
   init?: RequestInit,
 ): Promise<BrowseListingDetail> {
   const raw = await apiFetch<ApiReplacementListing>(
-    `/replacement-listings/${id}`,
+    `/replacement-listings/${encodeURIComponent(id)}`,
     init,
     transport,
   );

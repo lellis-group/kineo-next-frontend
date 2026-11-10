@@ -64,7 +64,7 @@ export async function updateProfile(
   transport?: ApiTransport,
 ): Promise<ApiProfile> {
   return apiFetch<ApiProfile>(
-    `/profile/${id}`,
+    `/profile/${encodeURIComponent(id)}`,
     {
       method: "PATCH",
       body: JSON.stringify(payload),

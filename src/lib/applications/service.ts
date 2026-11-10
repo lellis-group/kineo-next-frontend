@@ -183,7 +183,7 @@ export async function fetchApplicationDetail(
   transport?: ApiTransport,
 ): Promise<ApplicationEntry> {
   const application = await apiFetch<ApiApplication>(
-    `/applications/${id}`,
+    `/applications/${encodeURIComponent(id)}`,
     undefined,
     transport,
   );
@@ -290,7 +290,7 @@ export async function withdrawApplication(
 ): Promise<ApplicationEntry | null> {
   const trimmed = withdrawnReason?.trim();
   const raw = await apiFetch<unknown>(
-    `/applications/${id}/withdraw`,
+    `/applications/${encodeURIComponent(id)}/withdraw`,
     {
       method: "PATCH",
       body: JSON.stringify(trimmed ? { withdrawnReason: trimmed } : {}),
@@ -312,7 +312,7 @@ export async function updateApplicationMessage(
   transport?: ApiTransport,
 ): Promise<ApplicationEntry | null> {
   const raw = await apiFetch<unknown>(
-    `/applications/${id}`,
+    `/applications/${encodeURIComponent(id)}`,
     {
       method: "PATCH",
       body: JSON.stringify({ message: message.trim() }),

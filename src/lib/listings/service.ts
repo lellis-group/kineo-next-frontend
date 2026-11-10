@@ -203,7 +203,11 @@ export async function fetchListingApplications(
     ApiPaginated<ApiApplication> & {
       meta: { counts?: Partial<ReceivedApplicationCounts> };
     }
-  >(`/applications/listing/${listingId}?${query}`, init, transport);
+  >(
+    `/applications/listing/${encodeURIComponent(listingId)}?${query}`,
+    init,
+    transport,
+  );
 
   return {
     applications: raw.data
@@ -238,7 +242,11 @@ export async function markApplicationViewed(
   id: string,
   transport?: ApiTransport,
 ): Promise<void> {
-  await apiFetch(`/applications/${id}/view`, { method: "PATCH" }, transport);
+  await apiFetch(
+    `/applications/${encodeURIComponent(id)}/view`,
+    { method: "PATCH" },
+    transport,
+  );
 }
 
 /** PATCH /applications/:id/shortlist — pending → shortlisted. */
@@ -247,7 +255,7 @@ export async function shortlistReceivedApplication(
   transport?: ApiTransport,
 ): Promise<void> {
   await apiFetch(
-    `/applications/${id}/shortlist`,
+    `/applications/${encodeURIComponent(id)}/shortlist`,
     { method: "PATCH" },
     transport,
   );
@@ -262,7 +270,11 @@ export async function acceptReceivedApplication(
   id: string,
   transport?: ApiTransport,
 ): Promise<void> {
-  await apiFetch(`/applications/${id}/accept`, { method: "PATCH" }, transport);
+  await apiFetch(
+    `/applications/${encodeURIComponent(id)}/accept`,
+    { method: "PATCH" },
+    transport,
+  );
 }
 
 /** PATCH /applications/:id/reject — optional reason shared with the applicant. */
@@ -273,7 +285,7 @@ export async function rejectReceivedApplication(
 ): Promise<void> {
   const trimmed = reason?.trim();
   await apiFetch(
-    `/applications/${id}/reject`,
+    `/applications/${encodeURIComponent(id)}/reject`,
     {
       method: "PATCH",
       body: JSON.stringify(trimmed ? { rejectionReason: trimmed } : {}),
@@ -302,7 +314,7 @@ export async function fetchMyListing(
   transport?: ApiTransport,
 ): Promise<MyListing> {
   const listing = await apiFetch<ApiReplacementListing>(
-    `/replacement-listings/${id}`,
+    `/replacement-listings/${encodeURIComponent(id)}`,
     undefined,
     transport,
   );
@@ -350,7 +362,7 @@ async function mutateListing(
   transport?: ApiTransport,
 ): Promise<void> {
   await apiFetch(
-    `/replacement-listings/${id}/${action}`,
+    `/replacement-listings/${encodeURIComponent(id)}/${action}`,
     { method: "PATCH" },
     transport,
   );
