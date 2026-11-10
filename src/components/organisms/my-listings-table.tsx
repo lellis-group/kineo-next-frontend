@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Badge } from "@/components/atoms/badge";
-import { CalendarIcon } from "@/components/atoms/icons";
-import { CapacityBar } from "@/components/molecules/capacity-bar";
+import {
+  ListingCandidatesCell,
+  ListingPeriodCell,
+} from "@/components/molecules/listing-table-cells";
 import { SpecialtyIcon } from "@/components/molecules/specialty-icon";
 import { MyListingCard } from "@/components/organisms/my-listing-card";
-import { formatDayMonth } from "@/lib/format";
 import {
   formatListingAge,
   LISTING_STATUS_META,
@@ -101,38 +102,27 @@ export function MyListingsTable({ listings }: MyListingsTableProps) {
                   </span>
                 </td>
 
-                {/*
-                  The period on two lines, the way the reference draws a route:
-                  a start above, an end below, the arrow standing in for
-                  « Du … au … ». A range worded out is the one column whose text
-                  wraps, and it would make its own row the tall one.
-                */}
                 <td>
-                  <span
-                    className="inline-flex items-start gap-[var(--cell-gap)] whitespace-nowrap text-muted"
-                    title={listing.dateRange}
-                  >
-                    <CalendarIcon className="mt-[0.125rem] size-[var(--cell-icon)] shrink-0" />
-                    <span className="flex flex-col">
-                      <span className="leading-[var(--cell-icon)]">
-                        {formatDayMonth(listing.startDate)}
-                      </span>
-                      <span className="text-xs leading-tight text-faint">
-                        → {formatDayMonth(listing.endDate)}
-                      </span>
-                    </span>
-                  </span>
+                  {/*
+                    The period on two lines, the way the reference draws a
+                    route — see `ListingPeriodCell`, which both tables share.
+                  */}
+                  <ListingPeriodCell
+                    dateRange={listing.dateRange}
+                    startDate={listing.startDate}
+                    endDate={listing.endDate}
+                  />
                 </td>
 
                 <td>
                   {/*
-                    Candidats, au trait de la maquette : le chiffre, la plage,
-                    et la barre qui les lit d'un coup d'œil (voir
-                    `CapacityBar`). Le plafond porte ici le sens que le filtre
-                    « Capacité atteinte » nomme : une barre pleine est l'état
-                    que le légende du badge décrit.
+                    Candidats, au trait de la maquette — see
+                    `ListingCandidatesCell`, which both tables share. The
+                    ceiling carries here the meaning the « Capacité atteinte »
+                    filter names: a full bar is the state the badge's legend
+                    describes.
                   */}
-                  <CapacityBar
+                  <ListingCandidatesCell
                     count={listing.applicationsCount}
                     max={listing.maxApplications}
                   />

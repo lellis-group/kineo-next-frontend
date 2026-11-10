@@ -2,12 +2,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Badge } from "@/components/atoms/badge";
 import { Card } from "@/components/atoms/card";
-import {
-  CalendarIcon,
-  MapIcon,
-  MapPinIcon,
-  UsersIcon,
-} from "@/components/atoms/icons";
+import { CalendarIcon, MapPinIcon, UsersIcon } from "@/components/atoms/icons";
+import { ListingMapButton } from "@/components/molecules/listing-map-button";
 import { SpecialtyIcon } from "@/components/molecules/specialty-icon";
 import { cn } from "@/lib/cn";
 import {
@@ -94,15 +90,11 @@ export function ListingCard({
                   The title used to be a button, which left a keyboard reader no
                   way to open the posting from this half of the screen.
                 */
-                <button
-                  type="button"
-                  aria-label={`Voir ${listing.title} sur la carte`}
-                  aria-pressed={selected}
-                  onClick={() => onListingSelect?.(listing)}
-                  className="grid size-5 shrink-0 cursor-pointer place-items-center rounded-full text-faint transition-colors hover:bg-surface-hover hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-                >
-                  <MapIcon className="size-3.5" />
-                </button>
+                <ListingMapButton
+                  title={listing.title}
+                  pressed={selected}
+                  onSelect={() => onListingSelect?.(listing)}
+                />
               )}
             </div>
             <Badge tone={badge.tone} size="md">

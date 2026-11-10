@@ -2,11 +2,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { forwardRef, useImperativeHandle, useRef } from "react";
 import { Badge } from "@/components/atoms/badge";
-import { CalendarIcon, MapIcon, MapPinIcon } from "@/components/atoms/icons";
-import { CapacityBar } from "@/components/molecules/capacity-bar";
+import { MapPinIcon } from "@/components/atoms/icons";
+import { ListingMapButton } from "@/components/molecules/listing-map-button";
+import {
+  ListingCandidatesCell,
+  ListingPeriodCell,
+} from "@/components/molecules/listing-table-cells";
 import { SpecialtyIcon } from "@/components/molecules/specialty-icon";
 import { cn } from "@/lib/cn";
-import { formatDayMonth } from "@/lib/format";
 import {
   type BrowseListing,
   type ListingSpotlight,
@@ -287,15 +290,11 @@ export const ListingsTable = forwardRef<
                   */}
                   <span className="flex h-[var(--cell-icon)] items-center">
                     {locatable && (
-                      <button
-                        type="button"
-                        aria-label={`Voir ${listing.title} sur la carte`}
-                        aria-pressed={selected}
-                        onClick={() => onListingSelect?.(listing)}
-                        className="grid size-5 shrink-0 cursor-pointer place-items-center rounded-full text-faint transition-colors hover:bg-surface-hover hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-                      >
-                        <MapIcon className="size-3.5" />
-                      </button>
+                      <ListingMapButton
+                        title={listing.title}
+                        pressed={selected}
+                        onSelect={() => onListingSelect?.(listing)}
+                      />
                     )}
                   </span>
                 </td>
@@ -311,39 +310,20 @@ export const ListingsTable = forwardRef<
                 <td>
                   {/*
                     The period as two lines, which is how the reference draws a
-                    route: a start above, an end below, the arrow doing what
-                    « Du … au … » had to do with words — and with less of them.
-
-                    It matters here for the same reason it matters there: the cell
-                    next to it is a single line, and a range worded out is the one
-                    column whose text wraps to three lines and makes the row the
-                    tall one. Two lines keep every row the same height.
-
-                    `title` carries the full `dateRange` the adapter built, year
-                    and all, for the reader who wants the exact wording.
+                    route — see `ListingPeriodCell`, which both tables share.
                   */}
-                  <span
-                    className="inline-flex items-start gap-[var(--cell-gap)] whitespace-nowrap text-muted"
-                    title={listing.dateRange}
-                  >
-                    <CalendarIcon className="mt-[0.125rem] size-[var(--cell-icon)] shrink-0" />
-                    <span className="flex flex-col">
-                      <span className="leading-[var(--cell-icon)]">
-                        {formatDayMonth(listing.startDate)}
-                      </span>
-                      <span className="text-xs leading-tight text-faint">
-                        → {formatDayMonth(listing.endDate)}
-                      </span>
-                    </span>
-                  </span>
+                  <ListingPeriodCell
+                    dateRange={listing.dateRange}
+                    startDate={listing.startDate}
+                    endDate={listing.endDate}
+                  />
                 </td>
                 <td>
                   {/*
-                    Candidats, au trait de la maquette : le chiffre, la plage,
-                    et la barre qui les lit d'un coup d'œil (voir
-                    `CapacityBar`). Sans plafond, la barre n'existe pas.
+                    Candidats, au trait de la maquette — see
+                    `ListingCandidatesCell`, which both tables share.
                   */}
-                  <CapacityBar
+                  <ListingCandidatesCell
                     count={listing.applicationsCount}
                     max={listing.maxApplications}
                   />
