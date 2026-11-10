@@ -46,6 +46,8 @@ export function openPopupForKey(
     onPick?: (listing: MapPlaceListing) => void;
     onHover?: (id: string | null) => void;
     onMarkerSelect?: (listing: MapPlaceListing) => void;
+    /** The posting's own page — see `listingLink`. */
+    onOpen?: (listing: MapPlaceListing) => void;
   },
 ) {
   const live = livePlaces.get(key);
@@ -89,6 +91,7 @@ export function openPopupForKey(
         map,
         () => popupRef.current?.remove(),
         (listing) => handlers.onPick?.(listing),
+        handlers.onOpen,
       ),
     )
     .addTo(map);
@@ -133,6 +136,7 @@ export function openCardForSelected(
     | null
     | undefined,
   onPick: ((listing: MapPlaceListing) => void) | undefined,
+  onOpen?: (listing: MapPlaceListing) => void,
 ) {
   if (!selected) return;
 
@@ -160,6 +164,7 @@ export function openCardForSelected(
       onPick,
       onHover: undefined,
       onMarkerSelect: undefined,
+      onOpen,
     });
     return;
   }
@@ -204,6 +209,7 @@ function popupContent(
   map: MapLibreMap,
   dismiss: () => void,
   onPick: (listing: MapPlaceListing) => void,
+  onOpen: ((listing: MapPlaceListing) => void) | undefined,
 ): HTMLElement {
   const root = document.createElement("div");
   root.className = "flex flex-col gap-1 text-left";
@@ -261,6 +267,16 @@ function popupContent(
     period.className = "mt-0.5 text-xs text-black/55";
     period.textContent = first.dateRange;
     root.append(period);
+
+    /*
+      A posting's card carries its own way out: the heading is the link to the
+      posting's page. The popup's other doors all lead back to the list — the
+      group entries pick, « Centrer » frames the camera — but a reader who has
+      already chosen has nothing left to do in the list, and the detail was a
+      pick, a scroll and one more click away. The heading is where a card names
+      its destination, and where a reader reaches for it.
+    */
+    heading.replaceChildren(listingLink(first, onOpen));
     root.append(zoomButton(place, map, dismiss));
     return root;
   }
@@ -369,6 +385,41 @@ function zoomButton(
   });
 
   return button;
+}
+
+/**
+ * The posting's own page, as the card's heading.
+ *
+ * A real `<a>` first: the href is the destination, so a reader's browser tools
+ * (middle-click, copy, status bar) keep working on it, and a click with a
+ * modifier is left to the browser to honour — the same contract any application
+ * link keeps. A plain left-click takes the soft route the rest of the screen
+ * uses, because a full document reload would land the reader at the top of a
+ * page they left scrolled; the navigation it begins unmounts this screen, and
+ * the popup goes with it — there is nothing here to clean up by hand.
+ *
+ * Optional (`onOpen` may be absent) so an undefined handler degrades to the
+ * honest default rather than a dead link: the anchor still navigates, just the
+ * hard way.
+ */
+function listingLink(
+  listing: MapPlaceListing,
+  onOpen: ((listing: MapPlaceListing) => void) | undefined,
+): HTMLElement {
+  const link = document.createElement("a");
+  link.href = `/listings/${listing.id}`;
+  link.className =
+    "rounded-sm text-map-ink underline decoration-black/20 underline-offset-2 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary hover:text-primary";
+  link.textContent = listing.title;
+
+  link.addEventListener("click", (event) => {
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey)
+      return;
+    event.preventDefault();
+    onOpen?.(listing);
+  });
+
+  return link;
 }
 
 /**

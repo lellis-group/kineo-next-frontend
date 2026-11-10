@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
 import { forwardRef, Suspense, use, useCallback } from "react";
 import { ListingsView } from "@/components/templates/listings-view";
 import { useBrowsePicking } from "@/lib/hooks/use-browse-picking";
@@ -67,6 +68,7 @@ export function ListingsContainer({
 }) {
   const browse = useBrowseView();
   const resource = useBrowseResource(initialData, browse.view);
+  const router = useRouter();
   const picking = useBrowsePicking({
     view: browse.view,
     filters: browse.filters,
@@ -202,6 +204,7 @@ export function ListingsContainer({
             onSelectionClear={picking.clearSelection}
             onMarkerSelect={picking.pickListing}
             onListingPick={picking.pickListing}
+            onListingOpen={(listing) => router.push(`/listings/${listing.id}`)}
           />
         </Suspense>
       }

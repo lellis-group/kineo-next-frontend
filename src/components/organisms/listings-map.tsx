@@ -64,6 +64,11 @@ interface ListingsMapProps {
    * scroll the page under the reader.
    */
   onListingPick?: (listing: MapPlaceListing) => void;
+  /**
+   * A posting opened to its own page from the popup's heading link — the soft
+   * navigation the table rows and the row clicks use.
+   */
+  onListingOpen?: (listing: MapPlaceListing) => void;
   className?: string;
 }
 
@@ -107,6 +112,7 @@ export const ListingsMap = forwardRef<ListingsMapHandle, ListingsMapProps>(
       onSelectionClear,
       onMarkerSelect,
       onListingPick,
+      onListingOpen,
       className,
     },
     ref,
@@ -123,6 +129,7 @@ export const ListingsMap = forwardRef<ListingsMapHandle, ListingsMapProps>(
       onSelectionClear,
       onMarkerSelect,
       onListingPick,
+      onListingOpen,
     });
 
     // The screen's way in from the other side: the table asks the map to come to a

@@ -69,6 +69,7 @@ export function useMapMarkers({
   onSelectionClear,
   onMarkerSelect,
   onListingPick,
+  onListingOpen,
 }: {
   mapRef: RefObject<MapLibreMap | null>;
   places: MapPlace[];
@@ -110,6 +111,15 @@ export function useMapMarkers({
    * the mouse moving across the table scroll the page under the reader.
    */
   onListingPick?: (listing: MapPlaceListing) => void;
+  /**
+   * The posting's own page — the bridge to the router.
+   *
+   * The popup's card links to `/listings/{id}` (see `listingLink` in
+   * `popup.ts`), and a plain anchor would reload the whole document: this is
+   * the same screen's soft navigation, handed down from where the router
+   * lives.
+   */
+  onListingOpen?: (listing: MapPlaceListing) => void;
 }) {
   const markersRef = useRef<Map<string, Marker>>(new Map());
   const popupRef = useRef<maplibregl.Popup | null>(null);
@@ -154,6 +164,9 @@ export function useMapMarkers({
 
   const onMarkerSelectRef = useRef(onMarkerSelect);
   onMarkerSelectRef.current = onMarkerSelect;
+
+  const onOpenRef = useRef(onListingOpen);
+  onOpenRef.current = onListingOpen;
 
   /** The framing key the camera was last fitted over, so a refit is not repeated. */
   const lastFramedKeyRef = useRef<string | null>(null);
@@ -223,6 +236,7 @@ export function useMapMarkers({
           onPick: onPickRef,
           onHover: onHoverRef,
           onMarkerSelect: onMarkerSelectRef,
+          onOpen: onOpenRef,
         },
       );
     }
@@ -260,6 +274,7 @@ export function useMapMarkers({
       map,
       selectedRef.current,
       onPickRef.current,
+      onOpenRef.current,
     );
   }, [mapRef, clusters, places, ready]);
 
@@ -289,6 +304,7 @@ export function useMapMarkers({
       map,
       selectedListing,
       onPickRef.current,
+      onOpenRef.current,
     );
   }, [mapRef, ready, selectedListing]);
 

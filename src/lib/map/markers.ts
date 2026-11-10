@@ -77,6 +77,7 @@ export function rebuildMarkers(
     onPick: RefObject<((listing: MapPlaceListing) => void) | undefined>;
     onHover: RefObject<((id: string | null) => void) | undefined>;
     onMarkerSelect: RefObject<((listing: MapPlaceListing) => void) | undefined>;
+    onOpen: RefObject<((listing: MapPlaceListing) => void) | undefined>;
   },
 ) {
   const active = markers;
@@ -148,6 +149,7 @@ export function rebuildMarkers(
         onPick: handlers.onPick.current,
         onHover: handlers.onHover.current,
         onMarkerSelect: handlers.onMarkerSelect.current,
+        onOpen: handlers.onOpen.current,
       });
     });
 
