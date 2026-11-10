@@ -148,11 +148,10 @@ function requestDeletion(token: string): Promise<DeletionResult> {
 /** Exhaustively maps a failure onto an outcome; no silent fallthrough. */
 function toOutcome(failure: DeletionFailure): DeletionOutcome {
   switch (failure) {
-    // The backend no longer refuses an erasure over third-party applications: it
-    // detaches them onto ghost listings first, so the request always goes through.
-    // This case only survives for a backend one deploy behind, and deliberately
-    // lands on the generic error rather than on a screen telling the user to close
-    // their listings — advice that would not help.
+    // The backend detaches third-party applications onto ghost listings before
+    // an erasure, so it only answers `blocked` for a backend one deploy behind.
+    // The generic error is the honest answer here: advice to close listings
+    // first would not help.
     case "blocked":
     case "no-pending-request":
       return "no-pending-request";

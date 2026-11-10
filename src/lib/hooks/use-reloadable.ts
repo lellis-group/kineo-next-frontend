@@ -6,11 +6,11 @@ import { signInOnExpiredSession } from "@/lib/session-redirect";
 
 /**
  * Reloadable data — a server-seeded value that can be re-read on demand, with
- * the same error and expired-session handling the dashboard used to inline.
+ * the same error and expired-session handling.
  *
- * The dashboard container inlined `data`/`error`/`reloading` state plus a
- * `reload` callback; extracting it means the container only decides what to
- * render, and the reload logic lives here once.
+ * The container keeps only the decision of what to render; the
+ * `data`/`error`/`reloading` trio and the `reload` plumbing live here once,
+ * since every console screen needs exactly that trio.
  */
 export function useReloadable<T>(initialData: T, load: () => Promise<T>) {
   const router = useRouter();

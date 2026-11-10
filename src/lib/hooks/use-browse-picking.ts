@@ -33,8 +33,8 @@ type WriteView = (
  *
  * Two states, because two durations: the hover is a preview that lasts as long
  * as the pointer, and the choice is a selection that lasts until it is
- * dismissed. They were one value once, which meant a posting chosen in the table
- * went dark the moment the mouse left its row — the map's card closed with it.
+ * dismissed — a choice that went dark when the mouse left the row would close
+ * the map's card with it.
  *
  * The chosen posting may not be on the current page, so a pick turns to the page
  * that holds it before scrolling. That read is shared by both directions and
@@ -150,10 +150,10 @@ export function useBrowsePicking({
   /**
    * Brings a posting picked on the map to the reader in the list.
    *
-   * The two halves of this screen are one set of rows seen two ways, and the map
-   * used to be a dead end. Now that the map covers the whole collection rather
-   * than the page, the posting picked may not be on screen — so this turns to
-   * the page that holds it first, and scrolls once those rows have landed.
+   * The two halves of this screen are one set of rows seen two ways, and the
+   * map covers the whole collection rather than the page — the posting picked
+   * may be nowhere on screen, so this turns to the page that holds it first,
+   * and scrolls once those rows have landed.
    *
    * `block: "center"` because the list is taller than the viewport: the reader
    * is looking at a map some hundreds of pixels above the list.

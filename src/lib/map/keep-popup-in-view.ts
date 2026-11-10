@@ -12,30 +12,25 @@ export const POPUP_EDGE_MARGIN = 12;
 /**
  * Nudges the camera so a card that just opened is entirely inside the map.
  *
- * MapLibre positions a popup from its marker and clips whatever falls outside the
- * container — it has no collision detection of its own. What it *does* have is
- * anchor choice: with no `anchor` given, it flips the card above or below the
- * marker and to one side, which already covers most of the frame's edges (it is
- * why four markers fitted to the bounds of a 384px map all opened inside it).
+ * MapLibre positions a popup from its marker and clips whatever falls outside
+ * the container — it has no collision detection, only anchor choice: with no
+ * `anchor` given it flips the card above or below the marker and to one side,
+ * which already covers most of the frame's edges. Two cases it cannot, and both
+ * are the nudge's job:
  *
- * What that cannot do is two things, and both are the nudge's job:
+ * - a card near a corner can be anchored correctly and still sit off the
+ *   frame, because the anchor is chosen from the marker's half of the map, not
+ *   from the card's box;
+ * - a card taller than the frame fits nowhere: this one declines the job, and
+ *   MapLibre's flip — which at least compares the room above and below the
+ *   marker — decides.
  *
- * - a card near a corner can be anchored correctly and still sit off the frame,
- *   because the anchor is chosen from the marker's half of the map and not from
- *   the card's box;
- * - a card taller than the frame fits nowhere, and there the two mechanisms have
- *   to agree on losing: this one declines, and MapLibre's flip — which at least
- *   compares the room above and below the marker — decides.
- *
- * The nudge is measured, not guessed: the card's box is read after it exists in
- * the DOM, the overflow against the container's edges is the distance to move,
- * and only the axes that actually overflow move. `panBy` rather than `panTo`
- * because the offset is in screen pixels — it is the difference between two
- * rectangles, and translating that into a centre would need a projection the map
- * already does for us.
- *
- * It re-runs harmlessly on the `moveend` it causes: a re-cluster opens nothing
- * new, because the card is already at the place it was opened for.
+ * Measured, not guessed: the card's box is read once it exists in the DOM, the
+ * overflow against the frame's edges is the distance to move, and only the
+ * axes that actually overflow move. `panBy` rather than `panTo` because the
+ * offset is a difference of two screen rectangles, which is exactly the unit a
+ * `panBy` takes. It runs once per open and is idempotent against the
+ * `moveend` it causes, since a re-cluster opens nothing new.
  */
 export function keepPopupInView(
   map: MapLibreMap,

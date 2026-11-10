@@ -1,10 +1,7 @@
 /**
- * Map types — owned by `lib/map`, not by the listings domain.
- *
- * The browse feed's `MapPlace` used to live in `browse-contracts.ts`, which
- * forced every module in `lib/map` to import from `@/lib/listings` just to name
- * a pin. Inverting the dependency: the map owns its own types, and the listings
- * domain re-exports them for its consumers.
+ * Map types — owned by `lib/map`, not by the listings domain: the map has no
+ * reason to depend on the listings domain to name a pin, so the dependency is
+ * inverted and the listings domain re-exports these for its consumers.
  */
 /** The two coordinates a camera move needs — no place, no postings. */
 export interface MapPoint {

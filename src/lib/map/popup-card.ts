@@ -6,36 +6,23 @@ import type { MapPlace, MapPlaceListing } from "./types";
  * The popup body, built as DOM — the reference's marker card, and the one
  * element on this map allowed to be as bright as the streets.
  *
- * This used to be a string handed to `setHTML`, behind a hand-written escaper.
- * That is a shape worth avoiding on its own terms: an escaper is a security
- * control, and a security control nobody can see being applied is one line away
- * from being bypassed the next time a field joins the template. `textContent`
- * does the same job by construction — no path through it turns a title into
- * markup, however creative the title is.
+ * Built node by node, and read through `textContent` rather than a string
+ * template: an escaper is a security control, and a string template is one
+ * field away from a title that renders as markup. `textContent` cannot make a
+ * title into markup, however creative the title is. Colours, surfaces and
+ * shadows live in `globals.css` against `.maplibregl-popup-content` — the node
+ * MapLibre actually paints; what is here is the ink, drawn per node with no
+ * container class to inherit from.
  *
- * Colours, surfaces and shadows are not here. They were `!important` overrides
- * on the hook once, aimed at `.maplibregl-popup` — which is not the element
- * MapLibre paints a surface on. `.maplibregl-popup-content` is, so the popup came
- * out as a dark frame around a white box: the overrides were landing on the wrong
- * node all along. They now sit in `globals.css` with the rest of the theming.
+ * The single-listing case is not the group case with fewer rows: on a lone
+ * posting the title is the heading, so a list underneath would repeat the same
+ * sentence twice in a 300px box — one gets heading, place and period; several
+ * get a count, the place, and one entry each.
  *
- * What *is* here is the ink: the card the popup content sits on is white — the
- * reference's marker card, and the one element on this map allowed to be as
- * bright as the streets — so the text drawn into it is dark. Those classes are
- * here rather than in the stylesheet because they are drawn one node at a time,
- * with no class on a container to inherit from.
- *
- * The single-listing case is not the group case with fewer rows. With one posting
- * its title is the heading, and the list underneath used to repeat it — the same
- * sentence twice in a 300px box. A lone posting therefore gets heading, place and
- * period; several get a count, the place, and one entry each.
- *
- * The entry may name a posting that is not on the page in front of the reader.
- * The markers are built from the whole filtered collection (`/places`), not from
- * the rows on screen — that is the point of the map, and it is also why an entry
- * here is no guarantee the row exists. It is not this module's problem to solve:
- * `pickListing` in the container turns to the page holding the id and scrolls
- * once those rows land, and the popup here only has to name the posting.
+ * An entry may name a posting that is not on the page in front of the reader:
+ * the markers are built from the whole filtered collection, not from the rows
+ * on screen. Not this module's problem — `pickListing` in the container turns
+ * to the page holding the id; the popup only has to name the posting.
  */
 
 /**

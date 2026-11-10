@@ -7,38 +7,31 @@ import { openPopupForKey } from "@/lib/map/popup";
 import type { MapPlace, MapPlaceListing } from "./types";
 
 /**
- * The markers themselves: the node MapLibre positions, what is drawn inside it,
- * and the two states it can be in.
+ * The markers: the node MapLibre positions, what is drawn inside it, and the
+ * two states it can be in.
  *
- * Every node here is built as DOM rather than as React. MapLibre positions a
- * marker by writing a transform onto the element it is handed, and it does that
- * on every frame of a pan or a zoom — so anything that changes what the box
- * *measures* (a `hover:scale`, an intrinsic size) moves the pin under the
- * reader. A component would have to be mounted into a node that does not exist
- * yet; `document.createElement` is the honest shape for it.
- *
- * The popup is deliberately not here. It is the *card*, and it is opened from
- * two doors — a click on a pin, and a choice made in the table — which is why
- * it lives in `popup.ts` behind a function rather than as a branch in a listener.
+ * Every node here is built as DOM rather than as React. MapLibre re-positions a
+ * marker by writing a transform onto it every frame of a pan or a zoom, so
+ * anything that changes what the box *measures* moves the pin under the
+ * reader — and `document.createElement` is the honest shape anyway, since
+ * there is no React root to mount into. The card is deliberately not here: it
+ * opens from two doors (a pin, and a choice made in the table), and it lives in
+ * `popup.ts` behind a function rather than as a branch in a listener.
  */
 
 /**
  * The marker's box: sized here, positioned by MapLibre, and never animated.
  *
- * No `hover:scale` here, and that is not a style choice. MapLibre centres a
+ * No `hover:scale` here, and that is not a style choice: MapLibre centres a
  * marker with a `translate(-50%, -50%)` expressed as a percentage of its own
- * box, so growing the marker on hover moves it — measured at nearly 50px, on a
- * marker the reader had merely pointed at. Anything that changes the *box* is off
- * the table; the emphasis is a ring instead.
- *
- * `size-5`, which on the theme's 0.3rem unit is 24px: the reference's discs are
- * a little smaller than this screen used to draw them, and at 28px a map of
- * cabinets starts to look crowded before there are more than a dozen pins.
+ * box, so growing the marker on hover moves the pin — the emphasis is a ring
+ * instead. `size-5` is 24px on this theme's 0.3rem unit; at 28px a map of
+ * cabinets looks crowded past a dozen pins.
  *
  * The disc is a child element, and that is what buys the entrance animation: a
  * `scale` on the child leaves this box exactly as MapLibre sized it, so the
- * transform it writes keeps aiming at the same point while the disc grows inside.
- * See `.marker-dot` and `kineo-marker-enter` in `globals.css`.
+ * transform it writes keeps aiming at the same point while the disc grows
+ * inside. See `.marker-dot` and `kineo-marker-enter` in `globals.css`.
  */
 const MARKER_CLASS = "grid size-5 cursor-pointer place-items-center";
 
@@ -53,10 +46,8 @@ const MARKER_DOT_CLUSTER_CLASS = "!text-[0.625rem] !font-bold";
 /**
  * Swaps the markers on the map for a new set of clusters.
  *
- * Module-level, taking its refs as arguments, so the effect that calls it has a
- * stable dependency. Declared inside the hook it was a function identity that
- * changed on every render — the kind of thing a dependency array cannot state
- * honestly, and which sent the linter looking for a missing entry.
+ * Module-level, taking its refs as arguments, so the effect that calls it keeps
+ * a stable dependency instead of one that changes on every render.
  */
 export function rebuildMarkers(
   map: MapLibreMap,
@@ -66,12 +57,11 @@ export function rebuildMarkers(
   popupRef: RefObject<maplibregl.Popup | null>,
   leaving: HTMLElement[],
   /**
-   * The two callbacks, through refs rather than as values.
+   * The callbacks, through refs rather than as values.
    *
-   * Refs because a marker outlives the data it was built from and its handlers
-   * must read the *current* callback, not the one that was current when the pin
-   * was placed: the pick handler reaches the container, which rebuilds on every
-   * page turn.
+   * A marker outlives the data it was built from, so its handlers must read the
+   * callback that is current *now* — the pick handler reaches the container,
+   * which rebuilds on every page turn.
    */
   handlers: {
     onPick: RefObject<((listing: MapPlaceListing) => void) | undefined>;
@@ -97,14 +87,14 @@ export function rebuildMarkers(
     const existing = active.get(key);
 
     /**
-     * Reused rather than rebuilt, and this is what makes the animation legible.
+     * Reused rather than rebuilt, and this is what makes the entrance
+     * animation legible: a rebuild during a pan tears down and recreates every
+     * marker, the dots that had nothing to do with the gesture blinking out
+     * and in.
      *
-     * A key is built from the places it covers, so the same key means the same
-     * group — the only thing that can have changed is its count and its
-     * previews. Rebuilding it anyway (which is what this did) meant that
-     * panning one pin across another tore down and recreated *every* marker on
-     * the map: unaffected dots blinked out and in for no reason, and the ones
-     * that had nothing to do with the gesture were the most noticeable.
+     * A key names the very group it covers, so the same key can only have
+     * changed its count and its previews — a `setLngLat` plus a refresh is all
+     * it needs.
      */
     if (existing) {
       existing.setLngLat([place.longitude, place.latitude]);
@@ -131,18 +121,16 @@ export function rebuildMarkers(
      * Every handler below reads the place out of `livePlaces` rather than
      * closing over the one this marker was built with.
      *
-     * The two used to be the same object, back when each marker was rebuilt on
-     * every pass and nothing survived a rebuild. Now that a marker outlives the
-     * data it was made from, a captured place goes stale the moment a posting is
-     * added to a practice that already had a key — and the popup opens listing
-     * openings the practice no longer has, with no way to tell it is stale.
+     * A marker outlives its data: a captured place goes stale the moment a
+     * posting joins a practice whose key is already on the map, and the popup
+     * would open listing openings the practice no longer has.
      */
     const current = () => livePlaces.get(key);
 
     node.addEventListener("click", (event) => {
       // MapLibre closes any open popup when the map is clicked, and a marker
-      // sits *inside* the map: left alone this click opened the popup and then
-      // bubbled up and closed it again on the same event.
+      // sits *inside* the map: without `stopPropagation` this click would open
+      // the popup and bubble up to close it again on the same event.
       event.stopPropagation();
 
       openPopupForKey(key, livePlaces, popupRef, map, {
@@ -158,8 +146,8 @@ export function rebuildMarkers(
      *
      * `stopPropagation` is not tidiness. MapLibre binds its own double-click
      * zoom on the canvas container — the very element markers are appended to —
-     * so an event left to bubble runs both: this handler, then MapLibre's, which
-     * zooms a further step past the offer and is no longer looking at it.
+     * so an event left to bubble runs both handlers, and the camera zooms a
+     * further step past the offer it is meant to land on.
      *
      * A shortcut, not the only way in: a double-click cannot be pressed from a
      * keyboard, which is why the popup carries the same move as a button.
@@ -344,15 +332,12 @@ function startLeaving(marker: Marker, leaving: HTMLElement[]) {
  * Marks the marker covering the row the reader is pointing at, and the one they
  * have chosen.
  *
- * Two marks, because the two states are two marks: hovering is a *preview* — a
- * soft ink ring that says « this pin is that row » — and the choice is the
- * reference's own solid cream ring, which says « this one ». They were one value
- * before, so a selection lasted exactly as long as the mouse did, and the row a
- * reader had clicked went dark the moment they moved.
- *
- * The selection outranks the preview on the same marker rather than replacing
- * it: pointing at the row you already chose keeps the cream ring, because the
- * marker is still the chosen one.
+ * Two marks, because the two states are two durations: hovering is a *preview*
+ * — a soft ink ring that says « this pin is that row » — and the choice is a
+ * solid cream ring that has to outlive the pointer that made it. The selection
+ * outranks the preview on the same marker rather than replacing it: pointing at
+ * the row you already chose keeps the cream ring, because the marker is still
+ * the chosen one.
  */
 export function paintStates(
   markers: Map<string, Marker>,
@@ -380,10 +365,9 @@ export function paintStates(
       point.lat === selected.latitude;
 
     // A pressed pin announces its state the way the table's map button does
-    // (`aria-pressed` there): the cream ring paints a choice for the pointer,
-    // and this is the same choice in words. The hover stays a paint-only
-    // preview — it is not a state, it is the pointer, and « pressed » would
-    // lie about it exactly the way the old one-value pick did.
+    // (`aria-pressed` there): the cream ring paints the choice for the pointer,
+    // and this is the same choice in words. The hover stays paint-only — it is
+    // the pointer, not a state, and « pressed » would lie about it.
     marker.getElement().classList.toggle("is-preview", coversHovered);
     marker.getElement().classList.toggle("is-active", coversSelected);
     marker

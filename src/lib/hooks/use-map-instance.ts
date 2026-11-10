@@ -66,14 +66,13 @@ const FALLBACK_CENTER: [number, number] = [46.603354, 2.373722];
  * The map instance itself: created once, torn down once.
  *
  * Separate from the markers that go on it, because those change with the data
- * while this never does. Having both in one hook made "the map stopped working"
- * and "the pins are stale" the same function to read, and the reason it grew to
- * the point where a change to either meant re-reading both.
+ * while this never does: a hook holding both makes « the map stopped working »
+ * and « the pins are stale » the same function to read.
  *
- * Knows nothing about markers, popups or the viewport: it owns the canvas and the
- * context, and the layers above subscribe to the map themselves. Passing a
- * viewport callback in here instead would make the two order-dependent — neither
- * readable, nor testable, without knowing the other exists.
+ * Knows nothing about markers, popups or the viewport: it owns the canvas and
+ * the context, and the layers above subscribe to the map themselves. Passing a
+ * viewport callback in here instead would make the two order-dependent —
+ * neither readable, nor testable, without knowing the other exists.
  */
 export function useMapInstance() {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -142,23 +141,16 @@ export function useMapInstance() {
 /**
  * The map's style document.
  *
- * A light sheet under the tiles, and the tiles at full strength.
- *
- * The product's chrome is dark and the reference map is not — it is a pale warm
- * plan of the streets, and it is the one bright plane on that screen. The tiles
- * were previously pulled down to 86% over a near-black background to fit the
- * dark palette; that was the map being made to match its surroundings rather
- * than the other way round, and it cost the reader the only thing a map is for.
- *
- * `raster-opacity: 1` follows from it. The 86% was a blend towards the dark
- * base showing through; over a light base there is nothing to blend with, and
- * anything less than full leaves the map a shade of mud.
+ * A light sheet under the tiles, and the tiles at full strength. The product's
+ * chrome is dark and the map is deliberately not — a pale warm plan of the
+ * streets, the one bright plane on that screen. That is why `raster-opacity`
+ * is `1`: any dimming is a blend towards the dark base, anything less than
+ * full leaves the map a shade of mud.
  *
  * `raster-saturation` and `raster-contrast` take a little of the colour out of
- * OSM's cartography. A raster style with no tuning is drawn for a white page:
- * greens and reds that are legible on paper become the loudest thing on a dark
- * screen, and the markers — which carry the data — stop being the darkest marks
- * on it. Pulled back, the streets read as a base layer.
+ * OSM's cartography, which a raster style draws for a white page: greens and
+ * reds legible on paper become the loudest thing on a dark screen, and the
+ * markers — which carry the data — stop being the darkest marks on it.
  */
 function buildStyle() {
   return {

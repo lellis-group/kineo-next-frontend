@@ -36,28 +36,20 @@ export interface ListingsMapHandle {
 /**
  * The markers on the map, and the popup one of them opens.
  *
- * Everything here changes with the data; the map instance it draws on does not.
- * That split is the reason this is not the same hook as the instance's: reading
- * "the pins are wrong" should not mean reading how the WebGL context was made.
+ * Everything here changes with the data; the map instance it draws on does not
+ * — that split is the reason two hooks exist, so reading « the pins are wrong »
+ * never means reading how the WebGL context was made. This file is the
+ * orchestration only: which markers exist, how they group, what a dot draws and
+ * what a marker opens are four modules under `lib/map/`.
  *
- * This file is the orchestration and nothing else. The four things it arranges —
- * which markers exist, how they are grouped, what is drawn inside one, and what
- * card a marker opens — are four modules under `lib/map/`, each of which can be
- * read without reading the other three. What is left is the part none of them
- * could own: the refs the effects share, the listeners the reader installs, and
- * the handle the screen holds.
+ * The card is opened from here as well as from a pin: a posting chosen in the
+ * table comes with its own card on the map, the only way the two halves read as
+ * one screen.
  *
- * The popup is opened from here as well as from a marker because a posting chosen
- * in the table comes with its own card on the map — the reference's arrangement,
- * and the only way the two halves ever read as one screen. Opening is therefore a
- * function the hook calls rather than a branch inside one listener.
- *
- * Two states, not one, and the difference is the whole point of the screen's
- * interactivity: `hoveredListingId` is what the reader is *pointing at*, an
- * ephemeral preview; `selectedListing` is what the reader has *chosen*, and it
- * survives the pointer leaving. They must never be the same value — merging
- * them is what this screen did, and it meant a selection lasted exactly as long
- * as the mouse stayed on the row.
+ * Two states, never the same value, and the difference is the screen's whole
+ * interactivity: `hoveredListingId` is what the reader is *pointing at* — a
+ * preview that lives as long as the pointer — while `selectedListing` is what
+ * they *chose*, and it outlives the pointer.
  */
 export function useMapMarkers({
   mapRef,
@@ -127,8 +119,8 @@ export function useMapMarkers({
   /**
    * Dots mid-exit: MapLibre has let go of them, we have not.
    *
-   * Not owned by any MapLibre object any more, so nothing else will ever remove
-   * them. Cleared with the rest in the teardown below.
+   * Not owned by any MapLibre object, so nothing else will ever remove them;
+   * the teardown below does.
    */
   const leavingRef = useRef<HTMLElement[]>([]);
 
@@ -317,10 +309,11 @@ export function useMapMarkers({
    * the document, because focus never moves into the popup — it is not a focus
    * trap and should not become one.
    *
-   * It clears the *selection* too, not just the card: the two were one value
-   * here, and a popup closed by Escape used to leave the row lit with nothing on
-   * the map to explain it. The click on the map's background does the same — a
-   * second click on the marker re-opens, since markers stop their propagation.
+   * It clears the *selection* too, not just the card: the card belongs to the
+   * choice, and a popup closed while the row stayed lit would be a ring with
+   * nothing on the map to explain it. The click on the map's background does
+   * the same — a second click on the marker re-opens, since markers stop their
+   * propagation.
    */
   useEffect(() => {
     const map = mapRef.current;
@@ -336,9 +329,9 @@ export function useMapMarkers({
      * A click on the map's background — not on the card it is showing.
      *
      * The guard matters because the card lives *inside* the map container, so a
-     * click on one of its entries bubbles here: the entry sets a choice and this
-     * would clear it in the same event, which is how a popup used to be the one
-     * door that could not make a selection.
+     * click on one of its entries bubbles here: without it, an entry's click
+     * would set a choice and this would clear it in the same event — the popup
+     * would be the one door that could not make a selection.
      */
     const onMapClick = (event: maplibregl.MapMouseEvent) => {
       const target = event.originalEvent?.target as HTMLElement | null;

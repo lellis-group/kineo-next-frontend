@@ -15,38 +15,32 @@ import { signInOnExpiredSession } from "@/lib/session-redirect";
  * One owner action (close, cancel) against a listing, with its own state.
  *
  * Two screens run the same sequence: mark the listing busy, clear the previous
- * outcome, perform the write, re-read whatever the write invalidated, then report
- * in French. It was written out twice, and the re-read is the part that must not
- * be skipped.
+ * outcome, perform the write, re-read whatever the write invalidated, report in
+ * French. The sequence is here once so the re-read cannot be skipped by a copy.
  *
  * ## The action is named, not passed
  *
- * `run` takes `"close"` or `"cancel"` rather than the function to call. The
- * refusal sentence needs to name the action — « clôturee » is not French, and a
- * sentence about closing shown on a cancel is about the wrong thing — and the
- * only place that knows the pairing of verb and participle is the domain module.
- * Handing the function in would mean handing the verb in too.
+ * `run` takes `"close"` or `"cancel"` rather than the function to call: the
+ * refusal sentence needs to name the action, and the pairing of verb and
+ * participle lives in the domain module — « clôturee » is not French, and a
+ * sentence about closing shown on a cancel is about the wrong thing.
  *
- * ## Errors are formatted here, not at the call site
+ * ## How errors get to the UI
  *
- * The service used to throw `Error(frenchSentence)`, which made the hook's
- * `err instanceof Error ? err.message` do the display and left the typed error
- * unreadable to anything that cared. The write now lets the `ApiError` through
- * and the hook asks `listingActionErrorMessage` for a sentence — which is also
- * where an expired session is caught, before it can be reported as a failed
- * action: a session that ended mid-write gets the sign-in page, not « Veuillez
- * réessayer ».
+ * The service lets the typed `ApiError` through; this hook asks
+ * `listingActionErrorMessage` for a sentence — which is also where an expired
+ * session is caught, before it can be reported as a failed action: a session
+ * that ended mid-write gets the sign-in page, not « Veuillez réessayer ».
+ * Throwing a pre-formatted French sentence from the service would bury the
+ * typed error behind `err.message`.
  *
  * ## Feedback is scoped by listing id, not a single string
  *
- * Because the cards render it themselves. A shared string would have to be
- * suppressed while the listing it describes is filtered out — otherwise it
- * reappears on a freshly refetched card when the reader comes back to
- * « Toutes », several minutes after the action it belongs to.
- *
- * `actingId` is an id rather than a boolean so one card's buttons can disable
- * while a sibling's stay usable; a screen with a single listing in scope (the
- * detail page) compares it to its own id.
+ * The cards render it themselves, so feedback must die with its listing: a
+ * shared string would reappear on a freshly refetched card when the reader
+ * comes back to « Toutes », long after the action it belongs to. An id rather
+ * than a boolean also lets one card's buttons disable while a sibling's stay
+ * usable.
  */
 export function useListingAction<T>({
   refresh,

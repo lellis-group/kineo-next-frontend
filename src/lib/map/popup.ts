@@ -17,10 +17,9 @@ import type { MapPlace, MapPlaceListing } from "./types";
  * construction would drift the first time a field moved.
  *
  * What the card says to the reader lives in `./popup-card`, which builds the
- * body. This module owns the rest of the popup's life: the MapLibre instance
- * with its anchoring and its edge padding, the card that follows a choice made
- * in the table once the camera has landed, and nothing else — the split is what
- * the card is against when it opens.
+ * body. This module owns whether it exists at all: the MapLibre instance with
+ * its anchoring and edge padding, and the card that follows a choice made in
+ * the table once the camera has landed.
  */
 
 /**
@@ -56,11 +55,9 @@ export function openPopupForKey(
   popupRef.current?.remove();
   popupRef.current = new maplibregl.Popup({
     offset: 16,
-    // The very click that opened it used to close it again: the marker
-    // sits inside the map, so the click bubbled up and MapLibre dismissed
-    // the popup on the same event. `stopPropagation` at the click site is what
-    // makes this safe — without it, `true` would mean a popup that never stays
-    // open.
+    // A click on the marker bubbles up to the map, where MapLibre would close
+    // the popup this very click opened — `stopPropagation` at the click site is
+    // what makes a `true` here safe.
     closeOnClick: true,
     closeButton: true,
     /*

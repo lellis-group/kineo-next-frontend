@@ -82,9 +82,9 @@ export function fitToPlaces(map: MapLibreMap, places: readonly MapPoint[]) {
     Deduplicated before framing, for the same reason `distinctPoints` dedupes
     inside one place: two postings at the same practice are two entries with one
     coordinate, and a `LngLatBounds` whose corners coincide is a zero-area
-    rectangle MapLibre refuses to zoom into. This matters more now that the
-    caller hands over the rows of a page rather than the practices the map
-    grouped: the same practice can appear once per posting.
+    rectangle MapLibre refuses to zoom into. All the more so with the caller
+    handing over the rows of a page: the same practice can appear once per
+    posting.
   */
   const seen = new Set<string>();
   const points: MapPoint[] = [];

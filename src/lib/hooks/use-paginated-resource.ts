@@ -6,40 +6,21 @@ import { signInOnExpiredSession } from "@/lib/session-redirect";
 import { useRaceGuard } from "./use-race-guard";
 
 /**
- * One resource, paged and filtered, seeded from the server payload.
+ * One resource, paged and filtered, seeded from the server payload — the shape
+ * the three console screens share.
  *
- * All three console screens are the same screen: a server page delivers the
- * default view so the route is readable on arrival, and every other combination
- * of filter and page is client state that fetches. That pairing was written out
- * three times, and the copies had drifted in a way that mattered.
+ * Two rules found the hard way, both now structural:
  *
- * ## Why the default view is *restored*, not skipped
+ * - the default view is fetched like any other. Skipping the fetch when the
+ *   filters are back at their default means the *reset* of the previous view
+ *   never happens either: the old bucket's rows stay on screen under chips that
+ *   no longer name them. `initialData` is the default view's answer;
+ * - every response is checked against a request id (and the superseded request
+ *   *aborted*, via the signal handed to `load`) before it may write. Chips
+ *   switch faster than the network answers, and a slow answer to the view the
+ *   reader just left must not overwrite the one they are on.
  *
- * The obvious implementation — "if this is the default view, don't fetch" — is
- * wrong, and was the bug in two of the three copies. Returning to « Toutes »
- * from another bucket makes the condition true again, so nothing was fetched
- * *and nothing was reset*: the previous bucket's rows stayed on screen under a
- * chip row that had already switched. Going back to the default view is a
- * request like any other, and `initialData` is its answer.
- *
- * ## The cancellation guard is not optional
- *
- * Only the detail screen had one. Without it, switching chips faster than the
- * network answers lets responses land out of order, and a slow request for the
- * bucket you just left overwrites the rows for the bucket you are now looking at
- * — no error, and nothing for the reader to tell it apart. Every response is
- * therefore checked against a request id before it is allowed to write.
- *
- * ## What the request id does not do
- *
- * It discards the answer, and leaves the request running. Every discarded read
- * still went to the backend, was answered, and was paid for by a reader who is
- * no longer looking at it — which matters most where the read is most expensive
- * (the listings map). `load` is handed a `RequestInit` carrying a signal, so a
- * view change cancels the read it supersedes rather than ignoring its answer.
- *
- * The cancellation guard itself now lives in `useRaceGuard` — no call-site
- * codes `requestId` + `AbortController` by hand anymore.
+ * The race guard itself lives in `useRaceGuard`.
  */
 export function usePaginatedResource<T, V>({
   initialData,
