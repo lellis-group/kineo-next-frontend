@@ -6,18 +6,32 @@ import type { ApiTransport } from "./api-client";
  * server component has to reproduce by hand.
  *
  * Shared rather than re-derived per call site: `fetch` on the server needs an
- * absolute URL — `/api/profile/me` means nothing outside the browser — so the
- * origin comes from the request headers instead of an env var, which is what
- * makes the same code work in dev behind the dev server and in production
- * behind whatever proxy fronts it. And the session cookie has to be forwarded
- * explicitly; the browser would have attached it on its own.
+ * absolute URL — `/api/profile/me` means nothing outside the browser. The
+ * origin is this app's own loopback address, from `INTERNAL_ORIGIN` or the
+ * port it listens on — never the request's `Host` or `X-Forwarded-Proto`,
+ * which the client controls: trusting them would let any request point the
+ * server's own fetches (cookie attached) at a host of its choosing. Plain http
+ * on loopback is right even behind a TLS proxy, which never sees this hop. And
+ * the session cookie has to be forwarded explicitly; the browser would have
+ * attached it on its own.
  *
  * Server-only: `next/headers` has no meaning in the browser, so importing this
  * from a client component fails at build time rather than at runtime. That is
  * the guard — no `server-only` package needed for a transport this small.
  */
+/**
+ * Where this app answers its own requests: `INTERNAL_ORIGIN` when the
+ * deployment sets one (a container network, a non-default bind), otherwise
+ * IPv4 loopback on `PORT` — `127.0.0.1` rather than `localhost`, which may
+ * resolve to `::1` on a server bound to IPv4 only.
+ */
+function internalOrigin(): string {
+  const configured = process.env.INTERNAL_ORIGIN?.replace(/\/+$/, "");
+  return configured || `http://127.0.0.1:${process.env.PORT || 3001}`;
+}
+
 export async function serverRequestTarget(): Promise<{
-  /** Absolute origin of this app, from the request headers. */
+  /** Absolute loopback origin of this app — never read from the request. */
   origin: string;
   /** The raw cookie header to forward, or "" when the reader sent none. */
   cookie: string;
@@ -29,11 +43,9 @@ export async function serverRequestTarget(): Promise<{
   headers: Awaited<ReturnType<typeof headers>>;
 }> {
   const requestHeaders = await headers();
-  const proto = requestHeaders.get("x-forwarded-proto") ?? "http";
-  const host = requestHeaders.get("host") ?? "localhost:3001";
 
   return {
-    origin: `${proto}://${host}`,
+    origin: internalOrigin(),
     cookie: requestHeaders.get("cookie") ?? "",
     headers: requestHeaders,
   };
@@ -76,7 +88,7 @@ export const serverTransport: ApiTransport = async (path, init) => {
     cache: "no-store",
     ...init,
     headers: {
-      ...init?.headers,
+      ...Object.fromEntries(new Headers(init?.headers)),
       cookie,
       ...(forwardedFor ? { "x-forwarded-for": forwardedFor } : {}),
     },
