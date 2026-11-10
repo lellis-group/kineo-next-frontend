@@ -10,6 +10,10 @@ import { formatDayMonth } from "@/lib/format";
  * drift apart: the alignment contract (`--cell-icon`, the first line every
  * column's text starts on) and the route reading of a date range are written
  * once, here, and both tables inherit them.
+ *
+ * Each renders what goes *inside* a cell, not the `<td>` itself: the tables own
+ * their cells, so every column stays visible in the table's own markup, and a
+ * cell can never end up nested in another.
  */
 
 /**
@@ -36,22 +40,20 @@ export function ListingPeriodCell({
   endDate: string;
 }) {
   return (
-    <td>
-      <span
-        className="inline-flex items-start gap-[var(--cell-gap)] whitespace-nowrap text-muted"
-        title={dateRange}
-      >
-        <CalendarIcon className="mt-[0.125rem] size-[var(--cell-icon)] shrink-0" />
-        <span className="flex flex-col">
-          <span className="leading-[var(--cell-icon)]">
-            {formatDayMonth(startDate)}
-          </span>
-          <span className="text-xs leading-tight text-faint">
-            → {formatDayMonth(endDate)}
-          </span>
+    <span
+      className="inline-flex items-start gap-[var(--cell-gap)] whitespace-nowrap text-muted"
+      title={dateRange}
+    >
+      <CalendarIcon className="mt-[0.125rem] size-[var(--cell-icon)] shrink-0" />
+      <span className="flex flex-col">
+        <span className="leading-[var(--cell-icon)]">
+          {formatDayMonth(startDate)}
+        </span>
+        <span className="text-xs leading-tight text-faint">
+          → {formatDayMonth(endDate)}
         </span>
       </span>
-    </td>
+    </span>
   );
 }
 
@@ -66,9 +68,5 @@ export function ListingCandidatesCell({
   count: number;
   max?: number;
 }) {
-  return (
-    <td>
-      <CapacityBar count={count} max={max} />
-    </td>
-  );
+  return <CapacityBar count={count} max={max} />;
 }
