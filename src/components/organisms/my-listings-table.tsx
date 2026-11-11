@@ -42,10 +42,12 @@ export function MyListingsTable({ listings }: MyListingsTableProps) {
             <th scope="col" className="has-gutter">
               Annonce
             </th>
-            <th scope="col">Statut</th>
             <th scope="col">Période</th>
             <th scope="col">Candidats</th>
             <th scope="col">Publication</th>
+            <th scope="col" className="text-right">
+              Statut
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -92,14 +94,6 @@ export function MyListingsTable({ listings }: MyListingsTableProps) {
                 </td>
 
                 <td>
-                  <span className="flex h-[var(--cell-icon)] items-center">
-                    <Badge tone={status.tone} variant="plain">
-                      {status.label}
-                    </Badge>
-                  </span>
-                </td>
-
-                <td>
                   {/*
                     The period on two lines, the way the reference draws a
                     route — see `ListingPeriodCell`, which both tables share.
@@ -138,6 +132,14 @@ export function MyListingsTable({ listings }: MyListingsTableProps) {
                   >
                     {formatListingAge(listing)}
                   </span>
+                </td>
+
+                {/* Last and right-aligned, as on the browse table and the
+                    reference's « Status » column. */}
+                <td className="text-right">
+                  <Badge tone={status.tone} variant="plain">
+                    {status.label}
+                  </Badge>
                 </td>
               </tr>
             );
