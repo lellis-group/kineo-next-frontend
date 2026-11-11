@@ -104,8 +104,8 @@ export function MyListingsView({
 
   return (
     <div className={SHELL}>
-      <div className="grid gap-4 lg:min-h-0 lg:flex-1 lg:grid-cols-[21rem_minmax(0,1fr)] lg:gap-3">
-        <div className="order-2 lg:order-1 lg:flex lg:min-h-0 lg:flex-col lg:overflow-y-auto lg:pr-1">
+      <div className="grid gap-4 lg:min-h-0 lg:flex-1 lg:grid-cols-[22.5rem_minmax(0,1fr)] lg:gap-3">
+        <div className="scrollbar-quiet order-2 lg:order-1 lg:flex lg:min-h-0 lg:flex-col lg:overflow-y-auto lg:pr-1">
           <MyListingsRail listings={listings} counts={counts} />
         </div>
 

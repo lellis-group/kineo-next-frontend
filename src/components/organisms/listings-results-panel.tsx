@@ -61,6 +61,8 @@ const REFRESHING = "transition-opacity duration-200 ease-out";
 
 interface ListingsResultsPanelProps {
   listings: BrowseListing[];
+  /** Every posting the filters match, across pages — shown beside the title. */
+  total: number;
   totalPages: number;
   page: number;
   onPageChange: (page: number) => void;
@@ -127,6 +129,7 @@ interface ListingsResultsPanelProps {
  */
 export function ListingsResultsPanel({
   listings,
+  total,
   totalPages,
   page,
   onPageChange,
@@ -147,7 +150,11 @@ export function ListingsResultsPanel({
     <Panel
       fill
       className="lg:flex-1"
-      title="Annonces"
+      title={
+        <>
+          Annonces <span className="text-muted tabular-nums">{total}</span>
+        </>
+      }
       action={
         <div className="flex min-w-0 flex-wrap items-center justify-end gap-3">
           {/*

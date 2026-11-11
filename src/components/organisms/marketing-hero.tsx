@@ -100,7 +100,7 @@ export function MarketingHero() {
 
       <div className="mx-auto w-full max-w-7xl px-4 pt-6 pb-14 sm:px-6 sm:pb-16 lg:pb-20">
         <p
-          className="hero-enter mb-5 text-xs font-medium tracking-widest text-muted uppercase"
+          className="hero-enter mb-5 text-sm text-muted"
           style={heroDelay(280)}
         >
           {trustBar.eyebrow}

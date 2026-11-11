@@ -1,9 +1,9 @@
 import type { ReactNode } from "react";
-import { ExpandIcon } from "@/components/atoms/icons";
+import { ArrowUpRightIcon } from "@/components/atoms/icons";
 import { cn } from "@/lib/cn";
 
 /**
- * The expand mark the reference puts in the corner of every card it draws.
+ * The ↗ mark the reference puts in the corner of every card it draws.
  *
  * Decorative, and deliberately so. Its position is what makes a column of cards
  * read as the reference's column — the shape is part of the design — but there is
@@ -14,7 +14,11 @@ import { cn } from "@/lib/cn";
  */
 export function PanelExpand() {
   return (
-    <ExpandIcon className="size-4 shrink-0 text-faint" aria-hidden="true" />
+    <ArrowUpRightIcon
+      className="size-4 shrink-0 text-muted"
+      strokeWidth={1.5}
+      aria-hidden="true"
+    />
   );
 }
 

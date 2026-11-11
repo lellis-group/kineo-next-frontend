@@ -39,7 +39,7 @@ export function SegmentedControl<T extends string>({
   return (
     <fieldset
       className={cn(
-        "flex min-w-0 max-w-full flex-nowrap items-center gap-1 overflow-x-auto rounded-full border-0 bg-surface-2 p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+        "flex min-w-0 max-w-full flex-nowrap items-center gap-1 overflow-x-auto rounded-full border border-border p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
         className,
       )}
     >
@@ -67,7 +67,7 @@ export function SegmentedControl<T extends string>({
               // results header comes to. The two sit on one row and are centred
               // against each other, so a difference of a few pixels reads as
               // neither of them being aligned.
-              "shrink-0 rounded-full px-3.5 py-1 text-control font-medium whitespace-nowrap transition-colors",
+              "shrink-0 rounded-full px-4 py-1.5 text-control font-medium whitespace-nowrap transition-colors",
               active
                 ? "bg-primary text-primary-foreground"
                 : "text-muted hover:bg-surface-hover hover:text-foreground",

@@ -156,6 +156,7 @@ export function ListingsContainer({
       layout={browse.layout}
       results={{
         listings: resource.data.listings,
+        total: resource.data.total,
         totalPages: resource.data.totalPages,
         page: resource.data.page,
         onPageChange,

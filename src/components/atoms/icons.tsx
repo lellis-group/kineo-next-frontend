@@ -182,6 +182,15 @@ export function SlidersIcon(props: SVGProps<SVGSVGElement>) {
   );
 }
 
+/** Up and to the right — the open-this mark in the corner of a card. */
+export function ArrowUpRightIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Svg {...props}>
+      <path d="M7 7h10v10M7 17 17 7" />
+    </Svg>
+  );
+}
+
 /** Expand to fill the viewport — the map's fullscreen toggle. */
 export function ExpandIcon(props: SVGProps<SVGSVGElement>) {
   return (

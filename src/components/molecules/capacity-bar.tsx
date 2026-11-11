@@ -33,15 +33,15 @@ export function CapacityBar({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-[var(--cell-gap)] whitespace-nowrap leading-[var(--cell-icon)] text-muted tabular-nums",
+        "inline-flex items-center gap-[var(--cell-gap)] whitespace-nowrap leading-[var(--cell-icon)] text-foreground tabular-nums",
         className,
       )}
       title={formatCapacity(count, max ?? undefined)}
     >
-      <UsersIcon className="size-[var(--cell-icon)] shrink-0" />
+      <UsersIcon className="size-[var(--cell-icon)] shrink-0 text-muted" />
       <span>
         {count}
-        {max ? ` / ${max}` : ""}
+        {max ? <span className="text-muted"> / {max}</span> : null}
       </span>
       {max != null && max > 0 && (
         <span

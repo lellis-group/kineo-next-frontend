@@ -115,7 +115,7 @@ export function Pagination<C extends PageSize = PageSize>({
       )}
     >
       {hasMoreThanOnePage ? (
-        <div className="flex items-center rounded-full bg-surface-2 p-1">
+        <div className="flex items-center rounded-full border border-border p-1">
           <button
             type="button"
             disabled={!hasPrevious || loading}

@@ -22,11 +22,7 @@ export function DashboardGreeting({
           previous fallback was the literal string "Console Live", which said
           nothing and left the line reading differently depending on whether the
           member had filled in their profile. No eyebrow beats a meaningless one. */}
-      {greeting.meta && (
-        <p className="text-xs font-medium tracking-widest text-muted uppercase">
-          {greeting.meta}
-        </p>
-      )}
+      {greeting.meta && <p className="text-sm text-muted">{greeting.meta}</p>}
       <h1
         className={`text-2xl font-medium tracking-tight text-balance sm:text-3xl ${
           greeting.meta ? "mt-2" : ""

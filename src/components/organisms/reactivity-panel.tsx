@@ -17,7 +17,7 @@ export function ReactivityPanel({
   return (
     <div className="space-y-6">
       <GlowCard innerClassName="p-6">
-        <h2 className="mb-2 text-base font-medium">{title}</h2>
+        <h2 className="mb-2 text-lg leading-tight font-medium">{title}</h2>
         <div>
           {stats.map((stat) => (
             <StatRow

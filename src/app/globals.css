@@ -227,6 +227,32 @@
 }
 
 @layer components {
+  /*
+   * A scroller whose thumb shows only while the pointer is over it.
+   *
+   * The workspace rails scroll on their own, and a permanent thumb drew a
+   * full-height line between the rail and the map — a rule the reference does
+   * not have. The track is still there and still scrolls; it appears where the
+   * reader is already looking.
+   */
+  .scrollbar-quiet {
+    scrollbar-color: transparent transparent;
+    transition: scrollbar-color 200ms ease;
+  }
+
+  .scrollbar-quiet:hover,
+  .scrollbar-quiet:focus-within {
+    scrollbar-color: rgb(255 255 255 / 14%) transparent;
+  }
+
+  .scrollbar-quiet::-webkit-scrollbar-thumb {
+    background: transparent;
+  }
+
+  .scrollbar-quiet:is(:hover, :focus-within)::-webkit-scrollbar-thumb {
+    background: rgb(255 255 255 / 14%);
+  }
+
   /* Boutons et cartes : voir les atomes Button et Card (source unique). */
 
   .chip {
@@ -439,12 +465,15 @@
     border-bottom: none;
   }
 
+  /*
+   * Sentence case, as every label in the reference is: « Order ID »,
+   * « Sort by », « Average Fuel Efficiency ». Tracked capitals were the one
+   * typographic register the reference never uses.
+   */
   .field-label {
     display: block;
-    font-size: 0.75rem;
+    font-size: 0.8125rem;
     font-weight: 500;
-    letter-spacing: 0.09em;
-    text-transform: uppercase;
     color: var(--muted);
   }
 
@@ -495,6 +524,35 @@
     -webkit-box-shadow: 0 0 0 1000px #181716 inset;
     caret-color: var(--foreground);
     transition: background-color 9999s ease-in-out 0s;
+  }
+
+  /*
+   * The ticks of `SegmentedBar`: 2px marks on a 4px pitch, in `currentColor`,
+   * repeated across whatever width the track has.
+   *
+   * `.tick-fill` is the lit layer. Its width is the row's share of the real
+   * track, rounded down to a whole pitch where `round()` exists so the last
+   * lit mark is never sliced; elsewhere it is the plain percentage.
+   */
+  .tick-track {
+    --tick-pitch: 4px;
+    background: repeating-linear-gradient(
+      90deg,
+      currentColor 0 2px,
+      transparent 2px var(--tick-pitch)
+    );
+    border-radius: 1px;
+  }
+
+  .tick-fill {
+    width: var(--fill);
+    transition: width 300ms ease;
+  }
+
+  @supports (width: round(down, 50%, 4px)) {
+    .tick-fill {
+      width: round(down, var(--fill), var(--tick-pitch));
+    }
   }
 
   @property --glow-angle {

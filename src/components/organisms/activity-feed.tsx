@@ -36,6 +36,7 @@ export function ActivityFeed({
   return (
     <Card className="p-5 sm:p-6">
       <SectionHeading
+        size="card"
         title={title}
         action={
           seeAllHref &&

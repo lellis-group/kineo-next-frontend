@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
 
 interface PanelProps {
-  title: string;
+  title: ReactNode;
   children: ReactNode;
   /** Trailing control in the header — a link, a toggle. */
   action?: ReactNode;
@@ -59,7 +59,7 @@ export function Panel({
         lands on first on a column of stacked cards.
       */}
       <header className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 px-5 pt-5 pb-4 sm:px-6">
-        <h2 className="text-base leading-tight font-medium text-foreground">
+        <h2 className="text-lg leading-tight font-medium text-foreground">
           {title}
         </h2>
         {action ? (

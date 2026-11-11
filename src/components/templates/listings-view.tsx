@@ -99,8 +99,8 @@ export function ListingsView({
         off the bottom of the window. Below `lg` it collapses to a single column
         in reading order (rail, then map + table) and scrolls as a page.
       */}
-      <div className="grid gap-3 lg:min-h-0 lg:flex-1 lg:grid-cols-[21rem_minmax(0,1fr)] lg:gap-3">
-        <div className="order-2 lg:order-1 lg:flex lg:min-h-0 lg:flex-col lg:overflow-y-auto lg:pr-1">
+      <div className="grid gap-3 lg:min-h-0 lg:flex-1 lg:grid-cols-[22.5rem_minmax(0,1fr)] lg:gap-3">
+        <div className="scrollbar-quiet order-2 lg:order-1 lg:flex lg:min-h-0 lg:flex-col lg:overflow-y-auto lg:pr-1">
           <ListingsFacetsRail {...rail} />
         </div>
 

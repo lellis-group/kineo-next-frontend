@@ -72,7 +72,7 @@ export function MyListingsTable({ listings }: MyListingsTableProps) {
                   <div className="flex items-start gap-[var(--cell-gap)]">
                     <SpecialtyIcon
                       specialty={listing.specialty}
-                      className="size-[var(--cell-icon)] shrink-0 text-primary"
+                      className="size-[var(--cell-icon)] shrink-0 text-foreground"
                     />
                     <div className="min-w-0">
                       {/*
@@ -128,7 +128,7 @@ export function MyListingsTable({ listings }: MyListingsTableProps) {
                   />
                 </td>
 
-                <td className="leading-[var(--cell-icon)] text-muted">
+                <td className="leading-[var(--cell-icon)] text-foreground">
                   {/*
                     One line, truncated rather than wrapped: the reference's ETA
                     column is a single short date, and a column that folds to two

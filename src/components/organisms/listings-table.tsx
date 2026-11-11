@@ -235,7 +235,7 @@ export const ListingsTable = forwardRef<
                     */}
                     <SpecialtyIcon
                       specialty={listing.specialty}
-                      className="size-[var(--cell-icon)] shrink-0 text-primary"
+                      className="size-[var(--cell-icon)] shrink-0 text-foreground"
                     />
                     <div className="min-w-0">
                       {/*
@@ -287,12 +287,12 @@ export const ListingsTable = forwardRef<
                     )}
                   </span>
                 </td>
-                <td className="leading-[var(--cell-icon)] text-muted">
+                <td className="leading-[var(--cell-icon)] text-foreground">
                   {listing.practiceName}
                 </td>
                 <td>
-                  <span className="inline-flex items-center gap-[var(--cell-gap)] leading-[var(--cell-icon)] text-muted">
-                    <MapPinIcon className="size-[var(--cell-icon)] shrink-0" />
+                  <span className="inline-flex items-center gap-[var(--cell-gap)] leading-[var(--cell-icon)] text-foreground">
+                    <MapPinIcon className="size-[var(--cell-icon)] shrink-0 text-muted" />
                     {listing.city || "—"}
                   </span>
                 </td>

@@ -41,15 +41,15 @@ export function ListingPeriodCell({
 }) {
   return (
     <span
-      className="inline-flex items-start gap-[var(--cell-gap)] whitespace-nowrap text-muted"
+      className="inline-flex items-start gap-[var(--cell-gap)] whitespace-nowrap text-foreground"
       title={dateRange}
     >
-      <CalendarIcon className="mt-[0.125rem] size-[var(--cell-icon)] shrink-0" />
+      <CalendarIcon className="mt-[0.125rem] size-[var(--cell-icon)] shrink-0 text-muted" />
       <span className="flex flex-col">
         <span className="leading-[var(--cell-icon)]">
           {formatDayMonth(startDate)}
         </span>
-        <span className="text-xs leading-tight text-faint">
+        <span className="text-xs leading-tight text-muted">
           → {formatDayMonth(endDate)}
         </span>
       </span>

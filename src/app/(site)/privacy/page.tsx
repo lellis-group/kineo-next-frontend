@@ -61,9 +61,7 @@ export default function PrivacyPage() {
           aria-label="Sommaire"
           className="lg:sticky lg:top-28 lg:self-start"
         >
-          <p className="mb-3 text-xs font-medium tracking-wide text-faint uppercase">
-            Sommaire
-          </p>
+          <p className="mb-3 text-xs font-medium text-faint">Sommaire</p>
           <ol className="space-y-0.5">
             {PRIVACY_SECTIONS.map((section, index) => (
               <li key={section.id}>

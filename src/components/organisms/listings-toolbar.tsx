@@ -1,12 +1,11 @@
 "use client";
 
-import { SearchIcon } from "@/components/atoms/icons";
+import { ChevronDownIcon, SearchIcon } from "@/components/atoms/icons";
 import {
   ListingsFilterPopover,
   type SpecialtyOption,
 } from "@/components/molecules/listings-filter-popover";
 import { SegmentedControl } from "@/components/molecules/segmented-control";
-import { Select } from "@/components/molecules/select";
 import { cn } from "@/lib/cn";
 import {
   useCommittedInput,
@@ -184,32 +183,33 @@ export function ListingsToolbar({
         </div>
       </div>
 
-      <div className="flex shrink-0 items-center gap-2">
-        {/*
-          « Trier par », visible, as the reference writes it. The label is not
-          redundant with the select: it names the control the select *is*, where
-          an unlabelled dropdown at this size is a box of whatever happens to be
-          selected.
-        */}
-        <span className="hidden text-xs whitespace-nowrap text-muted lg:inline">
+      {/*
+        « Trier par » inside the pill, as the reference writes « Sort by ».
+        The label names the control the select *is*; outside the pill it was a
+        loose word between two fields, and it cost the row the width that sent
+        « Filtres » to a second line. The same chrome as the pager's page-size
+        pill: the label is the field, the select inside it is bare.
+      */}
+      <label className="flex shrink-0 cursor-pointer items-center rounded-full border border-border py-1.5 pr-1.5 pl-3.5 transition-colors hover:border-border-strong has-[select:focus-visible]:ring-2 has-[select:focus-visible]:ring-ring">
+        <span className="text-control whitespace-nowrap text-muted">
           Trier par
         </span>
-        <label className="sr-only" htmlFor="browse-sort">
-          Trier par
-        </label>
-        <Select
-          id="browse-sort"
-          className="w-44 rounded-full py-1.5"
-          value={sort}
-          onChange={(event) => onSortChange(event.target.value as BrowseSort)}
-        >
-          {BROWSE_SORTS.map((option) => (
-            <option key={option.id} value={option.id}>
-              {option.label}
-            </option>
-          ))}
-        </Select>
-      </div>
+        <span className="relative">
+          <select
+            id="browse-sort"
+            value={sort}
+            onChange={(event) => onSortChange(event.target.value as BrowseSort)}
+            className="cursor-pointer appearance-none bg-transparent py-0 pr-5 pl-1.5 text-control font-medium whitespace-nowrap text-foreground focus:outline-none"
+          >
+            {BROWSE_SORTS.map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+          <ChevronDownIcon className="pointer-events-none absolute top-1/2 right-1 size-3.5 -translate-y-1/2 text-muted" />
+        </span>
+      </label>
 
       {/*
         The layout switch, beside the sort it belongs with — both are how the
@@ -232,10 +232,12 @@ export function ListingsToolbar({
         />
       </div>
 
-      <p
-        className="shrink-0 text-xs whitespace-nowrap text-muted tabular-nums"
-        aria-live="polite"
-      >
+      {/*
+        Announced here, shown on the results card: the visible count sits
+        beside « Annonces », two-tone like the reference's labels, and the
+        toolbar keeps the room it needs to stay on one row.
+      */}
+      <p className="sr-only" aria-live="polite">
         {total} annonce{total > 1 ? "s" : ""}
       </p>
 

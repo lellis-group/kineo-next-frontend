@@ -175,7 +175,9 @@ export function ProgressCurve({
       <div className="relative" style={{ height: BOX }}>
         {/*
           A callout rather than a chip: the tail points at the dot, so the two read
-          as one mark instead of a number hovering near a line. Built from borders
+          as one mark instead of a number hovering near a line. White on the
+          dark card, as the reference draws its marker: the cream belongs to
+          the band, and a cream callout on a cream band was one blur. Built from borders
           rather than a rotated square, which would have to be aligned by hand and
           shows a seam where it meets the pill.
         */}
@@ -189,13 +191,13 @@ export function ProgressCurve({
             top: curveY - DOT / 2 - TAIL - BADGE,
           }}
         >
-          <span className="relative block rounded-full bg-primary px-2 py-0.5 text-xs leading-tight font-medium text-primary-foreground tabular-nums after:absolute after:top-full after:left-1/2 after:-translate-x-1/2 after:border-x-4 after:border-t-[5px] after:border-x-transparent after:border-t-primary after:content-['']">
+          <span className="relative block rounded-full bg-foreground px-2 py-0.5 text-xs leading-tight font-medium text-background tabular-nums shadow-[0_2px_8px_rgb(0_0_0/0.35)] after:absolute after:top-full after:left-1/2 after:-translate-x-1/2 after:border-x-4 after:border-t-[5px] after:border-x-transparent after:border-t-foreground after:content-['']">
             {rounded} %
           </span>
         </div>
 
         <div
-          className="absolute -translate-x-1/2 rounded-full bg-primary"
+          className="absolute -translate-x-1/2 rounded-full bg-foreground ring-2 ring-surface"
           style={{
             left: `${animated}%`,
             top: curveY - DOT / 2,

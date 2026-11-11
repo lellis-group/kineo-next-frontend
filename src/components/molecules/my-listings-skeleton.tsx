@@ -18,7 +18,7 @@ export function MyListingsSkeleton() {
     <div
       className={cn(SITE_SHELL, "flex flex-col lg:h-full lg:min-h-0 lg:flex-1")}
     >
-      <div className="grid gap-3 lg:min-h-0 lg:flex-1 lg:grid-cols-[21rem_minmax(0,1fr)]">
+      <div className="grid gap-3 lg:min-h-0 lg:flex-1 lg:grid-cols-[22.5rem_minmax(0,1fr)]">
         <div className="hidden flex-col gap-3 lg:flex">
           {[0, 1, 2].map((row) => (
             <div

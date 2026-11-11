@@ -47,7 +47,7 @@ export function HowItWorksSection() {
                   >
                     <Icon />
                   </span>
-                  <span className="text-xs font-medium tracking-widest text-muted uppercase">
+                  <span className="text-xs font-medium text-muted tabular-nums">
                     Étape {index + 1}
                   </span>
                 </div>
