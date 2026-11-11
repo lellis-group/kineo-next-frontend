@@ -17,7 +17,7 @@ export function ActivityItem({
   href,
 }: ActivityItemProps) {
   return (
-    <div className="flex items-start gap-3 rounded-xl border border-border bg-background/40 px-3 py-3.5 sm:items-center sm:gap-4 sm:px-4">
+    <div className="flex items-start gap-3 rounded-xl border border-border bg-surface-2 px-3 py-3.5 sm:items-center sm:gap-4 sm:px-4">
       <span className="mt-0.5 shrink-0 text-lg text-primary sm:mt-0">
         <Icon />
       </span>

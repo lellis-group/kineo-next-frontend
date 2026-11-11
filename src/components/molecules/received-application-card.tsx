@@ -70,7 +70,7 @@ export function ReceivedApplicationCard({
   return (
     <article
       className={cn(
-        "rounded-2xl border border-border bg-background/40 px-6 py-6 sm:px-8 sm:py-7",
+        "rounded-2xl border border-border bg-surface-2 px-6 py-6 sm:px-8 sm:py-7",
         className,
       )}
     >

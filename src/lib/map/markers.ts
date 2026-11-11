@@ -37,7 +37,7 @@ const MARKER_CLASS = "grid size-5 cursor-pointer place-items-center";
 
 /** The mark inside a lone posting's disc — the reference's own. */
 const MARKER_DOT_CLASS =
-  "marker-dot grid size-full place-items-center rounded-full bg-surface text-foreground";
+  "marker-dot grid size-full place-items-center rounded-full bg-background text-foreground";
 
 /** A place with more than one posting: bigger, and it carries the count. */
 const MARKER_CLUSTER_CLASS = "!size-6";

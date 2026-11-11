@@ -76,7 +76,7 @@ export function MarketingHero() {
                 {hero.livePreview.caption}
               </span>
             </div>
-            <div className="rounded-xl bg-background p-4 sm:p-5">
+            <div className="rounded-xl bg-surface-2 p-4 sm:p-5">
               <div className="flex items-center justify-between gap-3">
                 <p className="truncate text-sm font-bold text-foreground">
                   {hero.livePreview.contractTitle}

@@ -16,27 +16,21 @@
   color-scheme: dark;
 
   /*
-   * The page is lighter than the cards that sit on it.
+   * The cards are lighter than the page they sit on.
    *
-   * This is inverted from what this sheet used to carry — surface lighter than
-   * background — because the reference dashboard this product's console screens
-   * are built against draws it the other way round: the page is a warm dark
-   * grey and every card on it is a near-black box sitting *proud* of that grey,
-   * read from its own edge rather than from a border.
+   * These are the brand palette's two darks: `#11100F` is the frame behind
+   * everything, `#201F1E` every card on it. Each step up is one more layer of
+   * the same card — `surface-2` is a band inside a card (a table's header row,
+   * a segmented track, a chosen row), `surface-3` a control on that band.
    *
-   * With the old arrangement the cards were the lightest thing on the screen and
-   * the page read as a hole behind them, which is the reverse of the reference:
-   * there, the page is the surface and the cards are the objects.
-   *
-   * Warmth follows the palette rather than the previous neutral greys — the
-   * brand's cream (`--primary`) pulls its opposite, a brown-black, so the greys
-   * lean into it instead of sitting neutral beside it.
+   * Nothing inside a card is darker than the card: a well drawn in the page's
+   * colour reads as a hole through it. Inset blocks use `surface-2`.
    */
-  --background: #1c1a16;
-  --surface: #131211;
-  --surface-2: #1d1b18;
-  --surface-3: #252320;
-  --surface-hover: #201e1a;
+  --background: #11100f;
+  --surface: #201f1e;
+  --surface-2: #282624;
+  --surface-3: #312f2c;
+  --surface-hover: #292725;
 
   --foreground: #ffffff;
   --muted: #a6a29a;
@@ -44,10 +38,14 @@
 
   --primary: #d7d1b0;
   --primary-hover: #e3ddc4;
-  --primary-foreground: #131211;
+  --primary-foreground: #11100f;
 
-  --border: rgb(255 255 255 / 7%);
-  --border-strong: rgb(255 255 255 / 13%);
+  /*
+   * A card's rim and a row's divider are the same faint line: on `--surface`
+   * this lands on `#2B2A29`, the reference's own divider.
+   */
+  --border: rgb(255 255 255 / 5%);
+  --border-strong: rgb(255 255 255 / 11%);
   --ring: rgb(215 209 176 / 35%);
 
   /*
@@ -436,7 +434,7 @@
   .field-input:-webkit-autofill:hover,
   .field-input:-webkit-autofill:focus {
     -webkit-text-fill-color: var(--foreground);
-    -webkit-box-shadow: 0 0 0 1000px #191817 inset;
+    -webkit-box-shadow: 0 0 0 1000px #181716 inset;
     caret-color: var(--foreground);
     transition: background-color 9999s ease-in-out 0s;
   }

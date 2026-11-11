@@ -105,9 +105,9 @@ function FooterLinkGroup({
  * more.
  *
  * The band is `bg-background` and not `bg-surface`, which is the choice that
- * matters most. The footer is chrome, not a card: on the near-black surface it
+ * matters most. The footer is chrome, not a card: on the card surface it
  * would sit directly under the `bg-surface` call-to-action band with only a
- * hairline between them, the two merging into one black slab at the foot of
+ * hairline between them, the two merging into one slab at the foot of
  * every page with no edge of its own. In the page's colour it is the header's
  * counterpart — a hairline and nothing else, at the other end of the document —
  * and the cream hairline under the CTA above it is what ends that band.

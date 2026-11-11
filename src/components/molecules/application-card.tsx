@@ -43,7 +43,7 @@ export function ApplicationCard({
       )}
 
       {application.message && (
-        <div className="mt-3 rounded-xl bg-background/40 px-3 py-2.5 sm:mt-4 sm:px-4 sm:py-3">
+        <div className="mt-3 rounded-xl bg-surface-2 px-3 py-2.5 sm:mt-4 sm:px-4 sm:py-3">
           <p className="line-clamp-2 overflow-hidden text-[13px] leading-snug break-words text-muted sm:line-clamp-3 sm:text-sm sm:leading-relaxed">
             <span aria-hidden="true">«&nbsp;</span>
             {application.message}
