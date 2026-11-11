@@ -4,8 +4,11 @@ import { Chip } from "@/components/atoms/chip";
 import {
   AlertTriangleIcon,
   ChevronDownIcon,
+  ListIcon,
+  MapIcon,
   MapPinIcon,
   SearchIcon,
+  SplitViewIcon,
 } from "@/components/atoms/icons";
 import {
   ListingsFilterPopover,
@@ -27,6 +30,24 @@ import type {
 const BROWSE_SORTS: readonly { id: BrowseSort; label: string }[] = [
   { id: "recent", label: "Plus récentes" },
   { id: "startDate", label: "Date de début" },
+];
+
+/**
+ * How the two halves share the screen — the layout picker's options.
+ *
+ * « Carte et liste » rather than « Côte à côte »: the split is map-over-list,
+ * not side-by-side, and naming it for its shape would promise an arrangement
+ * the reader does not get. The labels are the buttons' accessible names and
+ * tooltips; on screen the icons carry them.
+ */
+const BROWSE_LAYOUTS: readonly {
+  id: BrowseLayout;
+  label: string;
+  Icon: typeof MapIcon;
+}[] = [
+  { id: "split", label: "Carte et liste", Icon: SplitViewIcon },
+  { id: "list", label: "Liste seule", Icon: ListIcon },
+  { id: "map", label: "Carte seule", Icon: MapIcon },
 ];
 
 interface ListingsToolbarProps {
@@ -145,9 +166,7 @@ export function ListingsToolbar({
         readable floor; on a narrow bar they wrap onto their own lines rather
         than squeeze into unusable slivers.
       */}
-      <div
-        className={cn("min-w-[9rem] flex-1", onMap && "lg:w-40 lg:flex-none")}
-      >
+      <div className={cn("min-w-[9rem] flex-1", onMap && "lg:min-w-[8rem]")}>
         <label className="sr-only" htmlFor="browse-q">
           Rechercher une annonce
         </label>
@@ -166,16 +185,14 @@ export function ListingsToolbar({
               pill,
               onMap && "lg:placeholder:text-black/45",
             )}
-            placeholder="Spécialité, mot-clé…"
+            placeholder="Mot-clé…"
             value={queryDraft}
             onChange={(event) => setQueryDraft(event.target.value)}
           />
         </div>
       </div>
 
-      <div
-        className={cn("min-w-[9rem] flex-1", onMap && "lg:w-40 lg:flex-none")}
-      >
+      <div className={cn("min-w-[9rem] flex-1", onMap && "lg:min-w-[8rem]")}>
         <label className="sr-only" htmlFor="browse-city">
           Rechercher une ville
         </label>
@@ -266,8 +283,6 @@ export function ListingsToolbar({
         specialties={specialties}
         filtered={filtered}
         onResetFilters={onResetFilters}
-        layout={layout}
-        onLayoutChange={onLayoutChange}
         onMap={onMap}
       />
 
@@ -294,6 +309,48 @@ export function ListingsToolbar({
         <AlertTriangleIcon className="mr-1 inline-block size-3.5 align-[-0.15em]" />
         Urgentes
       </Chip>
+
+      {/*
+        The layout, at the end of the row: three icons rather than three
+        words, since it is a display preference and narrows nothing. On the
+        row and not in « Filtres », because it is not a filter; on the row in
+        every layout, map-less included, so « Liste » can always be undone.
+        `ml-auto` sends it to the far end, away from the controls that do
+        narrow.
+      */}
+      <fieldset
+        className={cn(
+          "ml-auto flex shrink-0 items-center gap-0.5 rounded-full border border-border p-1",
+          onMap && MAP_PILL,
+          onMap && "lg:p-1",
+        )}
+      >
+        <legend className="sr-only">Disposition de l'écran</legend>
+        {BROWSE_LAYOUTS.map(({ id, label, Icon }) => {
+          const active = layout === id;
+          return (
+            <button
+              key={id}
+              type="button"
+              aria-pressed={active}
+              aria-label={label}
+              title={label}
+              onClick={() => onLayoutChange(id)}
+              className={cn(
+                "grid size-8 cursor-pointer place-items-center rounded-full transition-colors",
+                active
+                  ? "bg-primary text-primary-foreground"
+                  : cn(
+                      "text-muted hover:text-foreground",
+                      onMap && "lg:text-black/50 lg:hover:text-map-ink",
+                    ),
+              )}
+            >
+              <Icon className="size-4" />
+            </button>
+          );
+        })}
+      </fieldset>
     </div>
   );
 }

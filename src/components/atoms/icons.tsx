@@ -182,6 +182,25 @@ export function SlidersIcon(props: SVGProps<SVGSVGElement>) {
   );
 }
 
+/** A list of rows — the « list only » layout. */
+export function ListIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Svg {...props}>
+      <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />
+    </Svg>
+  );
+}
+
+/** A panel over a panel — the map-over-list layout. */
+export function SplitViewIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Svg {...props}>
+      <rect x="3" y="3" width="18" height="18" rx="2" />
+      <path d="M3 11h18" />
+    </Svg>
+  );
+}
+
 /** Up and to the right — the open-this mark in the corner of a card. */
 export function ArrowUpRightIcon(props: SVGProps<SVGSVGElement>) {
   return (
