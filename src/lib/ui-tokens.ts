@@ -22,7 +22,7 @@
  */
 export type Tone = "neutral" | "success" | "warning" | "danger" | "info";
 
-/** Tinted chip, mapped to the `.badge-*` classes in `globals.css`. */
+/** Status chip: a neutral label whose dot takes the tone (`.badge-*` in `globals.css`). */
 export type BadgeTone = Tone;
 
 /**

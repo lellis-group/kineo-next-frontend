@@ -61,12 +61,19 @@
   --map-base: #e9e5d9;
   --map-ink: #16150f;
 
-  --danger: #f87171;
-  --danger-hover: #f55757;
-  --danger-foreground: #ffffff;
-  --warning: #fbbf24;
-  --success: #4ade80;
-  --info: #93c5fd;
+  /*
+   * The status tones, muted to sit in a cream-and-charcoal palette.
+   *
+   * The reference is monochrome but for its cream; the only other hues it
+   * draws are the dusty red-to-sage of its progress curve. These are that
+   * family. Saturated web greens and ambers read as a second brand.
+   */
+  --danger: #e48a7c;
+  --danger-hover: #ec9d90;
+  --danger-foreground: #11100f;
+  --warning: #dcbc72;
+  --success: #a3c49a;
+  --info: #a9bccb;
 
   --shadow-card: inset 0 1px 0 rgb(255 255 255 / 3%);
   --shadow-pop: 0 16px 40px rgb(0 0 0 / 45%);
@@ -297,9 +304,26 @@
     font-weight: 500;
     line-height: 1.2;
     white-space: normal;
-    color: var(--muted);
+    color: var(--foreground);
     background: rgb(255 255 255 / 4%);
     border: 1px solid var(--border);
+  }
+
+  /*
+   * The tone is a dot, not a paint job.
+   *
+   * The reference writes a status as plain text in the row's own colour. A
+   * column of green, amber and red chips is the loudest thing on such a
+   * screen, so the label stays neutral and only a 6px dot carries the hue:
+   * still scannable down a column, without a second palette.
+   */
+  .badge::before {
+    content: "";
+    flex: none;
+    width: 0.375rem;
+    height: 0.375rem;
+    border-radius: 9999px;
+    background: var(--badge-dot, var(--faint));
   }
 
   @media (min-width: 640px) {
@@ -309,27 +333,19 @@
   }
 
   .badge-success {
-    color: var(--success);
-    background: rgb(74 222 128 / 8%);
-    border-color: rgb(74 222 128 / 20%);
+    --badge-dot: var(--success);
   }
 
   .badge-warning {
-    color: var(--warning);
-    background: rgb(251 191 36 / 8%);
-    border-color: rgb(251 191 36 / 20%);
+    --badge-dot: var(--warning);
   }
 
   .badge-danger {
-    color: var(--danger);
-    background: rgb(248 113 113 / 8%);
-    border-color: rgb(248 113 113 / 20%);
+    --badge-dot: var(--danger);
   }
 
   .badge-info {
-    color: var(--info);
-    background: rgb(147 197 253 / 8%);
-    border-color: rgb(147 197 253 / 20%);
+    --badge-dot: var(--info);
   }
 
   .table {
