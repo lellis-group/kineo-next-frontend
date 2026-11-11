@@ -1,4 +1,3 @@
-import { UsersIcon } from "@/components/atoms/icons";
 import { cn } from "@/lib/cn";
 import { formatCapacity } from "@/lib/listings";
 
@@ -38,7 +37,6 @@ export function CapacityBar({
       )}
       title={formatCapacity(count, max ?? undefined)}
     >
-      <UsersIcon className="size-[var(--cell-icon)] shrink-0 text-muted" />
       <span>
         {count}
         {max ? <span className="text-muted"> / {max}</span> : null}

@@ -43,12 +43,8 @@ export function MyListingsTable({ listings }: MyListingsTableProps) {
               Annonce
             </th>
             <th scope="col">Statut</th>
-            <th scope="col" className="has-gutter">
-              Période
-            </th>
-            <th scope="col" className="has-gutter">
-              Candidats
-            </th>
+            <th scope="col">Période</th>
+            <th scope="col">Candidats</th>
             <th scope="col">Publication</th>
           </tr>
         </thead>
@@ -83,7 +79,8 @@ export function MyListingsTable({ listings }: MyListingsTableProps) {
                       */}
                       <Link
                         href={href}
-                        className="line-clamp-2 font-medium leading-[var(--cell-icon)] wrap-break-word text-foreground transition-colors hover:text-primary"
+                        title={listing.title}
+                        className="block max-w-[22rem] truncate font-medium leading-[var(--cell-icon)] text-foreground transition-colors hover:text-primary"
                       >
                         {listing.title}
                       </Link>
@@ -96,7 +93,7 @@ export function MyListingsTable({ listings }: MyListingsTableProps) {
 
                 <td>
                   <span className="flex h-[var(--cell-icon)] items-center">
-                    <Badge tone={status.tone} size="md">
+                    <Badge tone={status.tone} variant="plain">
                       {status.label}
                     </Badge>
                   </span>

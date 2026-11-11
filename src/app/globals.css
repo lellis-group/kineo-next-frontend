@@ -372,6 +372,15 @@
     }
   }
 
+  /* The dot and the label, without the box — see `Badge`'s `variant`. */
+  .badge-plain {
+    padding: 0;
+    background: none;
+    border: 0;
+    font-size: 0.8125rem;
+    font-weight: 400;
+  }
+
   .badge-success {
     --badge-dot: var(--success);
   }

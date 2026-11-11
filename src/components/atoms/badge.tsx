@@ -25,17 +25,30 @@ const SIZE_CLASSES: Record<BadgeSize, string> = {
 export function Badge({
   tone = "neutral",
   size = "sm",
+  variant = "boxed",
   className,
   children,
 }: {
   tone?: BadgeTone;
   /** Same `sm` as before; `md` and `lg` are wider and squarer. */
   size?: BadgeSize;
+  /**
+   * `plain` drops the box and keeps the dot and the label: the status column
+   * of a table, where the reference writes a status as text and a column of
+   * framed chips would be the loudest thing on the screen.
+   */
+  variant?: "boxed" | "plain";
   className?: string;
   children: ReactNode;
 }) {
   return (
-    <span className={cn(TONE_CLASSES[tone], SIZE_CLASSES[size], className)}>
+    <span
+      className={cn(
+        TONE_CLASSES[tone],
+        variant === "plain" ? "badge-plain" : SIZE_CLASSES[size],
+        className,
+      )}
+    >
       {children}
     </span>
   );

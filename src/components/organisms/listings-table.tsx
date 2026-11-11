@@ -2,7 +2,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { forwardRef, useImperativeHandle, useRef } from "react";
 import { Badge } from "@/components/atoms/badge";
-import { MapPinIcon } from "@/components/atoms/icons";
 import { ListingMapButton } from "@/components/molecules/listing-map-button";
 import {
   ListingCandidatesCell,
@@ -167,33 +166,32 @@ export const ListingsTable = forwardRef<
       )}
     >
       <table ref={tableRef} className="table listings-table lg:h-full">
+        {/*
+          Six columns, laid out as the reference's « Orders » table: one line of
+          identity with a muted line under it, a two-line route, a figure, and a
+          status in plain text at the right edge. The location joined the
+          practice (« Cabinet » over its city, as « Brooklyn, New York » reads)
+          and the specialty went under the title, which is what took the table
+          from seven columns of two-line cells to rows of one height.
+        */}
         <thead>
           <tr>
-            {/*
-              `has-gutter` on exactly the columns whose cells open with an icon.
-              The padding comes from `globals.css`, from the same variable the
-              icon is sized from — see `.listings-table`.
-            */}
+            {/* `has-gutter` on the column whose cells open with an icon — see
+                `.listings-table` in `globals.css`. */}
             <th scope="col" className="has-gutter">
               Annonce
             </th>
-            {/*
-              The map column: a control, not an icon, so no `has-gutter` — the
-              button sits on the cell's own left padding, exactly where this
-              label does.
-            */}
-            <th scope="col">Carte</th>
             <th scope="col">Cabinet</th>
-            <th scope="col" className="has-gutter">
-              Lieu
+            <th scope="col">Période</th>
+            <th scope="col">Candidats</th>
+            <th scope="col" className="text-right">
+              Statut
             </th>
-            <th scope="col" className="has-gutter">
-              Période
+            {/* The map control's column: labelled for a screen reader, blank on
+                screen like the reference's trailing action. */}
+            <th scope="col">
+              <span className="sr-only">Carte</span>
             </th>
-            <th scope="col" className="has-gutter">
-              Candidats
-            </th>
-            <th scope="col">Statut</th>
           </tr>
         </thead>
         <tbody>
@@ -217,66 +215,64 @@ export const ListingsTable = forwardRef<
                 onMouseEnter={() => onHoveredChange?.(listing.id)}
                 onMouseLeave={() => onHoveredChange?.(null)}
                 onClick={(event) => {
-                  // The title is a link and the map button is a map control; a
-                  // click on either must keep doing its own thing.
+                  // The title link and the map button act on their own.
                   if ((event.target as Element).closest("button, a")) return;
                   router.push(`/listings/${listing.id}`);
                 }}
               >
                 <td>
                   <div className="flex items-start gap-[var(--cell-gap)]">
-                    {/*
-                      Sized to `--cell-icon` and top-aligned against a title whose
-                      first line carries the same value as its line-height (below),
-                      so the icon's box and the title's first-line box are the same
-                      height and start at the same y. The icon is centred on that
-                      line by construction — no `mt` nudge that only held for one
-                      font size.
-                    */}
                     <SpecialtyIcon
                       specialty={listing.specialty}
                       className="size-[var(--cell-icon)] shrink-0 text-foreground"
                     />
-                    <div className="min-w-0">
-                      {/*
-                        Clamped, so a long title cannot make one row taller than
-                        the rest and lift its own column out of line with the
-                        others. `min-w-0` on the wrapper is what lets the clamp
-                        engage instead of the text overflowing the cell.
-
-                        `leading-[var(--cell-icon)]` is what lines this first line
-                        up with the icon beside it, and with every other column's
-                        first line: they all share one box height, so their text
-                        sits at the same y across the whole row.
-                      */}
+                    {/*
+                      One line, truncated, with the full title on hover: a
+                      wrapped title is what made a row twice the height of its
+                      neighbours. `max-w` bounds the column so a long title
+                      cannot take the width the other columns need.
+                    */}
+                    <div className="max-w-[17rem] min-w-0">
                       <Link
                         href={`/listings/${listing.id}`}
-                        className="line-clamp-2 font-medium leading-[var(--cell-icon)] text-foreground transition-colors hover:text-primary focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                        title={listing.title}
+                        className="block truncate font-medium leading-[var(--cell-icon)] text-foreground transition-colors hover:text-primary focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                       >
                         {listing.title}
                       </Link>
-                      <p className="text-xs text-muted">
+                      <p className="truncate text-xs text-muted">
                         {SPECIALTY_LABELS[listing.specialty]}
                       </p>
                     </div>
                   </div>
                 </td>
                 <td>
-                  {/*
-                    The map control, in a column of its own.
-
-                    A title's length belongs to its row, so an icon taken to
-                    wherever the text had just ended sat at a different x on
-                    every row — and on a wrapped title the line rarely fills its
-                    box, so even a constant gap read as a moveable one. In its
-                    own cell, under the « Carte » label, the control is one x —
-                    a column of the table like any other.
-
-                    Like the badge's cell, the control is taller than a text
-                    line, so it stands in a box of exactly `--cell-icon`: its
-                    middle lands level with the title's first line and with the
-                    icon columns, whatever the row's height.
-                  */}
+                  <p className="max-w-[12rem] truncate leading-[var(--cell-icon)] text-foreground">
+                    {listing.practiceName}
+                  </p>
+                  <p className="truncate text-xs text-muted">
+                    {listing.city || "—"}
+                  </p>
+                </td>
+                <td>
+                  <ListingPeriodCell
+                    dateRange={listing.dateRange}
+                    startDate={listing.startDate}
+                    endDate={listing.endDate}
+                  />
+                </td>
+                <td>
+                  <ListingCandidatesCell
+                    count={listing.applicationsCount}
+                    max={listing.maxApplications}
+                  />
+                </td>
+                <td className="text-right">
+                  <Badge tone={badge.tone} variant="plain">
+                    {badge.label}
+                  </Badge>
+                </td>
+                <td className="w-0">
                   <span className="flex h-[var(--cell-icon)] items-center">
                     {locatable && (
                       <ListingMapButton
@@ -285,50 +281,6 @@ export const ListingsTable = forwardRef<
                         onSelect={() => onListingSelect?.(listing)}
                       />
                     )}
-                  </span>
-                </td>
-                <td className="leading-[var(--cell-icon)] text-foreground">
-                  {listing.practiceName}
-                </td>
-                <td>
-                  <span className="inline-flex items-center gap-[var(--cell-gap)] leading-[var(--cell-icon)] text-foreground">
-                    <MapPinIcon className="size-[var(--cell-icon)] shrink-0 text-muted" />
-                    {listing.city || "—"}
-                  </span>
-                </td>
-                <td>
-                  {/*
-                    The period as two lines, which is how the reference draws a
-                    route — see `ListingPeriodCell`, which both tables share.
-                  */}
-                  <ListingPeriodCell
-                    dateRange={listing.dateRange}
-                    startDate={listing.startDate}
-                    endDate={listing.endDate}
-                  />
-                </td>
-                <td>
-                  {/*
-                    Candidats, au trait de la maquette — see
-                    `ListingCandidatesCell`, which both tables share.
-                  */}
-                  <ListingCandidatesCell
-                    count={listing.applicationsCount}
-                    max={listing.maxApplications}
-                  />
-                </td>
-                <td>
-                  {/*
-                    The badge is taller than a text line, so top-aligning it left
-                    it floating off the row's first line. Centred on a box of
-                    exactly `--cell-icon` — the same line the icons are centred on
-                    — its middle lands level with the title's first line and with
-                    the icon columns. The overflow is absorbed by the cell padding.
-                  */}
-                  <span className="flex h-[var(--cell-icon)] items-center">
-                    <Badge tone={badge.tone} size="md">
-                      {badge.label}
-                    </Badge>
                   </span>
                 </td>
               </tr>
