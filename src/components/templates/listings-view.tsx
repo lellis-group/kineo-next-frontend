@@ -107,12 +107,12 @@ export function ListingsView({
         <div className="order-1 flex min-w-0 flex-col gap-3 lg:order-2 lg:min-h-0 lg:flex-1">
           {/*
             The map card and the results panel share the column's height, map
-            first — the proportions the reference dashboard uses, where the map
-            is the large element on the right rather than a thin strip. Both are
-            `flex-1` (the card's base class carries it, `lg:min-h-0` lets it
-            shrink), so they split the space ~50/50 and the table scrolls inside
-            its own region. A fixed height here would pin the map small and hand
-            the rest to the table, which is the opposite of the reference.
+            first, in the reference's proportions: 4 to 5 (`lg:flex-[4]` on the
+            card, `lg:flex-[5]` on the panel, `lg:min-h-0` letting both shrink).
+            The panel's share also pays for its title and pager, so the two
+            visible areas come out near even, and the table scrolls inside its
+            own region. A fixed height would stop either from following the
+            window.
 
             The reset row that used to sit between the two is gone, and on the
             reference's own evidence: its screen has no line of chrome under the

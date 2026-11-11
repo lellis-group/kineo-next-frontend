@@ -58,7 +58,7 @@ export function Panel({
         more air under the title than this did, and the title is what the eye
         lands on first on a column of stacked cards.
       */}
-      <header className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 px-5 pt-5 pb-4 sm:px-6">
+      <header className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 px-5 pt-4 pb-4 sm:px-6">
         <h2 className="text-lg leading-tight font-medium text-foreground">
           {title}
         </h2>

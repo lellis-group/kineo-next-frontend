@@ -97,12 +97,29 @@ export function ListingsToolbarCard({
       id={BROWSE_MAP_ID}
       className={cn(
         "relative flex flex-col",
-        !hideMap && "min-h-[20rem] flex-1 sm:min-h-[24rem] lg:min-h-0",
+        !hideMap &&
+          "min-h-[20rem] flex-1 sm:min-h-[24rem] lg:min-h-0 lg:flex-[4]",
         className,
       )}
     >
-      <div className="order-1 z-10 mb-3 rounded-card border border-border bg-surface p-2 shadow-[var(--shadow-card)]">
+      {/*
+        From `lg`, with a map to float on, the bar loses its card and its
+        controls sit on the map's top-left corner as white pills — the
+        reference's « South Bronx, New York » and « Sort by » — leaving the
+        right edge to the map's own buttons. The strip itself lets the pointer
+        through, so the map still pans under the gaps between the pills.
+        Below `lg`, and in « Liste seule », it stays a dark bar above.
+      */}
+      <div
+        className={cn(
+          "order-1 z-10 mb-3 rounded-card border border-border bg-surface p-2 shadow-[var(--shadow-card)]",
+          !hideMap &&
+            "lg:pointer-events-none lg:absolute lg:top-3 lg:right-16 lg:left-3 lg:mb-0 lg:rounded-none lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none",
+        )}
+      >
         <ListingsToolbar
+          onMap={!hideMap}
+          className={hideMap ? undefined : "lg:[&>*]:pointer-events-auto"}
           filters={filters}
           onFiltersChange={onFiltersChange}
           specialties={specialties}

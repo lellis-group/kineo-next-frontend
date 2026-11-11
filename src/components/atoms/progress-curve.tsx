@@ -123,14 +123,16 @@ interface ProgressCurveProps {
  *
  * The marker, the dot, the end labels and the printed number all read the
  * returned value, so they travel together instead of the number jumping while
- * the marker catches up. Starts from 0 so the gauge sweeps in on first paint,
+ * the marker catches up. Starts at the target, not at 0: the server renders
+ * this value, and a gauge that opened on « 0 % » showed a wrong number to
+ * every reader until the page hydrated. It sweeps when the value changes,
  * and restarts each tween from the current position — a filter change mid-sweep
  * bends the marker rather than snapping it. Honors `prefers-reduced-motion` by
  * snapping straight to the target.
  */
 function useAnimatedPercent(target: number): number {
-  const [displayed, setDisplayed] = useState(0);
-  const fromRef = useRef(0);
+  const [displayed, setDisplayed] = useState(target);
+  const fromRef = useRef(target);
   const rafRef = useRef(0);
 
   useEffect(() => {

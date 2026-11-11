@@ -3,11 +3,34 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { Chip } from "@/components/atoms/chip";
 import { AlertTriangleIcon, SlidersIcon } from "@/components/atoms/icons";
+import { SegmentedControl } from "@/components/molecules/segmented-control";
 import { Select } from "@/components/molecules/select";
 import { cn } from "@/lib/cn";
 import { useDebouncedInput } from "@/lib/hooks/use-committed-input";
-import type { BrowseFormFilters } from "@/lib/listings";
+import type { BrowseFormFilters, BrowseLayout } from "@/lib/listings";
 import type { Specialty } from "@/lib/types/api";
+
+/**
+ * How the two halves share the screen — the labels for the layout picker.
+ *
+ * « Les deux » rather than « Côte à côte »: the split is map-over-list, not
+ * side-by-side, and naming it for its shape would promise an arrangement the
+ * reader does not get. It names what they see — both, one, or the other.
+ */
+
+const BROWSE_LAYOUTS: readonly { id: BrowseLayout; label: string }[] = [
+  { id: "split", label: "Les deux" },
+  { id: "list", label: "Liste" },
+  { id: "map", label: "Carte" },
+];
+
+/**
+ * A control floating on the map, from `lg`: white and shadowed like the map's
+ * own buttons, dark ink. Below `lg` the toolbar is an ordinary bar over the
+ * map and the control keeps its dark chrome.
+ */
+export const MAP_PILL =
+  "lg:border-0 lg:bg-white/95 lg:text-map-ink lg:shadow-[0_2px_10px_rgb(22_21_15/0.18)] lg:backdrop-blur-sm lg:hover:bg-white lg:hover:text-map-ink";
 
 export interface SpecialtyOption {
   id: Specialty;
@@ -39,6 +62,9 @@ export function ListingsFilterPopover({
   specialties,
   filtered,
   onResetFilters,
+  layout,
+  onLayoutChange,
+  onMap = false,
 }: {
   filters: BrowseFormFilters;
   onFiltersChange: (patch: Partial<BrowseFormFilters>) => void;
@@ -46,6 +72,17 @@ export function ListingsFilterPopover({
   /** True on any filtered, non-default view — drives the reset affordance. */
   filtered: boolean;
   onResetFilters: () => void;
+  /**
+   * The screen's layout, switched from here. It used to be a third track on
+   * the toolbar; the toolbar now floats on the map as the reference's search
+   * and sort pills, and a display preference is the one control there that
+   * narrows nothing. It lives with the filters because this button is on
+   * screen in all three layouts, the map-less one included.
+   */
+  layout: BrowseLayout;
+  onLayoutChange: (layout: BrowseLayout) => void;
+  /** Drawn as a white pill on the map from `lg` (see `ListingsToolbar`). */
+  onMap?: boolean;
 }) {
   const { draft: fromDraft, setDraft: setFrom } = useDebouncedInput(
     filters.from,
@@ -109,7 +146,7 @@ export function ListingsFilterPopover({
         ref={triggerRef}
         size="md"
         active={open}
-        className="shrink-0 whitespace-nowrap"
+        className={cn("shrink-0 whitespace-nowrap", onMap && MAP_PILL)}
         aria-expanded={open}
         aria-controls={panelId}
         aria-haspopup="dialog"
@@ -143,6 +180,17 @@ export function ListingsFilterPopover({
           )}
         >
           <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1.5">
+              <span className="field-label">Affichage</span>
+              <SegmentedControl
+                className="self-start"
+                ariaLabel="Disposition de l'écran"
+                options={BROWSE_LAYOUTS}
+                value={layout}
+                onChange={onLayoutChange}
+              />
+            </div>
+
             <div className="flex flex-col gap-1.5">
               <label className="field-label" htmlFor="browse-specialty">
                 Spécialité

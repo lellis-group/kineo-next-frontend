@@ -149,7 +149,7 @@ export function ListingsResultsPanel({
   return (
     <Panel
       fill
-      className="lg:flex-1"
+      className="lg:flex-[5]"
       title={
         <>
           Annonces <span className="text-muted tabular-nums">{total}</span>

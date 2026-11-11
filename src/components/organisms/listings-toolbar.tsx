@@ -1,11 +1,15 @@
 "use client";
 
-import { ChevronDownIcon, SearchIcon } from "@/components/atoms/icons";
+import {
+  ChevronDownIcon,
+  MapPinIcon,
+  SearchIcon,
+} from "@/components/atoms/icons";
 import {
   ListingsFilterPopover,
+  MAP_PILL,
   type SpecialtyOption,
 } from "@/components/molecules/listings-filter-popover";
-import { SegmentedControl } from "@/components/molecules/segmented-control";
 import { cn } from "@/lib/cn";
 import {
   useCommittedInput,
@@ -22,19 +26,6 @@ const BROWSE_SORTS: readonly { id: BrowseSort; label: string }[] = [
   { id: "recent", label: "Plus récentes" },
   { id: "urgent", label: "Urgentes d'abord" },
   { id: "startDate", label: "Date de début" },
-];
-
-/**
- * How the two halves share the screen — the labels for the layout picker.
- *
- * « Les deux » rather than « Côte à côte »: the split is map-over-list, not
- * side-by-side, and naming it for its shape would promise an arrangement the
- * reader does not get. It names what they see — both, one, or the other.
- */
-const BROWSE_LAYOUTS: readonly { id: BrowseLayout; label: string }[] = [
-  { id: "split", label: "Les deux" },
-  { id: "list", label: "Liste" },
-  { id: "map", label: "Carte" },
 ];
 
 interface ListingsToolbarProps {
@@ -61,6 +52,12 @@ interface ListingsToolbarProps {
   /** Which halves are shown, and its change handler. A preference, not a filter. */
   layout: BrowseLayout;
   onLayoutChange: (layout: BrowseLayout) => void;
+  /**
+   * The toolbar floats on the map (from `lg`), as the reference's search and
+   * sort pills do: white controls over the light map instead of a dark bar
+   * above it. False when the map is hidden and the toolbar is a bar again.
+   */
+  onMap?: boolean;
   className?: string;
 }
 
@@ -93,8 +90,13 @@ export function ListingsToolbar({
   onSortChange,
   layout,
   onLayoutChange,
+  onMap = false,
   className,
 }: ListingsToolbarProps) {
+  // The ink of the icons and secondary words inside a pill: white pills on the
+  // map from `lg`, the dark bar otherwise.
+  const pill = onMap ? MAP_PILL : undefined;
+  const pillMuted = onMap ? "text-muted lg:text-black/45" : "text-muted";
   /**
    * What is typed, kept apart from what has been applied.
    *
@@ -142,16 +144,27 @@ export function ListingsToolbar({
         readable floor; on a narrow bar they wrap onto their own lines rather
         than squeeze into unusable slivers.
       */}
-      <div className="min-w-[9rem] flex-1">
+      <div
+        className={cn("min-w-[9rem] flex-1", onMap && "lg:w-48 lg:flex-none")}
+      >
         <label className="sr-only" htmlFor="browse-q">
           Rechercher une annonce
         </label>
         <div className="relative">
-          <SearchIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted" />
+          <SearchIcon
+            className={cn(
+              "pointer-events-none absolute top-1/2 left-3 z-10 size-4 -translate-y-1/2",
+              pillMuted,
+            )}
+          />
           <input
             id="browse-q"
             type="search"
-            className="field-input rounded-full py-1.5 pl-9"
+            className={cn(
+              "field-input rounded-full py-1.5 pl-9",
+              pill,
+              onMap && "lg:placeholder:text-black/45",
+            )}
             placeholder="Spécialité, mot-clé…"
             value={queryDraft}
             onChange={(event) => setQueryDraft(event.target.value)}
@@ -159,16 +172,27 @@ export function ListingsToolbar({
         </div>
       </div>
 
-      <div className="min-w-[9rem] flex-1">
+      <div
+        className={cn("min-w-[9rem] flex-1", onMap && "lg:w-48 lg:flex-none")}
+      >
         <label className="sr-only" htmlFor="browse-city">
           Rechercher une ville
         </label>
         <div className="relative">
-          <SearchIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted" />
+          <MapPinIcon
+            className={cn(
+              "pointer-events-none absolute top-1/2 left-3 z-10 size-4 -translate-y-1/2",
+              pillMuted,
+            )}
+          />
           <input
             id="browse-city"
             type="search"
-            className="field-input rounded-full py-1.5 pl-9"
+            className={cn(
+              "field-input rounded-full py-1.5 pl-9",
+              pill,
+              onMap && "lg:placeholder:text-black/45",
+            )}
             placeholder="Ville ou code postal"
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
@@ -190,8 +214,13 @@ export function ListingsToolbar({
         « Filtres » to a second line. The same chrome as the pager's page-size
         pill: the label is the field, the select inside it is bare.
       */}
-      <label className="flex shrink-0 cursor-pointer items-center rounded-full border border-border py-1.5 pr-1.5 pl-3.5 transition-colors hover:border-border-strong has-[select:focus-visible]:ring-2 has-[select:focus-visible]:ring-ring">
-        <span className="text-control whitespace-nowrap text-muted">
+      <label
+        className={cn(
+          "flex shrink-0 cursor-pointer items-center rounded-full border border-border py-1.5 pr-1.5 pl-3.5 transition-colors hover:border-border-strong has-[select:focus-visible]:ring-2 has-[select:focus-visible]:ring-ring",
+          pill,
+        )}
+      >
+        <span className={cn("text-control whitespace-nowrap", pillMuted)}>
           Trier par
         </span>
         <span className="relative">
@@ -199,7 +228,12 @@ export function ListingsToolbar({
             id="browse-sort"
             value={sort}
             onChange={(event) => onSortChange(event.target.value as BrowseSort)}
-            className="cursor-pointer appearance-none bg-transparent py-0 pr-5 pl-1.5 text-control font-medium whitespace-nowrap text-foreground focus:outline-none"
+            className={cn(
+              // The options keep the dark theme's colours: a native list opens
+              // on the page's dark scheme, where the pill's dark ink would vanish.
+              "cursor-pointer appearance-none bg-transparent py-0 pr-5 pl-1.5 text-control font-medium whitespace-nowrap text-foreground focus:outline-none [&_option]:bg-surface [&_option]:text-foreground",
+              onMap && "lg:text-map-ink",
+            )}
           >
             {BROWSE_SORTS.map((option) => (
               <option key={option.id} value={option.id}>
@@ -207,30 +241,14 @@ export function ListingsToolbar({
               </option>
             ))}
           </select>
-          <ChevronDownIcon className="pointer-events-none absolute top-1/2 right-1 size-3.5 -translate-y-1/2 text-muted" />
+          <ChevronDownIcon
+            className={cn(
+              "pointer-events-none absolute top-1/2 right-1 size-3.5 -translate-y-1/2",
+              pillMuted,
+            )}
+          />
         </span>
       </label>
-
-      {/*
-        The layout switch, beside the sort it belongs with — both are how the
-        reader wants the screen, neither narrows anything. A `SegmentedControl`
-        because it is « which of these few », the same shape as the period row.
-
-        Shown from `lg` only, where the split it toggles actually exists and the
-        bar has room for a third label; the toolbar already wraps, and a fourth
-        control on a phone would push the row to two lines for a preference that
-        matters most on a wide screen. The state still applies below `lg` — a
-        « Liste » chosen on desktop hides the map on a phone too — it is only the
-        control that is hidden, not the preference.
-      */}
-      <div className="hidden shrink-0 lg:block">
-        <SegmentedControl
-          ariaLabel="Disposition de l'écran"
-          options={BROWSE_LAYOUTS}
-          value={layout}
-          onChange={onLayoutChange}
-        />
-      </div>
 
       {/*
         Announced here, shown on the results card: the visible count sits
@@ -247,6 +265,9 @@ export function ListingsToolbar({
         specialties={specialties}
         filtered={filtered}
         onResetFilters={onResetFilters}
+        layout={layout}
+        onLayoutChange={onLayoutChange}
+        onMap={onMap}
       />
     </div>
   );
