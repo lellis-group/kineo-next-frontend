@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
+import { HeaderSkeleton } from "@/components/organisms/header-skeleton";
 import { SiteHeader } from "@/components/organisms/site-header";
 import { signOut, useSession } from "@/lib/auth-client";
 import type { UserSummary } from "@/lib/dashboard";
@@ -22,6 +23,13 @@ import type { ServerAuthState } from "@/lib/server-auth";
  *   It may demote a member (sign-out elsewhere) but not the reverse, because
  *   only the server saw the cookie. A stale client cache could otherwise
  *   resurrect account controls for a signed-out user.
+ * - only an *answer* demotes. A client read that failed — a `429` from the
+ *   session rate limit, above all — proves nothing about the session, so the
+ *   server state holds. Treating it as a sign-out is what flipped the header
+ *   to « Se connecter » for readers who were browsing at a normal pace.
+ * - when the server could not read the session either (`unavailable`), a
+ *   cookie was there, so the client is allowed to confirm it. Until it does,
+ *   the header shows its loading skeleton rather than claiming either state.
  *
  * The role follows the same rule: it is refreshed on navigation (the layout
  * payload is cached, so a prop alone cannot signal a role change) and never
@@ -31,16 +39,23 @@ import type { ServerAuthState } from "@/lib/server-auth";
 export function AppHeader({ initialAuth }: { initialAuth: ServerAuthState }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { data: session, isPending } = useSession();
+  const { data: session, isPending, error } = useSession();
 
   const clientUser = session?.user;
+  // A read that failed is not an answer: it can neither demote nor promote.
+  const clientUnsure = isPending || Boolean(error);
 
-  // The client session has one authority: proving the session is *gone*.
-  // Until it resolves we cannot claim that, so the server answer holds.
-  // A stale client cache therefore cannot resurrect account controls for
-  // someone who just signed out.
+  // The client session has one authority over a server-confirmed member:
+  // proving the session is *gone*, with a successful read that names nobody.
+  // Until then the server answer holds. A stale client cache therefore cannot
+  // resurrect account controls for someone who just signed out.
+  //
+  // Over an `unavailable` server read it may confirm the session instead —
+  // the server did see a cookie, it just could not ask about it.
   const isSignedIn =
-    initialAuth.status === "member" && (isPending || Boolean(clientUser));
+    initialAuth.status === "member"
+      ? clientUnsure || Boolean(clientUser)
+      : initialAuth.status === "unavailable" && Boolean(clientUser);
 
   const role = useRoleRefresh(initialAuth, pathname, isSignedIn);
 
@@ -49,9 +64,9 @@ export function AppHeader({ initialAuth }: { initialAuth: ServerAuthState }) {
   // The server name is the SSR-stable one and is replayed while pending, so
   // the first client render matches the server markup exactly.
   const name =
-    isPending || !clientUser
+    clientUnsure || !clientUser
       ? serverName
-      : clientUser.name?.trim() || serverName;
+      : clientUser.name?.trim() || serverName || "Professionnel";
 
   if (isSignedIn && name) {
     const identity: UserSummary = { name, subtitle: "Professionnel de santé" };
@@ -84,6 +99,12 @@ export function AppHeader({ initialAuth }: { initialAuth: ServerAuthState }) {
         }}
       />
     );
+  }
+
+  // Nobody could say who is reading: neither the server nor, yet, the client.
+  // The skeleton claims nothing; « Se connecter » would claim a sign-out.
+  if (initialAuth.status === "unavailable" && clientUnsure) {
+    return <HeaderSkeleton />;
   }
 
   return <SiteHeader links={publicNav} pathname={pathname} />;

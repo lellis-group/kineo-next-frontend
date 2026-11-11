@@ -21,7 +21,10 @@ export function useRoleRefresh(
 
   const prevPathnameRef = useRef(pathname);
   const needsConfirmRef = useRef(
-    initialAuth.status === "member" && initialAuth.role === null,
+    // An unreadable server session carried no role; confirm it once the
+    // client has confirmed the session itself.
+    (initialAuth.status === "member" && initialAuth.role === null) ||
+      initialAuth.status === "unavailable",
   );
 
   useEffect(() => {
@@ -32,7 +35,7 @@ export function useRoleRefresh(
   }, [initialAuth]);
 
   useEffect(() => {
-    if (initialAuth.status !== "member" || !isSignedIn) {
+    if (initialAuth.status === "anonymous" || !isSignedIn) {
       return;
     }
 
