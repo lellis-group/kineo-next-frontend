@@ -12,6 +12,7 @@ import { framingKey } from "@/lib/map/camera-target";
 import { clusterPlaces } from "@/lib/map/clustering";
 import { paintStates, rebuildMarkers } from "@/lib/map/markers";
 import { openCardForSelected } from "@/lib/map/popup";
+import { markSelectedEntry } from "@/lib/map/popup-card";
 import type { MapPoint } from "@/lib/map/types";
 
 /**
@@ -185,6 +186,7 @@ export function useMapMarkers({
           onHover: onHoverRef,
           onMarkerSelect: onMarkerSelectRef,
           onOpen: onOpenRef,
+          selected: selectedRef,
         },
       );
     }
@@ -221,8 +223,11 @@ export function useMapMarkers({
       popupRef,
       map,
       selectedRef.current,
-      onPickRef.current,
-      onOpenRef.current,
+      {
+        onPick: onPickRef.current,
+        onHover: onHoverRef.current,
+        onOpen: onOpenRef.current,
+      },
     );
   }, [mapRef, clusters, places, ready]);
 
@@ -236,6 +241,10 @@ export function useMapMarkers({
     const map = mapRef.current;
     if (!map || !ready) return;
     paintStates(markersRef.current, hoveredIdRef.current, selectedListing);
+    // A row chosen from a group's card stays open on that card; it is marked
+    // there too, so the card says which of its postings the list now shows.
+    const card = popupRef.current?.getElement();
+    if (card) markSelectedEntry(card, selectedListing?.id);
     // A dropped choice closes its own card: the popup belongs to the choice —
     // opened by a marker click or a pick in the list — and a card the choice no
     // longer stands for is a card about nothing. Markers are de-highlighted by
@@ -251,8 +260,11 @@ export function useMapMarkers({
       popupRef,
       map,
       selectedListing,
-      onPickRef.current,
-      onOpenRef.current,
+      {
+        onPick: onPickRef.current,
+        onHover: onHoverRef.current,
+        onOpen: onOpenRef.current,
+      },
     );
   }, [mapRef, ready, selectedListing]);
 

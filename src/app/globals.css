@@ -62,6 +62,20 @@
   --map-ink: #16150f;
 
   /*
+   * What sits *on* the map: the popup card and the white controls.
+   *
+   * The inks are the map ink at two strengths rather than greys of their own,
+   * so they stay warm on the cream paper. `--map-muted` holds 5.7:1 on white —
+   * readable at 12px; `--map-faint` is for marks that repeat something said
+   * elsewhere (a reference, a chevron, a count).
+   */
+  --map-card: #ffffff;
+  --map-muted: rgb(22 21 15 / 64%);
+  --map-faint: rgb(22 21 15 / 48%);
+  --map-line: rgb(22 21 15 / 10%);
+  --map-wash: rgb(22 21 15 / 5%);
+
+  /*
    * The status tones, muted to sit in a cream-and-charcoal palette.
    *
    * The reference is monochrome but for its cream; the only other hues it
@@ -114,6 +128,11 @@
   --color-ring: var(--ring);
   --color-map-base: var(--map-base);
   --color-map-ink: var(--map-ink);
+  --color-map-card: var(--map-card);
+  --color-map-muted: var(--map-muted);
+  --color-map-faint: var(--map-faint);
+  --color-map-line: var(--map-line);
+  --color-map-wash: var(--map-wash);
   --color-danger: var(--danger);
   --color-danger-hover: var(--danger-hover);
   --color-danger-foreground: var(--danger-foreground);
@@ -1281,67 +1300,86 @@
     animation: kineo-popup-enter 180ms cubic-bezier(0.22, 0.68, 0.28, 1) both;
     transform-origin: center;
     margin: 0;
-    padding: 0.75rem 0.875rem;
-    max-width: 17rem;
-    border-radius: var(--radius-card);
-    background: #ffffff;
-    border: 1px solid rgb(22 21 15 / 10%);
-    box-shadow: 0 12px 32px rgb(22 21 15 / 18%);
+    /*
+     * The reference's label card: white, softly lifted, no rim. No padding —
+     * the body pads itself (`popup-card.ts`), so the height cap set on it is
+     * the whole card's.
+     */
+    padding: 0;
+    overflow: hidden;
+    width: 17.5rem;
+    max-width: calc(100vw - 2rem);
+    border-radius: 1rem;
+    background: var(--map-card);
+    border: 0;
+    box-shadow:
+      0 1px 3px rgb(22 21 15 / 10%),
+      0 8px 24px rgb(22 21 15 / 16%);
     color: var(--map-ink);
+    /*
+     * MapLibre sets `font: 12px/20px Helvetica Neue` on the whole map, and the
+     * card lives inside it: without this it inherited Helvetica and a fixed
+     * 20px line height instead of the console's type.
+     */
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    line-height: 1.4;
   }
 
   .maplibregl-popup-close-button {
-    right: 0.375rem;
-    top: 0.375rem;
+    right: 0.625rem;
+    top: 0.625rem;
     padding: 0 0.25rem;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 9999px;
     font-size: 1rem;
     line-height: 1;
-    color: rgb(22 21 15 / 45%);
+    color: var(--map-faint);
   }
 
   .maplibregl-popup-close-button:hover {
-    background: transparent;
+    background: var(--map-wash);
     color: var(--map-ink);
   }
 
-  /* A heading running onto two lines must not slide under the close cross. */
-  .maplibregl-popup-content :is(h3, p) {
-    padding-right: 1.125rem;
-  }
-
   /*
-   * The postings inside a popup, and the focus ring they should not wear.
+   * Keyboard focus inside the card.
    *
-   * The global `:focus-visible` paints every focusable element a 2px primary
-   * outline. On a posting entry inside a white card that reads as a gold box
-   * drawn around one row of a small panel — heavy, and at odds with the rest of
-   * the card. The outline is dropped, but the entries keep a focus affordance all
-   * the same: a faint ink wash, so keyboard focus stays visible even where the
-   * gold ring does not.
+   * The global `:focus-visible` ring is the console's gold, drawn for a dark
+   * surface; on the white card it reads as a stray yellow box. The card's own
+   * ink takes its place — still a 2px ring, so focus stays as visible as
+   * anywhere else on the screen.
    */
-  .maplibregl-popup-content ul > li > button:focus-visible {
-    outline: none;
-    background: rgb(22 21 15 / 6%);
+  .maplibregl-popup-content :is(a, button):focus-visible,
+  .maplibregl-popup-close-button:focus-visible {
+    outline: 2px solid var(--map-ink);
+    outline-offset: 2px;
   }
 
   /*
-   * The tip is a directional border: its colour has to follow the card's, or a
-   * light triangle detaches against the map's background.
+   * No tip: the reference's card sits beside its pin with nothing pointing at
+   * it — the black disc repeating the pin's own is what ties the two together.
    */
-  .maplibregl-popup-anchor-bottom .maplibregl-popup-tip {
-    border-top-color: #ffffff;
+  .maplibregl-popup-tip {
+    display: none;
   }
 
-  .maplibregl-popup-anchor-top .maplibregl-popup-tip {
-    border-bottom-color: #ffffff;
+  /* The card grows out of its pin, whichever side of it it opened on. */
+  .maplibregl-popup-anchor-left .maplibregl-popup-content {
+    transform-origin: left center;
   }
 
-  .maplibregl-popup-anchor-left .maplibregl-popup-tip {
-    border-right-color: #ffffff;
+  .maplibregl-popup-anchor-right .maplibregl-popup-content {
+    transform-origin: right center;
   }
 
-  .maplibregl-popup-anchor-right .maplibregl-popup-tip {
-    border-left-color: #ffffff;
+  .maplibregl-popup-anchor-top .maplibregl-popup-content {
+    transform-origin: top center;
+  }
+
+  .maplibregl-popup-anchor-bottom .maplibregl-popup-content {
+    transform-origin: bottom center;
   }
 }
 

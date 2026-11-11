@@ -54,6 +54,11 @@ export function useMapDismiss({
     const onMapClick = (event: maplibregl.MapMouseEvent) => {
       const target = event.originalEvent?.target as HTMLElement | null;
       if (target?.closest(".maplibregl-popup")) return;
+      // The second click of a double-click is MapLibre's zoom, not a request
+      // to drop the choice. The usual case is a double-click on the card's
+      // camera button: the first click closes the card and moves the camera,
+      // and the second lands on the map where the card was.
+      if ((event.originalEvent?.detail ?? 1) > 1) return;
       dismiss();
     };
 

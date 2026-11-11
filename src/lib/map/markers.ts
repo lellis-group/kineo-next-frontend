@@ -68,6 +68,8 @@ export function rebuildMarkers(
     onHover: RefObject<((id: string | null) => void) | undefined>;
     onMarkerSelect: RefObject<((listing: MapPlaceListing) => void) | undefined>;
     onOpen: RefObject<((listing: MapPlaceListing) => void) | undefined>;
+    /** The posting already chosen, so a group's card can mark it. */
+    selected: RefObject<{ id: string } | null | undefined>;
   },
 ) {
   const active = markers;
@@ -133,11 +135,17 @@ export function rebuildMarkers(
       // the popup and bubble up to close it again on the same event.
       event.stopPropagation();
 
+      // The second click of a double-click is the zoom's, not a second open:
+      // rebuilding the card here replayed its entrance and re-placed it, only
+      // for the `dblclick` below to fly the camera away a moment later.
+      if (event.detail > 1) return;
+
       openPopupForKey(key, livePlaces, popupRef, map, {
         onPick: handlers.onPick.current,
         onHover: handlers.onHover.current,
         onMarkerSelect: handlers.onMarkerSelect.current,
         onOpen: handlers.onOpen.current,
+        selectedId: handlers.selected.current?.id,
       });
     });
 
@@ -156,7 +164,13 @@ export function rebuildMarkers(
       event.preventDefault();
       event.stopPropagation();
       const live = current();
-      if (live) zoomToPlace(map, live);
+      if (!live) return;
+      // The first click opened the card; the zoom closes it, as the card's own
+      // camera button does. Left open, it stays anchored where the markers it
+      // describes are about to separate — on top of what the zoom reveals.
+      popupRef.current?.remove();
+      popupRef.current = null;
+      zoomToPlace(map, live);
     });
 
     const marker = new maplibregl.Marker({ element: node, anchor: "center" })

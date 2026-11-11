@@ -8,6 +8,7 @@ import {
   type BrowseLayout,
   type BrowseSort,
 } from "@/lib/listings";
+import { MAP_TOP_OVERLAY_ATTRIBUTE } from "@/lib/map/popup-fit";
 
 interface ListingsToolbarCardProps {
   filters: BrowseFormFilters;
@@ -111,6 +112,9 @@ export function ListingsToolbarCard({
         Below `lg`, and in « Liste seule », it stays a dark bar above.
       */}
       <div
+        // Map popups open below this strip rather than over the pills — see
+        // `freeArea`. Harmless where the bar sits above the map instead.
+        {...{ [MAP_TOP_OVERLAY_ATTRIBUTE]: hideMap ? undefined : "" }}
         className={cn(
           "order-1 z-10 mb-3 rounded-card border border-border bg-surface p-2 shadow-[var(--shadow-card)]",
           !hideMap &&

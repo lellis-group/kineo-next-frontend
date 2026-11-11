@@ -1,11 +1,9 @@
 import type { Map as MapLibreMap } from "maplibre-gl";
 import * as maplibregl from "maplibre-gl";
 import type { RefObject } from "react";
-import {
-  keepPopupInView,
-  POPUP_EDGE_MARGIN,
-} from "@/lib/map/keep-popup-in-view";
-import { popupContent } from "./popup-card";
+import { markSelectedEntry, popupContent } from "./popup-card";
+import { freeArea, measureCard, POPUP_GAP } from "./popup-fit";
+import { placePopup, type Rect } from "./popup-placement";
 import type { MapPlace, MapPlaceListing } from "./types";
 
 /**
@@ -47,56 +45,77 @@ export function openPopupForKey(
     onMarkerSelect?: (listing: MapPlaceListing) => void;
     /** The posting's own page — see `listingLink`. */
     onOpen?: (listing: MapPlaceListing) => void;
+    /** The posting already chosen, marked in a group's list when it is there. */
+    selectedId?: string;
   },
 ) {
   const live = livePlaces.get(key);
   if (!live) return;
 
+  // A click on the marker whose card is already up leaves it be: rebuilding
+  // would replay its entrance, reset its list's scroll and re-place it under
+  // the pointer of a reader who was about to use it.
+  const open = popupRef.current;
+  const at = open?.isOpen() ? open.getLngLat() : null;
+  if (at && at.lng === live.longitude && at.lat === live.latitude) return;
+
   popupRef.current?.remove();
-  popupRef.current = new maplibregl.Popup({
-    offset: 16,
+  popupRef.current = null;
+
+  /**
+   * The popup dismissing itself is a read of the ref rather than a captured
+   * instance: the content is built before the popup exists. The closure
+   * resolves it on the click, by which time it is set.
+   */
+  const body = popupContent(live, map, () => popupRef.current?.remove(), {
+    onPick: (listing) => handlers.onPick?.(listing),
+    onHover: (id) => handlers.onHover?.(id),
+    onOpen: handlers.onOpen,
+  });
+  markSelectedEntry(body, handlers.selectedId);
+
+  /*
+    Placed before it is drawn, so it opens whole rather than clipped and then
+    chased by the camera:
+
+    1. the card is capped at the free area's height — a group's list scrolls
+       inside it — so a camera position that shows all of it always exists;
+    2. it is measured at that cap;
+    3. `placePopup` picks the side of the marker and the pan that brings the
+       whole card into view, and the pan is applied once the card is up.
+
+    MapLibre's own placement only flips the card to the roomier side and clips
+    the rest: on a short map that was the bottom of the card, buttons included.
+  */
+  const free = freeArea(map);
+  capHeight(body, free);
+  const { anchor, pan } = placePopup({
+    free,
+    point: map.project([live.longitude, live.latitude]),
+    card: measureCard(map, body),
+    gap: POPUP_GAP,
+  });
+
+  const popup = new maplibregl.Popup({
+    anchor,
+    offset: POPUP_GAP,
+    // MapLibre caps every popup at 240px by default, on the wrapper — narrower
+    // than the card, which then overflowed its own box. The card's width is the
+    // stylesheet's (`.maplibregl-popup-content`).
+    maxWidth: "none",
     // A click on the marker bubbles up to the map, where MapLibre would close
     // the popup this very click opened — `stopPropagation` at the click site is
     // what makes a `true` here safe.
     closeOnClick: true,
     closeButton: true,
-    /*
-      MapLibre picks the card's anchor itself when none is given — above or below
-      the marker, and to one side — but it does so against a padding of **zero**:
-      it only moves once the card is already at the edge. Handing it the same
-      margin `keepPopupInView` works with makes that decision happen a step
-      earlier, so the flip and the nudge stop fighting over the same pixel and
-      the card lands with air around it from the start.
-    */
-    padding: {
-      top: POPUP_EDGE_MARGIN,
-      bottom: POPUP_EDGE_MARGIN,
-      left: POPUP_EDGE_MARGIN,
-      right: POPUP_EDGE_MARGIN,
-    },
   })
     .setLngLat([live.longitude, live.latitude])
-    /**
-     * The popup dismissing itself is a read of the ref rather than a
-     * captured instance: the content is built before the popup exists, and
-     * the two are chained in one expression. The closure resolves it on the
-     * click, by which time it is set.
-     */
-    .setDOMContent(
-      popupContent(
-        live,
-        map,
-        () => popupRef.current?.remove(),
-        (listing) => handlers.onPick?.(listing),
-        handlers.onOpen,
-      ),
-    )
+    .setDOMContent(body)
     .addTo(map);
+  popupRef.current = popup;
 
-  // A card that arrives cropped is a card the reader cannot read, and the map's
-  // box is small by design — it shares the screen with the table. MapLibre has no
-  // collision detection for popups, so the camera makes room instead.
-  keepPopupInView(map, popupRef.current);
+  panBy(map, pan);
+  keepFitted(map, popup, body);
 
   // A lone posting has no list to choose from, so it selects itself: a click on
   // its pin is a choice, and a choice has to outlive the pointer that made it.
@@ -132,8 +151,11 @@ export function openCardForSelected(
     | { id: string; latitude: number; longitude: number }
     | null
     | undefined,
-  onPick: ((listing: MapPlaceListing) => void) | undefined,
-  onOpen?: (listing: MapPlaceListing) => void,
+  handlers: {
+    onPick?: (listing: MapPlaceListing) => void;
+    onHover?: (id: string | null) => void;
+    onOpen?: (listing: MapPlaceListing) => void;
+  },
 ) {
   if (!selected) return;
 
@@ -158,11 +180,82 @@ export function openCardForSelected(
     }
 
     openPopupForKey(key, livePlaces, popupRef, map, {
-      onPick,
-      onHover: undefined,
-      onMarkerSelect: undefined,
-      onOpen,
+      ...handlers,
+      selectedId: selected.id,
     });
     return;
   }
+}
+
+/**
+ * Keeps an open card placed as the map moves and resizes, until it closes.
+ *
+ * MapLibre already carries the card with its marker on every frame. What it
+ * does not do is reconsider the card's side or its height cap, both decided at
+ * opening against a map that has since changed:
+ *
+ * - **The reader moved the map** (`moveend` — pan, zoom, or the camera flying
+ *   to a posting): the side and the cap are recomputed, but the camera is never
+ *   moved. Panning back would undo the gesture the reader just made, and drag
+ *   the map from under them. If they pushed the card off the edge, that was
+ *   their move; it comes back whole the moment there is room on either side.
+ * - **The map changed size** (`resize` — the window, full screen, or the
+ *   « Carte seule » / « Carte et liste » switch): the reader moved nothing, so
+ *   the card is also brought back into view, as it was at opening.
+ *
+ * At gesture end rather than on every `move` frame: the side flipping while the
+ * map is still under the pointer would make the card jump about mid-drag.
+ * The pan this function makes on a resize ends in a `moveend` of its own, which
+ * re-places without panning — so the two never loop.
+ */
+function keepFitted(
+  map: MapLibreMap,
+  popup: maplibregl.Popup,
+  body: HTMLElement,
+) {
+  const refit = (bringIntoView: boolean) => {
+    const content = body.parentElement;
+    if (!content) return;
+
+    const free = freeArea(map);
+    capHeight(body, free);
+    const { anchor, pan } = placePopup({
+      free,
+      point: map.project(popup.getLngLat()),
+      card: { width: content.offsetWidth, height: content.offsetHeight },
+      gap: POPUP_GAP,
+    });
+
+    if (popup.options.anchor !== anchor) {
+      // The anchor is read from `options` on every placement; `setOffset`
+      // is the public call that runs one, without rebuilding the card — its
+      // list keeps its scroll position and its opening animation is not
+      // replayed.
+      popup.options.anchor = anchor;
+      popup.setOffset(POPUP_GAP);
+    }
+    if (bringIntoView) panBy(map, pan);
+  };
+
+  const onMoveEnd = () => refit(false);
+  const onResize = () => refit(true);
+  map.on("moveend", onMoveEnd);
+  map.on("resize", onResize);
+  popup.once("close", () => {
+    map.off("moveend", onMoveEnd);
+    map.off("resize", onResize);
+  });
+}
+
+/**
+ * Caps the card at the free area's height. A group's list is what gives way and
+ * scrolls, so the header and the actions are always on screen.
+ */
+function capHeight(body: HTMLElement, free: Rect) {
+  body.style.maxHeight = `${Math.max(0, free.bottom - free.top)}px`;
+}
+
+/** Instantaneous: the card's opening animation carries the movement. */
+function panBy(map: MapLibreMap, [dx, dy]: [number, number]) {
+  if (dx !== 0 || dy !== 0) map.panBy([dx, dy], { duration: 0 });
 }
