@@ -28,9 +28,13 @@ const BROWSE_LAYOUTS: readonly { id: BrowseLayout; label: string }[] = [
  * A control floating on the map, from `lg`: white and shadowed like the map's
  * own buttons, dark ink. Below `lg` the toolbar is an ordinary bar over the
  * map and the control keeps its dark chrome.
+ *
+ * Opaque, and no `backdrop-blur`: a blurred backdrop over the WebGL canvas
+ * is recomputed on every frame the map moves, and four pills of it made the
+ * map stutter on each pan, zoom and re-frame after a filter change.
  */
 export const MAP_PILL =
-  "lg:border-0 lg:bg-white/95 lg:text-map-ink lg:shadow-[0_2px_10px_rgb(22_21_15/0.18)] lg:backdrop-blur-sm lg:hover:bg-white lg:hover:text-map-ink";
+  "lg:border-0 lg:bg-white lg:text-map-ink lg:shadow-[0_2px_10px_rgb(22_21_15/0.18)] lg:hover:bg-white lg:hover:text-map-ink";
 
 export interface SpecialtyOption {
   id: Specialty;

@@ -197,7 +197,7 @@ export const ListingsMap = forwardRef<ListingsMapHandle, ListingsMapProps>(
             // worse than no button.
             disabled={pagePoints.length === 0}
             onClick={() => map.framePlaces(pagePoints)}
-            className="grid size-9 cursor-pointer place-items-center rounded-full bg-white/90 text-map-ink shadow-[0_2px_10px_rgb(22_21_15/0.2)] backdrop-blur-sm transition-colors hover:bg-white disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
+            className="grid size-9 cursor-pointer place-items-center rounded-full bg-white text-map-ink shadow-[0_2px_10px_rgb(22_21_15/0.2)] transition-colors hover:bg-white disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
           >
             <CrosshairIcon className="size-4" />
           </button>
@@ -222,7 +222,7 @@ export const ListingsMap = forwardRef<ListingsMapHandle, ListingsMapProps>(
           className="pointer-events-none absolute bottom-3 left-3 flex flex-col items-start gap-1.5"
         >
           {unlocated > 0 && (
-            <p className="rounded-full bg-white/90 px-3 py-1.5 text-2xs text-map-ink shadow-[0_2px_10px_rgb(22_21_15/0.12)] backdrop-blur-sm">
+            <p className="rounded-full bg-white px-3 py-1.5 text-2xs text-map-ink shadow-[0_2px_10px_rgb(22_21_15/0.12)]">
               {unlocated} annonce{unlocated > 1 ? "s" : ""} sans coordonnées,
               visible{unlocated > 1 ? "s" : ""} dans la liste seulement
             </p>
@@ -235,7 +235,7 @@ export const ListingsMap = forwardRef<ListingsMapHandle, ListingsMapProps>(
             listing count and keeps the top `maxPlaces`, so the ones left off are
             the quietest, not the oldest or the furthest. */}
           {truncated && (
-            <p className="rounded-full bg-white/90 px-3 py-1.5 text-2xs text-map-ink shadow-[0_2px_10px_rgb(22_21_15/0.12)] backdrop-blur-sm">
+            <p className="rounded-full bg-white px-3 py-1.5 text-2xs text-map-ink shadow-[0_2px_10px_rgb(22_21_15/0.12)]">
               {places.length} cabinets sur {totalPlaces} représentés — les plus
               actives
             </p>
@@ -290,7 +290,7 @@ function FullscreenToggle({
       */
       aria-label="Plein écran"
       aria-pressed={fullscreen}
-      className="grid size-9 cursor-pointer place-items-center rounded-full bg-white/90 text-map-ink shadow-[0_2px_10px_rgb(22_21_15/0.2)] backdrop-blur-sm transition-colors hover:bg-white"
+      className="grid size-9 cursor-pointer place-items-center rounded-full bg-white text-map-ink shadow-[0_2px_10px_rgb(22_21_15/0.2)] transition-colors hover:bg-white"
       onClick={() => {
         const node = containerRef.current?.parentElement;
         if (!node) return;
