@@ -16,8 +16,10 @@
 
 import { type FormEvent, useState } from "react";
 import { Button } from "@/components/atoms/button";
+import { CountedTextarea } from "@/components/molecules/counted-textarea";
 import { InlineAlert } from "@/components/molecules/inline-alert";
 import { PendingButton } from "@/components/molecules/pending-button";
+import { useAsyncSubmit } from "@/lib/hooks/use-async-submit";
 import type { ReceivedApplication } from "@/lib/listings";
 import { applicationDecisionErrorMessage } from "@/lib/listings";
 
@@ -50,20 +52,12 @@ export function ReceivedApplicationActions({
 }: ReceivedApplicationActionsProps) {
   const [stage, setStage] = useState<DecisionStage>("idle");
   const [reason, setReason] = useState("");
-  const [pending, setPending] = useState(false);
-  const [error, setError] = useState("");
+  const { pending, error, run } = useAsyncSubmit(
+    applicationDecisionErrorMessage,
+  );
 
   async function settle(work: () => Promise<void>) {
-    setError("");
-    setPending(true);
-    try {
-      await work();
-      setStage("idle");
-    } catch (err) {
-      setError(applicationDecisionErrorMessage(err));
-    } finally {
-      setPending(false);
-    }
+    if (await run(work)) setStage("idle");
   }
 
   async function handleReject(event: FormEvent<HTMLFormElement>) {
@@ -105,25 +99,12 @@ export function ReceivedApplicationActions({
         </div>
       ) : stage === "reject" ? (
         <form onSubmit={handleReject}>
-          <label
-            htmlFor="decision-reason"
-            className="flex items-baseline justify-between gap-4"
-          >
-            <span className="field-label">
-              Motif communiqué au candidat (optionnel)
-            </span>
-            <span className="text-xs text-faint">
-              {reason.length}/{MAX_REASON_LENGTH}
-            </span>
-          </label>
-          <textarea
-            id="decision-reason"
+          <CountedTextarea
+            label="Motif communiqué au candidat (optionnel)"
             value={reason}
-            onChange={(event) => setReason(event.target.value)}
-            rows={3}
+            onChange={setReason}
             maxLength={MAX_REASON_LENGTH}
             placeholder="Indiquez si vous le souhaitez la raison de votre refus…"
-            className="field-input mt-2 resize-none text-sm"
           />
           <div className="mt-3 flex flex-col gap-3 sm:flex-row">
             <PendingButton

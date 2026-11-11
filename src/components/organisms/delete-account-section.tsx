@@ -12,6 +12,7 @@ import {
   ERASURE_RETENTION_FACT,
   erasedFields,
 } from "@/lib/delete-account-content";
+import { useAsyncSubmit } from "@/lib/hooks/use-async-submit";
 
 export interface DeleteAccountSectionProps {
   /** Triggers account deletion + post-action sign-out/redirect. */
@@ -27,27 +28,21 @@ export function DeleteAccountSection({
   onDeleteAccount,
 }: DeleteAccountSectionProps) {
   const [confirmed, setConfirmed] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
   const [requested, setRequested] = useState(false);
-  const [error, setError] = useState("");
+  const {
+    pending: submitting,
+    error,
+    run,
+  } = useAsyncSubmit((e) =>
+    e instanceof Error && e.message ? e.message : copy.fallbackError,
+  );
 
   async function handleDelete() {
     if (!confirmed) return;
-    setError("");
-    setSubmitting(true);
-    try {
-      // Success = the deletion request is registered and a confirmation
-      // email is on its way; the account is anonymized only once the email
-      // link is opened (see /goodbye).
-      await onDeleteAccount();
-      setRequested(true);
-    } catch (e) {
-      setError(
-        e instanceof Error && e.message ? e.message : copy.fallbackError,
-      );
-    } finally {
-      setSubmitting(false);
-    }
+    // Success = the deletion request is registered and a confirmation email is
+    // on its way; the account is anonymized only once the email link is opened
+    // (see /goodbye).
+    if (await run(onDeleteAccount)) setRequested(true);
   }
 
   if (requested) {

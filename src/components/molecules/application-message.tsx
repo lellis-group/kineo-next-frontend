@@ -4,9 +4,11 @@ import type { FormEvent } from "react";
 import { useState } from "react";
 import { Button } from "@/components/atoms/button";
 import { PencilIcon } from "@/components/atoms/icons";
+import { CountedTextarea } from "@/components/molecules/counted-textarea";
 import { InlineAlert } from "@/components/molecules/inline-alert";
 import { PendingButton } from "@/components/molecules/pending-button";
 import { errorMessage } from "@/lib/api-errors";
+import { useAsyncSubmit } from "@/lib/hooks/use-async-submit";
 
 export interface ApplicationMessageProps {
   message?: string;
@@ -35,13 +37,17 @@ export function ApplicationMessage({
   onSaveMessage,
 }: ApplicationMessageProps) {
   const [editing, setEditing] = useState(false);
-  const [saving, setSaving] = useState(false);
   const [draft, setDraft] = useState("");
-  const [error, setError] = useState("");
+  const {
+    pending: saving,
+    error,
+    run,
+    clearError,
+  } = useAsyncSubmit((err) => errorMessage(err, MESSAGE_COPY));
 
   function startEditing() {
     setDraft(message ?? "");
-    setError("");
+    clearError();
     setEditing(true);
   }
 
@@ -49,39 +55,20 @@ export function ApplicationMessage({
     event.preventDefault();
     const trimmed = draft.trim();
     if (!trimmed) return;
-    setError("");
-    setSaving(true);
-    try {
-      await onSaveMessage(trimmed);
-      setEditing(false);
-    } catch (err) {
-      setError(errorMessage(err, MESSAGE_COPY));
-    } finally {
-      setSaving(false);
-    }
+    if (await run(() => onSaveMessage(trimmed))) setEditing(false);
   }
 
   if (editing) {
     return (
       <section aria-label="Votre message">
         <form onSubmit={handleSubmit}>
-          <label
-            htmlFor="application-message"
-            className="flex items-baseline justify-between gap-4"
-          >
-            <span className="field-label">Votre message</span>
-            <span className="text-xs text-faint">
-              {draft.length}/{MAX_MESSAGE_LENGTH}
-            </span>
-          </label>
-          <textarea
-            id="application-message"
+          <CountedTextarea
+            label="Votre message"
             value={draft}
-            onChange={(event) => setDraft(event.target.value)}
+            onChange={setDraft}
             rows={4}
             maxLength={MAX_MESSAGE_LENGTH}
             placeholder="Précisez vos disponibilités, votre expérience sur ce type de remplacement…"
-            className="field-input mt-2 resize-none text-sm"
           />
 
           {error && (

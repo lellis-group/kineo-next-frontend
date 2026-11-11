@@ -4,10 +4,12 @@ import type { FormEvent } from "react";
 import { useState } from "react";
 import { Button } from "@/components/atoms/button";
 import { UndoIcon } from "@/components/atoms/icons";
+import { CountedTextarea } from "@/components/molecules/counted-textarea";
 import { DangerPanel } from "@/components/molecules/danger-panel";
 import { InlineAlert } from "@/components/molecules/inline-alert";
 import { PendingButton } from "@/components/molecules/pending-button";
 import { errorMessage } from "@/lib/api-errors";
+import { useAsyncSubmit } from "@/lib/hooks/use-async-submit";
 
 export interface ApplicationWithdrawProps {
   onWithdraw: (reason: string) => Promise<void>;
@@ -34,21 +36,17 @@ export function ApplicationWithdraw({
   className,
 }: ApplicationWithdrawProps) {
   const [confirming, setConfirming] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
   const [reason, setReason] = useState("");
-  const [error, setError] = useState("");
+  const {
+    pending: submitting,
+    error,
+    run,
+    clearError,
+  } = useAsyncSubmit((err) => errorMessage(err, WITHDRAW_COPY));
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setError("");
-    setSubmitting(true);
-    try {
-      await onWithdraw(reason);
-    } catch (err) {
-      setError(errorMessage(err, WITHDRAW_COPY));
-    } finally {
-      setSubmitting(false);
-    }
+    await run(() => onWithdraw(reason));
   }
 
   return (
@@ -66,23 +64,12 @@ export function ApplicationWithdraw({
 
         {confirming ? (
           <form onSubmit={handleSubmit} className="mt-4">
-            <label
-              htmlFor="withdrawn-reason"
-              className="flex items-baseline justify-between gap-4"
-            >
-              <span className="field-label">Motif du retrait (optionnel)</span>
-              <span className="text-xs text-faint">
-                {reason.length}/{MAX_REASON_LENGTH}
-              </span>
-            </label>
-            <textarea
-              id="withdrawn-reason"
+            <CountedTextarea
+              label="Motif du retrait (optionnel)"
               value={reason}
-              onChange={(event) => setReason(event.target.value)}
-              rows={3}
+              onChange={setReason}
               maxLength={MAX_REASON_LENGTH}
               placeholder="Ex. : j'ai finalement trouvé un remplacement sur la même période…"
-              className="field-input mt-2 resize-none text-sm"
             />
 
             {error && (
@@ -104,7 +91,7 @@ export function ApplicationWithdraw({
                 disabled={submitting}
                 onClick={() => {
                   setConfirming(false);
-                  setError("");
+                  clearError();
                 }}
               >
                 Annuler

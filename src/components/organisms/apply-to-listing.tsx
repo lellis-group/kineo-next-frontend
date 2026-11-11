@@ -18,6 +18,7 @@
 import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
 import { Button } from "@/components/atoms/button";
+import { CountedTextarea } from "@/components/molecules/counted-textarea";
 import { InlineAlert } from "@/components/molecules/inline-alert";
 import { PendingButton } from "@/components/molecules/pending-button";
 import {
@@ -25,6 +26,7 @@ import {
   applyErrorMessage,
   applyToListing,
 } from "@/lib/applications";
+import { useAsyncSubmit } from "@/lib/hooks/use-async-submit";
 import { signInOnExpiredSession } from "@/lib/session-redirect";
 
 /** Backend CreateApplicationDto — optional message, 1-2000 chars. */
@@ -41,24 +43,21 @@ export function ApplyToListing({ listingId }: { listingId: string }) {
   const router = useRouter();
   const [state, setState] = useState<ApplyState>("closed");
   const [draft, setDraft] = useState("");
-  const [sending, setSending] = useState(false);
-  const [error, setError] = useState("");
+  const {
+    pending: sending,
+    error,
+    run,
+  } = useAsyncSubmit((err) =>
+    signInOnExpiredSession(err, router) ? null : applyErrorMessage(err),
+  );
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const trimmed = draft.trim();
-    setError("");
-    setSending(true);
-    try {
-      await applyToListing(listingId, trimmed || undefined);
-      setState("sent");
-    } catch (err) {
-      if (!signInOnExpiredSession(err, router)) {
-        setError(applyErrorMessage(err));
-      }
-    } finally {
-      setSending(false);
-    }
+    const sent = await run(() =>
+      applyToListing(listingId, trimmed || undefined),
+    );
+    if (sent) setState("sent");
   }
 
   if (state === "sent") {
@@ -91,23 +90,13 @@ export function ApplyToListing({ listingId }: { listingId: string }) {
   return (
     <section aria-label="Postuler" className="border-t border-border pt-6">
       <form onSubmit={handleSubmit}>
-        <label
-          htmlFor="apply-message"
-          className="flex items-baseline justify-between gap-4"
-        >
-          <span className="field-label">Message au cabinet (optionnel)</span>
-          <span className="text-xs text-faint">
-            {draft.length}/{MAX_MESSAGE_LENGTH}
-          </span>
-        </label>
-        <textarea
-          id="apply-message"
+        <CountedTextarea
+          label="Message au cabinet (optionnel)"
           value={draft}
-          onChange={(event) => setDraft(event.target.value)}
+          onChange={setDraft}
           rows={4}
           maxLength={MAX_MESSAGE_LENGTH}
           placeholder="Précisez vos disponibilités, votre expérience sur ce type de remplacement…"
-          className="field-input mt-2 resize-none text-sm"
         />
 
         {error && (
