@@ -38,20 +38,18 @@ export function HeaderNav({
             onClick={onNavigate}
             className={
               isHorizontal
-                ? `border-b-2 px-3.5 py-1.5 text-sm whitespace-nowrap transition-colors ${
+                ? `px-3.5 py-1.5 text-sm font-medium whitespace-nowrap transition-colors ${
                     isActive
-                      ? // An underline rather than a filled pill: the reference
-                        // marks the current section with a cream rule under the
-                        // word and nothing else, which leaves the row of links
-                        // reading as navigation instead of as a row of buttons.
-                        // Both states carry the border so the active link's
-                        // underline costs the row no height.
-                        "border-primary font-semibold text-foreground"
-                      : "border-transparent text-muted hover:text-foreground"
+                      ? // Brightness alone, as the reference marks the current
+                        // section: the word goes white and the others stay
+                        // grey. No rule, no pill — the row reads as
+                        // navigation rather than as a row of buttons.
+                        "text-foreground"
+                      : "text-muted hover:text-foreground"
                   }`
                 : `block w-full rounded-lg px-4 py-2.5 text-[15px] font-medium transition-colors ${
                     isActive
-                      ? "bg-primary font-semibold text-primary-foreground"
+                      ? "bg-primary text-primary-foreground"
                       : "text-muted hover:bg-surface-hover hover:text-foreground"
                   }`
             }

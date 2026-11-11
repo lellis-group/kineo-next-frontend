@@ -16,7 +16,7 @@ import { HEADER_HEIGHT, HEADER_HEIGHT_SM } from "@/lib/layout";
 export function HeaderSkeleton() {
   return (
     <header
-      className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur"
+      className="sticky top-0 z-40 bg-background/95 backdrop-blur"
       aria-busy="true"
     >
       <div

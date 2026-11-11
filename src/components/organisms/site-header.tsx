@@ -65,7 +65,7 @@ export function SiteHeader({
   pathname?: string;
 }) {
   return (
-    <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
+    <header className="sticky top-0 z-40 bg-background/95 backdrop-blur">
       <div
         className={cn(
           SITE_SHELL,
