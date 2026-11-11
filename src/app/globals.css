@@ -58,7 +58,7 @@
    * before its tiles arrive — the surface token would be wrong here precisely
    * because the map is not a surface.
    */
-  --map-base: #e9e5d9;
+  --map-base: #f3f0e8;
   --map-ink: #16150f;
 
   /*
@@ -1100,33 +1100,45 @@
   }
 
   /*
-   * The zoom pill: white, round, one hairline between its two halves.
+   * The zoom buttons: two white discs with a gap, as the reference draws them.
    *
-   * `overflow: hidden` is what turns the group's own square box into the pill —
-   * MapLibre puts the radius on the buttons, not on the group, so the group's
-   * corners are only rounded once its own corners are clipped. Buttons are
-   * widened past the 29px MapLibre ships so the pill reads as a control at the
-   * scale the rest of the console draws its controls.
+   * MapLibre ships them as one box with a divider. The group is made
+   * transparent and laid out as a column, and each button carries its own
+   * disc and shadow, at the same size as the « Cadrer » and fullscreen buttons
+   * in the opposite corner (`size-9`).
+   *
+   * The selectors match MapLibre's own: its sheet squares a focused button's
+   * corners (`:focus:first-child`), drops its shadow after a click
+   * (`:focus:not(:focus-visible)`), shades it on hover and rings the group
+   * (`:not(:empty)`). Each of those outranks a bare `button` rule.
    */
-  .maplibregl-ctrl-group {
-    background: #ffffff;
+  .maplibregl-ctrl-group,
+  .maplibregl-ctrl-group:not(:empty) {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    background: transparent;
     border: none;
-    border-radius: 9999px;
-    box-shadow: 0 2px 10px rgb(22 21 15 / 20%);
-    overflow: hidden;
+    box-shadow: none;
   }
 
-  .maplibregl-ctrl-group button {
-    width: 2.25rem;
-    height: 2.25rem;
+  .maplibregl-ctrl-group button,
+  .maplibregl-ctrl-group
+    button:focus:is(:first-child, :last-child, :only-child),
+  .maplibregl-ctrl-group button:focus:not(:focus-visible) {
+    width: calc(var(--spacing) * 9);
+    height: calc(var(--spacing) * 9);
+    border-radius: 9999px;
+    background: rgb(255 255 255 / 90%);
+    box-shadow: 0 2px 10px rgb(22 21 15 / 20%);
   }
 
   .maplibregl-ctrl-group button + button {
-    border-top: 1px solid rgb(22 21 15 / 12%);
+    border-top: none;
   }
 
-  .maplibregl-ctrl-group button:hover {
-    background: #f0eee6;
+  .maplibregl-ctrl-group button:not(:disabled):is(:hover, :active) {
+    background: #ffffff;
   }
 
   /*

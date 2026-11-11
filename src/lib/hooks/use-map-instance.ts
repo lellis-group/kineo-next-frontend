@@ -48,7 +48,7 @@ const MAP_LOCALE: Record<string, string> = {
  * to its own renderer, and the one place this is not a duplicate is the theme —
  * where a change to the token has to change this too.
  */
-const MAP_BASE_COLOR = "#e9e5d9";
+const MAP_BASE_COLOR = "#f3f0e8";
 
 /**
  * The deepest zoom OSM actually serves.
