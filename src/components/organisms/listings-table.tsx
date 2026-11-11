@@ -105,9 +105,18 @@ export const ListingsTable = forwardRef<
         // and report a row on screen while the reader is pages short of it.
         // `CSS.escape` keeps the id a value rather than selector syntax: an id
         // is the backend's, and one quote in it would break the query.
-        const row = tableRef.current?.querySelector<HTMLElement>(
-          `tbody tr[data-listing-id="${CSS.escape(id)}"]`,
-        );
+        //
+        // The panel shows either this table or cards, by its own width, and a
+        // `display: none` row scrolls nowhere while reporting success. So the
+        // query covers the results panel (`data-results`) and keeps the copy
+        // that is actually laid out.
+        const table = tableRef.current;
+        const scope = table?.closest("[data-results]") ?? table;
+        const row = [
+          ...(scope?.querySelectorAll<HTMLElement>(
+            `[data-listing-id="${CSS.escape(id)}"]`,
+          ) ?? []),
+        ].find((node) => node.getClientRects().length > 0);
         if (!row) return false;
         row.scrollIntoView({ behavior: "smooth", block: "center" });
         return true;
@@ -161,7 +170,7 @@ export const ListingsTable = forwardRef<
      */
     <div
       className={cn(
-        "table-flush hidden min-h-0 overflow-auto border-b border-border sm:block",
+        "table-flush hidden min-h-0 overflow-auto border-b border-border @md:block",
         className,
       )}
     >
@@ -181,9 +190,20 @@ export const ListingsTable = forwardRef<
             <th scope="col" className="has-gutter">
               Annonce
             </th>
-            <th scope="col">Cabinet</th>
+            {/*
+              The secondary columns give way to the panel's width (it is a
+              size container — see `ListingsResultsPanel`), not the screen's:
+              beside the facets rail the panel is narrow on a wide screen.
+              « Cabinet » goes first, and its name moves under the title;
+              « Candidats » next. Title, period and status always stay.
+            */}
+            <th scope="col" className="hidden @3xl:table-cell">
+              Cabinet
+            </th>
             <th scope="col">Période</th>
-            <th scope="col">Candidats</th>
+            <th scope="col" className="hidden @2xl:table-cell">
+              Candidats
+            </th>
             <th scope="col" className="text-right">
               Statut
             </th>
@@ -242,11 +262,15 @@ export const ListingsTable = forwardRef<
                       </Link>
                       <p className="truncate text-xs text-muted">
                         {SPECIALTY_LABELS[listing.specialty]}
+                        <span className="@3xl:hidden">
+                          {" · "}
+                          {listing.practiceName}
+                        </span>
                       </p>
                     </div>
                   </div>
                 </td>
-                <td>
+                <td className="hidden @3xl:table-cell">
                   <p className="max-w-[12rem] truncate leading-[var(--cell-icon)] text-foreground">
                     {listing.practiceName}
                   </p>
@@ -261,7 +285,7 @@ export const ListingsTable = forwardRef<
                     endDate={listing.endDate}
                   />
                 </td>
-                <td>
+                <td className="hidden @2xl:table-cell">
                   <ListingCandidatesCell
                     count={listing.applicationsCount}
                     max={listing.maxApplications}

@@ -28,19 +28,32 @@ export function DangerPanel({
 }) {
   return (
     <Card className={cn("border-danger/30 bg-danger/5 p-5 sm:p-6", className)}>
-      <div className="flex items-start gap-3">
+      {/*
+        On a phone the icon and the title share the first line and the body
+        runs the card's full width under them: kept in the icon's column, the
+        body lost a fifth of a 375px screen to the icon's gutter and read ten
+        words a line. From `sm` the body sits beside the icon again. With no
+        title there is nothing to share the line with, so the body stays in
+        the second column at every size.
+      */}
+      <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 sm:items-start">
         <span
           aria-hidden="true"
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-control bg-danger/15 text-danger"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-control bg-danger/15 text-danger sm:row-span-2"
         >
           {icon ?? <AlertIcon className="h-5 w-5" />}
         </span>
-        <div className="min-w-0">
-          {title && (
-            <Heading className="text-base font-medium text-danger">
-              {title}
-            </Heading>
+        {title && (
+          <Heading className="min-w-0 text-base font-medium text-danger">
+            {title}
+          </Heading>
+        )}
+        <div
+          className={cn(
+            "min-w-0",
+            title && "col-span-2 mt-2 sm:col-span-1 sm:col-start-2 sm:mt-0",
           )}
+        >
           {children}
         </div>
       </div>

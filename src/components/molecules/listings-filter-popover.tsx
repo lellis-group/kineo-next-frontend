@@ -10,8 +10,8 @@ import type { BrowseFormFilters } from "@/lib/listings";
 import type { Specialty } from "@/lib/types/api";
 
 /**
- * A control floating on the map, from `lg`: white and shadowed like the map's
- * own buttons, dark ink. Below `lg` the toolbar is an ordinary bar over the
+ * A control floating on the map, from `xl`: white and shadowed like the map's
+ * own buttons, dark ink. Below `xl` the toolbar is an ordinary bar over the
  * map and the control keeps its dark chrome.
  *
  * Opaque, and no `backdrop-blur`: a blurred backdrop over the WebGL canvas
@@ -19,7 +19,7 @@ import type { Specialty } from "@/lib/types/api";
  * map stutter on each pan, zoom and re-frame after a filter change.
  */
 export const MAP_PILL =
-  "lg:border-0 lg:bg-white lg:text-map-ink lg:shadow-[0_2px_10px_rgb(22_21_15/0.18)] lg:hover:bg-white lg:hover:text-map-ink";
+  "xl:border-0 xl:bg-white xl:text-map-ink xl:shadow-[0_2px_10px_rgb(22_21_15/0.18)] xl:hover:bg-white xl:hover:text-map-ink";
 
 export interface SpecialtyOption {
   id: Specialty;
@@ -59,7 +59,7 @@ export function ListingsFilterPopover({
   /** True on any filtered, non-default view — drives the reset affordance. */
   filtered: boolean;
   onResetFilters: () => void;
-  /** Drawn as a white pill on the map from `lg` (see `ListingsToolbar`). */
+  /** Drawn as a white pill on the map from `xl` (see `ListingsToolbar`). */
   onMap?: boolean;
 }) {
   const { draft: fromDraft, setDraft: setFrom } = useDebouncedInput(
@@ -153,7 +153,7 @@ export function ListingsFilterPopover({
           role="dialog"
           aria-label="Filtres de recherche"
           className={cn(
-            "absolute top-[calc(100%+0.5rem)] right-0 z-30 w-[19rem] rounded-card border border-border bg-surface p-4",
+            "absolute top-[calc(100%+0.5rem)] right-0 z-30 w-[19rem] max-w-[calc(100vw-2rem)] rounded-card border border-border bg-surface p-4",
             "shadow-[var(--shadow-pop)]",
           )}
         >

@@ -71,41 +71,44 @@ export function ListingCard({
         router.push(`/listings/${listing.id}`);
       }}
     >
-      <div className="flex items-start gap-3">
+      {/*
+        Icon on the left, status and map control on the right, and the title
+        under them across the card's whole width. The title used to share its
+        row with the badge and the map button, which left it about 100px on a
+        phone — a long posting title wrapped one word per line.
+      */}
+      <div className="flex items-center justify-between gap-3">
         <span className="icon-tilt grid size-9 shrink-0 place-items-center rounded-control bg-primary/10 text-primary">
           <SpecialtyIcon specialty={listing.specialty} className="size-4" />
         </span>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-start justify-between gap-2">
-            <div className="flex min-w-0 items-start gap-1">
-              <Link
-                href={`/listings/${listing.id}`}
-                className="font-medium text-foreground transition-colors hover:text-primary focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-              >
-                {listing.title}
-              </Link>
-              {locatable && (
-                /*
-                  The map control, beside the title rather than instead of it.
-                  The title used to be a button, which left a keyboard reader no
+        <div className="flex shrink-0 items-center gap-1">
+          {locatable && (
+            /*
+                  The map control, a control of its own rather than the title:
+                  the title used to be a button, which left a keyboard reader no
                   way to open the posting from this half of the screen.
                 */
-                <ListingMapButton
-                  title={listing.title}
-                  pressed={selected}
-                  onSelect={() => onListingSelect?.(listing)}
-                />
-              )}
-            </div>
-            <Badge tone={badge.tone} size="md">
-              {badge.label}
-            </Badge>
-          </div>
-          <p className="mt-0.5 text-xs text-muted">
-            {SPECIALTY_LABELS[listing.specialty]} · {listing.practiceName}
-          </p>
+            <ListingMapButton
+              title={listing.title}
+              pressed={selected}
+              onSelect={() => onListingSelect?.(listing)}
+            />
+          )}
+          <Badge tone={badge.tone} size="md">
+            {badge.label}
+          </Badge>
         </div>
       </div>
+
+      <Link
+        href={`/listings/${listing.id}`}
+        className="mt-3 block leading-snug font-medium text-foreground transition-colors hover:text-primary focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+      >
+        {listing.title}
+      </Link>
+      <p className="mt-1 text-xs text-muted">
+        {SPECIALTY_LABELS[listing.specialty]} · {listing.practiceName}
+      </p>
 
       <dl className="mt-4 grid grid-cols-2 gap-x-3 gap-y-3 text-sm">
         <div className="min-w-0">

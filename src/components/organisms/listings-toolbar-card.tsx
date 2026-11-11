@@ -104,12 +104,14 @@ export function ListingsToolbarCard({
       )}
     >
       {/*
-        From `lg`, with a map to float on, the bar loses its card and its
+        From `xl`, with a map to float on, the bar loses its card and its
         controls sit on the map's top-left corner as white pills — the
         reference's « South Bronx, New York » and « Sort by » — leaving the
         right edge to the map's own buttons. The strip itself lets the pointer
         through, so the map still pans under the gaps between the pills.
-        Below `lg`, and in « Liste seule », it stays a dark bar above.
+        Below `xl`, and in « Liste seule », it stays a dark bar above: at
+        `lg` the map column is about 540px wide, and the pills wrapped onto
+        three rows over the map, covering its top half and its markers.
       */}
       <div
         // Map popups open below this strip rather than over the pills — see
@@ -118,12 +120,12 @@ export function ListingsToolbarCard({
         className={cn(
           "order-1 z-10 mb-3 rounded-card border border-border bg-surface p-2 shadow-[var(--shadow-card)]",
           !hideMap &&
-            "lg:pointer-events-none lg:absolute lg:top-3 lg:right-16 lg:left-3 lg:mb-0 lg:rounded-none lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none",
+            "xl:pointer-events-none xl:absolute xl:top-3 xl:right-16 xl:left-3 xl:mb-0 xl:rounded-none xl:border-0 xl:bg-transparent xl:p-0 xl:shadow-none",
         )}
       >
         <ListingsToolbar
           onMap={!hideMap}
-          className={hideMap ? undefined : "lg:[&>*]:pointer-events-auto"}
+          className={hideMap ? undefined : "xl:[&>*]:pointer-events-auto"}
           filters={filters}
           onFiltersChange={onFiltersChange}
           specialties={specialties}

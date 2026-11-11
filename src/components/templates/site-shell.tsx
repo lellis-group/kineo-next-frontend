@@ -70,10 +70,19 @@ export function SiteShell({
       )}
     >
       {header}
+      {/*
+        `relative` is what keeps the workspace's scroll inside `<main>`: without
+        a positioned ancestor, an absolutely positioned descendant — the
+        `sr-only` live regions, for one — is placed against the page rather than
+        this scroller. It then sat at its static position thousands of pixels
+        down, outside the clipped shell, and gave the *window* a second scroll
+        that showed nothing but background on a phone.
+      */}
       <main
         className={cn(
           "flex-1",
-          isFullHeightWorkspace && "flex min-h-0 flex-col overflow-y-auto",
+          isFullHeightWorkspace &&
+            "relative flex min-h-0 flex-col overflow-y-auto",
         )}
       >
         {children}

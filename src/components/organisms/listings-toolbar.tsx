@@ -75,7 +75,7 @@ interface ListingsToolbarProps {
   layout: BrowseLayout;
   onLayoutChange: (layout: BrowseLayout) => void;
   /**
-   * The toolbar floats on the map (from `lg`), as the reference's search and
+   * The toolbar floats on the map (from `xl`), as the reference's search and
    * sort pills do: white controls over the light map instead of a dark bar
    * above it. False when the map is hidden and the toolbar is a bar again.
    */
@@ -116,9 +116,9 @@ export function ListingsToolbar({
   className,
 }: ListingsToolbarProps) {
   // The ink of the icons and secondary words inside a pill: white pills on the
-  // map from `lg`, the dark bar otherwise.
+  // map from `xl`, the dark bar otherwise.
   const pill = onMap ? MAP_PILL : undefined;
-  const pillMuted = onMap ? "text-muted lg:text-black/45" : "text-muted";
+  const pillMuted = onMap ? "text-muted xl:text-black/45" : "text-muted";
   /**
    * What is typed, kept apart from what has been applied.
    *
@@ -166,7 +166,7 @@ export function ListingsToolbar({
         readable floor; on a narrow bar they wrap onto their own lines rather
         than squeeze into unusable slivers.
       */}
-      <div className={cn("min-w-[9rem] flex-1", onMap && "lg:min-w-[8rem]")}>
+      <div className={cn("min-w-[9rem] flex-1", onMap && "xl:min-w-[8rem]")}>
         <label className="sr-only" htmlFor="browse-q">
           Rechercher une annonce
         </label>
@@ -183,7 +183,7 @@ export function ListingsToolbar({
             className={cn(
               "field-input rounded-full py-1.5 pl-9",
               pill,
-              onMap && "lg:placeholder:text-black/45",
+              onMap && "xl:placeholder:text-black/45",
             )}
             placeholder="Mot-clé…"
             value={queryDraft}
@@ -192,7 +192,7 @@ export function ListingsToolbar({
         </div>
       </div>
 
-      <div className={cn("min-w-[9rem] flex-1", onMap && "lg:min-w-[8rem]")}>
+      <div className={cn("min-w-[9rem] flex-1", onMap && "xl:min-w-[8rem]")}>
         <label className="sr-only" htmlFor="browse-city">
           Rechercher une ville
         </label>
@@ -209,7 +209,7 @@ export function ListingsToolbar({
             className={cn(
               "field-input rounded-full py-1.5 pl-9",
               pill,
-              onMap && "lg:placeholder:text-black/45",
+              onMap && "xl:placeholder:text-black/45",
             )}
             placeholder="Ville ou CP"
             value={draft}
@@ -250,7 +250,7 @@ export function ListingsToolbar({
               // The options keep the dark theme's colours: a native list opens
               // on the page's dark scheme, where the pill's dark ink would vanish.
               "cursor-pointer appearance-none bg-transparent py-0 pr-5 pl-1.5 text-control font-medium whitespace-nowrap text-foreground focus:outline-none [&_option]:bg-surface [&_option]:text-foreground",
-              onMap && "lg:text-map-ink",
+              onMap && "xl:text-map-ink",
             )}
           >
             {BROWSE_SORTS.map((option) => (
@@ -302,7 +302,7 @@ export function ListingsToolbar({
           onMap && !filters.urgentOnly && MAP_PILL,
           onMap &&
             filters.urgentOnly &&
-            "lg:shadow-[0_2px_10px_rgb(22_21_15/0.18)]",
+            "xl:shadow-[0_2px_10px_rgb(22_21_15/0.18)]",
         )}
         onClick={() => onFiltersChange({ urgentOnly: !filters.urgentOnly })}
       >
@@ -322,7 +322,7 @@ export function ListingsToolbar({
         className={cn(
           "ml-auto flex shrink-0 items-center gap-0.5 rounded-full border border-border p-1",
           onMap && MAP_PILL,
-          onMap && "lg:p-1",
+          onMap && "xl:p-1",
         )}
       >
         <legend className="sr-only">Disposition de l'écran</legend>
@@ -342,7 +342,7 @@ export function ListingsToolbar({
                   ? "bg-primary text-primary-foreground"
                   : cn(
                       "text-muted hover:text-foreground",
-                      onMap && "lg:text-black/50 lg:hover:text-map-ink",
+                      onMap && "xl:text-black/50 xl:hover:text-map-ink",
                     ),
               )}
             >

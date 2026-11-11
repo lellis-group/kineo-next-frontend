@@ -200,7 +200,19 @@ export function ListingsResultsPanel({
         </div>
       }
     >
-      <div className={cn("flex flex-col", RESULTS_BOX)}>
+      {/*
+        A size container: cards or table is decided by the width *this panel*
+        gets, not the screen's. Beside the facets rail at 1024px the panel is
+        about 550px wide, and the table — Annonce, Cabinet, Période, Candidats,
+        Statut — cut its last columns behind a horizontal scroll nothing
+        signalled. Now the table drops its secondary columns as the panel
+        narrows (see `ListingsTable`), and below 28rem — a phone — the cards
+        show instead.
+
+        `data-results` scopes the table's `scrollToId` to this panel, whichever
+        presentation is showing.
+      */}
+      <div data-results className={cn("@container flex flex-col", RESULTS_BOX)}>
         {/*
           The visual spotlight says « this is the row »; this says it in words,
           page turn included. Kept mounted whether the list has rows or not, so
@@ -262,7 +274,7 @@ export function ListingsResultsPanel({
             <ul
               className={cn(
                 REFRESHING,
-                "flex flex-col gap-3 sm:hidden",
+                "flex flex-col gap-3 @md:hidden",
                 loading && "opacity-60",
               )}
             >
@@ -282,11 +294,7 @@ export function ListingsResultsPanel({
             <ListingsTable
               ref={tableRef}
               listings={listings}
-              className={cn(
-                REFRESHING,
-                loading && "opacity-60",
-                "sm:min-h-0 lg:flex-1",
-              )}
+              className={cn(REFRESHING, loading && "opacity-60", "lg:flex-1")}
               onHoveredChange={onHoveredChange}
               selectedListingId={selectedListingId}
               onListingSelect={onListingSelect}

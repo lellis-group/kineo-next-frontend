@@ -127,7 +127,13 @@ export function SiteFooter() {
           "sm:flex-row sm:items-start sm:justify-between sm:gap-10",
         )}
       >
-        <div className="min-w-0">
+        {/*
+          `flex-1 min-w-0` here and `shrink-0` on the links: in a row, only the
+          brand gives way — its tagline already truncates — while the link
+          columns keep their width. Both used to shrink, and the columns, held
+          at `min-w-40` each, ran 35px off a 768px screen.
+        */}
+        <div className="min-w-0 sm:flex-1">
           <div className="flex items-center gap-2.5">
             <Link
               href="/"
@@ -157,7 +163,7 @@ export function SiteFooter() {
           </p>
         </div>
 
-        <div className="flex min-w-0 flex-col gap-5 sm:flex-row sm:gap-12">
+        <div className="flex flex-col gap-5 sm:shrink-0 sm:flex-row sm:gap-8 lg:gap-12">
           <FooterLinkGroup title="Produit" links={footerContent.productLinks} />
           <FooterLinkGroup
             title="Légal & Contact"
