@@ -2,16 +2,13 @@
 
 import type * as maplibregl from "maplibre-gl";
 import type { Map as MapLibreMap, Marker } from "maplibre-gl";
-import {
-  type RefObject,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { type RefObject, useCallback, useEffect, useMemo, useRef } from "react";
+import { useLatest } from "@/lib/hooks/use-latest";
+import { useMapDismiss } from "@/lib/hooks/use-map-dismiss";
+import { useMapViewport } from "@/lib/hooks/use-map-viewport";
 import type { MapPlace, MapPlaceListing } from "@/lib/listings";
 import { fitToPlaces, flyToPoint } from "@/lib/map/camera";
+import { framingKey } from "@/lib/map/camera-target";
 import { clusterPlaces } from "@/lib/map/clustering";
 import { paintStates, rebuildMarkers } from "@/lib/map/markers";
 import { openCardForSelected } from "@/lib/map/popup";
@@ -139,26 +136,12 @@ export function useMapMarkers({
    * and listing them would tear down and rebuild every marker on every row
    * hover — which is the one thing this screen does most.
    */
-  const onHoverRef = useRef(onHoveredChange);
-  onHoverRef.current = onHoveredChange;
-
-  const onPickRef = useRef(onListingPick);
-  onPickRef.current = onListingPick;
-
-  const hoveredIdRef = useRef(hoveredListingId);
-  hoveredIdRef.current = hoveredListingId;
-
-  const selectedRef = useRef(selectedListing);
-  selectedRef.current = selectedListing;
-
-  const onSelectionClearRef = useRef(onSelectionClear);
-  onSelectionClearRef.current = onSelectionClear;
-
-  const onMarkerSelectRef = useRef(onMarkerSelect);
-  onMarkerSelectRef.current = onMarkerSelect;
-
-  const onOpenRef = useRef(onListingOpen);
-  onOpenRef.current = onListingOpen;
+  const onHoverRef = useLatest(onHoveredChange);
+  const onPickRef = useLatest(onListingPick);
+  const hoveredIdRef = useLatest(hoveredListingId);
+  const selectedRef = useLatest(selectedListing);
+  const onMarkerSelectRef = useLatest(onMarkerSelect);
+  const onOpenRef = useLatest(onListingOpen);
 
   /** The framing key the camera was last fitted over, so a refit is not repeated. */
   const lastFramedKeyRef = useRef<string | null>(null);
@@ -166,34 +149,7 @@ export function useMapMarkers({
   /** The cluster set on the map, so an unchanged one is not rebuilt. */
   const lastSignatureRef = useRef<string | null>(null);
 
-  /**
-   * The viewport as last seen, and the trigger for re-clustering.
-   *
-   * Which markers touch depends on the zoom *and* on where the map is scrolled —
-   * panning two pins together merges them just as surely as zooming in does — so
-   * the state carries the centre as well as the level. Null until the map has
-   * settled once, which is also the signal that clustering can run at all.
-   *
-   * `zoomend`/`moveend` rather than `zoom` and `move`: the grouping only matters
-   * once the reader lets go, and re-projecting on every frame of a pinch is work
-   * spent on an answer nobody looks at until the gesture ends.
-   */
-  const [viewport, setViewport] = useState<Viewport | null>(null);
-
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map || !ready) {
-      return;
-    }
-    const onSettled = () => setViewport(viewportOf(map));
-    map.on("zoomend", onSettled);
-    map.on("moveend", onSettled);
-    onSettled();
-    return () => {
-      map.off("zoomend", onSettled);
-      map.off("moveend", onSettled);
-    };
-  }, [mapRef, ready]);
+  const viewport = useMapViewport(mapRef, ready);
 
   const clusters = useMemo(
     () =>
@@ -300,72 +256,7 @@ export function useMapMarkers({
     );
   }, [mapRef, ready, selectedListing]);
 
-  /**
-   * Escape, and the map's own background: the two ways a choice is dropped.
-   *
-   * MapLibre binds no Escape handler of its own, so a keyboard user could open a
-   * popup and have no way to dismiss it. Bound here rather than by the component
-   * because the popup is this hook's state: whoever opens a thing closes it. On
-   * the document, because focus never moves into the popup — it is not a focus
-   * trap and should not become one.
-   *
-   * It clears the *selection* too, not just the card: the card belongs to the
-   * choice, and a popup closed while the row stayed lit would be a ring with
-   * nothing on the map to explain it. The click on the map's background does
-   * the same — a second click on the marker re-opens, since markers stop their
-   * propagation.
-   */
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map || !ready) return undefined;
-
-    const dismiss = () => {
-      popupRef.current?.remove();
-      popupRef.current = null;
-      onSelectionClearRef.current?.();
-    };
-
-    /**
-     * A click on the map's background — not on the card it is showing.
-     *
-     * The guard matters because the card lives *inside* the map container, so a
-     * click on one of its entries bubbles here: without it, an entry's click
-     * would set a choice and this would clear it in the same event — the popup
-     * would be the one door that could not make a selection.
-     */
-    const onMapClick = (event: maplibregl.MapMouseEvent) => {
-      const target = event.originalEvent?.target as HTMLElement | null;
-      if (target?.closest(".maplibregl-popup")) return;
-      dismiss();
-    };
-
-    /**
-     * Escape clears a choice the *map* made — not whichever control the reader
-     * happens to be in.
-     *
-     * The toolbar's « Filtres » popover and its two search fields each bind
-     * their own Escape to close themselves, and this listener is on the
-     * document like theirs: ungated, closing the popover also reached over and
-     * dropped the selection on the map. The map owns the key when focus is
-     * nowhere (the body a click on the canvas or a marker left) or inside the
-     * map container — which is where the markers and the popup live.
-     */
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
-      const target = event.target as HTMLElement | null;
-      if (target && target !== document.body) {
-        if (!map.getContainer().contains(target)) return;
-      }
-      dismiss();
-    };
-
-    map.on("click", onMapClick);
-    document.addEventListener("keydown", onKeyDown);
-    return () => {
-      map.off("click", onMapClick);
-      document.removeEventListener("keydown", onKeyDown);
-    };
-  }, [mapRef, ready]);
+  useMapDismiss({ mapRef, ready, popupRef, onSelectionClear });
 
   useEffect(
     () => () => {
@@ -413,43 +304,4 @@ export function useMapMarkers({
   );
 
   return useMemo(() => ({ focusOn, framePlaces }), [focusOn, framePlaces]);
-}
-
-/** Where the reader is looking, as the clustering depends on it. */
-interface Viewport {
-  zoom: number;
-  center: [number, number];
-}
-
-/**
- * The viewport, read at the moment a gesture settles.
- *
- * Carries the centre as well as the level because panning two pins together
- * merges them exactly as surely as zooming in does, and a state holding only the
- * zoom would leave a pan silently unreclustered.
- */
-function viewportOf(map: MapLibreMap): Viewport {
-  const centre = map.getCenter();
-  return { zoom: map.getZoom(), center: [centre.lng, centre.lat] };
-}
-
-/**
- * The collection a camera framing stands for, as a comparable key.
- *
- * Key and coordinates, sorted: the order the read answered in says nothing
- * about geography (`/places` ranks practices by activity), and the coordinates
- * belong in the key because a practice regrouped at a new point deserves the
- * new frame. Two places on the same practice key are two entries here — the
- * merge that `clusterPlaces` does later is a matter of zoom, not of identity.
- */
-function framingKey(places: readonly MapPlace[]): string {
-  return places
-    .map(
-      (place) =>
-        `${place.key}:${place.latitude.toFixed(5)},${place.longitude.toFixed(
-          5,
-        )}`,
-    )
-    .sort()
-    .join("|");
 }

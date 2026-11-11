@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { cameraTargetFor, distinctPoints } from "./camera-target";
+import { cameraTargetFor, distinctPoints, framingKey } from "./camera-target";
 import type { MapPlace, MapPlaceListing } from "./types";
 
 /** A preview at a coordinate; only the fields this module reads are set. */
@@ -93,5 +93,28 @@ describe("cameraTargetFor", () => {
     );
 
     expect(target).toEqual({ kind: "point", center: [-0.58, 44.84] });
+  });
+});
+
+describe("framingKey", () => {
+  function place(key: string, latitude: number, longitude: number): MapPlace {
+    return { key, latitude, longitude, count: 1, listings: [] };
+  }
+
+  it("ignores the order the read answered in", () => {
+    // `/places` ranks by activity; a reordering is the same frame.
+    const a = place("a", 44.84, -0.58);
+    const b = place("b", 45.76, 4.83);
+    expect(framingKey([a, b])).toBe(framingKey([b, a]));
+  });
+
+  it("changes when a practice moves to a new point", () => {
+    expect(framingKey([place("a", 44.84, -0.58)])).not.toBe(
+      framingKey([place("a", 44.85, -0.58)]),
+    );
+  });
+
+  it("gives the empty collection its own key", () => {
+    expect(framingKey([])).toBe("");
   });
 });

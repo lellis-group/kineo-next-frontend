@@ -58,3 +58,22 @@ export function cameraTargetFor(place: MapPlace): CameraTarget {
 
   return { kind: "bounds", points };
 }
+
+/**
+ * The collection a camera framing stands for, as a comparable key.
+ *
+ * Key and coordinates, sorted: the order the read answered in says nothing
+ * about geography (`/places` ranks practices by activity), and the coordinates
+ * belong in the key because a practice regrouped at a new point deserves the
+ * new frame. Two places on the same practice key are two entries here — the
+ * merge that `clusterPlaces` does later is a matter of zoom, not of identity.
+ */
+export function framingKey(places: readonly MapPlace[]): string {
+  return places
+    .map(
+      (place) =>
+        `${place.key}:${place.latitude.toFixed(5)},${place.longitude.toFixed(5)}`,
+    )
+    .sort()
+    .join("|");
+}

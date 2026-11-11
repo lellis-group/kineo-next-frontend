@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useLatest } from "@/lib/hooks/use-latest";
 
 /**
  * A text field that reports a value only when the reader is done with it.
@@ -23,8 +24,7 @@ import { useEffect, useRef, useState } from "react";
  */
 export function useCommittedInput(committed: string) {
   const [draft, setDraft] = useState(committed);
-  const committedRef = useRef(committed);
-  committedRef.current = committed;
+  const committedRef = useLatest(committed);
   const lastSentRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -72,11 +72,9 @@ export function useDebouncedInput(
   delay = 300,
 ) {
   const [draft, setDraft] = useState(committed);
-  const committedRef = useRef(committed);
-  committedRef.current = committed;
+  const committedRef = useLatest(committed);
   const lastSentRef = useRef<string | null>(null);
-  const onCommitRef = useRef(onCommit);
-  onCommitRef.current = onCommit;
+  const onCommitRef = useLatest(onCommit);
 
   // An external change — reset, or the back button — becomes the new draft.
   // The echo of this field's own commit is not external: the navigation lands
