@@ -66,12 +66,16 @@ export function isDefaultBrowseView(view: BrowseView): boolean {
   );
 }
 
-/** The only sort values the URL is allowed to carry; anything else falls back. */
-const BROWSE_SORT_IDS: readonly BrowseSort[] = [
-  "recent",
-  "urgent",
-  "startDate",
-];
+/**
+ * The only sort values the URL is allowed to carry; anything else falls back.
+ *
+ * `urgent` is not one of them any more. « Urgentes d'abord » reordered the
+ * whole collection and kept every posting, so the map and the counts did not
+ * move, and a reader who picked it expected to see the urgent ones only. That
+ * is the `urgent=true` filter, now a toggle beside the sort; an old link
+ * carrying `sort=urgent` is read as that filter (see `browseViewFromParams`).
+ */
+const BROWSE_SORT_IDS: readonly BrowseSort[] = ["recent", "startDate"];
 
 /** The one date shape the two `<input type="date">` fields produce and read. */
 const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
@@ -113,7 +117,8 @@ export function browseViewFromParams(params: Pick<URLSearchParams, "get">): {
       q: (params.get("q") ?? "").trim(),
       from: readDate(params.get("from") ?? ""),
       to: readDate(params.get("to") ?? ""),
-      urgentOnly: params.get("urgent") === "true",
+      urgentOnly:
+        params.get("urgent") === "true" || params.get("sort") === "urgent",
     },
     page: (() => {
       const page = Number(params.get("page") ?? "");

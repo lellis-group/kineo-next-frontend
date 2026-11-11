@@ -1,6 +1,8 @@
 "use client";
 
+import { Chip } from "@/components/atoms/chip";
 import {
+  AlertTriangleIcon,
   ChevronDownIcon,
   MapPinIcon,
   SearchIcon,
@@ -24,7 +26,6 @@ import type {
 /** How the rows are ordered — the labels for the sort picker. */
 const BROWSE_SORTS: readonly { id: BrowseSort; label: string }[] = [
   { id: "recent", label: "Plus récentes" },
-  { id: "urgent", label: "Urgentes d'abord" },
   { id: "startDate", label: "Date de début" },
 ];
 
@@ -145,7 +146,7 @@ export function ListingsToolbar({
         than squeeze into unusable slivers.
       */}
       <div
-        className={cn("min-w-[9rem] flex-1", onMap && "lg:w-48 lg:flex-none")}
+        className={cn("min-w-[9rem] flex-1", onMap && "lg:w-40 lg:flex-none")}
       >
         <label className="sr-only" htmlFor="browse-q">
           Rechercher une annonce
@@ -173,7 +174,7 @@ export function ListingsToolbar({
       </div>
 
       <div
-        className={cn("min-w-[9rem] flex-1", onMap && "lg:w-48 lg:flex-none")}
+        className={cn("min-w-[9rem] flex-1", onMap && "lg:w-40 lg:flex-none")}
       >
         <label className="sr-only" htmlFor="browse-city">
           Rechercher une ville
@@ -193,7 +194,7 @@ export function ListingsToolbar({
               pill,
               onMap && "lg:placeholder:text-black/45",
             )}
-            placeholder="Ville ou code postal"
+            placeholder="Ville ou CP"
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
             onBlur={commitCity}
@@ -269,6 +270,30 @@ export function ListingsToolbar({
         onLayoutChange={onLayoutChange}
         onMap={onMap}
       />
+
+      {/*
+        « Urgentes » is a filter, and it sits on the row rather than in the
+        popover: it is the one narrowing readers reach for, and it changes the
+        map, the rows and the counts together. It used to be offered as a sort
+        (« Urgentes d'abord »), which kept every posting and moved none of the
+        pins — not what the word promised.
+      */}
+      <Chip
+        size="md"
+        active={filters.urgentOnly}
+        aria-pressed={filters.urgentOnly}
+        className={cn(
+          "shrink-0 whitespace-nowrap",
+          onMap && !filters.urgentOnly && MAP_PILL,
+          onMap &&
+            filters.urgentOnly &&
+            "lg:shadow-[0_2px_10px_rgb(22_21_15/0.18)]",
+        )}
+        onClick={() => onFiltersChange({ urgentOnly: !filters.urgentOnly })}
+      >
+        <AlertTriangleIcon className="mr-1 inline-block size-3.5 align-[-0.15em]" />
+        Urgentes
+      </Chip>
     </div>
   );
 }

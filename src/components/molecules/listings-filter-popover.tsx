@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { Chip } from "@/components/atoms/chip";
-import { AlertTriangleIcon, SlidersIcon } from "@/components/atoms/icons";
+import { SlidersIcon } from "@/components/atoms/icons";
 import { SegmentedControl } from "@/components/molecules/segmented-control";
 import { Select } from "@/components/molecules/select";
 import { cn } from "@/lib/cn";
@@ -97,7 +97,8 @@ export function ListingsFilterPopover({
     (value) => onFiltersChange({ to: value }),
   );
 
-  // How many of the four narrowing controls are applied. It is what the
+  // How many of the narrowing controls inside the panel are applied (« Urgentes »
+  // is on the row, where its own pressed state says so). It is what the
   // « Filtres » button carries: a panel that hides applied filters without
   // saying so would leave the reader reading a narrowed map with no clue what
   // narrowed it.
@@ -106,7 +107,6 @@ export function ListingsFilterPopover({
     filters.q.trim() !== "",
     filters.from !== "",
     filters.to !== "",
-    filters.urgentOnly,
   ].filter(Boolean).length;
 
   const [open, setOpen] = useState(false);
@@ -259,18 +259,6 @@ export function ListingsFilterPopover({
                 </div>
               </div>
             </div>
-
-            <Chip
-              size="block"
-              className="shrink-0 whitespace-nowrap"
-              aria-pressed={filters.urgentOnly}
-              onClick={() =>
-                onFiltersChange({ urgentOnly: !filters.urgentOnly })
-              }
-            >
-              <AlertTriangleIcon className="mr-1 inline-block align-[-0.15em] size-3.5" />
-              Urgentes seulement
-            </Chip>
 
             {/*
               The way out, and it only exists on a filtered view. It clears all

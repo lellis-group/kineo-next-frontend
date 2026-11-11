@@ -309,7 +309,7 @@ export function ProgressCurve({
             height: BADGE,
           }}
         >
-          <span className="relative flex h-full items-center rounded-control bg-foreground px-2.5 text-control leading-none font-medium text-background tabular-nums shadow-[0_2px_8px_rgb(0_0_0/0.35)] after:absolute after:top-full after:left-1/2 after:-translate-x-1/2 after:border-x-[5px] after:border-t-[5px] after:border-x-transparent after:border-t-foreground after:content-['']">
+          <span className="relative flex h-full items-center rounded-control bg-foreground px-2.5 whitespace-nowrap text-control leading-none font-medium text-background tabular-nums shadow-[0_2px_8px_rgb(0_0_0/0.35)] after:absolute after:top-full after:left-1/2 after:-translate-x-1/2 after:border-x-[5px] after:border-t-[5px] after:border-x-transparent after:border-t-foreground after:content-['']">
             {rounded} %
           </span>
         </div>

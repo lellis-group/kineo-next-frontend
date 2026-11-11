@@ -593,7 +593,7 @@ describe("browseViewFromParams", () => {
       to: "2026-10-31",
       urgent: "true",
       page: "3",
-      sort: "urgent",
+      sort: "startDate",
     });
 
     const { filters, page, sort } = browseViewFromParams(params);
@@ -607,7 +607,22 @@ describe("browseViewFromParams", () => {
       urgentOnly: true,
     });
     expect(page).toBe(3);
-    expect(sort).toBe("urgent");
+    expect(sort).toBe("startDate");
+  });
+
+  /**
+   * « Urgentes d'abord » kept every posting, so a reader who picked it saw the
+   * map and the counts unchanged. A link saved from that time asks for the
+   * urgent postings, which is the filter: it narrows, and the ordering falls
+   * back to the default.
+   */
+  it("reads an old sort=urgent link as the urgent filter", () => {
+    const { filters, sort } = browseViewFromParams(
+      new URLSearchParams({ sort: "urgent" }),
+    );
+
+    expect(filters.urgentOnly).toBe(true);
+    expect(sort).toBe("recent");
   });
 
   /**
@@ -751,7 +766,7 @@ describe("browse view round-trips through the URL", () => {
         urgentOnly: true,
       },
       3,
-      "urgent",
+      "startDate",
     );
 
     const { filters, page, sort } = browseViewFromParams(
@@ -767,7 +782,7 @@ describe("browse view round-trips through the URL", () => {
       urgentOnly: true,
     });
     expect(page).toBe(3);
-    expect(sort).toBe("urgent");
+    expect(sort).toBe("startDate");
   });
 
   it("round-trips the default view to an empty query and back", () => {
