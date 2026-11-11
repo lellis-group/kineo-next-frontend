@@ -5,7 +5,7 @@ import { PublicHome } from "@/components/templates/public-home";
 import { serverTransport } from "@/lib/api-transport.server";
 import { fetchDashboardData } from "@/lib/dashboard";
 import { requireMember } from "@/lib/require-member";
-import { fetchServerAuth } from "@/lib/server-auth";
+import { fetchKnownServerAuth } from "@/lib/server-auth";
 
 /**
  * Static shell. The session decides which of the two pages this is, and it is
@@ -26,7 +26,9 @@ export default function HomePage() {
 }
 
 async function Home() {
-  const auth = await fetchServerAuth();
+  // Known, not merely read: on a busy backend the session can be unreadable,
+  // and showing the marketing page to a signed-in reader was the wrong answer.
+  const auth = await fetchKnownServerAuth();
 
   if (auth.status !== "member") {
     return <PublicHome />;

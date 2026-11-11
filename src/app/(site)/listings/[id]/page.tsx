@@ -63,6 +63,15 @@ async function ApplyEntryInner({ listingId }: { listingId: string }) {
   switch (auth.status) {
     case "anonymous":
       return null;
+    case "unavailable":
+      // The posting is public and stays readable; only the apply entry
+      // depends on who is reading, and that could not be checked.
+      return (
+        <p className="text-sm text-muted">
+          Impossible de vérifier votre session pour le moment. Rechargez la page
+          dans un instant pour postuler.
+        </p>
+      );
     case "member":
       if (auth.role === null) {
         return (

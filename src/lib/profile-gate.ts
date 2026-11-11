@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { serverTransport } from "./api-transport.server";
 import { fetchMyProfile } from "./profile-service";
 import { requireMember } from "./require-member";
-import { fetchServerAuth, type ServerAuthState } from "./server-auth";
+import { fetchKnownServerAuth, type ServerAuthState } from "./server-auth";
 
 /**
  * The member variant only.
@@ -37,7 +37,7 @@ export async function passProfileGate(
   mode: ProfileGateMode,
 ): Promise<{ auth: MemberAuth; profile: ApiProfile | null }> {
   const [auth, profile] = await Promise.all([
-    fetchServerAuth(),
+    fetchKnownServerAuth(),
     readProfileFor(mode),
   ]);
 
