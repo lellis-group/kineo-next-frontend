@@ -22,10 +22,10 @@ export function StatCard({
     <Card className="flex h-full flex-col gap-1.5 p-5 sm:p-6">
       <div className="flex items-center justify-between gap-3">
         <h3 className="min-w-0 text-sm text-muted">{title}</h3>
-        <Icon className="h-5 w-5 shrink-0 text-xl text-primary" />
+        <Icon className="h-5 w-5 shrink-0 text-xl text-muted" />
       </div>
 
-      <p className="text-2xl font-medium tracking-tight break-words sm:text-3xl">
+      <p className="text-2xl font-normal tracking-tight break-words sm:text-3xl">
         {value}
       </p>
 

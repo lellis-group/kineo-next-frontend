@@ -132,16 +132,23 @@ export function MyListingsView({
                 >
                   Urgentes
                 </Chip>
-
-                <SegmentedControl
-                  ariaLabel="Filtrer les annonces par situation"
-                  options={buckets}
-                  value={currentFilter}
-                  onChange={onFilterChange}
-                />
               </div>
             }
           >
+            {/*
+              The status track on a row of its own, under the title, where the
+              title row keeps only the « Urgentes » toggle. Seven buckets beside
+              a title wrapped the header onto three lines — the toggle alone on
+              the first, the track cut off on the second. The reference's card
+              header is one line; the track is the first thing in the body.
+            */}
+            <SegmentedControl
+              className="mb-4 self-start"
+              ariaLabel="Filtrer les annonces par situation"
+              options={buckets}
+              value={currentFilter}
+              onChange={onFilterChange}
+            />
             {/*
               Two presentations, one removed by CSS: `display:none` also takes
               it out of the accessibility tree, so a screen reader and a
