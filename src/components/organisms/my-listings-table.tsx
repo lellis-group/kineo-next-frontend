@@ -80,7 +80,7 @@ export function MyListingsTable({ listings }: MyListingsTableProps) {
                       <Link
                         href={href}
                         title={listing.title}
-                        className="block max-w-[22rem] truncate font-medium leading-[var(--cell-icon)] text-foreground transition-colors hover:text-primary"
+                        className="block max-w-[17rem] truncate font-medium leading-[var(--cell-icon)] text-foreground transition-colors hover:text-primary"
                       >
                         {listing.title}
                       </Link>

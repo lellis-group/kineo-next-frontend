@@ -131,15 +131,14 @@ export function ListingsFacetsRail({
       aria-busy={busy}
     >
       {/*
-        Reserved, not conditional: a status line that appears only while loading
-        would move every panel down for the length of the fetch. `invisible`
-        keeps the space and takes the idle line out of the accessibility tree.
+        For a screen reader only. On screen the rail dims while it refreshes
+        (above), and a visible line here — even reserved and invisible when
+        idle — pushed every panel below the top of the map beside it, so the
+        rail never lined up with the column next to it. The content is
+        conditional so the region announces the refresh and then goes quiet.
       */}
-      <output
-        className={cn("text-xs text-muted", !busy && "invisible")}
-        aria-live="polite"
-      >
-        Actualisation…
+      <output className="sr-only" aria-live="polite">
+        {busy ? "Actualisation…" : ""}
       </output>
 
       <Panel title="Annonces urgentes" action={<PanelExpand />}>

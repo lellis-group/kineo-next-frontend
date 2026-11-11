@@ -1,5 +1,8 @@
-import { Chip } from "@/components/atoms/chip";
-import { FileTextIcon, UsersIcon } from "@/components/atoms/icons";
+import {
+  ChevronDownIcon,
+  FileTextIcon,
+  UsersIcon,
+} from "@/components/atoms/icons";
 import { Pagination } from "@/components/molecules/pagination";
 import { Panel } from "@/components/molecules/panel";
 import { SegmentedControl } from "@/components/molecules/segmented-control";
@@ -22,6 +25,11 @@ import {
   MY_LISTINGS_PAGE_SIZE_CHOICES,
   type MyListingsPageSize,
 } from "@/lib/page-size";
+
+const URGENCY_OPTIONS = [
+  { id: "ALL", label: "Toutes" },
+  { id: "URGENT", label: "Urgentes" },
+] as const;
 
 export interface MyListingsViewProps {
   listings: MyListing[];
@@ -104,51 +112,74 @@ export function MyListingsView({
 
   return (
     <div className={SHELL}>
-      <div className="grid gap-4 lg:min-h-0 lg:flex-1 lg:grid-cols-[22.5rem_minmax(0,1fr)] lg:gap-3">
+      <div className="grid gap-3 lg:min-h-0 lg:flex-1 lg:grid-cols-[22.5rem_minmax(0,1fr)] lg:gap-3">
         <div className="scrollbar-quiet order-2 lg:order-1 lg:flex lg:min-h-0 lg:flex-col lg:overflow-y-auto lg:pr-1">
           <MyListingsRail listings={listings} counts={counts} />
         </div>
 
-        <div className="order-1 flex min-w-0 flex-col lg:order-2 lg:min-h-0 lg:flex-1">
+        <div className="order-1 flex min-w-0 flex-col gap-3 lg:order-2 lg:min-h-0 lg:flex-1">
           <Panel
             fill
             className="lg:flex-1"
-            title="Mes offres"
+            title={
+              <>
+                Mes offres{" "}
+                <span className="text-muted tabular-nums">{counts.total}</span>
+              </>
+            }
             action={
-              <div className="flex min-w-0 flex-wrap items-center justify-end gap-3">
+              /*
+                The card header is built like the browse screen's « Annonces »
+                header — title and count on the left, its controls on the
+                right — so the two workspaces open on a header of the same
+                height and the tables under them start at the same line.
+
+                Urgency is orthogonal to the status buckets (a posting can be
+                urgent and closed), so it is its own two-way track rather than
+                an eighth bucket. It carries no counter: the endpoint breaks its
+                totals down by status only.
+              */
+              <div className="flex min-w-0 flex-wrap items-center justify-end gap-2">
                 {/*
-                  Urgency is orthogonal to the status buckets — a posting can be
-                  urgent and closed — so it is a toggle beside the tabs rather
-                  than a tenth bucket. It carries no counter: the endpoint breaks
-                  its totals down by status only, and a « (0) » that meant « the
-                  server did not send this » would be worse than no number.
+                  The nine status buckets as one pill with a menu, the way the
+                  browse screen offers « Trier par »: as a track they ran past
+                  the card at any desktop width, and as a row under the title
+                  they pushed the table below the line the browse table starts
+                  on. The counters stay, in the menu.
                 */}
-                <Chip
-                  size="sm"
-                  active={urgentOnly}
-                  className="shrink-0 whitespace-nowrap"
-                  aria-pressed={urgentOnly}
-                  onClick={onUrgentToggle}
-                >
-                  Urgentes
-                </Chip>
+                <label className="flex shrink-0 cursor-pointer items-center rounded-full border border-border py-1.5 pr-1.5 pl-3.5 transition-colors hover:border-border-strong has-[select:focus-visible]:ring-2 has-[select:focus-visible]:ring-ring">
+                  <span className="text-control whitespace-nowrap text-muted">
+                    Statut
+                  </span>
+                  <span className="relative">
+                    <select
+                      value={currentFilter}
+                      onChange={(event) =>
+                        onFilterChange(event.target.value as ListingsFilter)
+                      }
+                      className="cursor-pointer appearance-none bg-transparent py-0 pr-5 pl-1.5 text-control font-medium whitespace-nowrap text-foreground focus:outline-none [&_option]:bg-surface [&_option]:text-foreground"
+                    >
+                      {buckets.map((bucket) => (
+                        <option key={bucket.id} value={bucket.id}>
+                          {bucket.label} ({bucket.count})
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDownIcon className="pointer-events-none absolute top-1/2 right-1 size-3.5 -translate-y-1/2 text-muted" />
+                  </span>
+                </label>
+
+                <SegmentedControl
+                  ariaLabel="Filtrer par urgence"
+                  options={URGENCY_OPTIONS}
+                  value={urgentOnly ? "URGENT" : "ALL"}
+                  onChange={(next) => {
+                    if ((next === "URGENT") !== urgentOnly) onUrgentToggle();
+                  }}
+                />
               </div>
             }
           >
-            {/*
-              The status track on a row of its own, under the title, where the
-              title row keeps only the « Urgentes » toggle. Seven buckets beside
-              a title wrapped the header onto three lines — the toggle alone on
-              the first, the track cut off on the second. The reference's card
-              header is one line; the track is the first thing in the body.
-            */}
-            <SegmentedControl
-              className="mb-4 self-start"
-              ariaLabel="Filtrer les annonces par situation"
-              options={buckets}
-              value={currentFilter}
-              onChange={onFilterChange}
-            />
             {/*
               Two presentations, one removed by CSS: `display:none` also takes
               it out of the accessibility tree, so a screen reader and a
