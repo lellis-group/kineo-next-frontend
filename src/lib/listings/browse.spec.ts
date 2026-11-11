@@ -31,6 +31,7 @@ describe("adaptFacets", () => {
         PSYCHIATRIST: 0,
         OTHER: 0,
       },
+      byStartWeek: [],
     });
 
     expect(facets.bySpecialty).toHaveLength(5);
@@ -50,6 +51,7 @@ describe("adaptFacets", () => {
         PSYCHIATRIST: 0,
         OTHER: 0,
       },
+      byStartWeek: [],
     });
 
     expect(facets.bySpecialty.map((row) => row.percent)).toEqual([
@@ -67,6 +69,28 @@ describe("adaptFacets", () => {
     expect(facets.total).toBe(0);
     expect(facets.urgent).toBe(0);
     expect(facets.bySpecialty.every((row) => row.count === 0)).toBe(true);
+    // No series is « no data », not twelve quiet weeks: the panel is skipped.
+    expect(facets.byStartWeek).toEqual([]);
+  });
+
+  it("keeps the weekly series in the server's order", () => {
+    const facets = adaptFacets({
+      total: 3,
+      urgent: 0,
+      bySpecialty: {
+        GENERALIST: 3,
+        DENTIST: 0,
+        DERMATOLOGIST: 0,
+        PSYCHIATRIST: 0,
+        OTHER: 0,
+      },
+      byStartWeek: [
+        { weekStart: "2026-11-09T00:00:00.000Z", count: 2 },
+        { weekStart: "2026-11-16T00:00:00.000Z", count: 1 },
+      ],
+    });
+
+    expect(facets.byStartWeek.map((week) => week.count)).toEqual([2, 1]);
   });
 });
 

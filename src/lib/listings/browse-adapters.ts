@@ -45,6 +45,7 @@ export function emptyFacets(): BrowseFacets {
         percent: 0,
       }),
     ),
+    byStartWeek: [],
   };
 }
 
@@ -193,5 +194,13 @@ export function adaptFacets(raw: ApiListingFacets | undefined): BrowseFacets {
     };
   });
 
-  return { total, urgent: raw.urgent ?? 0, bySpecialty: rows };
+  return {
+    total,
+    urgent: raw.urgent ?? 0,
+    bySpecialty: rows,
+    byStartWeek: (raw.byStartWeek ?? []).map(({ weekStart, count }) => ({
+      weekStart,
+      count,
+    })),
+  };
 }

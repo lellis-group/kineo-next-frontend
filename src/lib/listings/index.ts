@@ -98,6 +98,7 @@ export type {
   MapPlaceListing,
   MapPoint,
   SpecialtyFacet,
+  StartWeekFacet,
 } from "./browse-contracts";
 export {
   BROWSE_MAP_ID,

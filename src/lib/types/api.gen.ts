@@ -811,6 +811,11 @@ export interface components {
             bySpecialty: {
                 [key: string]: number;
             };
+            byStartWeek: {
+                /** Format: date-time */
+                weekStart: string;
+                count: number;
+            }[];
         };
         ListingPlaces: {
             places: {

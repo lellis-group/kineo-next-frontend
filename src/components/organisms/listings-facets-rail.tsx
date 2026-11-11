@@ -12,6 +12,7 @@ import {
 } from "@/components/molecules/rail-distribution";
 import { RailEmpty } from "@/components/molecules/rail-empty";
 import { RailGauge } from "@/components/molecules/rail-gauge";
+import { RailWeeks } from "@/components/molecules/rail-weeks";
 import { SpecialtyIcon } from "@/components/molecules/specialty-icon";
 import { ListingSelectionPanel } from "@/components/organisms/listing-selection-panel";
 import { cn } from "@/lib/cn";
@@ -238,6 +239,17 @@ export function ListingsFacetsRail({
           </>
         )}
       </Panel>
+
+      {/*
+        Absent rather than empty when the series did not come back: a backend
+        one release behind sends no weeks, and twelve zero bars would claim a
+        quiet quarter nobody measured.
+      */}
+      {facets.byStartWeek.length > 0 && (
+        <Panel title="Départs à venir" action={<PanelExpand />}>
+          <RailWeeks weeks={facets.byStartWeek} />
+        </Panel>
+      )}
 
       <ListingSelectionPanel
         selection={selection}

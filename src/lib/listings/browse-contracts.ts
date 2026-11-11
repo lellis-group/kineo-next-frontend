@@ -201,11 +201,24 @@ export interface SpecialtyFacet {
   percent: number;
 }
 
-/** The counts the three summary panels are built from. */
+/** How many of the matching postings start in one week. */
+export interface StartWeekFacet {
+  /** ISO instant of the Monday (00:00 UTC) opening the week. */
+  weekStart: string;
+  count: number;
+}
+
+/** The counts the summary panels are built from. */
 export interface BrowseFacets {
   total: number;
   urgent: number;
   bySpecialty: SpecialtyFacet[];
+  /**
+   * Starts per week over the next twelve, current week first. Empty from a
+   * backend that does not send the series, which the panel reads as « no
+   * data », never as twelve zero weeks.
+   */
+  byStartWeek: StartWeekFacet[];
 }
 
 /**
