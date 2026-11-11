@@ -31,11 +31,15 @@ export function RailGauge({
       <div className="grid grid-cols-2 gap-2">{children}</div>
 
       {/*
-        `mt-5`, not a gap on the panel: the space belongs above the arc only, so
+        `mt-2`, not a gap on the panel: the space belongs above the arc only, so
         the arc still sits against the panel's own bottom padding.
       */}
-      <div className="mt-5">
-        <ProgressCurve percent={percent} caption={caption} />
+      <div className="mt-2">
+        <ProgressCurve
+          percent={percent}
+          caption={caption}
+          bleed="-mx-5 sm:-mx-6"
+        />
       </div>
     </>
   );
