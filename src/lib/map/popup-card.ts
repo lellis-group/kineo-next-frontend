@@ -258,7 +258,7 @@ function entryButton(
 ): HTMLElement {
   const row = el(
     "button",
-    "group/entry flex w-full cursor-pointer items-center gap-2.5 rounded-control px-2 py-2 text-left transition-colors hover:bg-map-wash aria-[current=true]:bg-map-wash aria-[current=true]:shadow-[inset_2px_0_0_var(--map-ink)]",
+    "group/entry flex w-full cursor-pointer items-center gap-2.5 rounded-control px-2 py-2 text-left transition-colors hover:bg-map-wash aria-[current=true]:bg-map-line",
   );
   row.type = "button";
   // Same handle as the table rows carry, so the two views of a posting can be
