@@ -148,9 +148,13 @@ export function DeletionScreen({
         subtitle="Ce lien de suppression n'est plus valable"
       >
         <div className="space-y-6 text-center">
-          <InlineAlert as="p" tone="warning" className="text-center">
-            {error}
-          </InlineAlert>
+          {/* Only with a message: an alert with nothing in it drew an empty
+              outlined bar between the subtitle and the button. */}
+          {error && (
+            <InlineAlert as="p" tone="warning" className="text-center">
+              {error}
+            </InlineAlert>
+          )}
 
           <Button href={exitHref(hasSession)} size="lg" className="w-full">
             {exitLabel(hasSession)}

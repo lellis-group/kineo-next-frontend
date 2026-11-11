@@ -44,10 +44,7 @@ export interface ApplicationsFilterOption {
 }
 
 export const APPLICATION_FILTERS: readonly ApplicationsFilterOption[] = [
-  // Not « Toutes », though the row above has one: these sit on adjacent lines and
-  // mean different things — every application against every rejection. Two chips
-  // with one label, two different scopes, is a misread waiting to happen.
-  { id: "ALL", label: "Tous les refus" },
+  { id: "ALL", label: "Toutes" },
   // No `countKeys`: these three are exactly one status, and the status totals
   // already answer them. Pointing them at `undecided` would have given both
   // chips the same number — the union of the two, since a decisionSource is null
@@ -101,7 +98,10 @@ export interface RejectionSituationOption {
  * a decision about them, then the competition, then the posting going away.
  */
 export const REJECTION_SITUATIONS: readonly RejectionSituationOption[] = [
-  { id: "ALL", label: "Toutes" },
+  // Not « Toutes », though the row above has one: these sit on adjacent lines and
+  // mean different things — every application against every rejection. Two chips
+  // with one label, two different scopes, is a misread waiting to happen.
+  { id: "ALL", label: "Tous les refus" },
   { id: "REFUSED", label: "Refusées par le cabinet" },
   { id: "PASSED_OVER", label: "Un autre candidat retenu" },
   { id: "POSTING_ENDED", label: "L'annonce a pris fin" },

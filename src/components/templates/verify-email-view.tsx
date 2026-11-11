@@ -79,8 +79,11 @@ export function VerifyEmailView({
             />
           )}
 
+          {/* Secondary beside « Renvoyer l'email »: one primary action per
+              card, as the reference never puts two cream buttons together. */}
           <Button
             href={isAddressChange ? "/profile" : "/signin"}
+            variant={isAddressChange ? "primary" : "secondary"}
             size="lg"
             className="w-full"
           >

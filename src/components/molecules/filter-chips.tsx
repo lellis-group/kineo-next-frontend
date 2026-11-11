@@ -1,4 +1,4 @@
-import { Chip } from "@/components/atoms/chip";
+import { SegmentedControl } from "@/components/molecules/segmented-control";
 import { cn } from "@/lib/cn";
 
 export interface FilterChipOption<T extends string> {
@@ -17,8 +17,14 @@ interface FilterChipsProps<T extends string> {
 }
 
 /**
- * Row of toggle chips (styles from the global `.chip` class) — used for the
- * status filters of the applications management pages.
+ * A status filter row — the applications screens and the candidates panel of a
+ * listing.
+ *
+ * Drawn as the outlined track every other filter on the console uses
+ * (`SegmentedControl`), as the reference draws its « All / Pending / … » row:
+ * a row of separate filled chips was the one filter on the product that did
+ * not look like the others. The name stays because the call sites describe
+ * what it is for, not how it is drawn.
  */
 export function FilterChips<T extends string>({
   options,
@@ -28,29 +34,12 @@ export function FilterChips<T extends string>({
   className,
 }: FilterChipsProps<T>) {
   return (
-    <fieldset
-      aria-label={ariaLabel}
-      className={cn(
-        "flex min-w-0 flex-nowrap gap-2 overflow-x-auto border-0 pt-1 pb-2 [scrollbar-width:none] sm:flex-wrap sm:overflow-visible sm:py-0 [&::-webkit-scrollbar]:hidden",
-        className,
-      )}
-    >
-      {options.map((option) => {
-        const active = option.id === value;
-        return (
-          <Chip
-            key={option.id}
-            className="shrink-0 whitespace-nowrap"
-            aria-pressed={active}
-            onClick={() => onChange(option.id)}
-          >
-            {option.label}
-            {typeof option.count === "number" && (
-              <span className="font-normal"> ({option.count})</span>
-            )}
-          </Chip>
-        );
-      })}
-    </fieldset>
+    <SegmentedControl
+      ariaLabel={ariaLabel}
+      options={options}
+      value={value}
+      onChange={onChange}
+      className={cn("w-fit", className)}
+    />
   );
 }
