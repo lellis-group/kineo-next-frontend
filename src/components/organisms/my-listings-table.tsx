@@ -35,7 +35,7 @@ export function MyListingsTable({ listings }: MyListingsTableProps) {
   const router = useRouter();
 
   return (
-    <div className="hidden min-h-0 flex-1 overflow-auto rounded-xl border border-border sm:block">
+    <div className="table-flush hidden min-h-0 flex-1 overflow-auto border-b border-border sm:block">
       <table className="table listings-table lg:h-full">
         <thead>
           <tr>

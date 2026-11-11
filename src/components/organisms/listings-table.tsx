@@ -154,23 +154,15 @@ export const ListingsTable = forwardRef<
      * price instead: the columns re-flow by a scrollbar's width on the pages
      * that do overflow, which is a transition, not a layout broken mid-reader.
      *
-     * And the frame, which is what the scrolling region is for. Because the
-     * rows move inside a box rather than the panel growing to hold them, the
-     * table has edges a reader can see: the panel says « here is a panel », the
-     * frame says « this much of it is the list ».
-     *
-     * `border`, not `border-strong`: the frame sits *inside* a panel that is
-     * itself outlined in `border`, and a stronger inner edge would read as the
-     * more important of two boundaries that are not.
-     *
-     * It also finishes the table properly. `.table` drops the last row's own
-     * bottom border, which suits rows that end a panel whose padding closes the
-     * list — here they end at a scroll edge, and this is the line that closes
-     * them.
+     * No frame of its own: `table-flush` runs the header band and the row
+     * dividers to the card's edges, as the reference does, and the panel is the
+     * only box. The one line kept is the bottom rule. `.table` drops the last
+     * row's own border, which suits a list the panel's padding closes; here the
+     * rows can end at a scroll edge, and this rule is what closes them.
      */
     <div
       className={cn(
-        "hidden min-h-0 overflow-auto rounded-xl border border-border sm:block",
+        "table-flush hidden min-h-0 overflow-auto border-b border-border sm:block",
         className,
       )}
     >

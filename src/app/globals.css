@@ -349,8 +349,36 @@
     font-size: 0.75rem;
     color: var(--muted);
     padding: 0.875rem 1rem;
-    border-bottom: 1px solid var(--border);
+    /*
+     * A filled band rather than a rule: the reference names its columns on a
+     * strip one step lighter than the card, which is what separates the labels
+     * from the first row without a line of its own.
+     */
+    background: var(--surface-2);
     white-space: nowrap;
+  }
+
+  /*
+   * A table that runs to its card's edges.
+   *
+   * The reference's table is not a box inside the card: its header band and
+   * its row dividers span the card's full width, and only the text keeps the
+   * card's inset. The wrapper cancels the panel's side padding (`Panel`'s
+   * `sm:px-6`; the tables are only drawn from `sm`) and hands the same inset
+   * back to the outer cells, so the first column still lines up with the
+   * card's title.
+   */
+  .table-flush {
+    --table-inset: calc(var(--spacing) * 6);
+    margin-inline: calc(var(--table-inset) * -1);
+  }
+
+  .table-flush .table :is(th, td):first-child {
+    padding-left: var(--table-inset);
+  }
+
+  .table-flush .table :is(th, td):last-child {
+    padding-right: var(--table-inset);
   }
 
   .table tbody td {
@@ -741,6 +769,10 @@
     padding-left: calc(1rem + var(--cell-gutter));
   }
 
+  .table-flush .listings-table thead th.has-gutter:first-child {
+    padding-left: calc(var(--table-inset) + var(--cell-gutter));
+  }
+
   /*
    * The column labels, pinned to the top of the scrolling box.
    *
@@ -751,8 +783,8 @@
    *
    * The background is not optional: a sticky `th` is transparent by
    * default, so the rows sliding under it would show through their
-   * labels. It carries the panel's own `surface`, the colour the
-   * rows sit on, which is what "opaque" means here.
+   * labels. The band's own `surface-2` from `.table thead th` is
+   * opaque, and it is restated here so this rule holds on its own.
    *
    * Scoped to `.listings-table` on purpose. `.table` is shared by
    * every list in the product, and most of those lists are short
@@ -764,7 +796,7 @@
     position: sticky;
     top: 0;
     z-index: 1;
-    background: var(--surface);
+    background: var(--surface-2);
   }
 
   /*
