@@ -97,23 +97,23 @@ export function ListingDetailContainer({
    * swap the rows under a chip row still showing the old selection, and page 3 of
    * a bucket that just lost a row is page 3 of nothing.
    */
-  const action = useListingAction({
-    refresh: async () => {
-      const [freshListing, freshReceived] = await Promise.all([
-        fetchMyListing(listingId),
-        fetchListingApplications(listingId, {
-          status: statusForFilter(filter),
-          page,
-          limit: LISTING_APPLICATIONS_PAGE_SIZE,
-        }),
-      ]);
-      return { freshListing, freshReceived };
-    },
-    onSettled: ({ freshListing, freshReceived }) => {
+  const reread = useCallback(async () => {
+    const [freshListing, freshReceived] = await Promise.all([
+      fetchMyListing(listingId),
+      load({ page, filter }),
+    ]);
+    return { freshListing, freshReceived };
+  }, [listingId, load, page, filter]);
+
+  const adopt = useCallback(
+    ({ freshListing, freshReceived }: Awaited<ReturnType<typeof reread>>) => {
       setListing(freshListing);
       replace(freshReceived);
     },
-  });
+    [replace],
+  );
+
+  const action = useListingAction({ refresh: reread, onSettled: adopt });
 
   /**
    * The decisions on one received application, made to look like one call: the
@@ -125,18 +125,10 @@ export function ListingDetailContainer({
    * has the row in front of it — the page banner cannot say which card was
    * busy.
    */
-  const refreshAfterDecision = useCallback(async () => {
-    const [freshListing, freshReceived] = await Promise.all([
-      fetchMyListing(listingId),
-      fetchListingApplications(listingId, {
-        status: statusForFilter(filter),
-        page,
-        limit: LISTING_APPLICATIONS_PAGE_SIZE,
-      }),
-    ]);
-    setListing(freshListing);
-    replace(freshReceived);
-  }, [listingId, filter, page, replace]);
+  const refreshAfterDecision = useCallback(
+    async () => adopt(await reread()),
+    [adopt, reread],
+  );
 
   const onApplicationViewed = useCallback(
     (applicationId: string) =>
