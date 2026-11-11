@@ -47,11 +47,11 @@ export function HowItWorksSection() {
                   >
                     <Icon />
                   </span>
-                  <span className="text-xs font-bold tracking-widest text-muted uppercase">
+                  <span className="text-xs font-medium tracking-widest text-muted uppercase">
                     Étape {index + 1}
                   </span>
                 </div>
-                <h3 className="mb-2 font-bold">{step.title}</h3>
+                <h3 className="mb-2 font-medium">{step.title}</h3>
                 <p className="text-sm leading-relaxed text-muted">
                   {step.description}
                 </p>

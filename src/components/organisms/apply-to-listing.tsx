@@ -67,7 +67,7 @@ export function ApplyToListing({ listingId }: { listingId: string }) {
         aria-label="Candidature envoyée"
         className="border-t border-border pt-6"
       >
-        <p className="text-sm font-bold">{APPLY_SUCCESS}</p>
+        <p className="text-sm font-medium">{APPLY_SUCCESS}</p>
         <p className="mt-2 text-sm text-muted">
           Vous pouvez suivre son état depuis vos candidatures.
         </p>

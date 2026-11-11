@@ -39,7 +39,7 @@ export function LegalDocument({
         </Link>
 
         <div className="space-y-2">
-          <h1 className="text-3xl font-bold tracking-tight">{title}</h1>
+          <h1 className="text-3xl font-medium tracking-tight">{title}</h1>
           <p className="text-sm text-muted">
             Dernière mise à jour : {updatedAt}
           </p>
@@ -51,7 +51,7 @@ export function LegalDocument({
       <div className="mt-14 border-t border-border pt-6 text-center">
         <Link
           href={backHref}
-          className="text-sm font-semibold text-primary transition-colors hover:text-primary-hover"
+          className="text-sm font-medium text-primary transition-colors hover:text-primary-hover"
         >
           {backLabel}
         </Link>

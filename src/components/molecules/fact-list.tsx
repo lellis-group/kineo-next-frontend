@@ -26,7 +26,7 @@ export function Fact({
         {Icon && <Icon className="h-4 w-4 shrink-0 text-faint" />}
         {term}
       </dt>
-      <dd className="mt-2 text-[15px] leading-snug font-bold break-words text-foreground">
+      <dd className="mt-2 text-[15px] leading-snug font-medium break-words text-foreground">
         {children}
       </dd>
     </div>

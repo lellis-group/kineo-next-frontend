@@ -120,7 +120,7 @@ export function ListingsFilterPopover({
         {appliedFilters > 0 && (
           <span
             className={cn(
-              "ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[0.625rem] font-semibold tabular-nums",
+              "ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[0.625rem] font-medium tabular-nums",
               open
                 ? "bg-primary-foreground/15 text-primary-foreground"
                 : "bg-primary/15 text-primary",

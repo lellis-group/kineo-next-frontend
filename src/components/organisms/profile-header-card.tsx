@@ -39,7 +39,7 @@ export function ProfileHeaderCard({
             className="h-12 w-12 shrink-0 text-base sm:h-14 sm:w-14 sm:text-lg"
           />
           <div className="min-w-0 flex-1">
-            <h1 className="truncate text-lg font-bold tracking-tight sm:text-xl">
+            <h1 className="truncate text-lg font-medium tracking-tight sm:text-xl">
               {user.name ?? "Profil"}
             </h1>
             <p className="mt-0.5 truncate text-sm break-all text-muted">
@@ -81,7 +81,7 @@ export function ProfileHeaderCard({
       </p>
 
       <div className="mt-5 border-t border-border pt-5">
-        <h2 className="mb-3 text-sm font-bold">Informations du compte</h2>
+        <h2 className="mb-3 text-sm font-medium">Informations du compte</h2>
         <UserInfoFields
           user={user}
           onUpdateInfo={onUpdateInfo}

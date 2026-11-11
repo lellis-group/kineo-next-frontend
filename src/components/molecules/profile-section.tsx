@@ -24,7 +24,7 @@ export function ProfileSection({
           <Icon />
         </span>
         <div>
-          <h2 className="text-base font-bold">{title}</h2>
+          <h2 className="text-base font-medium">{title}</h2>
           {description && (
             <p className="mt-0.5 text-sm text-muted">{description}</p>
           )}

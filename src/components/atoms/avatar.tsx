@@ -24,7 +24,7 @@ export const Avatar = forwardRef<HTMLSpanElement, AvatarProps>(function Avatar(
       ref={ref}
       aria-hidden="true"
       className={cn(
-        "relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-primary/60 bg-surface text-sm font-bold text-primary",
+        "relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-primary/60 bg-surface text-sm font-medium text-primary",
         className,
       )}
     >

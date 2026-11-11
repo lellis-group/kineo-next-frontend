@@ -17,7 +17,7 @@ export function FeaturesSection() {
       className="scroll-mt-20 border-b border-border bg-background"
     >
       <div className={MARKETING_CONTAINER}>
-        <h2 className="max-w-2xl text-2xl font-bold tracking-tight text-balance sm:text-3xl">
+        <h2 className="max-w-2xl text-2xl font-medium tracking-tight text-balance sm:text-3xl">
           {featuresSection.title}
         </h2>
 

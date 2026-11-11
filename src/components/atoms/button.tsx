@@ -41,7 +41,7 @@ export function Button({
   ...rest
 }: ButtonProps) {
   const classes = cn(
-    "inline-flex items-center justify-center gap-2 rounded-[0.625rem] font-bold transition-colors disabled:pointer-events-none disabled:opacity-60",
+    "inline-flex items-center justify-center gap-2 rounded-[0.625rem] font-medium transition-colors disabled:pointer-events-none disabled:opacity-60",
     SIZE_CLASSES[size],
     VARIANT_CLASSES[variant],
     className,

@@ -86,7 +86,7 @@ export function ReceivedApplicationCard({
           />
 
           <div className="min-w-0">
-            <p className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-base leading-snug font-bold break-words text-foreground">
+            <p className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-base leading-snug font-medium break-words text-foreground">
               {applicant.displayName}
               {applicant.verified && <VerifiedBadge />}
             </p>

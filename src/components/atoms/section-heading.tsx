@@ -12,7 +12,7 @@ export function SectionHeading({
   return (
     <div className="flex flex-wrap items-center justify-between gap-3">
       <div>
-        <h2 className="text-xl font-bold tracking-tight sm:text-2xl">
+        <h2 className="text-xl font-medium tracking-tight sm:text-2xl">
           {title}
         </h2>
         {subtitle && <p className="mt-1 text-sm text-muted">{subtitle}</p>}

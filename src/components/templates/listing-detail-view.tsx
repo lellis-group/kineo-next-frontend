@@ -77,7 +77,7 @@ export function ListingDetailView({
 
       <section className="mt-10">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h2 className="flex items-center gap-2 text-lg font-bold tracking-tight text-foreground">
+          <h2 className="flex items-center gap-2 text-lg font-medium tracking-tight text-foreground">
             <UsersIcon className="h-4 w-4 text-muted" />
             Candidatures reçues
           </h2>

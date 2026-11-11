@@ -114,7 +114,7 @@ export function ApplicationMessage({
   return (
     <section aria-label="Votre message">
       <div className="flex items-center justify-between gap-4">
-        <h2 className="text-sm font-bold text-foreground">Votre message</h2>
+        <h2 className="text-sm font-medium text-foreground">Votre message</h2>
         {canEdit && (
           <button
             type="button"

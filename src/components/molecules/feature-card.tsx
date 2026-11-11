@@ -20,7 +20,7 @@ export function FeatureCard({
         <Icon />
       </div>
 
-      <h3 className="mb-2 font-bold">{title}</h3>
+      <h3 className="mb-2 font-medium">{title}</h3>
       <p className="text-sm leading-relaxed text-muted">{description}</p>
     </div>
   );

@@ -68,7 +68,7 @@ export function ActivityFeed({
                 {entry.message.map((segment, index) =>
                   segment.bold ? (
                     // biome-ignore lint/suspicious/noArrayIndexKey: static segments, stable order
-                    <strong key={index} className="font-bold text-foreground">
+                    <strong key={index} className="font-medium text-foreground">
                       {segment.text}
                     </strong>
                   ) : (

@@ -8,12 +8,12 @@ export function TestimonialsSection() {
     <section className="border-b border-border bg-background">
       <div className={MARKETING_CONTAINER}>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <h2 className="max-w-xl text-2xl font-bold tracking-tight text-balance sm:text-3xl">
+          <h2 className="max-w-xl text-2xl font-medium tracking-tight text-balance sm:text-3xl">
             {testimonialsSection.title}
           </h2>
           <p className="flex shrink-0 items-center gap-1.5 text-sm text-muted">
             <StarIcon className="h-4 w-4 text-primary" />
-            <strong className="font-bold text-foreground">
+            <strong className="font-medium text-foreground">
               {testimonialsSection.rating}
             </strong>
             {testimonialsSection.ratingLabel}
@@ -38,7 +38,7 @@ export function TestimonialsSection() {
                   &ldquo;{testimonial.quote}&rdquo;
                 </blockquote>
                 <figcaption className="mt-5">
-                  <p className="text-sm font-bold text-foreground">
+                  <p className="text-sm font-medium text-foreground">
                     {testimonial.name}
                   </p>
                   <p className="mt-0.5 text-xs text-muted">

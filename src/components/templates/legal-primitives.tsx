@@ -38,7 +38,7 @@ export function Section({
 }) {
   return (
     <section id={id} className="scroll-mt-28">
-      <h2 className="text-xl font-bold tracking-tight sm:text-2xl">
+      <h2 className="text-xl font-medium tracking-tight sm:text-2xl">
         <span className="text-faint">{index}.</span> {title}
       </h2>
       <div className="mt-4 space-y-4">{children}</div>
@@ -48,7 +48,7 @@ export function Section({
 
 export function Subheading({ children }: { children: ReactNode }) {
   return (
-    <h3 className="pt-2 text-sm font-bold tracking-tight text-foreground">
+    <h3 className="pt-2 text-sm font-medium tracking-tight text-foreground">
       {children}
     </h3>
   );
@@ -83,7 +83,7 @@ export function Steps({ items }: { items: readonly string[] }) {
         <li key={item} className="flex items-start gap-3">
           <span
             aria-hidden="true"
-            className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/15 text-[11px] font-bold text-primary"
+            className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/15 text-[11px] font-medium text-primary"
           >
             {index + 1}
           </span>
@@ -116,7 +116,7 @@ export function PendingNote({ children }: { children: ReactNode }) {
 export function PendingCallout({ items }: { items: readonly string[] }) {
   return (
     <details className="group mt-8 rounded-2xl border border-warning/25 bg-warning/5">
-      <summary className="flex cursor-pointer list-none items-center justify-between gap-4 p-5 text-sm font-semibold text-warning marker:content-none">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-4 p-5 text-sm font-medium text-warning marker:content-none">
         <span>En attente de validation juridique ({items.length} points)</span>
         <ChevronDownIcon
           aria-hidden="true"

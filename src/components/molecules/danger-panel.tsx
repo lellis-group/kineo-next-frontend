@@ -37,7 +37,7 @@ export function DangerPanel({
         </span>
         <div className="min-w-0">
           {title && (
-            <Heading className="text-base font-bold text-danger">
+            <Heading className="text-base font-medium text-danger">
               {title}
             </Heading>
           )}

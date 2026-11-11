@@ -8,7 +8,7 @@ export function ApplicationListingDetails({
 }) {
   return (
     <section>
-      <h2 className="text-sm font-bold text-foreground">L&apos;annonce</h2>
+      <h2 className="text-sm font-medium text-foreground">L&apos;annonce</h2>
 
       <FactList className="mt-6">
         <Fact term="Période">

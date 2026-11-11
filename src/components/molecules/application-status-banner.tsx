@@ -81,7 +81,7 @@ export function ApplicationStatusBanner({
         className,
       )}
     >
-      <p className="text-sm font-bold">{headline}</p>
+      <p className="text-sm font-medium">{headline}</p>
       <p className="mt-1.5 text-sm leading-relaxed text-muted">{summary}</p>
     </div>
   );

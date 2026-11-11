@@ -13,7 +13,7 @@ export function ProfileOnboardingCard() {
     <Card className="border-primary/30 bg-primary/5 p-6 sm:p-8">
       <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
-          <h2 className="text-base font-bold">
+          <h2 className="text-base font-medium">
             Complétez votre profil professionnel
           </h2>
           <p className="mt-1.5 text-sm leading-relaxed text-muted">

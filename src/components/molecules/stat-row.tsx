@@ -15,7 +15,7 @@ export function StatRow({
 }: StatRowProps) {
   const valueClasses = muted
     ? "font-medium text-muted"
-    : `font-bold ${accent ? "text-success" : "text-foreground"}`;
+    : `font-medium ${accent ? "text-success" : "text-foreground"}`;
 
   return (
     <div className="flex items-center justify-between gap-4 border-b border-border py-3.5 last:border-b-0">

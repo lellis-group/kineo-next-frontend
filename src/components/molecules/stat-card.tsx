@@ -25,7 +25,7 @@ export function StatCard({
         <Icon className="h-5 w-5 shrink-0 text-xl text-primary" />
       </div>
 
-      <p className="text-2xl font-bold tracking-tight break-words sm:text-3xl">
+      <p className="text-2xl font-medium tracking-tight break-words sm:text-3xl">
         {value}
       </p>
 

@@ -40,7 +40,7 @@ export function AuthCard({
             <h1
               ref={headingRef}
               tabIndex={-1}
-              className="text-[1.7rem] leading-tight font-bold tracking-tight focus:outline-none"
+              className="text-[1.7rem] leading-tight font-medium tracking-tight focus:outline-none"
             >
               {title}
             </h1>

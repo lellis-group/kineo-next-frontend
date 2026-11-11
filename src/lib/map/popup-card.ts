@@ -75,7 +75,7 @@ export function popupContent(
   */
   const reference = document.createElement("p");
   reference.className =
-    "text-[0.6875rem] leading-none font-semibold tracking-wide text-black/50 tabular-nums";
+    "text-[0.6875rem] leading-none font-medium tracking-wide text-black/50 tabular-nums";
   reference.textContent =
     place.count === 1 ? `#${first.id.slice(0, 8).toUpperCase()}` : "";
   if (reference.textContent) {

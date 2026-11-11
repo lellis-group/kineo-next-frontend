@@ -80,7 +80,7 @@ export function ForgotPasswordView({
         Mot de passe retrouvé ?{" "}
         <Link
           href="/signin"
-          className="font-semibold text-primary transition-colors hover:text-primary-hover"
+          className="font-medium text-primary transition-colors hover:text-primary-hover"
         >
           Se connecter
         </Link>

@@ -21,7 +21,7 @@ const COPYRIGHT_YEAR = 2026;
  */
 function BetaBadge() {
   return (
-    <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[0.6875rem] font-semibold tracking-wide text-primary">
+    <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[0.6875rem] font-medium tracking-wide text-primary">
       Bêta
     </span>
   );

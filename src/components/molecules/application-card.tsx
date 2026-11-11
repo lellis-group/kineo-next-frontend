@@ -22,7 +22,7 @@ export function ApplicationCard({
     >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
         <div className="min-w-0 flex-1">
-          <p className="text-[15px] leading-snug font-bold break-words text-foreground sm:text-lg">
+          <p className="text-[15px] leading-snug font-medium break-words text-foreground sm:text-lg">
             {application.listing.title}
           </p>
           <ApplicationCardMeta application={application} />

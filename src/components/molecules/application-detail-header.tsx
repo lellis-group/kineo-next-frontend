@@ -13,7 +13,7 @@ export function ApplicationDetailHeader({
 
   return (
     <div className="min-w-0">
-      <h1 className="text-xl leading-snug font-bold tracking-tight text-balance text-foreground sm:text-2xl">
+      <h1 className="text-xl leading-snug font-medium tracking-tight text-balance text-foreground sm:text-2xl">
         {listing.title}
       </h1>
       {label && (

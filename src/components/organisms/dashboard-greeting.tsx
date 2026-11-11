@@ -23,12 +23,12 @@ export function DashboardGreeting({
           nothing and left the line reading differently depending on whether the
           member had filled in their profile. No eyebrow beats a meaningless one. */}
       {greeting.meta && (
-        <p className="text-xs font-bold tracking-widest text-muted uppercase">
+        <p className="text-xs font-medium tracking-widest text-muted uppercase">
           {greeting.meta}
         </p>
       )}
       <h1
-        className={`text-2xl font-bold tracking-tight text-balance sm:text-3xl ${
+        className={`text-2xl font-medium tracking-tight text-balance sm:text-3xl ${
           greeting.meta ? "mt-2" : ""
         }`}
       >

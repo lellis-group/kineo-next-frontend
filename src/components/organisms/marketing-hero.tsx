@@ -25,7 +25,7 @@ export function MarketingHero() {
       <div className="mx-auto grid w-full max-w-7xl items-center gap-10 px-4 pt-12 pb-10 sm:px-6 sm:pt-16 lg:grid-cols-2 lg:gap-14 lg:pt-20">
         <div className="min-w-0 text-center lg:text-left">
           <h1
-            className="hero-enter text-[2.5rem] leading-[1.05] font-bold tracking-tight text-balance sm:text-5xl lg:text-6xl"
+            className="hero-enter text-[2.5rem] leading-[1.05] font-medium tracking-tight text-balance sm:text-5xl lg:text-6xl"
             style={heroDelay(0)}
           >
             {hero.title}{" "}
@@ -78,7 +78,7 @@ export function MarketingHero() {
             </div>
             <div className="rounded-xl bg-surface-2 p-4 sm:p-5">
               <div className="flex items-center justify-between gap-3">
-                <p className="truncate text-sm font-bold text-foreground">
+                <p className="truncate text-sm font-medium text-foreground">
                   {hero.livePreview.contractTitle}
                 </p>
                 <span className="shrink-0 text-xs font-medium text-success">
@@ -100,7 +100,7 @@ export function MarketingHero() {
 
       <div className="mx-auto w-full max-w-7xl px-4 pt-6 pb-14 sm:px-6 sm:pb-16 lg:pb-20">
         <p
-          className="hero-enter mb-5 text-xs font-bold tracking-widest text-muted uppercase"
+          className="hero-enter mb-5 text-xs font-medium tracking-widest text-muted uppercase"
           style={heroDelay(280)}
         >
           {trustBar.eyebrow}

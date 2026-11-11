@@ -40,7 +40,7 @@ export function ApplicationTimeline({
 
   return (
     <section>
-      <h2 className="text-sm font-bold text-foreground">Suivi</h2>
+      <h2 className="text-sm font-medium text-foreground">Suivi</h2>
       <ol className="mt-3 divide-y divide-border">
         {events.map((event) => (
           <li

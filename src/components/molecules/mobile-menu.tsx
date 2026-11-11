@@ -144,13 +144,13 @@ export function MobileMenu({
           <div className="flex flex-col gap-2 p-1">
             <Link
               href="/signin"
-              className="flex min-h-11 w-full items-center justify-center rounded-lg border border-border px-4 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-surface-hover"
+              className="flex min-h-11 w-full items-center justify-center rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-hover"
             >
               Se connecter
             </Link>
             <Link
               href="/signup"
-              className="flex min-h-11 w-full items-center justify-center rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-hover"
+              className="flex min-h-11 w-full items-center justify-center rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary-hover"
             >
               Créer un compte
             </Link>

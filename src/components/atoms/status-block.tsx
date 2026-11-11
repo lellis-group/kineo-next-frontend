@@ -69,7 +69,7 @@ export function StatusBlock({
           {icon}
         </div>
       )}
-      <h2 className="text-lg font-semibold text-foreground">{title}</h2>
+      <h2 className="text-lg font-medium text-foreground">{title}</h2>
       {description && (
         <p className="mt-2 max-w-md text-sm leading-relaxed text-muted">
           {description}

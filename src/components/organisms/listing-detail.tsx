@@ -50,7 +50,7 @@ export function ListingDetail({
   return (
     <Card className="p-6 sm:p-8">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <h1 className="min-w-0 flex-1 text-xl leading-snug font-bold break-words tracking-tight text-foreground sm:text-2xl">
+        <h1 className="min-w-0 flex-1 text-xl leading-snug font-medium break-words tracking-tight text-foreground sm:text-2xl">
           {listing.title}
         </h1>
 
@@ -86,7 +86,7 @@ export function ListingDetail({
 
       {listing.description && (
         <div className="mt-8 border-t border-border pt-6">
-          <h2 className="text-sm font-bold text-foreground">Description</h2>
+          <h2 className="text-sm font-medium text-foreground">Description</h2>
           <p className="mt-2 text-sm leading-relaxed whitespace-pre-line text-muted">
             {listing.description}
           </p>
@@ -104,7 +104,7 @@ export function ListingDetail({
 
       {RECRUITING_STATUSES.has(listing.status) && (
         <div className="mt-8 border-t border-border pt-6">
-          <h2 className="text-sm font-bold text-foreground">
+          <h2 className="text-sm font-medium text-foreground">
             Retirer l&apos;annonce de la diffusion
           </h2>
           <p className="mt-1.5 text-sm leading-relaxed text-muted">

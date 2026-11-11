@@ -27,7 +27,7 @@ export function ProfileFormPage({
       </Button>
 
       <Card className="p-6 sm:p-8">
-        <h1 className="text-xl font-bold tracking-tight sm:text-2xl">
+        <h1 className="text-xl font-medium tracking-tight sm:text-2xl">
           {title}
         </h1>
         <p className="mt-3 text-sm leading-relaxed text-muted">{subtitle}</p>

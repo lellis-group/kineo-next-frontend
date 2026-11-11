@@ -19,7 +19,7 @@ export const BACK_LINK =
 
 /**
  * Page title, sized to the same rhythm on every console screen. */
-export const PAGE_TITLE = "text-2xl font-bold tracking-tight sm:text-3xl";
+export const PAGE_TITLE = "text-2xl font-medium tracking-tight sm:text-3xl";
 
 /**
  * The horizontal geometry every full-width band on a `(site)` page shares —

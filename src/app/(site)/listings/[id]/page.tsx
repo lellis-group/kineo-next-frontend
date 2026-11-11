@@ -67,7 +67,7 @@ async function ApplyEntryInner({ listingId }: { listingId: string }) {
       if (auth.role === null) {
         return (
           <p className="text-sm text-muted">
-            <Link href="/profile/create" className="font-bold">
+            <Link href="/profile/create" className="font-medium">
               Créez votre profil
             </Link>{" "}
             pour postuler à cette annonce.
@@ -122,7 +122,7 @@ async function BrowseListingDetailPageInner({
 
       <Card className="mt-8 p-6 sm:p-8">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <h1 className="min-w-0 flex-1 text-xl leading-snug font-bold break-words tracking-tight text-foreground sm:text-2xl">
+          <h1 className="min-w-0 flex-1 text-xl leading-snug font-medium break-words tracking-tight text-foreground sm:text-2xl">
             {listing.title}
           </h1>
 
@@ -173,7 +173,7 @@ async function BrowseListingDetailPageInner({
 
         {listing.description && (
           <div className="mt-8 border-t border-border pt-6">
-            <h2 className="text-sm font-bold text-foreground">Description</h2>
+            <h2 className="text-sm font-medium text-foreground">Description</h2>
             <p className="mt-2 text-sm leading-relaxed whitespace-pre-line text-muted">
               {listing.description}
             </p>
