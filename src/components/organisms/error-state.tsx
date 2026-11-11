@@ -31,7 +31,7 @@ export function ErrorState({
         action={<Button onClick={onRetry}>Réessayer</Button>}
       >
         {isDev && (
-          <p className="mt-2 max-w-sm wrap-break-word rounded bg-surface px-3 py-2 font-mono text-xs text-muted">
+          <p className="mt-2 max-w-sm wrap-break-word rounded-control bg-surface px-3 py-2 font-mono text-xs text-muted">
             [dev] {rawErrorText(error)}
           </p>
         )}

@@ -64,7 +64,7 @@ export function MarketingHero() {
         <div className="hero-enter min-w-0" style={heroDelay(240)}>
           <div
             aria-hidden="true"
-            className="rounded-2xl border border-border bg-surface p-4 sm:p-5"
+            className="rounded-card border border-border bg-surface p-4 sm:p-5"
           >
             <div className="flex items-center justify-between px-1 pt-1 pb-4">
               <span className="flex items-center gap-1.5">
@@ -72,11 +72,11 @@ export function MarketingHero() {
                 <span className="h-2.5 w-2.5 rounded-full bg-muted/30" />
                 <span className="h-2.5 w-2.5 rounded-full bg-muted/20" />
               </span>
-              <span className="font-mono text-[11px] tracking-wide text-muted">
+              <span className="font-mono text-2xs tracking-wide text-muted">
                 {hero.livePreview.caption}
               </span>
             </div>
-            <div className="rounded-xl bg-surface-2 p-4 sm:p-5">
+            <div className="rounded-control bg-surface-2 p-4 sm:p-5">
               <div className="flex items-center justify-between gap-3">
                 <p className="truncate text-sm font-medium text-foreground">
                   {hero.livePreview.contractTitle}
@@ -86,10 +86,10 @@ export function MarketingHero() {
                 </span>
               </div>
               <div className="mt-3 border-t border-border pt-3">
-                <p className="truncate text-[13px] text-muted">
+                <p className="truncate text-control text-muted">
                   {hero.livePreview.cabinet}
                 </p>
-                <p className="mt-1.5 truncate text-[13px] text-muted">
+                <p className="mt-1.5 truncate text-control text-muted">
                   {hero.livePreview.period}
                 </p>
               </div>

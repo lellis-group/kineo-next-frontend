@@ -47,7 +47,7 @@ export function HeaderNav({
                         "text-foreground"
                       : "text-muted hover:text-foreground"
                   }`
-                : `block w-full rounded-lg px-4 py-2.5 text-[15px] font-medium transition-colors ${
+                : `block w-full rounded-control px-4 py-2.5 text-base font-medium transition-colors ${
                     isActive
                       ? "bg-primary text-primary-foreground"
                       : "text-muted hover:bg-surface-hover hover:text-foreground"

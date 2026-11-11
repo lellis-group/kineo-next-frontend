@@ -36,14 +36,14 @@ export function HowItWorksSection() {
                 key={step.title}
                 delay={index * 90}
                 className={cn(
-                  "card-lift h-full rounded-2xl border border-border bg-surface p-6",
+                  "card-lift h-full rounded-card border border-border bg-surface p-6",
                   isLast && "sm:col-span-2 lg:col-span-1",
                 )}
               >
                 <div className="mb-5 flex items-center gap-3">
                   <span
                     aria-hidden="true"
-                    className="icon-tilt flex h-10 w-10 items-center justify-center rounded-xl bg-primary/15 text-primary"
+                    className="icon-tilt flex h-10 w-10 items-center justify-center rounded-control bg-primary/15 text-primary"
                   >
                     <Icon />
                   </span>

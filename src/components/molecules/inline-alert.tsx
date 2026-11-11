@@ -47,7 +47,7 @@ export function InlineAlert({
     <Component
       {...(Component === "p" ? { role: "alert" } : {})}
       className={cn(
-        "rounded-lg border text-sm leading-relaxed",
+        "rounded-control border text-sm leading-relaxed",
         TONE_CLASSES[tone],
         ELEMENT_CLASSES[Component],
         className,

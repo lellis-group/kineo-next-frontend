@@ -123,7 +123,7 @@ export function SiteHeader({
 
               <Link
                 href="/signup"
-                className="inline-flex shrink-0 items-center justify-center rounded-full bg-primary px-2 py-1.5 text-xs font-medium whitespace-nowrap text-primary-foreground transition-colors hover:bg-primary-hover min-[360px]:px-3 min-[360px]:text-[13px] sm:px-4 sm:py-2 sm:text-sm"
+                className="inline-flex shrink-0 items-center justify-center rounded-full bg-primary px-2 py-1.5 text-xs font-medium whitespace-nowrap text-primary-foreground transition-colors hover:bg-primary-hover min-[360px]:px-3 min-[360px]:text-control sm:px-4 sm:py-2 sm:text-sm"
               >
                 Créer un compte
               </Link>

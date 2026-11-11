@@ -119,7 +119,7 @@ export function ApplicationMessage({
           <button
             type="button"
             onClick={startEditing}
-            className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-muted transition-colors hover:bg-surface-hover hover:text-foreground"
+            className="inline-flex items-center gap-1.5 rounded-control px-2 py-1 text-xs font-medium text-muted transition-colors hover:bg-surface-hover hover:text-foreground"
           >
             <PencilIcon className="h-3.5 w-3.5" />
             {message ? "Modifier" : "Ajouter un message"}

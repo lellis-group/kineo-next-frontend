@@ -96,7 +96,7 @@ export function MobileMenu({
           aria-label={open ? "Fermer le menu" : "Ouvrir le menu"}
           onClick={() => setOpen((value) => !value)}
           className={cn(
-            "flex h-10 w-10 items-center justify-center rounded-lg border transition-all duration-200 active:scale-95",
+            "flex h-10 w-10 items-center justify-center rounded-control border transition-all duration-200 active:scale-95",
             open
               ? "border-primary/50 text-foreground"
               : "border-border text-foreground/80",
@@ -114,7 +114,7 @@ export function MobileMenu({
         tabIndex={-1}
         inert={!open}
         className={cn(
-          "absolute top-[calc(100%+0.5rem)] right-0 z-50 max-h-[70dvh] w-56 max-w-[calc(100vw-2rem)] overflow-y-auto rounded-xl border border-border bg-surface p-2 shadow-2xl shadow-black/50 outline-none transition-all duration-200 ease-out",
+          "absolute top-[calc(100%+0.5rem)] right-0 z-50 max-h-[70dvh] w-56 max-w-[calc(100vw-2rem)] overflow-y-auto rounded-card border border-border bg-surface p-2 shadow-2xl shadow-black/50 outline-none transition-all duration-200 ease-out",
           open
             ? "pointer-events-auto translate-y-0 scale-100 opacity-100"
             : "pointer-events-none -translate-y-2 scale-[0.98] opacity-0",
@@ -134,7 +134,7 @@ export function MobileMenu({
             <button
               type="button"
               onClick={onSignOut}
-              className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-muted transition-colors hover:bg-surface-hover hover:text-foreground"
+              className="flex w-full items-center gap-2 rounded-control px-3 py-2 text-sm text-muted transition-colors hover:bg-surface-hover hover:text-foreground"
             >
               <LogOutIcon />
               Se déconnecter
@@ -144,13 +144,13 @@ export function MobileMenu({
           <div className="flex flex-col gap-2 p-1">
             <Link
               href="/signin"
-              className="flex min-h-11 w-full items-center justify-center rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-hover"
+              className="flex min-h-11 w-full items-center justify-center rounded-control border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-hover"
             >
               Se connecter
             </Link>
             <Link
               href="/signup"
-              className="flex min-h-11 w-full items-center justify-center rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary-hover"
+              className="flex min-h-11 w-full items-center justify-center rounded-control bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary-hover"
             >
               Créer un compte
             </Link>

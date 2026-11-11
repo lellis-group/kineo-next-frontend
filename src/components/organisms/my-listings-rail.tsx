@@ -147,7 +147,7 @@ export function MyListingsRail({
               different sets, and the caption is what tells them apart.
             */}
             <SpecialtyBars rows={specialtyBars(listings)} />
-            <p className="mt-2 text-[0.6875rem] leading-tight text-faint">
+            <p className="mt-2 text-2xs leading-tight text-faint">
               Spécialités de cette page
             </p>
           </>

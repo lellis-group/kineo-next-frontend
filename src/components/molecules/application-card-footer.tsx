@@ -16,7 +16,7 @@ export function ApplicationCardFooter({
         <MetaRowItem>{application.submittedLabel}</MetaRowItem>
       </MetaRow>
 
-      <span className="flex shrink-0 items-center gap-1.5 self-start text-[13px] font-medium text-faint transition-colors group-hover:text-primary sm:self-auto">
+      <span className="flex shrink-0 items-center gap-1.5 self-start text-control font-medium text-faint transition-colors group-hover:text-primary sm:self-auto">
         Voir le détail
         <ArrowRightIcon className="h-4 w-4 shrink-0 transition-transform duration-200 group-hover:translate-x-0.5" />
       </span>

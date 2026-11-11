@@ -50,7 +50,7 @@ export const PAGE_SUBTITLE = "mt-1.5 text-sm leading-relaxed text-muted";
  * A recessed box for a message that belongs to the flow rather than to the
  * chrome: an empty state, a note under a form, a hint inside a card.
  */
-export const SOFT_PANEL = "rounded-xl border border-border bg-surface-2";
+export const SOFT_PANEL = "rounded-control border border-border bg-surface-2";
 
 /** Centred text inside a `SOFT_PANEL`. */
 export const SOFT_PANEL_BODY = "px-4 py-6 text-center text-sm text-muted";

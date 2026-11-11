@@ -72,7 +72,7 @@ export function ListingCard({
       }}
     >
       <div className="flex items-start gap-3">
-        <span className="icon-tilt grid size-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
+        <span className="icon-tilt grid size-9 shrink-0 place-items-center rounded-control bg-primary/10 text-primary">
           <SpecialtyIcon specialty={listing.specialty} className="size-4" />
         </span>
         <div className="min-w-0 flex-1">

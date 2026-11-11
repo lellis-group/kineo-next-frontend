@@ -35,7 +35,7 @@ export function MyListingCard({ listing }: { listing: MyListing }) {
       <Card className="card-lift p-5 sm:p-7">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0 flex-1">
-            <h2 className="text-[15px] leading-snug font-medium wrap-break-word text-foreground sm:text-lg">
+            <h2 className="text-base leading-snug font-medium wrap-break-word text-foreground sm:text-lg">
               {listing.title}
             </h2>
 

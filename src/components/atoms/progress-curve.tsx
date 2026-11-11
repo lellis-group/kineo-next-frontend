@@ -189,7 +189,7 @@ export function ProgressCurve({
             top: curveY - DOT / 2 - TAIL - BADGE,
           }}
         >
-          <span className="relative block rounded-md bg-primary px-2 py-0.5 text-[0.75rem] leading-tight font-medium text-primary-foreground tabular-nums after:absolute after:top-full after:left-1/2 after:-translate-x-1/2 after:border-x-4 after:border-t-[5px] after:border-x-transparent after:border-t-primary after:content-['']">
+          <span className="relative block rounded-full bg-primary px-2 py-0.5 text-xs leading-tight font-medium text-primary-foreground tabular-nums after:absolute after:top-full after:left-1/2 after:-translate-x-1/2 after:border-x-4 after:border-t-[5px] after:border-x-transparent after:border-t-primary after:content-['']">
             {rounded} %
           </span>
         </div>
@@ -266,7 +266,7 @@ export function ProgressCurve({
           than this puts the line back through the text.
         */}
         <div
-          className="pointer-events-none absolute inset-x-0 flex justify-between text-[0.6875rem] leading-none text-faint tabular-nums"
+          className="pointer-events-none absolute inset-x-0 flex justify-between text-2xs leading-none text-faint tabular-nums"
           style={{ top: SVG_TOP + ARC.chordY + 7 }}
         >
           <span>{leftLabel}</span>

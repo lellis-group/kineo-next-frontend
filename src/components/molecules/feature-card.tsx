@@ -12,10 +12,10 @@ export function FeatureCard({
   description,
 }: FeatureCardProps) {
   return (
-    <div className="card-lift h-full rounded-2xl border border-border bg-surface p-6">
+    <div className="card-lift h-full rounded-card border border-border bg-surface p-6">
       <div
         aria-hidden="true"
-        className="icon-tilt mb-5 flex h-11 w-11 items-center justify-center rounded-xl bg-primary/15 text-xl text-primary"
+        className="icon-tilt mb-5 flex h-11 w-11 items-center justify-center rounded-control bg-primary/15 text-xl text-primary"
       >
         <Icon />
       </div>

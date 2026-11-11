@@ -76,7 +76,7 @@ export function ListSkeleton({
           <div
             // biome-ignore lint/suspicious/noArrayIndexKey: static placeholders
             key={index}
-            className={cn("animate-pulse rounded-2xl bg-surface", cardHeight)}
+            className={cn("animate-pulse rounded-card bg-surface", cardHeight)}
           />
         ))}
       </div>

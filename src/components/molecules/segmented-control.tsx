@@ -67,7 +67,7 @@ export function SegmentedControl<T extends string>({
               // results header comes to. The two sit on one row and are centred
               // against each other, so a difference of a few pixels reads as
               // neither of them being aligned.
-              "shrink-0 rounded-full px-3.5 py-1 text-[0.8125rem] font-medium whitespace-nowrap transition-colors",
+              "shrink-0 rounded-full px-3.5 py-1 text-control font-medium whitespace-nowrap transition-colors",
               active
                 ? "bg-primary text-primary-foreground"
                 : "text-muted hover:bg-surface-hover hover:text-foreground",

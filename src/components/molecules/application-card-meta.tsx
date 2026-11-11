@@ -11,7 +11,7 @@ export function ApplicationCardMeta({
 
   if (!label) {
     return (
-      <p className="mt-2 text-[13px] text-muted sm:text-sm">
+      <p className="mt-2 text-control text-muted sm:text-sm">
         {application.submittedLabel}
       </p>
     );

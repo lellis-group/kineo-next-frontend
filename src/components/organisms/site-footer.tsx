@@ -21,7 +21,7 @@ const COPYRIGHT_YEAR = 2026;
  */
 function BetaBadge() {
   return (
-    <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[0.6875rem] font-medium tracking-wide text-primary">
+    <span className="rounded-full bg-primary/15 px-2 py-0.5 text-2xs font-medium tracking-wide text-primary">
       Bêta
     </span>
   );
@@ -48,7 +48,7 @@ function FooterLink({ href, label }: { href: string; label: string }) {
     <Link
       href={href}
       title={pending}
-      className="text-[0.8125rem] leading-tight whitespace-nowrap text-muted transition-colors hover:text-primary"
+      className="text-control leading-tight whitespace-nowrap text-muted transition-colors hover:text-primary"
     >
       {label}
     </Link>
@@ -80,9 +80,7 @@ function FooterLinkGroup({
 }) {
   return (
     <nav aria-label={title} className="min-w-40">
-      <h3 className="text-[0.6875rem] leading-tight font-medium text-faint">
-        {title}
-      </h3>
+      <h3 className="text-2xs leading-tight font-medium text-faint">{title}</h3>
 
       <ul className="mt-2 flex flex-col gap-1.5">
         {links.map((link) => (
@@ -134,7 +132,7 @@ export function SiteFooter() {
             <Link
               href="/"
               aria-label="Kineo — Accueil"
-              className="inline-flex rounded-lg"
+              className="inline-flex rounded-control"
             >
               <KineoLogo />
             </Link>
@@ -154,7 +152,7 @@ export function SiteFooter() {
             {footerContent.tagline}
           </p>
 
-          <p className="mt-1.5 text-[0.6875rem] text-faint">
+          <p className="mt-1.5 text-2xs text-faint">
             © {COPYRIGHT_YEAR} Kineo. Tous droits réservés.
           </p>
         </div>

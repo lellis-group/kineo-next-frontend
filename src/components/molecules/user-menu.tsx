@@ -84,7 +84,7 @@ export function UserMenu({
           <span className="block truncate text-sm leading-tight font-medium text-foreground">
             {name}
           </span>
-          <span className="block truncate text-[0.6875rem] leading-tight text-muted">
+          <span className="block truncate text-2xs leading-tight text-muted">
             {subtitle}
           </span>
         </span>
@@ -114,7 +114,7 @@ export function UserMenu({
             role="menuitem"
             href="/profile"
             onClick={() => setOpen(false)}
-            className="mt-1 flex items-center rounded-lg px-3 py-2 text-sm text-muted transition-colors hover:bg-surface-hover hover:text-foreground focus-visible:bg-surface-hover focus-visible:outline-none"
+            className="mt-1 flex items-center rounded-control px-3 py-2 text-sm text-muted transition-colors hover:bg-surface-hover hover:text-foreground focus-visible:bg-surface-hover focus-visible:outline-none"
           >
             Mon profil
           </Link>
@@ -127,7 +127,7 @@ export function UserMenu({
                 setOpen(false);
                 onSignOut();
               }}
-              className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted transition-colors hover:bg-surface-hover hover:text-foreground focus-visible:bg-surface-hover focus-visible:outline-none"
+              className="flex w-full cursor-pointer items-center gap-2 rounded-control px-3 py-2 text-sm text-muted transition-colors hover:bg-surface-hover hover:text-foreground focus-visible:bg-surface-hover focus-visible:outline-none"
             >
               <LogOutIcon className="size-4" />
               Se déconnecter

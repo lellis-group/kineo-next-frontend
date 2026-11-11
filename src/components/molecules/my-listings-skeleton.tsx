@@ -49,7 +49,7 @@ export function MyListingsSkeleton() {
             {[0, 1, 2, 3, 4].map((row) => (
               <div
                 key={row}
-                className="h-14 animate-pulse rounded-xl bg-surface-2/60"
+                className="h-14 animate-pulse rounded-control bg-surface-2/60"
               />
             ))}
           </div>

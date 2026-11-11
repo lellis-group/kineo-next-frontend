@@ -45,7 +45,7 @@ export function PasswordInput({
         aria-label={
           visible ? "Masquer le mot de passe" : "Afficher le mot de passe"
         }
-        className="absolute top-1/2 right-2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-lg text-muted transition-colors hover:text-foreground"
+        className="absolute top-1/2 right-2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-control text-muted transition-colors hover:text-foreground"
       >
         {visible ? (
           <EyeOffIcon className="h-4.5 w-4.5" />

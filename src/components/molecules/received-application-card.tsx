@@ -70,7 +70,7 @@ export function ReceivedApplicationCard({
   return (
     <article
       className={cn(
-        "rounded-2xl border border-border bg-surface-2 px-6 py-6 sm:px-8 sm:py-7",
+        "rounded-card border border-border bg-surface-2 px-6 py-6 sm:px-8 sm:py-7",
         className,
       )}
     >
@@ -108,7 +108,7 @@ export function ReceivedApplicationCard({
             {RECEIVED_STATUS_LABELS[application.status]}
           </Badge>
           {decision && (
-            <span className="text-right text-[13px] leading-snug text-muted">
+            <span className="text-right text-control leading-snug text-muted">
               {decision}
             </span>
           )}
@@ -126,7 +126,7 @@ export function ReceivedApplicationCard({
              bordered card is a box in a box, and the quote is the one part of
              the row that is the candidate's own words — it should read as
              quoted, not as another field. */
-          <blockquote className="mt-7 border-l-2 border-primary/30 pl-5 text-[15px] leading-loose break-words text-muted">
+          <blockquote className="mt-7 border-l-2 border-primary/30 pl-5 text-base leading-loose break-words text-muted">
             {application.message}
           </blockquote>
         )

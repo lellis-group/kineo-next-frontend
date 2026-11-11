@@ -78,7 +78,7 @@ interface PaginationProps<C extends PageSize = PageSize> {
  * never wraps, and `aria-label` carries what the icons stand for.
  */
 const TRACK_PILL =
-  "inline-flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1 text-[0.8125rem] font-medium whitespace-nowrap text-foreground transition-colors hover:bg-surface-hover disabled:pointer-events-none disabled:opacity-50";
+  "inline-flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1 text-control font-medium whitespace-nowrap text-foreground transition-colors hover:bg-surface-hover disabled:pointer-events-none disabled:opacity-50";
 
 export function Pagination<C extends PageSize = PageSize>({
   currentPage,
@@ -130,7 +130,7 @@ export function Pagination<C extends PageSize = PageSize>({
           <span
             key={highlight ?? "page"}
             className={cn(
-              "px-1.5 text-[0.8125rem] whitespace-nowrap text-muted tabular-nums",
+              "px-1.5 text-control whitespace-nowrap text-muted tabular-nums",
               highlight != null && "pager-spotlight",
             )}
           >
@@ -149,7 +149,7 @@ export function Pagination<C extends PageSize = PageSize>({
           </button>
         </div>
       ) : (
-        <span className="text-[0.8125rem] text-muted">Une seule page</span>
+        <span className="text-control text-muted">Une seule page</span>
       )}
 
       {canChooseSize && (
@@ -172,7 +172,7 @@ export function Pagination<C extends PageSize = PageSize>({
             loading && "pointer-events-none opacity-50",
           )}
         >
-          <span className="cursor-pointer text-[0.8125rem] text-muted">
+          <span className="cursor-pointer text-control text-muted">
             Par page
           </span>
           <span className="relative">
@@ -183,7 +183,7 @@ export function Pagination<C extends PageSize = PageSize>({
               onChange={(event) =>
                 onPageSizeChange(Number(event.target.value) as C)
               }
-              className="cursor-pointer appearance-none bg-transparent py-0 pr-5 pl-1.5 text-[0.8125rem] font-medium whitespace-nowrap text-foreground focus:outline-none disabled:cursor-not-allowed"
+              className="cursor-pointer appearance-none bg-transparent py-0 pr-5 pl-1.5 text-control font-medium whitespace-nowrap text-foreground focus:outline-none disabled:cursor-not-allowed"
             >
               {choices.map((size) => (
                 <option key={size} value={size}>

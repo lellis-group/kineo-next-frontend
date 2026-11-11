@@ -121,8 +121,22 @@
   --color-success: var(--success);
   --color-info: var(--info);
 
+  /*
+   * Three radii, as in the reference: `rounded-full` for pills, chips and icon
+   * buttons, `rounded-control` for anything clickable or inset inside a card,
+   * `rounded-card` for cards, panels and popovers. Tailwind's own `rounded-lg`
+   * / `-xl` / `-2xl` are not used, so a new box picks one of these three.
+   */
   --radius-control: var(--radius-control);
   --radius-card: var(--radius-card);
+
+  /*
+   * The two steps the reference uses between Tailwind's: 11px for secondary
+   * lines under a value (« Dispatch Officer », a stat's label), 13px for
+   * controls (chips, segmented options, the pager).
+   */
+  --text-2xs: 0.6875rem;
+  --text-control: 0.8125rem;
 
   /*
    * The base spacing unit.

@@ -112,7 +112,7 @@ export function ListingSelectionPanel({
           <button
             type="button"
             onClick={onReveal}
-            className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            className="inline-flex items-center justify-center gap-1.5 rounded-control bg-primary px-3 py-2 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
           >
             Voir dans la liste
             <ArrowRightIcon className="size-3.5 shrink-0" />

@@ -69,7 +69,7 @@ export default function PrivacyPage() {
               <li key={section.id}>
                 <a
                   href={`#${section.id}`}
-                  className="flex gap-2 rounded-lg px-2 py-1.5 text-sm text-muted transition-colors hover:bg-surface-2 hover:text-foreground"
+                  className="flex gap-2 rounded-control px-2 py-1.5 text-sm text-muted transition-colors hover:bg-surface-2 hover:text-foreground"
                 >
                   <span className="text-faint">{index + 1}.</span>
                   {section.label}

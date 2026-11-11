@@ -17,7 +17,7 @@ export function ActivityItem({
   href,
 }: ActivityItemProps) {
   return (
-    <div className="flex items-start gap-3 rounded-xl border border-border bg-surface-2 px-3 py-3.5 sm:items-center sm:gap-4 sm:px-4">
+    <div className="flex items-start gap-3 rounded-control border border-border bg-surface-2 px-3 py-3.5 sm:items-center sm:gap-4 sm:px-4">
       <span className="mt-0.5 shrink-0 text-lg text-primary sm:mt-0">
         <Icon />
       </span>
@@ -36,7 +36,7 @@ export function ActivityItem({
       {href && (
         <Link
           href={href}
-          className="inline-flex min-h-11 shrink-0 items-center rounded-md px-2 py-2 text-sm text-muted transition-colors hover:text-primary"
+          className="inline-flex min-h-11 shrink-0 items-center rounded-control px-2 py-2 text-sm text-muted transition-colors hover:text-primary"
         >
           Voir
         </Link>

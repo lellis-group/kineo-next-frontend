@@ -40,7 +40,7 @@ export function HeaderSkeleton() {
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3" aria-hidden="true">
-          <span className="hidden h-10 w-10 animate-pulse rounded-lg bg-surface sm:block" />
+          <span className="hidden h-10 w-10 animate-pulse rounded-control bg-surface sm:block" />
           <span className="h-10 w-10 animate-pulse rounded-full bg-surface" />
           <span className="h-10 w-28 animate-pulse rounded-full bg-surface" />
         </div>

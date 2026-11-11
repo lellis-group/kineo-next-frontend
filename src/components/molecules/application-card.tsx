@@ -18,11 +18,11 @@ export function ApplicationCard({
   return (
     <Link
       href={`/applications/${application.id}`}
-      className="group block w-full rounded-2xl border border-border bg-surface p-5 transition-colors hover:border-border-strong hover:bg-surface-hover sm:p-7"
+      className="group block w-full rounded-card border border-border bg-surface p-5 transition-colors hover:border-border-strong hover:bg-surface-hover sm:p-7"
     >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
         <div className="min-w-0 flex-1">
-          <p className="text-[15px] leading-snug font-medium break-words text-foreground sm:text-lg">
+          <p className="text-base leading-snug font-medium break-words text-foreground sm:text-lg">
             {application.listing.title}
           </p>
           <ApplicationCardMeta application={application} />
@@ -43,8 +43,8 @@ export function ApplicationCard({
       )}
 
       {application.message && (
-        <div className="mt-3 rounded-xl bg-surface-2 px-3 py-2.5 sm:mt-4 sm:px-4 sm:py-3">
-          <p className="line-clamp-2 overflow-hidden text-[13px] leading-snug break-words text-muted sm:line-clamp-3 sm:text-sm sm:leading-relaxed">
+        <div className="mt-3 rounded-control bg-surface-2 px-3 py-2.5 sm:mt-4 sm:px-4 sm:py-3">
+          <p className="line-clamp-2 overflow-hidden text-control leading-snug break-words text-muted sm:line-clamp-3 sm:text-sm sm:leading-relaxed">
             <span aria-hidden="true">«&nbsp;</span>
             {application.message}
             <span aria-hidden="true">&nbsp;»</span>

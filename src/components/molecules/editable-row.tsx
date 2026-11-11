@@ -99,7 +99,7 @@ export function EditableRow({
       {editing ? (
         <form
           action={handleAction}
-          className="flex flex-col gap-2 rounded-lg bg-surface-2 p-3"
+          className="flex flex-col gap-2 rounded-control bg-surface-2 p-3"
         >
           {fields.map((field) => (
             <label key={field.name} className="flex flex-col gap-1.5">
@@ -136,7 +136,7 @@ export function EditableRow({
           </div>
         </form>
       ) : (
-        <div className="flex items-center justify-between gap-3 rounded-lg bg-surface-2 px-3 py-2.5">
+        <div className="flex items-center justify-between gap-3 rounded-control bg-surface-2 px-3 py-2.5">
           <div className="min-w-0 flex-1">
             <p className="text-xs text-muted">{label}</p>
             <div className="truncate text-sm font-medium break-all">

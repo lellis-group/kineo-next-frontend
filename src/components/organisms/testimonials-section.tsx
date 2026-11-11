@@ -33,7 +33,7 @@ export function TestimonialsSection() {
                     : undefined
               }
             >
-              <figure className="card-lift flex h-full flex-col rounded-2xl border border-border bg-surface p-6">
+              <figure className="card-lift flex h-full flex-col rounded-card border border-border bg-surface p-6">
                 <blockquote className="flex-1 text-sm leading-relaxed text-muted">
                   &ldquo;{testimonial.quote}&rdquo;
                 </blockquote>

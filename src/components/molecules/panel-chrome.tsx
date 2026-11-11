@@ -56,7 +56,7 @@ export function StatChip({
         {icon}
       </span>
       <span className="min-w-0">
-        <span className="block truncate text-[0.6875rem] leading-tight text-muted">
+        <span className="block truncate text-2xs leading-tight text-muted">
           {label}
         </span>
         <span className="block truncate text-base leading-tight font-medium text-foreground tabular-nums">
@@ -67,7 +67,7 @@ export function StatChip({
   );
 
   const classes = cn(
-    "flex min-w-0 items-center gap-2 rounded-xl px-3 py-2.5 text-left",
+    "flex min-w-0 items-center gap-2 rounded-control px-3 py-2.5 text-left",
     pressed ? "bg-primary/15 ring-1 ring-primary/40" : "bg-white/[0.04]",
     onClick &&
       "cursor-pointer transition-colors hover:bg-white/[0.08] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",

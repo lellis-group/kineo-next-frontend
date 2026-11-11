@@ -18,7 +18,7 @@ const VARIANT_CLASSES: Record<ButtonVariant, string> = {
 
 const SIZE_CLASSES: Record<ButtonSize, string> = {
   md: "px-5 py-3 text-sm",
-  lg: "px-5 py-3.5 text-[0.9375rem]",
+  lg: "px-5 py-3.5 text-base",
 };
 
 export interface ButtonProps extends ComponentProps<"button"> {
@@ -41,7 +41,7 @@ export function Button({
   ...rest
 }: ButtonProps) {
   const classes = cn(
-    "inline-flex items-center justify-center gap-2 rounded-[0.625rem] font-medium transition-colors disabled:pointer-events-none disabled:opacity-60",
+    "inline-flex items-center justify-center gap-2 rounded-control font-medium transition-colors disabled:pointer-events-none disabled:opacity-60",
     SIZE_CLASSES[size],
     VARIANT_CLASSES[variant],
     className,

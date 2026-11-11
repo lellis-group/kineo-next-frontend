@@ -75,7 +75,7 @@ export function popupContent(
   */
   const reference = document.createElement("p");
   reference.className =
-    "text-[0.6875rem] leading-none font-medium tracking-wide text-black/50 tabular-nums";
+    "text-2xs leading-none font-medium tracking-wide text-black/50 tabular-nums";
   reference.textContent =
     place.count === 1 ? `#${first.id.slice(0, 8).toUpperCase()}` : "";
   if (reference.textContent) {
@@ -133,7 +133,7 @@ export function popupContent(
     const row = document.createElement("button");
     row.type = "button";
     row.className =
-      "flex w-full cursor-pointer flex-col rounded-lg px-1.5 py-0.5 text-left transition-colors hover:bg-black/5";
+      "flex w-full cursor-pointer flex-col rounded-control px-1.5 py-0.5 text-left transition-colors hover:bg-black/5";
     row.addEventListener("click", () => onPick(listing));
     // Same handle as the table rows carry, so the two views of a posting can be
     // matched from the outside — by the map's own tests, and by anything else that
@@ -146,7 +146,7 @@ export function popupContent(
     row.append(title);
 
     const meta = document.createElement("span");
-    meta.className = "text-[0.6875rem] text-black/50";
+    meta.className = "text-2xs text-black/50";
     meta.textContent = listing.dateRange;
     row.append(meta);
 
@@ -162,7 +162,7 @@ export function popupContent(
   const hidden = place.count - shown.length;
   if (hidden > 0) {
     const rest = document.createElement("p");
-    rest.className = "mt-1 text-[0.6875rem] text-black/50";
+    rest.className = "mt-1 text-2xs text-black/50";
     rest.textContent = `+ ${hidden} autre${hidden > 1 ? "s" : ""}`;
     root.append(rest);
   }
@@ -200,7 +200,7 @@ function zoomButton(
   const button = document.createElement("button");
   button.type = "button";
   button.className =
-    "mt-1.5 flex w-full cursor-pointer items-center justify-center rounded-lg border border-black/10 px-3 py-2 text-xs font-medium text-black/70 transition-colors hover:bg-black/5 focus-visible:bg-black/5";
+    "mt-1.5 flex w-full cursor-pointer items-center justify-center rounded-control border border-black/10 px-3 py-2 text-xs font-medium text-black/70 transition-colors hover:bg-black/5 focus-visible:bg-black/5";
 
   const isCluster = place.count > 1;
   button.textContent = isCluster

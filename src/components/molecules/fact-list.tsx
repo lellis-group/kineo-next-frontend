@@ -22,11 +22,11 @@ export function Fact({
 }) {
   return (
     <div className={cn("min-w-0", className)}>
-      <dt className="flex items-center gap-1.5 text-[13px] text-muted">
+      <dt className="flex items-center gap-1.5 text-control text-muted">
         {Icon && <Icon className="h-4 w-4 shrink-0 text-faint" />}
         {term}
       </dt>
-      <dd className="mt-2 text-[15px] leading-snug font-medium break-words text-foreground">
+      <dd className="mt-2 text-base leading-snug font-medium break-words text-foreground">
         {children}
       </dd>
     </div>

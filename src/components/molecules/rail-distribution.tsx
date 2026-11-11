@@ -85,7 +85,7 @@ export function RailDistribution({ rows }: { rows: RailDistributionRow[] }) {
                   // The negative margin and matching padding keep the row's
                   // geometry identical to a plain one while giving the hover and
                   // pressed tints an edge to sit against.
-                  "-mx-1.5 flex w-[calc(100%+0.75rem)] min-w-0 items-center gap-2 rounded-lg px-1.5 py-1 text-left transition-colors",
+                  "-mx-1.5 flex w-[calc(100%+0.75rem)] min-w-0 items-center gap-2 rounded-control px-1.5 py-1 text-left transition-colors",
                   "hover:bg-surface-2 focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-primary",
                   row.active && "bg-primary/10",
                 )}

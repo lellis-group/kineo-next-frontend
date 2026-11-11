@@ -15,7 +15,7 @@ export function TrustBadge({ icon: Icon, label, className }: TrustBadgeProps) {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-2 rounded-xl border border-border bg-surface px-3.5 py-2.5 text-sm font-medium text-foreground",
+        "inline-flex items-center gap-2 rounded-control border border-border bg-surface px-3.5 py-2.5 text-sm font-medium text-foreground",
         className,
       )}
     >

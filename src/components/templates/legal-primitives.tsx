@@ -83,7 +83,7 @@ export function Steps({ items }: { items: readonly string[] }) {
         <li key={item} className="flex items-start gap-3">
           <span
             aria-hidden="true"
-            className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/15 text-[11px] font-medium text-primary"
+            className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/15 text-2xs font-medium text-primary"
           >
             {index + 1}
           </span>
@@ -115,7 +115,7 @@ export function PendingNote({ children }: { children: ReactNode }) {
  */
 export function PendingCallout({ items }: { items: readonly string[] }) {
   return (
-    <details className="group mt-8 rounded-2xl border border-warning/25 bg-warning/5">
+    <details className="group mt-8 rounded-card border border-warning/25 bg-warning/5">
       <summary className="flex cursor-pointer list-none items-center justify-between gap-4 p-5 text-sm font-medium text-warning marker:content-none">
         <span>En attente de validation juridique ({items.length} points)</span>
         <ChevronDownIcon

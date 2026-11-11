@@ -45,7 +45,7 @@ export function RailVolume({
       <div className="flex flex-col gap-2.5">
         {leading.map((figure) => (
           <div key={figure.label}>
-            <dt className="text-[0.6875rem] leading-tight text-muted">
+            <dt className="text-2xs leading-tight text-muted">
               {figure.label}
             </dt>
             <dd className="text-lg leading-tight font-medium text-foreground tabular-nums">
@@ -59,7 +59,7 @@ export function RailVolume({
         <dd className="text-4xl leading-none font-medium text-foreground tabular-nums">
           {total}
         </dd>
-        <dt className="mt-1.5 text-[0.6875rem] leading-tight text-muted">
+        <dt className="mt-1.5 text-2xs leading-tight text-muted">
           {totalLabel}
         </dt>
       </div>

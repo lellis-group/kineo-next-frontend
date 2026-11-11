@@ -19,7 +19,7 @@ export function ProfileSection({
       <div className="flex items-center gap-3">
         <span
           aria-hidden="true"
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-control bg-primary/15 text-primary"
         >
           <Icon />
         </span>
