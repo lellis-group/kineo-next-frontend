@@ -17,21 +17,9 @@ export const metadata: Metadata = {
 };
 
 /**
- * Dedicated listing page — routed by listing id. Reads the dynamic params inside
- * a Suspense boundary so the route stays instant-streamable instead of blocking
- * prerendering, like the candidate application page.
- *
- * The listing and its candidates are read together: the candidate read is scoped
- * to a listing the first one has to have authorised, and running them in
- * sequence would double the time to first paint for no gain.
- *
- * Neither read is allowed to degrade into an empty result. Both are wrapped in
- * `requireExisting` because both can answer "this is not yours" — the listing
- * read with a 404, the candidates read with a 403, the backend not being
- * consistent between the two — and a reader who guessed another practice's
- * listing id must land on the 404 page rather than on a crash or, worse, on a
- * confident « aucune candidature reçue » describing somebody else's posting.
- * The genuinely empty case arrives as a successful `total: 0`.
+ * The owner's page for one listing. The listing and its candidates are read in
+ * parallel, both under `requireExisting`: "not yours" arrives as a 404 on one
+ * and a 403 on the other, and must land on the 404 page either way.
  */
 export default function ListingDetailPage({
   params,

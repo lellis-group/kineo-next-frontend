@@ -15,17 +15,8 @@ import type { ApiProfile, ApiUser } from "@/lib/types/api";
 export type ProfileFeedback = "created" | "saved" | null;
 
 /**
- * The /profile screen in view mode. Edit and create live on their own routes.
- *
- * Markup only: the account writes, their error mapping and the post-success
- * refresh all live in `ProfileContainer`. The split is not ceremony — every
- * handler here takes a service rejection and turns it into a sentence, and a
- * view that never imports the auth client is a view that can be rendered from
- * fixed props.
- *
- * The profile and the account both arrive from the server page, including the
- * session user — not read a second time here through the client auth client.
- * Nothing here fetches on mount.
+ * The /profile screen in view mode; markup only. The writes and their error
+ * mapping live in `ProfileContainer`; the data arrives from the server page.
  */
 export function ProfileView({
   profile,
@@ -89,8 +80,6 @@ export function ProfileView({
             muted={!profile.city}
           />
 
-          {/* Same marker a practice sees beside a candidate's name — the two
-              must not disagree about what "verified" means. */}
           <div className="flex items-center justify-between gap-4 border-b border-border py-3.5">
             <span className="text-sm text-muted">Identité professionnelle</span>
             {profile.verified ? (

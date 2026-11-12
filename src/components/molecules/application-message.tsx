@@ -20,10 +20,7 @@ export interface ApplicationMessageProps {
 /** Backend UpdateApplicationDto — required message, 1-2000 chars. */
 const MAX_MESSAGE_LENGTH = 2000;
 
-/**
- * Editing is refused once the practice has answered, so the 400 is a state the
- * reader can act on rather than a fault to retry.
- */
+/** Editing is refused once the practice has answered: a state, not a fault. */
 const MESSAGE_COPY = {
   conflict: "Cette candidature ne peut plus être modifiée.",
   unavailable: "L'enregistrement a échoué pour le moment. Veuillez réessayer.",

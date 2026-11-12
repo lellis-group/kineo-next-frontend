@@ -13,13 +13,8 @@ export interface MobileMenuProps {
   activeHref?: string;
   /** Only present in the authenticated area. */
   user?: UserSummary;
-  /** Sign-out callback (injected by AppHeader). */
   onSignOut?: () => void;
-  /**
-   * Current route path, injected by AppHeader. Read as a plain prop instead
-   * of `usePathname()` so this component stays safe inside a prerendered
-   * Suspense fallback (SiteHeader renders as the shell's fallback).
-   */
+  /** A prop rather than `usePathname()`, so this is safe inside a prerendered fallback. */
   pathname?: string;
 }
 
@@ -43,9 +38,7 @@ export function MobileMenu({
   const triggerRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
 
-  // Close when the active route changes (back/forward, programmatic push).
-  // `pathname` is an injected prop (see the prop docs) — this effect only
-  // runs when the route actually changes.
+  // Close when the route changes (back/forward, programmatic push).
   const prevPathname = useRef(pathname);
   useEffect(() => {
     if (prevPathname.current !== pathname) {
@@ -54,7 +47,7 @@ export function MobileMenu({
     }
   }, [pathname]);
 
-  // Close on Escape + return focus to the trigger.
+  // Return focus to the trigger on Escape.
   useEffect(() => {
     if (!open) return;
     function onKeyDown(event: KeyboardEvent) {
@@ -80,7 +73,6 @@ export function MobileMenu({
     return () => document.removeEventListener("pointerdown", onPointerDown);
   }, [open]);
 
-  // Move focus into the panel when it opens.
   useEffect(() => {
     if (open) panelRef.current?.focus();
   }, [open]);

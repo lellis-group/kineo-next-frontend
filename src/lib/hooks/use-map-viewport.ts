@@ -10,16 +10,9 @@ export interface Viewport {
 }
 
 /**
- * The viewport as last seen, and the trigger for re-clustering.
- *
- * Which markers touch depends on the zoom *and* on where the map is scrolled —
- * panning two pins together merges them just as surely as zooming in does — so
- * the state carries the centre as well as the level. Null until the map has
- * settled once, which is also the signal that clustering can run at all.
- *
- * `zoomend`/`moveend` rather than `zoom` and `move`: the grouping only matters
- * once the reader lets go, and re-projecting on every frame of a pinch is work
- * spent on an answer nobody looks at until the gesture ends.
+ * The viewport as last settled, the trigger for re-clustering: zoom and centre
+ * (panning can merge pins too). Null until the map has settled once. Updated
+ * on `zoomend`/`moveend`, not every frame.
  */
 export function useMapViewport(
   mapRef: RefObject<MapLibreMap | null>,

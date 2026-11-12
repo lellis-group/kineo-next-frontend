@@ -3,41 +3,18 @@ import { ApiError } from "@/lib/api-client";
 import { STRIP_CONTAINER } from "@/lib/layout";
 
 /**
- * A refresh that failed, over content that is still on screen.
- *
- * The one error state a list screen has that `ErrorState` cannot express: the
- * server already delivered a usable view, so a later read going wrong must not
- * throw that view away. Replacing a working list with an error card would also
- * hide the chips that would let the reader navigate out of the broken state.
- *
- * Written once because copies drift: two screens with their own banner end up
- * disagreeing about what a failed refresh says about the data underneath it.
- *
- * `message` is the noun-specific half; the surrounding sentence is not, so it
- * lives here.
- *
- * ## Why a 429 is told apart
- *
- * Paging through a list fast enough earns a 429 from the backend's rate limit,
- * and it is the one failure here where « the service had a problem » is the
- * wrong thing to say: the service is fine, the reader simply outpaced it. The
- * generic copy would have them retry immediately into the same wall. A 429
- * instead says to wait a moment — the one piece of advice that actually clears
- * it. `error` is read for its status only; anything else keeps the generic copy.
+ * A refresh that failed, over content that is still on screen (unlike
+ * `ErrorState`, it keeps the working view and its chips). A 429 gets its own
+ * copy: the reader should wait, not retry at once.
  */
 export function InlineRetryBanner({
   noun,
   onRetry,
   error,
 }: {
-  /** What the stale content is — « les candidatures », « les annonces ». */
   noun: string;
   onRetry: () => void;
-  /**
-   * The failure behind the banner, when the caller has it. Read only to tell a
-   * 429 apart; optional so a caller with nothing more than « it failed » keeps
-   * the generic copy unchanged.
-   */
+  /** Read only to tell a 429 apart. */
   error?: unknown;
 }) {
   const rateLimited = error instanceof ApiError && error.status === 429;

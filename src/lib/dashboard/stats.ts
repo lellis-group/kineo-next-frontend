@@ -5,18 +5,7 @@ import type { MyListingsData } from "../listings";
 import { recruitingCount } from "../listings";
 import type { DashboardStat } from "./contracts";
 
-/**
- * The three figures cards.
- *
- * Everything counted here comes from the server's totals rather than from the
- * rows on hand — paging the member's whole collection to count it would be
- * twenty requests and figures that are short past the last page.
- *
- * Nothing here reads a row. « Prochain remplacement » is the one thing no
- * breakdown of statuses can answer — it asks for the soonest period still to
- * come — and the server answers it beside the counts, over the whole
- * collection rather than over the hundred most recent postings.
- */
+/** The three figure cards, all from the server's totals rather than rows on hand. */
 export function adaptStats(
   listings: MyListingsData,
   applications: ApplicationsData,
@@ -27,45 +16,27 @@ export function adaptStats(
   const discussion = listings.counts.IN_DISCUSSION;
   const full = listings.counts.FULL;
 
-  // PENDING + SHORTLISTED — a shortlisted application is one the practice put
-  // forward but has not yet decided on, so it is still outstanding. Counts are
-  // server-side totals, so the review-by-count must be a total too.
   const awaitingDecision = awaitingDecisionCount(applications.counts);
 
-  // The two statuses behind that total, broken out so the reader can tell a
-  // request nobody has opened yet from one the practice has already put forward —
-  // the same shape as the listings breakdown below: total above, split below.
-  //
-  // Kept adjacent to `AWAITING_DECISION_STATUSES` on purpose. A status added to
-  // that set counts in the headline whether or not it is named here, so this list
-  // has to move with it; nothing enforces that today.
+  // Keep in step with `AWAITING_DECISION_STATUSES`: nothing enforces it.
   const pendingCount = applications.counts.PENDING;
   const shortlistedCount = applications.counts.SHORTLISTED;
 
   const appsBreakdown = [
-    // « en attente » is invariable — no plural suffix on either count.
     `${pendingCount} en attente`,
     `${shortlistedCount} présélectionnée${plural(shortlistedCount)}`,
   ].filter((part) => !part.startsWith("0 "));
 
-  // A subset of the figure above: the same statuses, narrowed to the ones the
-  // practice has not opened yet. Server-counted, so it describes every
-  // outstanding application and not the page of them that came back.
   const unseenApps = applications.unseenOpenCount;
 
-  // Every recruiting status, so the breakdown sums to the headline. Omitting a
-  // status the headline counts would show a number that does not add up — the
-  // same class of bug as the headline itself being wrong.
+  // Every recruiting status, so the breakdown sums to the headline.
   const breakdown = [
     `${open} ouverte${plural(open)}`,
     `${discussion} en discussion`,
     `${full} complet${plural(full)}`,
   ].filter((part) => !part.startsWith("0 "));
 
-  // Only a posting that is actually recruiting can be the next replacement to
-  // cover. The server draws that line — the statuses it considers in play, and
-  // `startDate` in the future — and answers with the soonest one, or with
-  // nothing when there is nothing to come.
+  // Server-answered: the soonest recruiting posting still to come.
   const upcoming = listings.nextRecruitingListing;
 
   const nextReplacement: DashboardStat = upcoming
@@ -91,10 +62,6 @@ export function adaptStats(
       id: "listings",
       title: "Mes annonces",
       value: `${activeListings}`,
-      // The label states what the figure means, not what the noun is: "Mes
-      // annonces" above already says which noun, so repeating it left the line
-      // reading like a fragment. And it is written for zero, rather than
-      // describing 0 as "annonce active · en recherche de remplaçant".
       label:
         activeListings > 0
           ? "en recherche d'un remplaçant"
@@ -106,16 +73,11 @@ export function adaptStats(
       id: "applications",
       title: "Mes candidatures",
       value: `${awaitingDecision}`,
-      // « décision » rather than « réponse »: a shortlisted application has
-      // already been answered — the cabinet put it forward — what is still
-      // outstanding is whether anyone gets picked.
+      // « décision », not « réponse »: a shortlisted application was answered.
       label:
         awaitingDecision > 0
           ? "en attente de décision du cabinet"
           : "aucune en attente de décision",
-      // Split by status, then the unread count as a qualifier on the total. Both
-      // are kept: the split is what says which requests are still untouched, and
-      // the qualifier is the actionable half of it.
       detail:
         [
           appsBreakdown.join(" · "),

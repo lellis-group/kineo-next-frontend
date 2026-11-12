@@ -10,16 +10,7 @@ const DOT_TONES: Record<MetaDotTone, string> = {
   danger: "bg-danger",
 };
 
-/**
- * The row's own box: icon size, gap, text size, line wrapping.
- *
- * Everything on the product that shows "where, when, how many" goes through
- * here, which is what makes two cards written by different people look like they
- * belong to the same screen. Retyping the rhythm at every call site — `h-4` next
- * to `text-sm` on one card, `h-3.5` next to `text-control` on the next — draws the
- * same calendar icon at two sizes between a card and the detail page it links
- * to, and nothing lines up.
- */
+/** The shared "where, when, how many" row, so every card uses one rhythm. */
 export function MetaRow({
   children,
   className,
@@ -40,11 +31,8 @@ export function MetaRow({
 }
 
 /**
- * One fact in a meta row: an icon, a status dot, or plain text.
- *
- * The icon is taken as a *component* rather than as a rendered node on purpose.
- * A node lets each call site pass its own size class, which is exactly how the
- * icons drifted apart; handing over the component keeps the size in one place.
+ * One fact in a meta row: an icon, a status dot, or plain text. The icon is a
+ * component, so its size stays defined here.
  */
 export function MetaRowItem({
   icon: Icon,
@@ -67,9 +55,7 @@ export function MetaRowItem({
     <span
       className={cn(
         "inline-flex min-w-0 items-center gap-1.5",
-        // A truncating item has to be allowed to shrink below its content, and
-        // the others must not be — otherwise the long one refuses to shrink and
-        // pushes the row onto two lines instead of truncating.
+        // Only the truncating item may shrink below its content.
         truncate && "min-w-0 flex-1",
         className,
       )}

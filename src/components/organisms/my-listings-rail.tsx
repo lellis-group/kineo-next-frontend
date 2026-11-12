@@ -34,30 +34,14 @@ import { SPECIALTY_LABELS, SPECIALTY_SHORT_LABELS } from "@/lib/profile";
 import type { Specialty } from "@/lib/types/api";
 
 /**
- * The three summary panels down the left of the practice's board — the reference
- * dashboard's column, drawn from what this screen actually knows.
- *
- * Two kinds of number live here and the difference is stated on each panel rather
- * than left for the reader to guess:
- *
- * - `counts` is the only aggregate the endpoint answers, and it covers the
- *   **whole collection**, so the status panel says the same thing whatever page
- *   is on screen;
- * - everything else — candidatures, urgentes, specialties — can only be derived
- *   from the **page on screen**, and is labelled « cette page ». A practice
- *   paging through forty postings must not read « 3 candidatures » as a fact
- *   about all forty, which is exactly what the same figures on the browse screen
- *   *do* mean: there the panels are fed by an aggregate, and here they are not.
- *
- * The three panel bodies are molecules shared with the browse feed
- * (`RailGauge`, `RailDistribution`, `RailVolume`): the two rails are the same
- * column of panels filled from different numbers, written once.
+ * The summary panels down the left of the practice's board. `counts` covers
+ * the whole collection; every other figure is derived from the page on screen
+ * and labelled « cette page ».
  */
 export function MyListingsRail({
   listings,
   counts,
 }: {
-  /** The page on screen — the source of every page-scoped figure. */
   listings: readonly MyListing[];
   counts: ListingStatusCounts;
 }) {
@@ -65,17 +49,13 @@ export function MyListingsRail({
   const recruitingPercent =
     listings.length > 0 ? Math.round((recruiting / listings.length) * 100) : 0;
 
-  // Active candidates only, never the applications ever received: a shortlisted
-  // candidate and a refused one are both « candidatures », and only one of them
-  // is still holding a slot the practice has to fill.
+  // Active candidates only: a refused one no longer holds a slot.
   const activeCandidates = listings.reduce(
     (sum, listing) => sum + listing.applicationsCount,
     0,
   );
   const urgent = listings.filter((listing) => listing.urgent).length;
 
-  // Whole collection, like the two panels below: the status breakdown is the one
-  // thing this screen is told about everything it owns.
   const filled = counts.FILLED;
   const filledPercent =
     counts.total > 0 ? Math.round((filled / counts.total) * 100) : 0;
@@ -137,15 +117,6 @@ export function MyListingsRail({
               badge={`${filledPercent} % pourvues`}
             />
 
-            {/*
-              Bars over the page's specialties.
-
-              The volume card draws a distribution beside its total, and the only
-              specialty distribution available is the one the page on screen
-              carries — so it is drawn and labelled as the page's, while the total
-              beside it says what the whole collection holds. Two facts about two
-              different sets, and the caption is what tells them apart.
-            */}
             <SpecialtyBars rows={specialtyBars(listings)} />
             <p className="mt-2 text-2xs leading-tight text-faint">
               Spécialités de cette page
@@ -158,17 +129,8 @@ export function MyListingsRail({
 }
 
 /**
- * A mark per status, chosen from the icons this product already carries.
- *
- * The one thing `LISTING_STATUS_META` does not carry, because it is a React
- * component and that table is imported by the server as well. Keyed by status
- * and *total* rather than defaulted, so a status the table gains without a mark
- * here is a compile error rather than a clock.
- *
- * Exported for `my-listings-rail.spec.ts`, which holds the two tables against
- * each other: the type above makes a missing mark a compile error, but only as
- * long as nobody widens it to a `Partial` one day, and the test is what still
- * notices when they do.
+ * A mark per status. Lives here rather than in `LISTING_STATUS_META`, which the
+ * server imports. Exhaustive by type; `my-listings-rail.spec.ts` checks it too.
  */
 export const STATUS_MARKS: Record<
   keyof typeof LISTING_STATUS_META,
@@ -179,20 +141,12 @@ export const STATUS_MARKS: Record<
   IN_DISCUSSION: FileTextIcon,
   FULL: UsersIcon,
   FILLED: CheckIcon,
-  // « stopped », and the fallback MapLibre would have drawn anyway.
   CLOSED: ClockIcon,
   CLOSED_NO_CANDIDATE: ClockIcon,
   CANCELLED: ClockIcon,
 };
 
-/**
- * Every status with something in it, as a bar per row.
- *
- * Whole-collection figures, so this is the one panel on the rail that says the
- * same thing whatever page the reader is on. Empty statuses are dropped rather
- * than drawn at zero: a hairline row under every other one adds lines of noise
- * to say the collection has no cancelled posting.
- */
+/** Whole-collection figures; empty statuses are dropped rather than drawn at zero. */
 function StatusDistribution({ counts }: { counts: ListingStatusCounts }) {
   const rows = LISTING_STATUS_ORDER.map((status) => ({
     status,
@@ -211,11 +165,6 @@ function StatusDistribution({ counts }: { counts: ListingStatusCounts }) {
       rows={rows.map(
         (row): RailDistributionRow => ({
           key: row.status,
-          /*
-            The mark that opens each row, the reference's own arrangement: a
-            glyph per category is what lets a reader match a bar here to a row in
-            the table under it, where the same status pill appears.
-          */
           mark: <StatusMark status={row.status} />,
           label: LISTING_STATUS_META[row.status].shortLabel,
           title: LISTING_STATUS_META[row.status].label,
@@ -227,24 +176,12 @@ function StatusDistribution({ counts }: { counts: ListingStatusCounts }) {
   );
 }
 
-/**
- * A mark per status, chosen from the icons this product already carries.
- *
- * Decorative either way — the label sits beside it on the same row, and the pill
- * in the table says the same thing in colour.
- */
 function StatusMark({ status }: { status: keyof typeof LISTING_STATUS_META }) {
   const Mark = STATUS_MARKS[status];
   return <Mark className="size-4 shrink-0 text-muted" />;
 }
 
-/**
- * The specialties on screen, ranked, ready for the bars.
- *
- * Ranked rather than in API order: the bars are a ranking (the tallest is cream),
- * and a chart whose tallest bar sits in the middle of the column reads as noise
- * rather than as a leader.
- */
+/** The specialties on screen, ranked (the tallest bar is highlighted). */
 function specialtyBars(listings: readonly MyListing[]): BarRow[] {
   const counts = new Map<Specialty, number>();
   for (const listing of listings) {
@@ -262,5 +199,4 @@ function specialtyBars(listings: readonly MyListing[]): BarRow[] {
     }));
 }
 
-/** How many bars the panel draws before folding the rest into the tooltips. */
 const MAX_SPECIALTY_BARS = 6;

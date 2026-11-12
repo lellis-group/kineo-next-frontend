@@ -1,7 +1,6 @@
 import { cn } from "@/lib/cn";
 
 export interface BarRow {
-  /** Stable key — the specialty id. */
   key: string;
   /** The name in full, for the tooltip. */
   label: string;
@@ -11,23 +10,11 @@ export interface BarRow {
 }
 
 /**
- * A distribution as bars under a total — the reference's volume card.
- *
- * Its own component because the one thing it has to do is not drawing: scaling
- * to the tallest row rather than to the sum. A collection whose busiest specialty
- * holds four openings would otherwise draw hairline bars and read as an empty
- * panel, and the reader would conclude nothing is there.
- *
- * The tallest bar is cream and the rest are a step back from it, which is the
- * reference's own two-tone: it keeps the eye on the one column that owns the
- * total above, with no legend to explain why.
- *
- * Every bar is `title`d with the full name, because the label under it is the
- * compromise the width forces and has to stay reachable in full.
+ * A distribution as bars, scaled to the tallest row (not the sum) so a small
+ * collection doesn't draw hairlines. The tallest bar is highlighted.
  */
 export function SpecialtyBars({ rows }: { rows: readonly BarRow[] }) {
-  // No rows is not an empty chart: it is a collection with nothing to spread,
-  // and the panel's own zero state says so already.
+  // The panel's own zero state covers this.
   if (rows.length === 0) {
     return null;
   }

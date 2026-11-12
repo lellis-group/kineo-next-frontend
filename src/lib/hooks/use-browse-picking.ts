@@ -21,7 +21,6 @@ import {
   type MapPlaceListing,
 } from "@/lib/listings";
 
-/** A view write, as the URL hook exposes it. */
 type WriteView = (
   next: { filters: BrowseFormFilters; page: number; sort: BrowseSort },
   method: "replace" | "push",
@@ -29,16 +28,9 @@ type WriteView = (
 ) => void;
 
 /**
- * Pointing at something, in the two directions the screen supports.
- *
- * Two states, because two durations: the hover is a preview that lasts as long
- * as the pointer, and the choice is a selection that lasts until it is
- * dismissed — a choice that went dark when the mouse left the row would close
- * the map's card with it.
- *
- * The chosen posting may not be on the current page, so a pick turns to the page
- * that holds it before scrolling. That read is shared by both directions and
- * owned here, so only one of them asks the server where a posting lives.
+ * Hover (a preview lasting as long as the pointer) and selection (lasting until
+ * dismissed), in both directions between map and list. A pick may target a row
+ * on another page, so it turns to that page first.
  */
 export function useBrowsePicking({
   view,
@@ -76,14 +68,7 @@ export function useBrowsePicking({
   const [selectedPreview, setSelectedPreview] =
     useState<BrowseSelection | null>(null);
 
-  /**
-   * The chosen posting's row, when it happens to be on the page on screen.
-   *
-   * Looked up, not stored: the row is already in the response the screen holds,
-   * and a second copy would be one more state that can drift as the reader
-   * pages. When the row is on another page this is null and the map's preview
-   * answers instead.
-   */
+  /** The chosen posting's row, when it is on the page on screen. */
   const selectedRow = useMemo(
     (): BrowseSelection | null =>
       (selectedListing &&
@@ -92,23 +77,13 @@ export function useBrowsePicking({
     [data.listings, selectedListing],
   );
 
-  /**
-   * What the rail's selection panel draws. The row is preferred because it is
-   * the fuller fact — specialty, urgency — and only when the row is off screen
-   * does the preview answer.
-   */
+  // The row is the fuller fact; the map preview answers when it is off screen.
   const selection: BrowseSelection | null = selectedRow ?? selectedPreview;
 
   /**
-   * Turns the page to the one holding `id`, then scrolls to it.
-   *
-   * A `replace`, not a `push`: the reader picked a posting, they did not page to
-   * it, and a jump they never asked for must not become a back-button stop.
-   * Resolves with the `/page-of` answer: `found` means the URL write happened
-   * and the row is on its way; `missing` and `unavailable` are handed back
-   * untouched so the caller can say which one it was. The catch is for anything
-   * between the read and the write — this promise is not awaited by every
-   * caller, so it must not reject.
+   * Turns to the page holding `id`, then scrolls to it. A `replace`: a jump the
+   * reader never asked for must not become a back-button stop. Never rejects —
+   * not every caller awaits it.
    */
   const turnToPage = useCallback(
     (id: string): Promise<ListingPageOfResult> => {
@@ -133,13 +108,6 @@ export function useBrowsePicking({
     [view, filters, sort, writeView, scrollTo, clearScroll],
   );
 
-  /**
-   * The after-motion of a pick — the glow, the waited-for page turn, the
-   * sentence a screen reader hears — is `usePickLanding`'s. This hook calls it
-   * at the moment of the pick and delegates the two drops: a page turn keeps
-   * the choice and clears the landing only, while a dismissed choice takes
-   * both.
-   */
   const landing = usePickLanding({
     page: data.page,
     totalPages: data.totalPages,
@@ -147,26 +115,10 @@ export function useBrowsePicking({
     turnToPage,
   });
 
-  /**
-   * Brings a posting picked on the map to the reader in the list.
-   *
-   * The two halves of this screen are one set of rows seen two ways, and the
-   * map covers the whole collection rather than the page — the posting picked
-   * may be nowhere on screen, so this turns to the page that holds it first,
-   * and scrolls once those rows have landed.
-   *
-   * `block: "center"` because the list is taller than the viewport: the reader
-   * is looking at a map some hundreds of pixels above the list.
-   *
-   * It also *chooses* the posting. Both doors into this screen — a marker and a
-   * row — must land on the same state. The pick brought the whole preview, not
-   * just an id, so the rail can name the posting before its row renders.
-   */
+  /** A posting picked on the map: selects it and brings its row into view. */
   const pickListing = useCallback(
     (listing: MapPlaceListing) => {
-      // In « Carte seule » the list is not drawn, so scrolling a row into view
-      // has nothing to scroll. The popup's action is « see this in the list », so
-      // the honest answer is to reveal the list.
+      // « Carte seule » has no list to scroll to: reveal it.
       if (layout === "map") {
         setLayout("split");
       }
@@ -180,10 +132,8 @@ export function useBrowsePicking({
       });
       setSelectedPreview(listing);
 
-      // The glow and the words are `usePickLanding`'s — this hook adds only the
-      // scroll that goes with them: when the row is already on screen it is
-      // scrolled to now; when it is elsewhere the landing has turned the page
-      // and its own effect waits for the row to really arrive.
+      // Scroll now if the row is on screen; otherwise the landing turns the
+      // page and waits for the row.
       if (landing.landPick(listing)) {
         scrollTo(listing.id);
       }
@@ -192,20 +142,12 @@ export function useBrowsePicking({
   );
 
   /**
-   * The other direction: a posting chosen in the list comes to the map.
-   *
-   * The camera flies whatever page the row is on: the map is the same map. The
-   * row then scrolls into view, by way of the same page-turning read
-   * `pickListing` uses. A posting with no coordinates simply selects: its
-   * practice was never geocoded, so there is nothing to fly to.
-   *
-   * No glow here, on purpose: the row was already on screen, so nothing changed
-   * under the reader.
+   * A posting chosen in the list: the camera flies to it, the row scrolls into
+   * view. Without coordinates it just selects.
    */
   const selectListing = useCallback(
     (listing: BrowseListing) => {
       setHoveredListingId(listing.id);
-      // The row is in hand — the panel keeps it through a later page turn.
       setSelectedPreview(listing);
 
       if (!listing.location) {
@@ -219,10 +161,7 @@ export function useBrowsePicking({
         longitude: listing.location.longitude,
       });
 
-      // In « Liste seule » the map is not drawn, so a camera move has nowhere to
-      // land. The row's title is a « voir sur la carte » action, so the honest
-      // answer is to reveal the map: switching to the split mounts it and the
-      // map opens this posting's card.
+      // « Liste seule » has no map: reveal it; it opens the card once mounted.
       if (layout === "list") {
         setLayout("split");
         return;
@@ -230,9 +169,7 @@ export function useBrowsePicking({
 
       mapRef.current?.focusOn(listing.location);
 
-      // On a phone the map is a screen away *above* the list, and a camera move
-      // nobody can see is a camera that did not move. Brought back only when it
-      // is out of view.
+      // On a phone the map may be a screen above the list.
       const card = document.getElementById(BROWSE_MAP_ID);
       if (card && !isInView(card)) {
         card.scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -248,17 +185,13 @@ export function useBrowsePicking({
     [layout, mapRef, onScreenIds, setLayout, tableRef, turnToPage],
   );
 
-  /**
-   * Drops the choice — Escape on the map, a click outside, the panel's close.
-   * The landing goes with it: the glow, the pending turn, the words.
-   */
+  /** Drops the choice, and the landing with it. */
   const clearSelection = useCallback(() => {
     setSelectedListing(null);
     setSelectedPreview(null);
     landing.clear();
   }, [landing]);
 
-  /** Brings the chosen posting's row back into view, from the rail's panel. */
   const revealSelection = useCallback(() => {
     if (!selection) return;
     if (selection.location) {
@@ -266,14 +199,7 @@ export function useBrowsePicking({
       return;
     }
 
-    /*
-      A practice that was never geocoded has no pin to fly to, but it still has
-      a row, and the panel's promise is « Voir dans la liste ». `pickListing`
-      needs coordinates to fly the camera, so it cannot carry this case; the
-      old guard simply returned and left the button doing nothing. Reveal the
-      row directly instead: scroll to it when the page already holds it, turn
-      to its page otherwise.
-    */
+    // Never geocoded: no pin, but the row can still be revealed.
     if (onScreenIds.has(selection.id)) {
       scrollTo(selection.id);
       return;

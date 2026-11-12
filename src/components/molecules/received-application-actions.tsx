@@ -1,17 +1,9 @@
 "use client";
 
 /**
- * The decision area of one application a practice received.
- *
- * Rendered under the card only while its status leaves the practice a choice:
- * a pending row carries everything, a shortlisted one keeps accept and reject,
- * and any decided row shows none — the card above already carries the answer.
- *
- * The state machine is card-local, on purpose: the error sentence must stand
- * next to the row it describes (a page-level banner over a dozen cards cannot
- * say which of them was busy), and nothing else needs to know. The parent re-
- * reads inside the awaited callback, so `pending` covers the write *and* the
- * re-read; `resolving` releases when both are done or one failed.
+ * The decision area of one received application, shown only while its status
+ * leaves a choice. Card-local state, so the error stands next to its row;
+ * `pending` covers the write and the parent's re-read.
  */
 
 import { type FormEvent, useState } from "react";
@@ -27,10 +19,8 @@ import { applicationDecisionErrorMessage } from "@/lib/listings";
 const MAX_REASON_LENGTH = 500;
 
 /**
- * `idle` — buttons; `reject` — the optional-reason form, from « Refuser »;
- * `confirm` — the accept confirmation, held until the reader says so twice,
- * because this one decision changes lives beyond the row: the listing fills
- * and every other active candidate is refused for them.
+ * `idle` — buttons; `reject` — the optional-reason form; `confirm` — the
+ * accept confirmation (accepting fills the listing and refuses the others).
  */
 type DecisionStage = "idle" | "reject" | "confirm";
 

@@ -16,8 +16,6 @@ export const metadata: Metadata = {
 
 export default function MyListingsPage() {
   return (
-    // The workspace's own shape, so the first streaming block is the board the
-    // reader lands on rather than a stacked list that then rearranges itself.
     <Suspense fallback={<MyListingsSkeleton />}>
       <MyListings />
     </Suspense>
@@ -25,10 +23,7 @@ export default function MyListingsPage() {
 }
 
 async function MyListings() {
-  // Seeded at the size the reader chose, so the cold load is the page they are
-  // coming back to rather than the default one they then have to grow into.
-  // Clamped to this screen's list for the symmetric reason: a 25 written by
-  // /applications stays valid here because it is on both lists.
+  // Seeded at the reader's chosen size, clamped to this screen's list.
   const pageSize = clampPageSize(
     await readServerPageSize(),
     MY_LISTINGS_PAGE_SIZE_CHOICES,

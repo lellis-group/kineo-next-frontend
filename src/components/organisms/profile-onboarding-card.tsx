@@ -1,13 +1,7 @@
 import { Button } from "@/components/atoms/button";
 import { Card } from "@/components/atoms/card";
 
-/**
- * Onboarding banner when the user has no profile yet (GET /profile/me → 404,
- * documented by the API). Account is active, but business data is missing.
- *
- * Built on Card with `cn` (tailwind-merge): the primary tint reliably
- * overrides Card's default border/background.
- */
+/** Onboarding banner when the user has no profile yet. */
 export function ProfileOnboardingCard() {
   return (
     <Card className="border-primary/30 bg-primary/5 p-6 sm:p-8">

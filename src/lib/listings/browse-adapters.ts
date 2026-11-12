@@ -1,9 +1,6 @@
 /**
  * Adapters for the browse feed — turn the listings payload into the
  * presentation contracts of `./browse-contracts`.
- *
- * French wording and derived figures only. Anything that needs a decision the
- * reader can audit (is this urgent? where is it?) comes straight from the row.
  */
 
 import { formatDateRange } from "@/lib/format";
@@ -26,13 +23,7 @@ import type {
 } from "./browse-contracts";
 import { adaptListingBase } from "./shared";
 
-/**
- * Zeroed facets, for a response that carried none.
- *
- * Zeros rather than an absent panel: the feed can legitimately be empty, and a
- * reader who sees « 0 annonces » learns something, where a missing panel would
- * look like a broken page.
- */
+/** Zeroed facets, for a response that carried none. */
 export function emptyFacets(): BrowseFacets {
   return {
     total: 0,
@@ -59,9 +50,7 @@ export function adaptBrowseListing(
     ...base,
     practiceName: practice?.name?.trim() || "Cabinet",
     city: practice?.city?.trim() || "",
-    // Both coordinates or neither: a pin at 0,0 in the Gulf of Guinea is worse
-    // than no pin, and a practice geocoded on one axis alone has nothing honest
-    // to offer either.
+    // Both coordinates or neither: no pin beats a pin at 0,0.
     location:
       typeof practice?.latitude === "number" &&
       typeof practice?.longitude === "number"
@@ -76,13 +65,7 @@ export function adaptBrowseListings(
   return listings.map(adaptBrowseListing);
 }
 
-/**
- * The public detail of one posting.
- *
- * The resource endpoint is the only browse read that carries `description` and
- * the backend status — the feed slims the description away and never sends the
- * status — so the detail page takes the row adapter and adds the status.
- */
+/** The public detail of one posting: the feed row plus the backend status. */
 export function adaptBrowseListingDetail(
   listing: ApiReplacementListing,
 ): BrowseListingDetail {
@@ -92,25 +75,7 @@ export function adaptBrowseListingDetail(
   };
 }
 
-/**
- * The map's places, as one entry per practice.
- *
- * The endpoint already grouped them, so there is nothing to group here — and
- * grouping by `practiceId` is exact, where rounding coordinates (three decimals,
- * about a hundred metres) would let two openings at the same address round apart
- * and draw as two pins stacked on one pixel.
- *
- * A place with no coordinates is dropped rather than drawn at 0,0, which is in
- * the Gulf of Guinea. The endpoint counts those postings and the map says how
- * many could not be placed, so a practice that was never geocoded is a row in
- * the list and a number under the map — not a pin in the Atlantic.
- */
-/**
- * The places a first render starts from when the endpoint gave nothing back.
- *
- * A function rather than a shared constant so no caller can mutate the one
- * object every other caller is holding.
- */
+/** A function rather than a shared constant, so no caller can mutate it. */
 export function emptyBrowsePlaces(): BrowsePlacesData {
   return {
     places: [],
@@ -120,6 +85,11 @@ export function emptyBrowsePlaces(): BrowsePlacesData {
   };
 }
 
+/**
+ * The map's places, one entry per practice (grouped by the endpoint). A place
+ * with no coordinates is dropped rather than drawn at 0,0; the endpoint counts
+ * those in `unlocated`.
+ */
 export function adaptBrowsePlaces(
   raw: ApiListingPlaces | undefined,
 ): BrowsePlacesData {
@@ -135,9 +105,7 @@ export function adaptBrowsePlaces(
       continue;
     }
 
-    // Only what a popup reads. Filling the rest of `BrowseListing` would mean
-    // inventing a specialty, an application count and a createdAt for a posting
-    // the endpoint never sent.
+    // Only what a popup reads: the endpoint sends nothing more.
     const previewOf = (listing: ApiPlaceListing): MapPlaceListing => ({
       id: listing.id,
       title: listing.title,
@@ -165,13 +133,9 @@ export function adaptBrowsePlaces(
 }
 
 /**
- * The distribution panel, as one row per specialty in a fixed order.
- *
- * Every specialty is emitted even at zero, and the rows keep the backend's
- * order rather than being sorted by count: a bar chart whose bars jump around
- * between two refetches of the same collection is harder to read than one whose
- * positions hold still. The order is also the one the reader learned from the
- * filter row above.
+ * The distribution panel, one row per specialty. Every specialty is emitted
+ * even at zero, in a fixed order rather than sorted by count, so the bars hold
+ * still between refetches.
  */
 export function adaptFacets(raw: ApiListingFacets | undefined): BrowseFacets {
   if (!raw) {
@@ -187,9 +151,7 @@ export function adaptFacets(raw: ApiListingFacets | undefined): BrowseFacets {
       specialty,
       label: SPECIALTY_SHORT_LABELS[specialty],
       count,
-      // Against `total`, not against the largest row: the panel is showing how
-      // the collection is made up, so the bars have to sum to the same picture
-      // as the count above them.
+      // Against `total`, not the largest row, so the bars sum to the count above.
       percent: total > 0 ? Math.round((count / total) * 100) : 0,
     };
   });

@@ -11,10 +11,7 @@ const STEP_ICONS = {
   check: CheckIcon,
 } as const;
 
-/**
- * The `#how-it-works` anchor the public nav scrolls to — without this section on
- * the page, that link has no target.
- */
+/** The `#how-it-works` anchor the public nav scrolls to. */
 export function HowItWorksSection() {
   return (
     <section

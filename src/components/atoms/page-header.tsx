@@ -2,14 +2,8 @@ import type { ReactNode } from "react";
 import { PAGE_SUBTITLE, PAGE_TITLE } from "@/lib/layout";
 
 /**
- * A page's title and the one line under it.
- *
- * The `h1` + subtitle pair, at console scale. `SectionHeading` is the same shape
- * one size down for a heading inside a page, and the two agree on the gap below
- * the subtitle and on letting it wrap onto two comfortable lines.
- *
- * `as` exists because an error card or a confirmation screen is a page's worth
- * of content without being a route — and it still needs one `h1`.
+ * A page's `h1` and subtitle. `as` serves screens that are a page's worth of
+ * content without being a route.
  */
 export function PageHeader({
   title,

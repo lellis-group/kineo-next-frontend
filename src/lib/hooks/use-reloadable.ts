@@ -4,22 +4,14 @@ import { useRouter } from "next/navigation";
 import { useCallback, useRef, useState } from "react";
 import { signInOnExpiredSession } from "@/lib/session-redirect";
 
-/**
- * Reloadable data — a server-seeded value that can be re-read on demand, with
- * the same error and expired-session handling.
- *
- * The container keeps only the decision of what to render; the
- * `data`/`error`/`reloading` trio and the `reload` plumbing live here once,
- * since every console screen needs exactly that trio.
- */
+/** A server-seeded value that can be re-read on demand, with error and session handling. */
 export function useReloadable<T>(initialData: T, load: () => Promise<T>) {
   const router = useRouter();
   const [data, setData] = useState<T>(initialData);
   const [error, setError] = useState<unknown>(null);
   const [reloading, setReloading] = useState(false);
 
-  // Only the latest reload may write: two reloads in quick succession can
-  // answer out of order, and the older answer must not land last.
+  // Only the latest reload may write.
   const latest = useRef(0);
 
   const reload = useCallback(() => {

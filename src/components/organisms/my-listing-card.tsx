@@ -12,14 +12,7 @@ import {
   specialtyLabel,
 } from "@/lib/listings";
 
-/**
- * One of the user's listings, as a card on a narrow screen.
- *
- * The whole card is the link to the posting's own page: the list is for
- * scanning, and every action on a posting — candidates, close, cancel — lives
- * on that page. Actions of its own would make the card a second, narrower
- * version of the page it already opens.
- */
+/** One of the user's listings on a narrow screen; the whole card links to its page. */
 export function MyListingCard({ listing }: { listing: MyListing }) {
   const status = LISTING_STATUS_META[listing.status];
   const capacity = formatCapacity(

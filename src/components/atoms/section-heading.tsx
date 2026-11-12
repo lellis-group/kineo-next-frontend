@@ -9,11 +9,7 @@ export function SectionHeading({
   title: string;
   subtitle?: string;
   action?: ReactNode;
-  /**
-   * `card` when the heading titles a card rather than a page section: it then
-   * takes the card-title size every `Panel` uses, so two cards side by side do
-   * not announce themselves at two different scales.
-   */
+  /** `card` for a card title: the same size `Panel` uses. */
   size?: "section" | "card";
 }) {
   return (

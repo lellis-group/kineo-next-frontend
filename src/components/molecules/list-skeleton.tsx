@@ -2,36 +2,19 @@ import { cn } from "@/lib/cn";
 import { PAGE_CONTAINER } from "@/lib/layout";
 
 interface ListSkeletonProps {
-  /** Filter chips above the list, omitted on screens whose filters live elsewhere. */
   chipCount?: number;
   cardCount?: number;
-  /** Matches the collapsed card the real list will render. */
   cardHeight?: string;
-  /** Pages whose layout is not the console list: the browse feed leads with a map. */
   mapFirst?: boolean;
-  /**
-   * The title + subtitle block. Off for the browse feed, which has no page
-   * header: a placeholder for a heading that never arrives would draw it, then
-   * pull the whole list up when the real content replaces it.
-   */
+  /** The title + subtitle block; off for the browse feed, which has none. */
   titleBlock?: boolean;
   className?: string;
 }
 
 /**
- * Loading placeholder for the collection screens (`/applications`,
- * `/listings/mine` and the `/listings` feed).
- *
- * One placeholder for all three, differing only in the card height, so they
- * cannot drift apart. It reproduces the real page rhythm — title,
- * subtitle, chips, cards at the `space-y-5` gap — so the swap when data lands
- * does not shift the layout under the reader.
- *
- * `mapFirst` is the browse feed's variant. It is not cosmetic: that page opens on
- * a fixed-height map with the filters floating over it, so a placeholder of the
- * wrong shape would show a chip row where a map lands and then push every card
- * down by the height of the map — the layout would jump at exactly the moment the
- * reader starts reading.
+ * Loading placeholder for the collection screens, matching the real page's
+ * rhythm so nothing shifts when data lands. `mapFirst` is the browse feed's
+ * shape, which opens on a map.
  */
 export function ListSkeleton({
   chipCount,
@@ -65,9 +48,6 @@ export function ListSkeleton({
       )}
 
       {mapFirst && (
-        // The map's paper, not a card's surface: the map is a light plane, and a
-        // placeholder drawn in the surface colour would read as a panel that
-        // then got swapped for something much brighter.
         <div className="mt-6 h-[22rem] animate-pulse rounded-card bg-map-base sm:h-[26rem]" />
       )}
 

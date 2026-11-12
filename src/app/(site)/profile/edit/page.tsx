@@ -12,10 +12,8 @@ export const metadata: Metadata = {
 };
 
 /**
- * Static shell; the session and profile reads are uncached and stream behind the
- * boundary. An expired session goes to sign-in and a member without a profile
- * goes to the create form — both decided before the form is rendered, instead of
- * after a round trip from the browser.
+ * Static shell; the uncached reads stream behind the boundary. An expired
+ * session goes to sign-in, a member without a profile to the create form.
  */
 export default function ProfileEditPage() {
   return (

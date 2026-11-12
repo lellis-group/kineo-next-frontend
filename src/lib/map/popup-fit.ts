@@ -1,31 +1,16 @@
 import type { Map as MapLibreMap } from "maplibre-gl";
 import type { Rect } from "./popup-placement";
 
-/**
- * The two measurements `placePopup` needs from the DOM: the part of the map a
- * card may cover, and the card's size before it is shown.
- */
-
-/** How far a card is kept from the map's edges, in pixels. */
 export const POPUP_EDGE_MARGIN = 12;
 
-/** Distance between a marker's centre and the card beside it, in pixels. */
 export const POPUP_GAP = 18;
 
-/**
- * Marks an element floating over the map's top edge — the filter pills from
- * `lg` up. A card is kept below it: drawn over the pills, it would hide the
- * controls the reader uses to change what the map shows.
- */
+/** Marks an element floating over the map's top edge; popups stay below it. */
 export const MAP_TOP_OVERLAY_ATTRIBUTE = "data-map-overlay";
 
 /**
- * The map's free area, in its container's pixels.
- *
- * The container minus a margin on every side, and minus whatever is marked as
- * floating over its top edge. An overlay counts only when it actually sits on
- * the map: below `lg` the same bar is laid out above the map, and its box ends
- * where the map's begins.
+ * The map's free area, in container pixels: the container minus a margin, and
+ * minus any marked overlay actually sitting on the map's top edge.
  */
 export function freeArea(map: MapLibreMap): Rect {
   const container = map.getContainer();
@@ -56,13 +41,9 @@ export function freeArea(map: MapLibreMap): Rect {
 }
 
 /**
- * The card's size as the popup will draw it, measured before it is shown.
- *
- * The anchor is a constructor option, so it has to be known before the popup
- * exists — and the card's height depends on its text. The body is laid out once
- * in a hidden copy of the popup's own wrapper, inside the map container, so the
- * same stylesheet rules apply, then handed back for the real popup to adopt.
- * `offsetWidth`/`offsetHeight` ignore the opening animation's `scale`.
+ * The card's size, measured before the popup exists (the anchor is a
+ * constructor option): laid out once in a hidden copy of the popup wrapper so
+ * the same styles apply. `offset*` ignore the opening `scale`.
  */
 export function measureCard(
   map: MapLibreMap,

@@ -22,36 +22,12 @@ export const metadata: Metadata = {
 };
 
 /**
- * The member-only feed, resolved on the server.
+ * The member-only feed, resolved on the server. The URL is the source of
+ * truth: all three reads are seeded from it, and the client never refetches.
  *
- * Guarded like every other member route, on two layers: `src/proxy.ts` bounces a
- * signed-out reader before the route runs, and the backend — which requires a
- * session on every browse endpoint — answers an expired cookie with a 401 that
- * `requireMember` turns into `/signin`. The reads are the check: no separate
- * session round-trip stands in front of them.
- *
- * The URL is the source of truth, and the server answers whatever view it names.
- * `searchParams` is parsed once here into a view, and all three reads are seeded
- * with it, so a shared or bookmarked link paints its exact results — filters,
- * page and ordering — rather than the default view whatever the query string
- * says. The client reads the same string and never
- * refetches, which is why the rows it shows are the rows the server just sent.
- * One exception to "answers whatever it names": a page past the end of the
- * collection is clamped, by a redirect that rewrites the URL rather than a
- * screen that pretends `page=5` has rows.
- *
- * Two of the three reads are awaited and the third is not, and the third is the
- * one that streams. The rows and the panels are what a reader reads, so the page
- * waits for them; the map's read is both the slowest and the largest answer on
- * the screen, and the map is drawn by a client-only chunk that arrives after the
- * HTML anyway. Held as a promise, it is unwrapped behind a `<Suspense>` boundary
- * inside the container, so it cannot hold up the list. Awaiting it here — the
- * obvious shape — would make the whole page wait for a map nobody has scrolled
- * to.
- *
- * The map's promise is also the only one that cannot fail loudly:
- * `fetchBrowsePlaces` answers `null` rather than throwing, and the `.catch`
- * guards the transport itself.
+ * The rows and facets are awaited; the map's places stay a promise, unwrapped
+ * behind a `<Suspense>` in the container, so the slowest read can't hold up
+ * the list.
  */
 export default function ListingsPage({
   searchParams,
@@ -72,16 +48,7 @@ async function Listings({
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  // The view the URL names, parsed once and widened once. `toBrowseView` widens
-  // the date fields to ISO bounds and omits every unset filter, so the same view
-  // the client will read back off the URL is the one every read is seeded with —
-  // the two never describe different collections.
-  //
-  // The awaited `searchParams` is a plain record, and `browseViewFromParams`
-  // reads it through `URLSearchParams.get` so the server and the client parse the
-  // same string the same way — the client hands it `new URLSearchParams(...)`,
-  // so the server builds one here. Repeated keys are kept as `get` reads them:
-  // the first value, which is the only one a single-valued filter means.
+  // Rebuilt as `URLSearchParams` so server and client parse the same way.
   const params = new URLSearchParams();
   for (const [key, value] of Object.entries(await searchParams)) {
     if (typeof value === "string") params.append(key, value);
@@ -94,23 +61,11 @@ async function Listings({
   const [data, facets] = await requireMember(
     Promise.all([
       fetchBrowseListings(view, serverTransport),
-      // A separate read from the rows, and still right to await together: the
-      // panels depend on a subset of the filters (never the specialty, never the
-      // page, never the ordering — `fetchFacets` drops them), and the first paint
-      // should not arrive without its summary. On a page turn the server re-runs
-      // this route, but `fetchFacets` answers the same collection it answered
-      // before, so the panels hold their numbers.
       fetchFacets(view, serverTransport),
     ]),
   );
 
-  // A shared or hand-edited link can name a page past the end of the collection
-  // — `browseViewFromParams` accepts any positive integer, and the honest answer
-  // for « Page 5 sur 2 » is not empty rows under a pager that claims five
-  // pages exist. Redirecting *replaces* the URL with the clamped page's query
-  // string, so the round-trip the screen runs on (server parse, client read,
-  // writes back) names the view the reader is actually looking at, and a
-  // refresh does not repeat the lie.
+  // A page past the end redirects to the last page, rewriting the URL.
   const clampedPage = browsePageClamp(view.page, data.totalPages);
   if (clampedPage !== null) {
     redirect(
@@ -118,12 +73,9 @@ async function Listings({
     );
   }
 
-  // The map is the whole filtered collection, not the page — seeded with the
-  // view but no page, so paging does not redraw it.
   const places = fetchBrowsePlaces(view, serverTransport).catch(() => null);
 
-  // No previous pins to keep on a first render, so a failed places read starts
-  // the map empty rather than taking the whole page down over it.
+  // A failed places read starts the map empty rather than failing the page.
   return (
     <ListingsContainer
       initialData={data}

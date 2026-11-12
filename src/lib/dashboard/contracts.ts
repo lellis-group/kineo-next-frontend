@@ -1,8 +1,4 @@
-/**
- * Presentation-layer contracts for the logged-in homepage.
- * Components depend only on these types; the raw data is fetched and
- * adapted by the dashboard service (`./service`).
- */
+/** Presentation contracts for the logged-in homepage. */
 
 import type { ButtonVariant } from "../ui-tokens";
 

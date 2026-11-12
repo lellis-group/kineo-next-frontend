@@ -13,17 +13,9 @@ import {
 import { normalizeEmail } from "@/lib/auth-validation";
 
 /**
- * Orchestrator for /signin.
- *
- * Two failure shapes arrive here and they are told apart on purpose:
- *
- *  - better-auth *returns* an error object. `isAuthServiceUnavailable` decides
- *    whether that is the service being down (say so) or a rejected credential
- *    (say what to check).
- *  - the call *throws*, which means the request never completed. That is a
- *    network cut, not a verdict on the password, and it is worded differently.
- *
- * Conflating the two is how a mistyped password ends up reported as an outage.
+ * Orchestrator for /signin. A returned error object may be a rejected
+ * credential or an outage (`isAuthServiceUnavailable`); a thrown call is a
+ * network cut. Each is worded differently.
  */
 export function SignInContainer() {
   const router = useRouter();

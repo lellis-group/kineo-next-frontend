@@ -11,11 +11,7 @@ export const publicNav: HeaderLink[] = [
   { label: "Tarifs", href: "#" },
 ];
 
-// English routes, French labels.
-//
-// No `/practices` entry: there is no such page on either side of the wire, so
-// the link only ever 404s. The practice side lives under `/listings/mine` for
-// now, and a nav item that does not resolve is worse than a missing one.
+// English routes, French labels. No `/practices` entry: the page doesn't exist.
 const replacementNav: HeaderLink[] = [
   { label: "Accueil", href: "/" },
   { label: "Annonces", href: "/listings" },
@@ -37,14 +33,7 @@ const bothNav: HeaderLink[] = [
   { label: "Mon Profil", href: "/profile" },
 ];
 
-/**
- * Member nav by role.
- *
- * A signed-in member with no profile yet (onboarding) has no role to pick
- * from, so they get the replacement links: those are the ones they can act on
- * before the role is known. Once `/profile` assigns a role, this returns the
- * practice links instead.
- */
+/** Member nav by role; a member without a profile gets the replacement links. */
 export function getMemberNav(profileType?: ProfileType | null): HeaderLink[] {
   switch (profileType) {
     case "INSTALLED":

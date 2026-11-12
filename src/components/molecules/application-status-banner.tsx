@@ -9,12 +9,7 @@ import { cn } from "@/lib/cn";
 import { formatDateTime } from "@/lib/format";
 import type { BadgeTone } from "@/lib/ui-tokens";
 
-/**
- * Band classes per badge tone.
- *
- * Same tones as the badge, painted as a wide band rather than a chip — the
- * vocabulary is shared (see `lib/ui-tokens.ts`), only the treatment differs.
- */
+/** Band classes per badge tone. */
 const TONE_CLASSES: Record<BadgeTone, string> = {
   neutral: "border-border bg-surface-2 text-foreground",
   success: "border-success/20 bg-success/10 text-success",
@@ -36,15 +31,9 @@ function buildOpenSummary(application: ApplicationEntry): string {
 }
 
 /**
- * What happened, once something did.
- *
- * The decision source comes first because it is the only thing separating "the
- * practice refused you" from "the practice closed the posting with nobody
- * chosen" — both a `REJECTED`, and the second says nothing about the applicant.
- *
- * A practice's own words are appended only when it decided itself: the other
- * outcomes are the platform's, so there is no free text to show, and inventing
- * one is what this whole column exists to stop.
+ * What happened, once something did. The decision source comes first: it
+ * separates "refused" from "closed with nobody chosen". The practice's own
+ * words are appended only when it decided itself.
  */
 function buildDecidedSummary(application: ApplicationEntry): string {
   return decisionSummary(application);
@@ -60,8 +49,7 @@ export function ApplicationStatusBanner({
   const stillOpen =
     application.status === "PENDING" || application.status === "SHORTLISTED";
 
-  // The decision names the situation better than the status can; the status is
-  // what covers rows written before `decisionSource` existed.
+  // The status covers rows written before `decisionSource` existed.
   const headline = decisionHeadline(
     application,
     (status) => STATUS_HEADLINES[status],

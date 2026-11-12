@@ -8,14 +8,8 @@ import { requireMember } from "@/lib/require-member";
 import { fetchKnownServerAuth } from "@/lib/server-auth";
 
 /**
- * Static shell. The session decides which of the two pages this is, and it is
- * read with `headers()` — uncached — so it cannot be awaited from the component
- * that blocks the route; the boundary is what keeps the route instant.
- *
- * The fallback is the dashboard skeleton: geometry-matched, so a member sees the
- * dashboard arrive without the layout shifting. An anonymous visitor sees it for
- * the length of one session read, which is shorter than the wait they had while
- * this page blocked on the same read.
+ * Static shell: the session (read with `headers()`) decides between the
+ * dashboard and the marketing page, behind a dashboard-shaped fallback.
  */
 export default function HomePage() {
   return (
@@ -26,16 +20,14 @@ export default function HomePage() {
 }
 
 async function Home() {
-  // Known, not merely read: on a busy backend the session can be unreadable,
-  // and showing the marketing page to a signed-in reader was the wrong answer.
+  // An unreadable session must not show the marketing page to a member.
   const auth = await fetchKnownServerAuth();
 
   if (auth.status !== "member") {
     return <PublicHome />;
   }
 
-  // The session was valid a moment ago; it can still expire before the data
-  // read, and that has to land on /signin rather than the error boundary.
+  // The session can still expire before the data read.
   const data = await requireMember(
     fetchDashboardData(auth.name, serverTransport),
   );

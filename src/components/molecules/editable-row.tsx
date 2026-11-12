@@ -19,21 +19,8 @@ export interface EditableField {
 
 /**
  * A read-only value with an edit button that becomes a small inline form.
- *
- * The profile page has two of these — name and email — both drawn here, down to
- * the `<form>` wrapper and the cancel row.
- *
- * Each row owns its own editing, error and success state, which is the part worth
- * having a component for. One `error` and one `success` string shared between
- * them would leak both ways:
- *
- *  - a failed email change would leave its message sitting in the *name* form,
- *    because switching rows is one click on a button that is still on screen and
- *    nothing clears the error on the way;
- *  - the success banner would render above whichever row happens to be first, so
- *    a name update would report itself inside the email block.
- *
- * Nothing needs to be invalid for either to happen.
+ * Each row owns its error and success state, so one row's message can't show
+ * up in another.
  */
 export function EditableRow({
   label,
@@ -45,9 +32,7 @@ export function EditableRow({
   pendingLabel,
   onSubmit,
 }: {
-  /** Small caption above the value (« Nom », « Email »). */
   label: string;
-  /** Read-only content: the value, plus any secondary line. */
   display: ReactNode;
   fields: readonly EditableField[];
   editLabel: string;
@@ -55,10 +40,8 @@ export function EditableRow({
   submitLabel: string;
   pendingLabel: string;
   /**
-   * Receives the submitted values by field name. Returning a string means "this
-   * is the message to confirm" — the write succeeded and the backend had
-   * something to say. Throwing means it failed, and the thrown message is shown
-   * as-is; callers throw `mapUserError(err)` so the wording stays in the service.
+   * Resolves with an optional confirmation message; throws with the message to
+   * show on failure (callers throw `mapUserError(err)`).
    */
   onSubmit: (values: Record<string, string>) => Promise<string | undefined>;
 }) {

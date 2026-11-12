@@ -21,8 +21,7 @@ export function useRoleRefresh(
 
   const prevPathnameRef = useRef(pathname);
   const needsConfirmRef = useRef(
-    // An unreadable server session carried no role; confirm it once the
-    // client has confirmed the session itself.
+    // An unreadable server session carried no role.
     (initialAuth.status === "member" && initialAuth.role === null) ||
       initialAuth.status === "unavailable",
   );

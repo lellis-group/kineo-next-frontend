@@ -18,26 +18,16 @@ interface View {
   filter: ApplicationsFilter;
   /** Which situation, within « Refusées » only. */
   situation: RejectionSituationFilter;
-  /** Rows per page — the reader's choice, and part of what identifies a page. */
   pageSize: ApplicationsPageSize;
 }
 
 const DEFAULT_FILTER: ApplicationsFilter = "ALL";
 
-/**
- * The page size is part of this test for the same reason the situation is:
- * `initialData` is the server's answer at the size *it* seeded the page with, so
- * a reader who asks for another size is no longer looking at that answer —
- * restoring it would put the rows they had before the choice back on screen.
- */
+/** The page size is part of the test: `initialData` is at the seeded size. */
 function isDefaultView(
   view: View,
   seededPageSize: ApplicationsPageSize,
 ): boolean {
-  // `"ALL"`, not `null`, for the situation: the state is initialised to « Toutes »,
-  // so testing it against null would never be true — the default view would be
-  // refetched on every visit instead of adopting the page the server already
-  // sent.
   return (
     view.page === 1 &&
     view.filter === DEFAULT_FILTER &&
@@ -47,19 +37,14 @@ function isDefaultView(
 }
 
 /**
- * Orchestrator for /applications — renders ApplicationsView.
- *
- * The first page of « Toutes » arrives from the server page, so a cold load shows
- * the list rather than a skeleton; every other view is client state. That
- * pairing, and the redirect an expired session triggers, are `usePaginatedResource`'s
- * — the same two rules the listings screens follow.
+ * Orchestrator for /applications. The first page of « Toutes » arrives from
+ * the server; every other view is client state.
  */
 export function ApplicationsContainer({
   initialData,
   initialPageSize,
 }: {
   initialData: ApplicationsData;
-  /** The size the server seeded the first page with — the reader's own choice. */
   initialPageSize: ApplicationsPageSize;
 }) {
   const [page, setPage] = useState(1);
@@ -77,14 +62,7 @@ export function ApplicationsContainer({
     (target: View) =>
       fetchApplicationsData({
         page: target.page,
-        // The chosen size travels with the view rather than beside it: the size is
-        // part of what a page *is*, so a read asking for another one is a
-        // different view — and a closure over the size would hide that.
         limit: target.pageSize,
-        // The bucket is translated through APPLICATION_FILTERS rather than sent
-        // as-is: the ids are presentation values, and the backend only knows
-        // statuses and decision sources. One definition, so the chip, the request
-        // and the counter cannot drift apart.
         ...bucketParams(target.filter),
         ...(target.situation === "ALL" ? {} : { bucket: target.situation }),
       }),
@@ -116,10 +94,7 @@ export function ApplicationsContainer({
         onPageChange={setPage}
         onFilterChange={(next) => {
           setFilter(next);
-          // Leaving « Refusées » clears the situation with it. Carried over, it
-          // would silently keep narrowing the next chip: « En attente » plus a
-          // situation that only exists among rejections returns nothing, and an
-          // empty list looks like a bug rather than a stale filter.
+          // The situation only exists among rejections.
           if (next !== "REFUSED") {
             setSituation("ALL");
           }
@@ -134,12 +109,7 @@ export function ApplicationsContainer({
         pageSize={pageSize}
         onPageSizeChange={(next) => {
           setPageSize(next);
-          // Back to the first page: the reader asked for a different slice, and
-          // page 7 of 500 rows is not page 7 of what is on screen.
           setPage(1);
-          // Written from the browser: the server page reads this on the next
-          // visit, and a round trip to store four bytes would make the list show
-          // the old size until it came back.
           rememberPageSize(next);
         }}
         loading={loading}

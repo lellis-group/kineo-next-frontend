@@ -1,10 +1,6 @@
 /**
- * The apply write — the request it sends, the entry it returns, and the French
- * it reports when the backend refuses.
- *
- * `POST /applications` answers 201 with the created row *bare* — no embedded
- * listing or applicant, unlike the list reads — so this spec also pins that the
- * adapter fills the gap instead of rendering `undefined` into a card.
+ * The apply write: its request, the entry it returns (from a bare 201 row with
+ * no embedded listing), and the French for a refusal.
  */
 import { describe, expect, it } from "bun:test";
 import { ApiError, type ApiTransport } from "../api-client";
@@ -19,11 +15,7 @@ import { applyToListing } from "./service";
 
 const LISTING_ID = "cm5listing0000000abcdefghi";
 
-/**
- * A bare application, the way the backend answers a create: no `listing`, no
- * `applicant` — typed against the generated wire, so a schema change that drops
- * or renames a field this spec relies on fails right here.
- */
+/** A bare application, as a create answers it; typed against the generated wire. */
 function submittedApplication(
   over: Partial<ApiApplication> = {},
 ): ApiApplication {

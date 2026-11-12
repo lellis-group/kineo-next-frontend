@@ -14,11 +14,8 @@ export interface CountedTextareaProps {
 }
 
 /**
- * A free-text field with its label and a « 12/500 » counter beside it.
- *
- * The id is generated rather than passed: several of these can be on one page
- * at once (one decision form per received application), and a hard-coded id
- * would point every label at the first textarea.
+ * A free-text field with a « 12/500 » counter. The id is generated: several
+ * can be on one page.
  */
 export function CountedTextarea({
   label,

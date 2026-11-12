@@ -2,22 +2,10 @@ import type { ApplicationEntry } from "@/lib/applications";
 import { formatRelativeTime } from "../format";
 import type { ActivityEntry } from "./contracts";
 
-/**
- * How many entries the feed shows.
- *
- * Also the page size the dashboard asks for: the server orders newest first, so
- * the first page of four *is* the four newest — reading twenty pages to keep four
- * rows is the whole thing this screen stopped doing.
- */
+/** Entries in the feed — also the page size asked for (newest first). */
 export const ACTIVITY_FEED_SIZE = 4;
 
-/**
- * The activity feed: the member's own applications, most recent first.
- *
- * Titles come from the listing each application embeds, so nothing here needs
- * the member's listings at all — no title map over every listing the practice
- * owns, no « Titre d'annonce indisponible » for the older entries.
- */
+/** The activity feed: the member's own applications, titled from their embedded listing. */
 export function adaptActivity(
   applications: readonly ApplicationEntry[],
 ): ActivityEntry[] {
@@ -58,7 +46,6 @@ export function adaptActivity(
       icon: app.status === "ACCEPTED" ? ("check" as const) : ("file" as const),
       message,
       timestamp: formatRelativeTime(app.createdAt),
-      // Deep-link straight to the application's dedicated detail page.
       href: `/applications/${app.id}`,
     };
   });

@@ -15,9 +15,7 @@ describe("readPageSize", () => {
   });
 
   test("falls back on anything the list does not carry", () => {
-    // A cookie is a number on its way to `?limit=`, and a reader can edit one.
-    // A value the server has never agreed to is not forwarded: the endpoint would
-    // answer a 400 to a page size the interface itself never proposed.
+    // Only sizes on the list reach `?limit=`.
     for (const raw of ["0", "37", "1000", "-10", "abc", "", undefined]) {
       expect(readPageSize(raw), String(raw)).toBe(DEFAULT_PAGE_SIZE);
     }
@@ -38,8 +36,6 @@ describe("pageSizeCookie", () => {
   });
 
   test("persists a chosen size, and only a chosen one", () => {
-    // The default is not worth a cookie on every subsequent request: it is what
-    // an absent cookie already means.
     expect(pageSizeCookie(50)).toContain("Max-Age=");
     expect(pageSizeCookie(DEFAULT_PAGE_SIZE)).not.toContain("Max-Age=");
   });

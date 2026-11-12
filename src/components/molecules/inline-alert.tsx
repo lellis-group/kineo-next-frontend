@@ -2,12 +2,6 @@ import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
 import type { InlineAlertTone } from "@/lib/ui-tokens";
 
-/**
- * Alert treatment per tone.
- *
- * `info` paints as `info`, matching the badge and the status banner: a
- * shared tone name should mean the same hue everywhere.
- */
 const TONE_CLASSES: Record<InlineAlertTone, string> = {
   info: "border-info/30 bg-info/10",
   success: "border-success/30 bg-success/10",
@@ -15,10 +9,7 @@ const TONE_CLASSES: Record<InlineAlertTone, string> = {
   danger: "border-danger/25 bg-danger/10 text-danger",
 };
 
-/**
- * Layout per variant: `p` (compact, blocking) vs `output` (spacious, result).
- * Avoids utility class conflicts — `cn` resolves them predictably.
- */
+/** Layout per element: `p` (compact, blocking) vs `output` (spacious, result). */
 const ELEMENT_CLASSES: Record<InlineAlertProps["as"] & string, string> = {
   p: "block px-3.5 py-2.5",
   output: "block px-4 py-3.5",
@@ -27,11 +18,7 @@ const ELEMENT_CLASSES: Record<InlineAlertProps["as"] & string, string> = {
 
 export interface InlineAlertProps {
   tone?: InlineAlertTone;
-  /**
-   * `p` for a blocking error, announced immediately via `role="alert"` ·
-   * `output` for a result worth reporting — the semantic element the project's
-   * a11y lint expects for a polite status message.
-   */
+  /** `p` for a blocking error (`role="alert"`), `output` for a polite status. */
   as?: "p" | "output" | "div";
   className?: string;
   children: ReactNode;

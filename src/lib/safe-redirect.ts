@@ -1,13 +1,8 @@
 /**
- * A path from the query string that is safe to navigate to, or `/`.
- *
- * Only a path on this site gets through. A prefix check is not enough:
- * browsers read `/\evil.example` as `//evil.example`, and drop tabs and
- * newlines before resolving, so `/\t/evil.example` is the same host again.
- * The candidate is therefore resolved the way the browser will resolve it,
- * against a placeholder origin, and kept only if it is still on that origin.
- * What is returned is the resolved path, not the raw input, so nothing the
- * parser normalised away can come back at navigation time.
+ * A path from the query string that is safe to navigate to, or `/`. A prefix
+ * check is not enough (`/\evil.example`, `/\t/evil.example`), so the candidate
+ * is resolved against a placeholder origin and kept only if it stays there;
+ * the resolved path is what's returned.
  */
 const PLACEHOLDER_ORIGIN = "http://internal.invalid";
 

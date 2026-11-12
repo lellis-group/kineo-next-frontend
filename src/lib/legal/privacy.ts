@@ -1,28 +1,9 @@
 import { ERASURE_RETENTION_FACT } from "@/lib/delete-account-content";
 
 /**
- * The privacy policy's structure, as data.
- *
- * The policy is the one page whose content is bound by something other than taste:
- * a reader is entitled to read it, and it has to keep describing what the
- * platform actually does. So it lives apart from the route — next to
- * `lib/marketing.ts` and `lib/delete-account-content.ts`, which is the same
- * pattern — and what stays in the page is the composition of these lists into
- * prose, not the sentences themselves.
- *
- * Two kinds of section, deliberately not mixed:
- *
- *  - sections describing what the platform does today, verified against the
- *    schema and the services (data inventory, retention, erasure lifecycle).
- *    These are binding and are written in full;
- *  - sections only the legal team can settle (legal basis per purpose,
- *    sub-processor list, DPO, supervisory authority, hosting location). Rather
- *    than interrupt the reading flow with a badge in each one, they are collected
- *    in `PENDING_ITEMS` and shown once at the top, which is what makes the count
- *    there meaningful.
- *
- * A notice that invents those facts is worse than one that admits it is
- * incomplete, so the open items are named rather than papered over.
+ * The privacy policy's structure, as data. Sections describing what the
+ * platform does today are written in full; what only the legal team can
+ * settle is listed once in `PENDING_ITEMS` rather than invented.
  */
 
 /** Anchors, in reading order — the sidebar and the headings share the ids. */
@@ -48,14 +29,7 @@ export const PENDING_ITEMS = [
   "Contact du DPO et autorité de contrôle (section 9)",
 ] as const;
 
-/**
- * Retention, per category.
- *
- * Two rows are deliberately "not defined" / grace period rather than a tidy
- * number: those are the cases where the honest answer is that no purge applies
- * yet, and inventing a duration would be the whole failure this policy exists to
- * avoid.
- */
+/** Retention, per category. "Non définies" where no purge applies yet. */
 export const RETENTION_PERIODS = [
   {
     data: "Sessions de connexion expirées",

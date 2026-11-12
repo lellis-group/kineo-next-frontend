@@ -12,29 +12,14 @@ import { ERASURE_RETENTION_FACT } from "@/lib/delete-account-content";
 export type DeletionScreenStatus = DeletionOutcome;
 
 /**
- * One screen per outcome of the account-erasure confirmation.
- *
- * Kept apart from the flow that drives them: `useDeletionConfirmation` owns the
- * request, the job cache and the sign-out, while this file is only the wording
- * and the actions. The screens share a shell and almost nothing else, so the
- * thing worth protecting is the mapping from an outcome to a screen — which lives
- * with the flow and is exhaustive rather than a chain of conditionals: a failure
- * the service can report but that map does not cover would otherwise fall through
- * to a generic screen — a retryable 429 with no retry button on it.
- *
- * `already-erased` and `success` read alike — same title, same « recréer un
- * compte » button — but they are not one screen: the first is reached because the
- * link was already used and the session may never have been cleared, and it says
- * so in one line, while the second is the only place that explains what was
- * replaced, when the rows are really gone, and what the 365-day trace holds. Two
- * paragraphs and a policy link between them is more than a conditional.
+ * One screen per outcome of the account-erasure confirmation; the flow lives
+ * in `useDeletionConfirmation`. `already-erased` and `success` look alike, but
+ * only `success` explains what was replaced and what is retained.
  */
 
 export interface DeletionScreenProps {
   status: DeletionScreenStatus;
-  /** Service-supplied wording for the failure, when there is one. */
   error?: string;
-  /** True once the browser session has been cleared after a success. */
   signedOut: boolean;
   /** Whether a session is still present — decides profile vs sign-in. */
   hasSession: boolean;
@@ -59,8 +44,7 @@ export function DeletionScreen({
   onRetry,
   headingRef,
 }: DeletionScreenProps) {
-  // The erasure already ran. Not a failure, and no link back to a profile: the
-  // account was revoked, so the session this page would send them to is gone.
+  // No link back to a profile: the session was revoked.
   if (status === "already-erased") {
     return (
       <AuthCard
@@ -84,8 +68,7 @@ export function DeletionScreen({
     );
   }
 
-  // Conflict with nothing in the way: no listing to close, and retrying this
-  // link cannot help. The only way forward is a fresh request.
+  // Retrying this link cannot help; only a fresh request can.
   if (status === "no-pending-request") {
     return (
       <AuthCard
@@ -116,9 +99,7 @@ export function DeletionScreen({
             {error}
           </InlineAlert>
 
-          {/* Retrying is the only useful action: nothing was consumed
-            server-side, so the token is still valid and unspent. Disabled on a
-            rate limit, where the server asked for a wait it has not reported. */}
+          {/* The token is still unspent. Disabled on a rate limit. */}
           <Button
             size="lg"
             className="w-full"
@@ -148,8 +129,6 @@ export function DeletionScreen({
         subtitle="Ce lien de suppression n'est plus valable"
       >
         <div className="space-y-6 text-center">
-          {/* Only with a message: an alert with nothing in it drew an empty
-              outlined bar between the subtitle and the button. */}
           {error && (
             <InlineAlert as="p" tone="warning" className="text-center">
               {error}

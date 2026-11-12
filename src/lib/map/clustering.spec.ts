@@ -30,9 +30,7 @@ function bare(key: string, latitude = 0, longitude = 0, count = 1): MapPlace {
 function place(key: string, x: number, y: number, count = 1): ProjectedPlace {
   return {
     place: bare(key, 0, 0, count),
-    // The same Euclidean measure as MapLibre's `Point.dist`, so the grouping is
-    // exercised against the geometry it really sees rather than against a looser
-    // stand-in that would let a wrong threshold pass.
+    // Euclidean, like MapLibre's `Point.dist`.
     point: {
       x,
       y,
@@ -96,8 +94,7 @@ describe("groupByDistance", () => {
   });
 
   test("leaves two places exactly at the radius apart", () => {
-    // The comparison is strict: at the radius they are told apart, which is what
-    // keeps two discs 44px apart from swallowing each other.
+    // Strict: exactly at the radius, they stay apart.
     const rows = groupByDistance([place("a", 0, 0), place("b", 44, 0)], 44);
 
     expect(rows).toHaveLength(2);

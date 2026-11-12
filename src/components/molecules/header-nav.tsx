@@ -41,9 +41,6 @@ export function HeaderNav({
                 ? `px-3.5 py-1.5 text-sm font-medium whitespace-nowrap transition-colors ${
                     isActive
                       ? // Brightness alone, as the reference marks the current
-                        // section: the word goes white and the others stay
-                        // grey. No rule, no pill — the row reads as
-                        // navigation rather than as a row of buttons.
                         "text-foreground"
                       : "text-muted hover:text-foreground"
                   }`

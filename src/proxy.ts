@@ -1,9 +1,8 @@
 import { getSessionCookie } from "better-auth/cookies";
 import { type NextRequest, NextResponse } from "next/server";
 
-// /goodbye edge headers (Cache-Control, Referrer-Policy, X-Robots-Tag) live in
-// next.config.ts `headers()`: for static pages it applies AFTER Next's own
-// cache header, which the proxy (middleware) cannot do for Cache-Control.
+// /goodbye's headers live in next.config.ts `headers()`: the proxy can't
+// override Cache-Control for static pages.
 
 export function proxy(request: NextRequest) {
   if (!getSessionCookie(request)) {
@@ -19,11 +18,7 @@ export const config = {
     "/profile/:path*",
     "/applications",
     "/applications/:path*",
-    // The whole `/listings` prefix is guarded, browse feed included: the feed is
-    // member-only. `/listings/:path*` already covers
-    // `/listings/mine` and its detail pages, so the practice side needs no entry
-    // of its own. No `/practices` entry either: there is no such route, and a
-    // matcher for a page that does not exist guards nothing.
+    // Covers the browse feed, `/listings/mine` and their detail pages.
     "/listings",
     "/listings/:path*",
   ],

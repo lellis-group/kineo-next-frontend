@@ -19,10 +19,7 @@ export interface ApplicationWithdrawProps {
 /** Backend WithdrawApplicationDto — optional reason, 1-500 chars. */
 const MAX_REASON_LENGTH = 500;
 
-/**
- * Withdrawing is refused once the practice has answered, so the 400 is a state
- * the reader can act on (stop asking, accept the answer) rather than a fault.
- */
+/** Withdrawing is refused once the practice has answered: a state, not a fault. */
 const WITHDRAW_COPY = {
   conflict:
     "Cette candidature ne peut plus être retirée dans son statut actuel.",

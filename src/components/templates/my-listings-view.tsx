@@ -33,32 +33,20 @@ const URGENCY_OPTIONS = [
 
 export interface MyListingsViewProps {
   listings: MyListing[];
-  /** Totals over the whole collection — the only source of the rail's aggregates. */
   counts: ListingStatusCounts;
   currentFilter: ListingsFilter;
   onFilterChange: (filter: ListingsFilter) => void;
-  /** Narrows any bucket to the postings flagged urgent. */
   urgentOnly: boolean;
   onUrgentToggle: () => void;
   page: number;
   totalPages: number;
   onPageChange: (page: number) => void;
-  /** Rows per page — 10/25/50/100/500 on this screen, see `Pagination`. */
   pageSize: MyListingsPageSize;
   onPageSizeChange: (size: MyListingsPageSize) => void;
-  /** A read is in flight: the pager holds, so the reader cannot burst it. */
   loading: boolean;
 }
 
-/**
- * The board's own shell: the same full-height geometry the browse feed uses.
- *
- * `py` kept to a minimum and the width widened past the console default, for the
- * same reason there — the point of the screen is to show as much of the
- * collection at once as the window allows. Below `lg` none of that holds: there
- * is no height to fill and the rail would sit beside a squeezed table, so it is
- * ordinary document flow — rail first, then the card — and the page scrolls.
- */
+/** The same full-height shell as the browse feed; document flow below `lg`. */
 const SHELL = cn(
   SITE_SHELL,
   "flex flex-col gap-4 py-4",
@@ -66,18 +54,8 @@ const SHELL = cn(
 );
 
 /**
- * The practice's board — the same shell as the browse feed, filled with what
- * this screen owns.
- *
- * Three zones, the reference's own: a rail of summary panels down the left, and
- * one card across the rest holding the buckets above the listings. The card is
- * `flex-1` and carries the table, which scrolls inside it, so the page never
- * scrolls and a practice with three postings and a practice with forty see the
- * same board.
- *
- * No `PageHeader`: the reference's main card carries its own title, and a page
- * title above a card that is also titled is the same sentence twice on one
- * screen.
+ * The practice's board: a rail of summary panels, and one card whose table
+ * scrolls inside it so the page doesn't.
  */
 export function MyListingsView({
   listings,
@@ -93,17 +71,6 @@ export function MyListingsView({
   onPageSizeChange,
   loading,
 }: MyListingsViewProps) {
-  /*
-   * The buckets become the reference's tabs: one track with the active bucket as
-   * a cream pill. The counts are already totals over the whole collection, so
-   * they belong to the tab and not to the page under it — the reader changes
-   * bucket *because* of the number on it.
-   *
-   * `SegmentedControl` rather than `FilterChips`: nine free-standing chips on a
-   * wrapping row is a bundle, where nine options inside one track with the
-   * selection filled reads as one control, and scrolls horizontally on a phone
-   * instead of taking four floors.
-   */
   const buckets = LISTING_FILTERS.map((option) => ({
     id: option.id,
     label: option.label,
@@ -128,25 +95,8 @@ export function MyListingsView({
               </>
             }
             action={
-              /*
-                The card header is built like the browse screen's « Annonces »
-                header — title and count on the left, its controls on the
-                right — so the two workspaces open on a header of the same
-                height and the tables under them start at the same line.
-
-                Urgency is orthogonal to the status buckets (a posting can be
-                urgent and closed), so it is its own two-way track rather than
-                an eighth bucket. It carries no counter: the endpoint breaks its
-                totals down by status only.
-              */
+              // Urgency is orthogonal to status, so it is its own toggle.
               <div className="flex min-w-0 flex-wrap items-center justify-end gap-2">
-                {/*
-                  The nine status buckets as one pill with a menu, the way the
-                  browse screen offers « Trier par »: as a track they ran past
-                  the card at any desktop width, and as a row under the title
-                  they pushed the table below the line the browse table starts
-                  on. The counters stay, in the menu.
-                */}
                 <label className="flex shrink-0 cursor-pointer items-center rounded-full border border-border py-1.5 pr-1.5 pl-3.5 transition-colors hover:border-border-strong has-[select:focus-visible]:ring-2 has-[select:focus-visible]:ring-ring">
                   <span className="text-control whitespace-nowrap text-muted">
                     Statut
@@ -181,17 +131,8 @@ export function MyListingsView({
             }
           >
             {/*
-              Two presentations, one removed by CSS: `display:none` also takes
-              it out of the accessibility tree, so a screen reader and a
-              keyboard never meet the copy that is not on screen.
-
-              One region, then the pager — and the region takes the height the
-              card has at `lg`: the table frame inside it is `flex-1` too, so a
-              short page's spare room lives *inside* the frame, under its rows,
-              and the pager stays at the card's foot (see `my-listings-table`).
-              Below `lg` the screen is ordinary document flow: no floor on this
-              region, so the card hugs the rows and the pager follows them
-              instead of floating off across empty space.
+              Table and mobile list, one removed by CSS. At `lg` the region
+              takes the card's height so the pager stays at its foot.
             */}
             <div className="flex flex-col lg:min-h-0 lg:flex-1">
               {counts.total === 0 ? (
@@ -201,13 +142,6 @@ export function MyListingsView({
                     icon={<FileTextIcon className="h-8 w-8 text-primary" />}
                     title="Aucune annonce publiée"
                     description="Vous n'avez pas encore d'annonce de remplacement. Publiez-en une pour recevoir des candidatures."
-                    /*
-                      The way out, on the one state that has nowhere to go: an
-                      empty board asks for its first posting, and the shelf the
-                      dashboard's « Publier une annonce » acts from is the same
-                      route. Without it this card is the one surface on the
-                      screen that ends in a wall.
-                    */
                     actionLabel="Publier une annonce"
                     actionHref="/listings/new"
                   />
@@ -223,9 +157,6 @@ export function MyListingsView({
                         ? "Aucune annonce urgente dans cette catégorie. Retirez le filtre « Urgentes » pour voir les autres."
                         : "Changez de filtre pour voir vos autres annonces."
                     }
-                    // The way out, offered on the state that needs it: the reader
-                    // who narrowed to urgent and found nothing has one filter to
-                    // undo, so the button says exactly that.
                     actionLabel={
                       urgentOnly ? "Retirer le filtre Urgentes" : undefined
                     }
@@ -249,14 +180,6 @@ export function MyListingsView({
               onPageSizeChange={onPageSizeChange}
               choices={MY_LISTINGS_PAGE_SIZE_CHOICES}
               loading={loading}
-              /*
-                Tighter than the flow margin: the table frame above is a
-                bordered region whose edge the pager reads against, so the
-                `mt-8` a flowing page needs is a second layer of air on the one
-                edge (`Pagination`, and its `className` note). A little stays,
-                because the frame's border still wants to breathe before its own
-                card ends.
-              */
               className="mt-3 lg:mt-4"
             />
           </Panel>

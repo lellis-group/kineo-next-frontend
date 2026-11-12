@@ -1,18 +1,9 @@
 "use client";
 
 /**
- * The apply section of a public listing detail page.
- *
- * The reader is already looking at the posting, so the flow is one button and
- * one optional sentence, not another page: the button opens the form, the
- * message travels with the application, and the confirmation stays where the
- * posting is, with the way out to « Mes candidatures » beside it.
- *
- * Eligibility is not re-decided here. The server page gates who sees this
- * section at all (signed in, profile created, not an installed-practice-only
- * profile), because the backend decides it against the same facts — a refused
- * apply is still reported in French through `applyErrorMessage`, as the honest
- * answer to a state that changed between render and submit.
+ * The apply section of a listing detail page: a button opening a short form,
+ * then a confirmation in place. Who sees it is decided by the server page; a
+ * refusal is reported through `applyErrorMessage`.
  */
 
 import { useRouter } from "next/navigation";
@@ -32,11 +23,7 @@ import { signInOnExpiredSession } from "@/lib/session-redirect";
 /** Backend CreateApplicationDto — optional message, 1-2000 chars. */
 const MAX_MESSAGE_LENGTH = 2000;
 
-/**
- * `closed` — the button, until opened; `open` — the form, until a settle;
- * `sent` — the confirmation, terminal for the session: the reader has applied
- * and nothing here un-applies.
- */
+/** `sent` is terminal: nothing here un-applies. */
 type ApplyState = "closed" | "open" | "sent";
 
 export function ApplyToListing({ listingId }: { listingId: string }) {

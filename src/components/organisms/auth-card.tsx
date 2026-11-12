@@ -12,15 +12,9 @@ export interface AuthCardProps {
 }
 
 /**
- * The shell every auth and erasure screen is built on.
- *
- * The heading is exposed as a ref so a caller can move focus onto it when the
- * card's content is swapped underneath the reader — the erasure flow replaces
- * the whole card several times over, and without that a keyboard user is left
- * tabbing back through whatever was on the page before. The heading is the right
- * target: it names what the screen now is, and focusing the surrounding wrapper
- * instead would put a focus stop on a non-interactive box. `tabIndex` therefore
- * lives here rather than on the wrapper.
+ * The shell every auth and erasure screen is built on. The heading is exposed
+ * as a focusable ref, so a caller can move focus to it when the content is
+ * swapped.
  */
 export function AuthCard({
   title,
@@ -30,8 +24,7 @@ export function AuthCard({
 }: AuthCardProps) {
   return (
     <main className="flex min-h-dvh flex-col items-center justify-center bg-background px-4 py-8 text-foreground sm:px-6 sm:py-10">
-      {/* my-auto: vertical centering that stays scrollable when the card
-          exceeds the viewport (landscape, open keyboard) */}
+      {/* `my-auto`: centred, yet scrollable when taller than the viewport. */}
       <div className="my-auto w-full max-w-110 rounded-card border border-border bg-surface px-5 py-7 shadow-2xl shadow-black/50 sm:px-9 sm:py-10">
         <div className="mb-8 flex flex-col items-center gap-6 text-center sm:mb-9 sm:gap-8">
           <KineoLogo />

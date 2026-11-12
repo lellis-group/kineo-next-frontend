@@ -20,15 +20,8 @@ import {
 } from "@/lib/listings";
 
 /**
- * The full record of one listing: what it is, when it runs, who it is for, how
- * many candidates it holds, and — while it can still take someone — the two
- * actions that take it out of circulation.
- *
- * The close/cancel row is on the card as well as here, and that is deliberate
- * rather than duplicated: it is the only way to clear the active applications
- * that block an account erasure, and an erasure notice that tells a practice to
- * resolve a blocker it can only reach from a list it may not be on is a dead
- * end. Both surfaces call the same service functions.
+ * The full record of one listing, with the close/cancel actions while it can
+ * still take someone.
  */
 export function ListingDetail({
   listing,
@@ -93,9 +86,6 @@ export function ListingDetail({
         </div>
       )}
 
-      {/* Last write rather than creation: what a practice wants to know about a
-          posting it touched hours ago is whether anything moved since, and the
-          two dates are usually the same on a listing nobody has edited. */}
       {listing.updatedAt && listing.updatedAt !== listing.createdAt && (
         <p className="mt-6 text-xs text-faint">
           Dernière modification le {formatDateTime(listing.updatedAt)}

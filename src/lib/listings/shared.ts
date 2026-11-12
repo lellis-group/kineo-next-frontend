@@ -1,9 +1,4 @@
-/**
- * Shared listing adapter helpers — base mapping from `ApiReplacementListing`
- * to the fields both the practice side (`MyListing`) and the browse feed
- * (`BrowseListing`) render. Extracted so the two adapters cannot drift apart
- * on a field they both read.
- */
+/** The base mapping both `MyListing` and `BrowseListing` adapters share. */
 import { formatDateRange } from "@/lib/format";
 import type { ApiReplacementListing } from "@/lib/types/api";
 

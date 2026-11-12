@@ -4,15 +4,8 @@ import { KineoLogo } from "@/components/atoms/kineo-logo";
 import { PROSE_CONTAINER } from "@/lib/layout";
 
 /**
- * Shell for the long-form legal documents.
- *
- * Two things it leaves out, so no legal page decides them its own way:
- *
- * - it renders no `<main>`. The `(site)` layout already provides the page's
- *   single `main`, and a second one inside it is invalid HTML and gives assistive
- *   technology two landmarks to choose between.
- * - it renders no site header or footer. The layout has both; repeating the logo
- *   and a "back" link on top would show a reader two navbars.
+ * Shell for the long-form legal documents. No `<main>` and no header/footer:
+ * the `(site)` layout provides them.
  */
 export function LegalDocument({
   title,

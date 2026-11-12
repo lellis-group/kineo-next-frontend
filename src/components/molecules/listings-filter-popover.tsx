@@ -10,13 +10,8 @@ import type { BrowseFormFilters } from "@/lib/listings";
 import type { Specialty } from "@/lib/types/api";
 
 /**
- * A control floating on the map, from `xl`: white and shadowed like the map's
- * own buttons, dark ink. Below `xl` the toolbar is an ordinary bar over the
- * map and the control keeps its dark chrome.
- *
- * Opaque, and no `backdrop-blur`: a blurred backdrop over the WebGL canvas
- * is recomputed on every frame the map moves, and four pills of it made the
- * map stutter on each pan, zoom and re-frame after a filter change.
+ * A control floating on the map from `xl`. Opaque, no `backdrop-blur`: a blur
+ * over the WebGL canvas is recomputed every frame and made panning stutter.
  */
 export const MAP_PILL =
   "xl:border-0 xl:bg-white xl:text-map-ink xl:shadow-[0_2px_10px_rgb(22_21_15/0.18)] xl:hover:bg-white xl:hover:text-map-ink";
@@ -27,23 +22,9 @@ export interface SpecialtyOption {
 }
 
 /**
- * The « Filtres » button and the panel it opens.
- *
- * Extracted from `ListingsToolbar` because the popover has its own state and
- * its own focus rules — a trigger, a dialog, four debounced fields, and the
- * outside-click and Escape handlers that close it. Leaving it inline made the
- * toolbar file the place to read about popover lifecycle, when the toolbar's
- * own job is the row around it.
- *
- * The panel is a popover rather than an expansion below the row: it must not
- * resize the map, which is the one element on this screen whose height is worth
- * protecting. It closes on Escape, on a click outside, and after a choice.
- *
- * The date fields keep their own drafts: a native date input can emit several
- * changes while one date is being chosen, and each would otherwise write the
- * URL and re-read the feed. Debounced, a burst collapses into one apply. Each
- * bound commits independently, which is correct because a range is two filters,
- * not one.
+ * The « Filtres » button and its popover (a popover so it never resizes the
+ * map). The date fields are debounced: a native date input can emit several
+ * changes while one date is chosen.
  */
 export function ListingsFilterPopover({
   filters,
@@ -56,10 +37,8 @@ export function ListingsFilterPopover({
   filters: BrowseFormFilters;
   onFiltersChange: (patch: Partial<BrowseFormFilters>) => void;
   specialties: readonly SpecialtyOption[];
-  /** True on any filtered, non-default view — drives the reset affordance. */
   filtered: boolean;
   onResetFilters: () => void;
-  /** Drawn as a white pill on the map from `xl` (see `ListingsToolbar`). */
   onMap?: boolean;
 }) {
   const { draft: fromDraft, setDraft: setFrom } = useDebouncedInput(
@@ -71,11 +50,7 @@ export function ListingsFilterPopover({
     (value) => onFiltersChange({ to: value }),
   );
 
-  // How many of the narrowing controls inside the panel are applied (« Urgentes »
-  // is on the row, where its own pressed state says so). It is what the
-  // « Filtres » button carries: a panel that hides applied filters without
-  // saying so would leave the reader reading a narrowed map with no clue what
-  // narrowed it.
+  // Shown on the button, so applied-but-hidden filters are visible.
   const appliedFilters = [
     filters.specialty !== "",
     filters.q.trim() !== "",
@@ -92,18 +67,14 @@ export function ListingsFilterPopover({
   useEffect(() => {
     if (!open) return;
 
-    // Land a keyboard reader on the first field rather than leaving focus on the
-    // trigger: the panel is the reason the button was pressed. `select` first,
-    // so a phone does not raise its keyboard on open.
+    // Focus the first field; `select` first so a phone doesn't raise its keyboard.
     panelRef.current?.querySelector<HTMLElement>("select, input")?.focus();
 
     const onPointerDown = (event: MouseEvent) => {
       if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
     };
 
-    // Escape closes and hands focus back to the trigger. A click outside does
-    // not: the reader is already on their way somewhere else, and pulling focus
-    // back to this button would undo that.
+    // Escape returns focus to the trigger; a click outside does not.
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
       setOpen(false);
@@ -181,11 +152,6 @@ export function ListingsFilterPopover({
               </Select>
             </div>
 
-            {/*
-              The pair grows, but within a ceiling, and its two fields grow with
-              it — the same shape it had on the row, kept here where there is
-              finally room for it to be honest.
-            */}
             <div className="flex flex-col gap-1.5">
               <span className="field-label">Date de début</span>
               <div className="grid grid-cols-2 gap-2">
@@ -199,9 +165,7 @@ export function ListingsFilterPopover({
                     aria-label="Démarrant après le"
                     className="field-input w-full min-w-0 rounded-full py-1.5"
                     value={fromDraft}
-                    // The settled `to`, not its draft: the ceiling is what is
-                    // actually applied, and reading a half-typed bound here
-                    // would reject a date the reader is still entering.
+                    // The applied `to`, not its draft.
                     max={filters.to || undefined}
                     onChange={(event) => setFrom(event.target.value)}
                   />
@@ -223,12 +187,6 @@ export function ListingsFilterPopover({
               </div>
             </div>
 
-            {/*
-              The way out, and it only exists on a filtered view. It clears all
-              four at once, which is the difference between a reset and four
-              undos: a reader who narrowed three fields wants the collection
-              back, not the last field.
-            */}
             {filtered && (
               <button
                 type="button"

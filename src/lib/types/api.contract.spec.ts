@@ -1,11 +1,7 @@
 /**
- * Parity contracts between the hand-maintained façade (`./api`) and the
- * generated document types (`./api.gen`).
- *
- * Most of these are type-level: a backend change that drops, renames or
- * re-typing a value the frontend reads must fail compilation here, in the file
- * whose job is saying what the wire looks like — the runtime fallbacks elsewhere
- * would otherwise absorb the change into a silently wrong screen.
+ * Parity contracts between the façade (`./api`) and the generated types
+ * (`./api.gen`): a backend change that drops, renames or re-types a value the
+ * frontend reads must fail compilation here.
  */
 import { describe, expect, it } from "bun:test";
 import {
@@ -27,19 +23,9 @@ import type { components } from "./api.gen";
 
 type Wire = components["schemas"];
 
-/**
- * Structural two-way comparison: true only when `A` and `B` accept each other.
- * Unlike a bare `A extends B`, an extra or missing key on either side fails it,
- * which is the point — a drift in one direction alone would read as "typecheck
- * still passes" while a chip loses a status.
- */
+/** True only when `A` and `B` accept each other. */
 type Same<A, B> = A extends B ? (B extends A ? true : false) : false;
 
-/**
- * Two-way armor: each member must evaluate to true for the const below to
- * compile — a dropped, renamed or re-typed wire value fills its slot with
- * `false` and fails here, ahead of any screen.
- */
 type PARITY = [
   Same<Specialty, Wire["Profile"]["specialty"]>,
   Same<ProfileType, Wire["Profile"]["profileType"]>,
@@ -61,11 +47,8 @@ type PARITY = [
 ];
 
 /**
- * One-way: the vocabulary the frontend reads must exist on the wire, even where
- * the frontend type is stricter. `ApiListingSpecialtyCounts` is the case in
- * point — the document cannot say "record keyed by an enum" in OpenAPI 3.0
- * form, so its published shape is an index signature, and the client type is
- * only required not to be wider.
+ * One-way: the frontend's vocabulary must exist on the wire, even where its
+ * type is stricter (`ApiListingSpecialtyCounts` vs an index signature).
  */
 type COVERAGE = [
   Specialty extends Wire["Profile"]["specialty"] ? true : false,

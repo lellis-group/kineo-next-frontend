@@ -1,22 +1,8 @@
-/**
- * The RPPS number's rule, in one place.
- *
- * Five consumers read it: the regex here, the form's `pattern` and `maxLength`,
- * and the one French sentence the validator and the error translator share.
- * `maxLength` cannot read a regex, so `RPPS_DIGITS` exists for
- * it — and the length the form allows is derived from the pattern rather than
- * decided again.
- */
+/** The RPPS number's rule; `RPPS_DIGITS` exists for the form's `maxLength`. */
 export const RPPS_DIGITS = 11;
 /**
- * The rule as a pattern *source*, so the two consumers that cannot share a
- * `RegExp` both read it from here.
- *
- * The input's `pattern` attribute takes a string and anchors it itself, so it
- * wants the bare `\d{11}`; the validator wants the anchored `RegExp`. Writing
- * the attribute inline — where the backslash is easily lost to `d{11}` — makes
- * it match the literal letter `d` eleven times, so a real number is rejected by
- * the browser's own constraint validation and no French message appears.
+ * The rule as a pattern *source*: the input's `pattern` attribute takes the bare
+ * `\d{11}` (it anchors itself), the validator the anchored `RegExp`.
  */
 export const RPPS_PATTERN_SOURCE = `\\d{${RPPS_DIGITS}}`;
 export const RPPS_PATTERN = new RegExp(`^${RPPS_PATTERN_SOURCE}$`);
@@ -28,13 +14,8 @@ export const CITY_MAX_LENGTH = 100;
 import type { ApiProfile, ProfileType, Specialty } from "./types/api";
 
 /**
- * The specialties, each with the name it takes wherever there is room and the
- * name it takes in a fixed-width column.
- *
- * One table, not two. `Record<Specialty, …>` twice would type-check perfectly
- * well as a pair and still drift the first time somebody adds a specialty to the
- * short one only — the distribution panel would then read « undefined » where a
- * specialty exists, and nothing would say so until a reader looked at it.
+ * The specialties, with their full name and their name in a fixed-width
+ * column. One table, so the two can't drift.
  */
 export const SPECIALTY_NAMES: Record<
   Specialty,
@@ -51,13 +32,7 @@ export const SPECIALTY_LABELS: Record<Specialty, string> = Object.fromEntries(
   Object.entries(SPECIALTY_NAMES).map(([id, name]) => [id, name.long]),
 ) as Record<Specialty, string>;
 
-/**
- * The names for a chart row.
- *
- * « Chirurgien-dentiste » and « Autre spécialité » are both wider than the column,
- * and a truncated label in a distribution panel is worse than a terse one: the
- * reader cannot tell which specialty the bar belongs to.
- */
+/** The names for a fixed-width chart row. */
 export const SPECIALTY_SHORT_LABELS: Record<Specialty, string> =
   Object.fromEntries(
     Object.entries(SPECIALTY_NAMES).map(([id, name]) => [id, name.short]),

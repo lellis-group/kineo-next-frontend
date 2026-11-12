@@ -19,7 +19,6 @@ interface BrowseHorizonOption {
   label: string;
 }
 
-/** Period row labels, beside the `SegmentedControl` that renders them. */
 const BROWSE_HORIZONS: readonly BrowseHorizonOption[] = [
   { id: "ALL", label: "Toutes" },
   { id: "WEEK", label: "Cette semaine" },
@@ -28,104 +27,43 @@ const BROWSE_HORIZONS: readonly BrowseHorizonOption[] = [
 ];
 
 /**
- * How the results box takes its height — by giving it back to its rows.
- *
- * From `lg` up the whole page is a full-height shell (`100dvh`, no page scroll),
- * so this box is `flex-1 min-h-0`: it absorbs whatever the map card above it
- * leaves, and the table frame inside it is `flex-1` in turn, so the box's spare
- * room falls *inside* the frame, under its rows, and the pager — a direct child
- * of the panel, after this box — stays at the card's foot instead of drifting
- * across the void (the browse table's own note, and the same decision). That is
- * what lets ten rows and three rows be the same panel without the panel
- * deciding a height of its own.
- *
- * Below `lg` the screen is ordinary document flow, and the box carries no floor:
- * there is no bounded height to fill, so the panel hugs the rows and the pager
- * follows them. A `min-h` would give the box a shape of its own — a region of
- * empty surface between the last row and the pager, on every short page.
+ * From `lg` the page is a full-height shell, so the box absorbs what the map
+ * leaves and the spare room falls inside the table frame, keeping the pager at
+ * the card's foot. Below `lg` it hugs its rows.
  */
 const RESULTS_BOX = "lg:min-h-0 lg:flex-1";
 
 /**
- * The dimming a fetch in flight puts over the rows.
- *
- * Declared unconditionally, not on the loading branch only: a `transition-*`
- * class added at the same moment as the opacity it animates has nothing to
- * transition *from*, so the list would go dim instantly and then fade back in on
- * its own. Both states need the class for the pair to interpolate.
- *
- * It is a value rather than markup because the two presentations below are
- * siblings rather than two children of one wrapper — see the note at the list.
+ * Declared on both states: a transition class added together with the opacity
+ * it animates has nothing to transition from.
  */
 const REFRESHING = "transition-opacity duration-200 ease-out";
 
 interface ListingsResultsPanelProps {
   listings: BrowseListing[];
-  /** Every posting the filters match, across pages — shown beside the title. */
   total: number;
   totalPages: number;
   page: number;
   onPageChange: (page: number) => void;
   loading: boolean;
-  /** True on a filtered view — what the empty state says about itself. */
   filtered: boolean;
   horizon: BrowseHorizon;
   onHorizonChange: (horizon: BrowseHorizon) => void;
-  /**
-   * Clears every filter — offered on the filtered empty state as the way out of a
-   * search that matched nothing.
-   */
   onResetFilters: () => void;
-  /** Reports the row under the pointer to the map's preview state. */
   onHoveredChange?: (id: string | null) => void;
-  /**
-   * The posting the reader has chosen, and the way to choose another.
-   *
-   * Passed straight through to the table, which owns the row markup: a choice is
-   * made by the title button, and the map half of the screen acts on it.
-   */
   selectedListingId?: string | null;
   onListingSelect?: (listing: BrowseListing) => void;
-  /**
-   * The posting a pick on the map just brought into view, and the one-shot mark
-   * both presentations draw for it.
-   */
   spotlight?: ListingSpotlight | null;
-  /**
-   * What a screen reader hears after a pick: the posting, and the page if the
-   * list had to turn to reach it.
-   *
-   * The glow is the visual answer to "what changed"; this is the same answer
-   * without relying on sight, and it is also the only place the page turn is
-   * stated in words.
-   */
+  /** What a screen reader hears after a pick, page turn included. */
   announcement?: string;
-  /**
-   * The nonce of a pick that changed page — drives the pager's brief flash.
-   *
-   * Null when the pick landed on the page already on screen, which is most of
-   * the time and is exactly when the pager did not change.
-   */
+  /** Nonce of a pick that changed page — drives the pager's flash. */
   pageHighlight?: number | null;
-  /**
-   * A handle onto the table, so the screen can scroll a picked posting into
-   * view. Passed down rather than reached for: the table owns the row markup,
-   * so it — not the container — is what knows how to find a row by id.
-   */
   tableRef?: Ref<ListingsTableHandle>;
 }
 
 /**
- * The results: the quick period row, the rows themselves, and the pager.
- *
- * An organism — a whole section built out of a panel, a segmented control, cards
- * or a table, and a pager — and it exists as its own component so that this
- * screen's layout never has to know what a "period row" or an "empty state" is.
- *
- * Both presentations are rendered and one is removed by CSS, which is not the
- * same as being hidden: `display:none` also takes it out of the accessibility
- * tree, so a screen reader and a keyboard never meet the copy that is not on
- * screen.
+ * The results: the period row, the rows (cards or table, one removed by CSS),
+ * and the pager.
  */
 export function ListingsResultsPanel({
   listings,
@@ -158,16 +96,8 @@ export function ListingsResultsPanel({
       action={
         <div className="flex min-w-0 flex-wrap items-center justify-end gap-3">
           {/*
-            Whether a fetch is in flight, said once and reserved: `invisible`
-            rather than absent when idle, so the box is taken whether or not this
-            panel is refreshing. It has to be reserved because it is one more item
-            in a *wrapping* row, and a transient status that comes and goes would
-            change the header's height under the reader.
-
-            `invisible` rather than `opacity-0`: an invisible element is out of the
-            accessibility tree, so a screen reader is not left with a stale
-            « Actualisation… » on a panel that is no longer loading, and still
-            hears the one that appears.
+            Reserved with `invisible` rather than removed, so the wrapping header
+            keeps its height; `invisible` also takes it out of the a11y tree.
           */}
           <span
             className={cn(
@@ -179,18 +109,7 @@ export function ListingsResultsPanel({
             Actualisation…
           </span>
 
-          {/*
-            The reference's trailing control on this card: a track of options with
-            the active one filled. Ordering used to live here too, as a labelled
-            select — the sort is not a narrowing, so its place is with the row of
-            controls that changes no result set. It moved up to the map's own row,
-            where « Trier par » reads beside the search it belongs with.
-
-            `min-w-0` stays: `Panel` gives this wrapper the same, and it only
-            holds if this div has it as well. As a flex item its default minimum
-            is its content's own, and a four-option track is wide — on a phone the
-            row ran past the card's edge until the track was told it could shrink.
-          */}
+          {/* `min-w-0` lets the track shrink on a phone. */}
           <SegmentedControl
             ariaLabel="Filtrer les annonces par date de début"
             options={BROWSE_HORIZONS}
@@ -201,34 +120,16 @@ export function ListingsResultsPanel({
       }
     >
       {/*
-        A size container: cards or table is decided by the width *this panel*
-        gets, not the screen's. Beside the facets rail at 1024px the panel is
-        about 550px wide, and the table — Annonce, Cabinet, Période, Candidats,
-        Statut — cut its last columns behind a horizontal scroll nothing
-        signalled. Now the table drops its secondary columns as the panel
-        narrows (see `ListingsTable`), and below 28rem — a phone — the cards
-        show instead.
-
-        `data-results` scopes the table's `scrollToId` to this panel, whichever
-        presentation is showing.
+        A size container: cards or table is decided by this panel's width, not
+        the screen's. `data-results` scopes the table's `scrollToId`.
       */}
       <div data-results className={cn("@container flex flex-col", RESULTS_BOX)}>
-        {/*
-          The visual spotlight says « this is the row »; this says it in words,
-          page turn included. Kept mounted whether the list has rows or not, so
-          a pick that lands on an empty page is still announced. `<output>`
-          carries an implicit `status` role — see the map's own live region.
-        */}
+        {/* Kept mounted, so a pick landing on an empty page is announced. */}
         <output className="sr-only" aria-live="polite" aria-atomic="true">
           {announcement}
         </output>
 
         {listings.length === 0 ? (
-          /*
-           * Centred in the box rather than left at its own height, so that a
-           * search matching nothing is the same size as a search matching ten
-           * postings: the panel's dimensions do not depend on what is in it.
-           */
           <div className="flex flex-1 items-center">
             <EmptyState
               className="mt-0 w-full"
@@ -250,26 +151,8 @@ export function ListingsResultsPanel({
         ) : (
           <>
             {/*
-              The two presentations are siblings, each one told how it takes its
-              height, where they used to sit inside a wrapper that put a single
-              `sm:h-full` on both.
-
-              That wrapper was the empty space under a short page. `h-full` is not
-              "as tall as you need", it is "as tall as the box" — so the table's
-              frame was drawn down to the bottom of the panel whatever the row
-              count, and a page of two rows was a bordered box with an empty
-              lower half.
-
-              Flattening them is what lets the fix work. A frame that is a
-              *direct* child of the results box is a flex item of it, and a flex
-              item sizes itself to its content and only shrinks if it has to —
-              which is exactly « short page, no scroll; long page, scroll
-              inside ». Bevel the frame behind a wrapper div and that wrapper
-              becomes the flex item instead: it would have to carry the
-              `min-h-0` that lets the chain reach the frame at all, and the extra
-              link is one more thing to keep in step. So the refresh dimming goes
-              on the presentations themselves — which is where it belongs anyway,
-              it is a property of the rows and not of a box that held them.
+              Siblings, not wrapped: the table frame must be a direct flex child
+              of the results box to scroll inside it.
             */}
             <ul
               className={cn(
@@ -310,13 +193,6 @@ export function ListingsResultsPanel({
         onPageChange={onPageChange}
         loading={loading}
         highlight={pageHighlight}
-        /*
-          Tighter than the flow margin, for the reason `Pagination` states in
-          its `className` note and the same the mine table's pager carries: the
-          table frame above is a bordered region, and at `lg` its edge is the
-          boundary this row reads against — `mt-8` there is one step of air
-          repeated on one edge.
-        */
         className="mt-3 lg:mt-4"
       />
     </Panel>

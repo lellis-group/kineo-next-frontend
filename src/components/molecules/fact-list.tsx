@@ -1,14 +1,7 @@
 import type { ComponentType, ReactNode, SVGProps } from "react";
 import { cn } from "@/lib/cn";
 
-/**
- * One labelled value in a fact list — the term/definition pair of a `<dl>`.
- *
- * The icon is passed as a component, not as a node, for the reason it is in
- * `MetaRow`: the two fact lists this replaces each wrote their own icon size and
- * their own gap between the icon and the label, so the same « période » fact sat
- * at two different offsets depending on the page.
- */
+/** One labelled value in a `<dl>`; the icon is a component so its size stays here. */
 export function Fact({
   icon: Icon,
   term,

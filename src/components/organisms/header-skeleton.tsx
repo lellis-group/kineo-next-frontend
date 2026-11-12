@@ -2,16 +2,8 @@ import { KineoLogo } from "@/components/atoms/kineo-logo";
 import { HEADER_HEIGHT, HEADER_HEIGHT_SM } from "@/lib/layout";
 
 /**
- * Placeholder for the header while the server resolves the session.
- *
- * It exists because the obvious fallback — the anonymous header — is a lie
- * for a signed-in member: the page would paint "Se connecter / Créer un
- * compte" and then swap the whole bar a moment later. This reserves the same
- * geometry as `SiteHeader` (same heights, logo, one slot per side) so nothing
- * moves when the real state arrives.
- *
- * Bar-shaped, not a spinner: the header is a horizontal strip, and a circular
- * loader there would resize the bar.
+ * The header while the session resolves: same geometry as `SiteHeader`, so a
+ * member doesn't see the anonymous header flash first.
  */
 export function HeaderSkeleton() {
   return (

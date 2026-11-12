@@ -6,32 +6,12 @@ import {
 } from "@/lib/auth-validation";
 
 /**
- * Auth error handling — user-friendly French messages for the auth flows
- * (signin, signup, password reset, email verification).
+ * French messages for the auth flows (signin, signup, password reset, email
+ * verification). The failure *kind* is asked of `api-errors.ts`; this module
+ * reads better-auth's own string `code`s.
  *
- * Two things worth separating, because they answer different questions:
- *
- *  - *What kind of failure was this?* That is `api-errors.ts`'s job, and this
- *    module asks it rather than re-deciding: a rule of its own (say
- *    `!status || status >= 500`) would quietly disagree with the main
- *    classifier, and the same outage would be described two ways depending on
- *    which screen hit it first.
- *  - *What does better-auth actually say?* That stays here, because better-auth
- *    answers with string `code`s (`EMAIL_NOT_VERIFIED`, `USER_ALREADY_EXISTS`…)
- *    rather than HTTP statuses, and those codes are specific to the auth
- *    endpoints.
- *
- * On `message` matching, which `api-errors.ts` otherwise forbids: a `code` is
- * always tried first, and the `message` check is the fallback for a backend one
- * deploy behind that still answers with the older code inside the text. This is
- * the same rolling-deploy concession `lib/listings/service.ts` documents for
- * its status regex — deliberate, and kept as long as both backends can be
- * deployed independently.
- *
- * Nothing here matches on a *rendered sentence*. The one place a message is
- * read at all, it reads better-auth's structured `[body.<field>]` prefix rather
- * than a French or English phrase, and the reason it is not a code is written
- * where it happens.
+ * `message` matching is only a fallback after the code, for a backend one
+ * deploy behind that still carries the code inside the text.
  */
 
 /** Server outage / network cut — shared copy across the auth pages. */
@@ -39,37 +19,20 @@ export const AUTH_SERVICE_UNAVAILABLE_MESSAGE =
   "Service d'authentification indisponible. Veuillez réessayer dans quelques instants.";
 
 /**
- * The same outage, from a call that *threw* instead of returning an error object.
- *
- * Distinct from `AUTH_SERVICE_UNAVAILABLE_MESSAGE` above, which is what
- * `mapNetworkSignInError` returns. Two sentences for one situation is a smell
- * worth settling on purpose rather than by accident — but they are not obviously
- * interchangeable: this one is written for a reader who is mid-form and does not
- * know the auth service exists, so it names what they can act on ("votre
- * connexion") instead of naming a subsystem. A constant rather than three
- * literals that could drift.
+ * The same outage, from a call that *threw*. Worded for a reader who does not
+ * know the auth service exists: it names their connection instead.
  */
 export const AUTH_UNREACHABLE_MESSAGE =
   "Impossible de contacter le serveur. Réessayez plus tard.";
 
-/**
- * The sentence for "the call did not get through", for whichever action it was.
- *
- * Six screens use it, swapping only the leading verb — the rest is one template,
- * so the wording of a network blip is the same everywhere it is shown.
- */
+/** "The call did not get through", with the action's verb swapped in. */
 export function authCallFailed(action: string): string {
   return `${action} impossible pour le moment. Vérifiez votre connexion, puis réessayez.`;
 }
 
 /**
- * Whether this is worth retrying later rather than something the reader did
- * wrong: the service is down, or the connection never completed.
- *
- * Delegates the 5xx threshold to `api-errors.ts`, and asks separately whether
- * anything was ever received — the auth client resolves with a status-less
- * object when the network drops, which the main classifier has no way to
- * recognise on its own.
+ * Whether this is worth retrying later: the service is down, or the connection
+ * never completed (the auth client then resolves with a status-less object).
  */
 export function isAuthServiceUnavailable(error: { status?: number }): boolean {
   if (neverReached(error)) return true;
@@ -77,7 +40,6 @@ export function isAuthServiceUnavailable(error: { status?: number }): boolean {
   return kind === "unavailable" || kind === "service-down";
 }
 
-/** Shown when the account exists but the email hasn't been verified. */
 const EMAIL_NOT_VERIFIED_MESSAGE =
   "Adresse e-mail non vérifiée. Consultez votre boîte de réception et cliquez sur le lien de vérification pour activer votre compte.";
 
@@ -133,8 +95,8 @@ export function mapSignUpError(error: {
   const message = (error.message ?? "").toLowerCase();
   const code = (error.code ?? "").toUpperCase();
 
-  // better-auth 1.7: duplicate email is `USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL`
-  // (single caller may also receive older `USER_ALREADY_EXISTS` / `EMAIL_ALREADY_EXISTS`).
+  // better-auth 1.7 answers `USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL`; older
+  // codes are kept.
   if (
     code.includes("USER_ALREADY_EXISTS") ||
     code === "EMAIL_ALREADY_EXISTS" ||
@@ -148,14 +110,8 @@ export function mapSignUpError(error: {
     };
   }
 
-  // Field-level rejections, matched on the code, never on a sentence: the backend
-  // answers in English and rewords its copy, and a branch that misses falls
-  // through to "vérifiez votre connexion" below — a sentence about the network
-  // for someone who mistyped their name.
-  //
-  // The password codes come from our own `before` hook (`PASSWORD_TOO_SHORT_OR_LONG`)
-  // or from better-auth's own length check, depending on which got there first;
-  // both are listed so the reader is told the same thing either way.
+  // Matched on the code, never on the backend's English copy. The password
+  // codes come from our `before` hook or from better-auth's own length check.
   if (
     code === "PASSWORD_TOO_SHORT_OR_LONG" ||
     code === "PASSWORD_TOO_SHORT" ||
@@ -168,20 +124,8 @@ export function mapSignUpError(error: {
     return { existingAccount: false, message: NAME_ERROR_MESSAGE };
   }
 
-  // An invalid email is the one case with no code to match.
-  //
-  // Our hook validates the email's *bounds* only (trim, lowercase, length) and
-  // leaves the shape to better-auth, so the rejection comes from its own zod
-  // layer, which answers `VALIDATION_ERROR` for any field — too coarse to say
-  // which. Its message is structured, though: `[body.<field>] <reason>`, and the
-  // field is named. So the code plus that prefix is what identifies this, which
-  // is still a string match, but on a format rather than on prose.
-  //
-  // What would remove the coupling: our hook rejecting a malformed email with its
-  // own `INVALID_EMAIL`, the way it already rejects the name. That would be a
-  // behaviour change on every path `emailSchema` guards — including sign-in
-  // lookups against stored values — so it is a deliberate decision, not a
-  // cleanup to slip in here.
+  // An invalid email has no code of its own: better-auth's zod layer answers
+  // `VALIDATION_ERROR` for any field, but names it in a `[body.<field>]` prefix.
   if (code === "VALIDATION_ERROR" && message.includes("[body.email]")) {
     return { existingAccount: false, message: EMAIL_ERROR_MESSAGE };
   }
@@ -192,14 +136,7 @@ export function mapSignUpError(error: {
   };
 }
 
-/**
- * Whether this instance has password reset switched off.
- *
- * Lives here rather than in the container, because it is a reading of what
- * better-auth says — which is this module's whole subject. A code added here
- * reaches this screen too, instead of being handled on four screens and missed
- * on the fifth.
- */
+/** Whether this instance has password reset switched off. */
 export function isPasswordResetDisabled(failure: {
   code?: string | null;
   message?: string | null;
@@ -230,10 +167,6 @@ export function mapResetPasswordError(error: {
   ) {
     return "Ce lien a expiré ou a déjà été utilisé. Demandez un nouveau lien.";
   }
-  // Codes first, like `mapSignUpError`. The old check matched a French sentence
-  // ("8 ET 128 CARACTÈRES") that only this frontend writes — the reset form
-  // already validates the length before calling, so that branch could not fire
-  // on a real backend answer.
   if (
     code === "PASSWORD_TOO_SHORT_OR_LONG" ||
     code === "PASSWORD_TOO_SHORT" ||

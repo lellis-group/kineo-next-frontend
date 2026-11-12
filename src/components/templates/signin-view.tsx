@@ -8,12 +8,7 @@ import { SubmitButton } from "@/components/molecules/submit-button";
 import { AuthCard } from "@/components/organisms/auth-card";
 import { PASSWORD_MAX_LENGTH } from "@/lib/auth-validation";
 
-/**
- * The sign-in form.
- *
- * Pure: every handler arrives as a prop, so this file is about what the screen
- * looks like and `signin-container` is about what happens when it is submitted.
- */
+/** The sign-in form; handlers arrive as props. */
 export function SignInView({
   error,
   onSubmit,

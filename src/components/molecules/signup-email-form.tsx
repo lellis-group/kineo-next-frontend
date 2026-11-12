@@ -6,16 +6,7 @@ export interface SignupEmailFormProps {
   submitLabel?: string;
 }
 
-/**
- * Hands an address over to the signup form.
- *
- * A plain GET form, not a scripted one: the whole job is to navigate to
- * `/signup?email=…`, which is exactly what the browser does natively — so the
- * landing page needs no JavaScript for its call to action, and the field keeps
- * working before hydration. A client component doing it by hand with
- * `useState` and `useRouter` would also produce an address that has to be
- * re-read on the far side.
- */
+/** Hands an address to `/signup?email=…` with a plain GET form, so it works before hydration. */
 export function SignupEmailForm({
   placeholder = "prenom.nom@exemple.fr",
   submitLabel = "Commencer",

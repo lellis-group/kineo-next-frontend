@@ -1,9 +1,6 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
-/**
- * The request the page is rendering for, as `headers()` would hand it over.
- * Replaced per test; `mock.module` must run before the transport is imported.
- */
+/** What `headers()` hands over; `mock.module` must run before the import. */
 let incoming = new Headers();
 mock.module("next/headers", () => ({ headers: async () => incoming }));
 

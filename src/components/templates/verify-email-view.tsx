@@ -12,20 +12,9 @@ import { isAddressChangeFlow, isApprovalFlow } from "@/lib/verification-flow";
 export type VerificationStage = "verifying" | "success" | "error" | "invalid";
 
 /**
- * Pure: the stage picks the screen, and the callbacks arrive as props.
- *
- * `error` and `invalid` share a layout but not a meaning — one is a link that
- * could not be validated at all, the other is a verification that was attempted
- * and refused — so they are separate stages rather than one stage with a flag.
- * Both offer a resend on a sign-up link, because both leave the reader needing
- * the same next step.
- *
- * `flow` says what the link was for, and it picks between three success
- * screens: a change of address confirms the address, the approval that releases
- * it confirms nothing at all, and anything else is a sign-up claiming an account
- * has just become active. A resend cannot help on the first two either:
- * `sendVerificationEmail` re-issues a *sign-up* link, which never advances
- * either step of a change.
+ * Pure: the stage picks the screen. `flow` picks between three success
+ * screens (sign-up, email change, change approval); a resend only helps a
+ * sign-up link.
  */
 export function VerifyEmailView({
   stage,
@@ -38,7 +27,6 @@ export function VerifyEmailView({
   stage: VerificationStage;
   /** What the link does when it is opened. Defaults to a sign-up. */
   flow?: VerificationFlow;
-  /** Sentence for the `error` stage. Unused on the others. */
   error: string;
   resendStatus: ResendStatus;
   onResend: () => void;
@@ -79,8 +67,6 @@ export function VerifyEmailView({
             />
           )}
 
-          {/* Secondary beside « Renvoyer l'email »: one primary action per
-              card, as the reference never puts two cream buttons together. */}
           <Button
             href={isAddressChange ? "/profile" : "/signin"}
             variant={isAddressChange ? "primary" : "secondary"}
@@ -137,11 +123,7 @@ export function VerifyEmailView({
       title="Vérification en cours"
       subtitle="Nous validons votre adresse e-mail"
     >
-      {/* Not `LoadingState`: that reserves half the viewport, which is right for
-          a page but wrong inside a card that already fills one — the box would
-          be taller than the card around it. Same rule as the spinners in
-          `deletion-screen`. The label names the step rather than "Chargement",
-          since the reader is waiting on a server round trip. */}
+      {/* Not `LoadingState`, which reserves half the viewport. */}
       <div className="flex justify-center">
         <output aria-label="Vérification en cours">
           <Spinner className="h-8 w-8 border-primary/20 border-t-primary" />

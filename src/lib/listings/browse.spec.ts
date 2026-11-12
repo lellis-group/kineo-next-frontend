@@ -59,10 +59,7 @@ describe("adaptFacets", () => {
     ]);
   });
 
-  /**
-   * A response with no breakdown is a normal case — an older backend, or a feed
-   * that was never asked — and it must read as zeros rather than as NaN.
-   */
+  /** An older backend sends no breakdown: it must read as zeros, not NaN. */
   it("stands in zeros when the breakdown is missing", () => {
     const facets = adaptFacets(undefined);
 
@@ -174,12 +171,8 @@ describe("isDefaultBrowseView", () => {
   });
 
   /**
-   * The ordering is part of what the server answered for, like any filter.
-   *
-   * Omitting it here breaks nothing the eye can see: the reader picks
-   * « Urgentes d'abord », the view reads as the default one, and
-   * `usePaginatedResource` restores `initialData` instead of fetching — the rows
-   * stay in the old order under a control that has already moved.
+   * Without the sort in the view, `usePaginatedResource` would restore
+   * `initialData` instead of refetching, leaving rows in the old order.
    */
   it("is false for a reordering, which the server has not answered", () => {
     expect(
@@ -211,11 +204,7 @@ describe("horizons", () => {
     expect(horizonForBounds(week.from, week.to)).toBe("WEEK");
   });
 
-  /**
-   * A date typed by hand is not a horizon. Matching "at or before today" would
-   * have lit « Cette semaine » under a bound a month in the past, which names a
-   * filter the results do not have.
-   */
+  /** A date typed by hand is not a horizon, even one in the past. */
   it("reads a bound that is not a horizon as no horizon", () => {
     expect(horizonForBounds("2020-07-04", undefined)).toBe("ALL");
     expect(horizonForBounds(`${horizonBounds("WEEK").from}x`, undefined)).toBe(
@@ -274,16 +263,7 @@ describe("fetchBrowseListings", () => {
     return { paths, transport };
   }
 
-  /**
-   * The rows and the panels are two reads, not one.
-   *
-   * Fetching the panels alongside the rows would make every page turn and every
-   * reordering ask for a distribution the filter they just changed cannot have
-   * touched — the facets endpoint is given no `specialty`, no `sort` and no
-   * page. This pins that the rows read asks for the rows and nothing
-   * else, so the panels stay where they belong: a separate read, with its own
-   * trigger.
-   */
+  /** The rows read asks for the rows only; facets are a separate read. */
   it("asks for the rows, and for nothing else", async () => {
     const { paths, transport } = recorder();
 
@@ -320,13 +300,7 @@ describe("fetchBrowseListings", () => {
     expect(paths[0]).toContain("page=3");
   });
 
-  /**
-   * An aborted read is this client's decision, not the endpoint's answer.
-   *
-   * A page turn cancels the read the last page turn started; that cancellation
-   * must surface here as a rejection the caller's guard handles, and not as a
-   * page of rows the reader has already left.
-   */
+  /** An aborted read must reject, not resolve to a page the reader has left. */
   it("forwards a caller's signal", async () => {
     const { paths, transport } = recorder();
     const controller = new AbortController();
@@ -358,12 +332,7 @@ describe("fetchListingPageOf", () => {
     expect(page).toEqual({ status: "found", page: 7 });
   });
 
-  /**
-   * The filters travel with it, because a page is a position inside the filtered
-   * collection: the same posting is on page 2 of one view and page 9 of another,
-   * and asking without the filters would answer for a collection the reader is
-   * not looking at.
-   */
+  /** A page is a position inside the filtered collection, so filters travel. */
   it("carries the filters and the ordering the reader is on", async () => {
     const paths: string[] = [];
     const transport: ApiTransport = async (path) => {
@@ -548,9 +517,7 @@ describe("fetchBrowsePlaces", () => {
 
     const data = await fetchBrowsePlaces({}, transport);
 
-    // Not an empty set. An empty set is what "the filters matched nothing" looks
-    // like, and returning it for a failed refresh would let a 429 or a dropped
-    // connection blank the map while the reader is told nothing.
+    // Not an empty set: a failed refresh must not blank the map.
     expect(data).toBeNull();
   });
 
@@ -559,22 +526,12 @@ describe("fetchBrowsePlaces", () => {
 
     const data = await fetchBrowsePlaces({}, transport);
 
-    // The distinction the caller acts on: an empty collection is a result to
-    // apply, a failed read is null and leaves the pins alone.
     expect(data).not.toBeNull();
     expect(data?.places).toEqual([]);
   });
 });
 
-/**
- * The URL boundary: a view read off the query string and written back to it.
- *
- * These two are the halves of one contract, and the tests that matter are the
- * round-trips — a value written must read back as the same view, or the screen
- * and the URL drift apart with nothing to catch it. `/listings` is built on this:
- * `page.tsx` parses the URL server-side, the client reads the same string, and a
- * shared link has to open exactly the view it was made from.
- */
+/** The URL boundary: a written value must read back as the same view. */
 describe("browseViewFromParams", () => {
   it("reads an empty query as the default view", () => {
     const { filters, page, sort } = browseViewFromParams(new URLSearchParams());
@@ -610,12 +567,7 @@ describe("browseViewFromParams", () => {
     expect(sort).toBe("startDate");
   });
 
-  /**
-   * « Urgentes d'abord » kept every posting, so a reader who picked it saw the
-   * map and the counts unchanged. A link saved from that time asks for the
-   * urgent postings, which is the filter: it narrows, and the ordering falls
-   * back to the default.
-   */
+  /** Old « Urgentes d'abord » links narrow to urgent postings, with the default sort. */
   it("reads an old sort=urgent link as the urgent filter", () => {
     const { filters, sort } = browseViewFromParams(
       new URLSearchParams({ sort: "urgent" }),
@@ -626,10 +578,8 @@ describe("browseViewFromParams", () => {
   });
 
   /**
-   * The value comes off the query string, so it is attacker- and accident-shaped.
-   * An unknown specialty is not a filter to send — it is dropped, and the feed
-   * reads as « toutes spécialités » rather than as a 400. A prototype key is not
-   * a specialty either: `"toString"` would pass an `in` check and must not.
+   * An unknown specialty off the query string is dropped, not sent. A prototype
+   * key like `"toString"` would pass an `in` check and must not.
    */
   it("drops a specialty that is not one of the specialties", () => {
     expect(
@@ -642,11 +592,7 @@ describe("browseViewFromParams", () => {
     ).toBe("");
   });
 
-  /**
-   * `page` is a number the pagination is divided by. A fractional, negative or
-   * non-numeric page reads as page 1 rather than as a broken feed — the reader
-   * typed the URL, and the safe reading of a bad page is the first one.
-   */
+  /** A fractional, negative or non-numeric page reads as page 1. */
   it("reads a page that is not a positive integer as page 1", () => {
     expect(browseViewFromParams(new URLSearchParams({ page: "0" })).page).toBe(
       1,
@@ -668,11 +614,7 @@ describe("browseViewFromParams", () => {
     ).toBe("recent");
   });
 
-  /**
-   * The shape alone is not a date. A `<input type="date">` never produces
-   * « 2026-13-40 », but a hand-edited URL can, and an impossible bound handed to
-   * the feed reads as a request that matched nothing.
-   */
+  /** A hand-edited URL can hold « 2026-13-40 »: the shape alone is not a date. */
   it("drops a date that is shaped like one but is not a real day", () => {
     expect(
       browseViewFromParams(new URLSearchParams({ from: "2026-02-30" })).filters
@@ -727,10 +669,7 @@ describe("browseViewToParams", () => {
     ).toBe("urgent");
   });
 
-  /**
-   * A search is a narrowing like any other: it belongs in the URL, trimmed, and
-   * dropped when it is blank — a query for «   » is no query at all.
-   */
+  /** A search belongs in the URL, trimmed, and dropped when blank. */
   it("writes the free-text term, trimmed, and drops it when blank", () => {
     expect(
       browseViewToParams(
@@ -749,11 +688,6 @@ describe("browseViewToParams", () => {
   });
 });
 
-/**
- * The round-trip is the contract that matters most here: the server parses the
- * URL, the client reads the same string, and the two have to agree on the view.
- * A value that does not survive the round-trip is a screen and a URL that drift.
- */
 describe("browse view round-trips through the URL", () => {
   it("reads back the view it was written from", () => {
     const written = browseViewToParams(
@@ -796,10 +730,9 @@ describe("browse view round-trips through the URL", () => {
   });
 
   /**
-   * The invariant the whole screen leans on: whatever the URL parses to, feeding
-   * it back through `toBrowseView` must give a view `usePaginatedResource`
-   * recognises — or `seedFromServer` would adopt rows for a view the server was
-   * never asked for. The default query must read as the default view.
+   * Whatever the URL parses to, `toBrowseView` must give a view
+   * `usePaginatedResource` recognises, or `seedFromServer` adopts rows for the
+   * wrong view.
    */
   it("parses the default query to the view the server answered", () => {
     const { filters, page, sort } = browseViewFromParams(new URLSearchParams());

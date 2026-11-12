@@ -2,24 +2,13 @@ import { formatDayMonth } from "@/lib/format";
 import type { StartWeekFacet } from "@/lib/listings";
 
 /**
- * The starts to come, week by week: the reference's « Fuel Usage & Cost »
- * card, figures over a bar chart with a line riding it.
- *
- * Three figures across the top — this week on the left, the twelve weeks'
- * total in the middle at display size, the busiest week on the right — then
- * one bar per week and a cream line through their tops, with the first and
- * last week named under the ends.
- *
- * Every number comes from the server's count over the whole matching
- * collection (`byStartWeek` on the facets); nothing is summed from the rows of
- * a page. Bars are scaled against the busiest week, so the tallest bar is the
- * figure on the right.
+ * Starts to come, week by week: three figures (this week, total, busiest
+ * week) over one bar per week with a line through their tops. Bars scale
+ * against the busiest week.
  */
 export function RailWeeks({ weeks }: { weeks: StartWeekFacet[] }) {
   const current = weeks[0];
   const last = weeks.at(-1);
-  // The caller does not draw the panel without a series; this keeps the
-  // component honest on its own if one ever reaches it empty.
   if (!current || !last) return null;
 
   const total = weeks.reduce((sum, week) => sum + week.count, 0);
@@ -29,8 +18,7 @@ export function RailWeeks({ weeks }: { weeks: StartWeekFacet[] }) {
   );
   const max = Math.max(1, busiest.count);
 
-  // The line's points, one per bar centre, in a 100 × 100 box that is
-  // stretched over the chart: x in percent of the width, y from the top.
+  // One point per bar centre, in a 100 × 100 box stretched over the chart.
   const points = weeks
     .map((week, index) => {
       const x = ((index + 0.5) / weeks.length) * 100;
@@ -66,11 +54,7 @@ export function RailWeeks({ weeks }: { weeks: StartWeekFacet[] }) {
         </div>
       </dl>
 
-      {/*
-        One image for the reader of a screen reader: the bars are decorative
-        once their numbers are said, and twelve focusable bars would be twelve
-        stops for a summary the label gives in one.
-      */}
+      {/* One labelled image: the bars are decorative once their numbers are said. */}
       <div
         role="img"
         aria-label={`Départs par semaine : ${weeks
@@ -87,8 +71,7 @@ export function RailWeeks({ weeks }: { weeks: StartWeekFacet[] }) {
                   ? "flex-1 rounded-t-[2px] bg-foreground"
                   : "flex-1 rounded-t-[2px] bg-foreground/25"
               }
-              // A zero week keeps a hairline, so the scale still reads as
-              // twelve weeks rather than as a chart with holes in it.
+              // A zero week keeps a hairline.
               style={{ height: `max(2px, ${(week.count / max) * 100}%)` }}
             />
           ))}

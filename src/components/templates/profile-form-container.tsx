@@ -15,12 +15,7 @@ import {
 import type { ApiProfile } from "@/lib/types/api";
 import { ProfileFormPage } from "./profile-form-page";
 
-/**
- * What differs between the create and edit screens. Five values change between
- * them, which is what a single component parameterised by a mode is for — the
- * risk is not duplication but drift: the day one of two copies gains an error
- * path, the other quietly keeps the old behaviour.
- */
+/** What differs between the create and edit screens. */
 const MODES = {
   create: {
     backHref: "/",
@@ -45,25 +40,14 @@ const MODES = {
   },
 } as const;
 
-/**
- * Orchestrator for both /profile/create and /profile/edit.
- *
- * Neither screen fetches on mount. The server page has to read the profile
- * anyway to decide whether the route is reachable at all — a member without a
- * profile belongs on the create form, one with a profile on the edit form — so
- * it is passed in rather than fetched here. Fetching it again from a `useEffect`
- * would make that redirect happen a beat late.
- *
- * Reaching `create` therefore already means there is no profile to edit, and
- * reaching `edit` already means there is one.
- */
-/**
- * A discriminated union rather than an optional `profile`, so that `mode: "edit"`
- * cannot be reached without the id the update needs. With a plain optional prop
- * the compiler is happy and the submit path silently does nothing.
- */
+/** A union rather than an optional `profile`, so `edit` always has its id. */
 type Props = { mode: "create" } | { mode: "edit"; profile: ApiProfile };
 
+/**
+ * Orchestrator for both /profile/create and /profile/edit. The server page has
+ * already read the profile to decide which route is reachable, so it is passed
+ * in rather than fetched here.
+ */
 export function ProfileFormContainer(props: Props) {
   const router = useRouter();
   const { mode } = props;

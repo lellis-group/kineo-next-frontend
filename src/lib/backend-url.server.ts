@@ -1,13 +1,7 @@
 /**
- * Where the Kineo backend answers, for the two server-side callers that reach
- * it: the `/api/*` proxy routes (`lib/backend-proxy.ts`) and the server
- * components' transport (`lib/api-transport.server.ts`).
- *
- * Read from `BACKEND_URL` on every call rather than once at import, so a test
- * or a restart with a new value is honoured. Development falls back to the
- * backend's default local port; production refuses to guess, because a
- * fallback there would send every member's cookie to whatever happens to
- * listen on `localhost:3000`.
+ * Where the backend answers, for the `/api/*` proxy and the server transport.
+ * Read on every call. Production refuses to fall back: that would send
+ * members' cookies to whatever listens on `localhost:3000`.
  */
 const DEVELOPMENT_BACKEND_URL = "http://localhost:3000";
 

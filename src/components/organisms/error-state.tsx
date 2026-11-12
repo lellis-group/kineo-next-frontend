@@ -5,13 +5,7 @@ import { AlertIcon } from "@/components/atoms/icons";
 import { StatusBlock } from "@/components/atoms/status-block";
 import { errorMessage, rawErrorText } from "@/lib/api-errors";
 
-/**
- * Full-area error screen with retry.
- *
- * Takes the thrown value rather than a message, so the copy is derived from the
- * typed status (`see lib/api-errors`) and this component never has to re-read a
- * rendered string to work out what went wrong.
- */
+/** Full-area error screen with retry; the copy comes from the error's type. */
 export function ErrorState({
   error,
   onRetry,

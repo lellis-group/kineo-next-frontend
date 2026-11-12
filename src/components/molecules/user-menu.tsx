@@ -7,21 +7,8 @@ import { ChevronDownIcon, LogOutIcon } from "@/components/atoms/icons";
 import { cn } from "@/lib/cn";
 
 /**
- * The signed-in member, as the reference draws them: a plate carrying the
- * avatar, the name and the role, with a chevron that opens the account menu.
- *
- * A molecule and a client component, both because it has to be: the sign-out
- * callback it forwards arrives from `AppHeader`, which is itself on the client,
- * and a menu that cannot close itself is not a menu.
- *
- * The name and the role are the point of the plate. An avatar alone beside a
- * sign-out button would say « here is a person » and « leave » and nothing else,
- * while the reference says who is signed in and what they do, with every action
- * one click away behind the chevron.
- *
- * Closes on Escape, on a click outside, and after a choice — each on the
- * document rather than on the plate, because a click that starts inside the menu
- * and ends outside it should still close it.
+ * The signed-in member's plate (avatar, name, role) opening the account menu.
+ * Closes on Escape, on a click outside, and after a choice.
  */
 export function UserMenu({
   name,
@@ -45,9 +32,7 @@ export function UserMenu({
       if (!rootRef.current?.contains(event.target as Node)) dismiss();
     };
 
-    // Escape, and the focus back on the button that opened the menu: a menu
-    // dismissed from the keyboard leaves focus on an element that is no longer in
-    // the tree, and the next Tab starts from the top of the document.
+    // Return focus to the trigger, or the next Tab starts from the top.
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
       dismiss();
@@ -74,12 +59,7 @@ export function UserMenu({
       >
         <Avatar name={name} className="h-8 w-8 text-xs" />
 
-        {/*
-          `hidden` below `lg` rather than dropped: the avatar alone is the plate's
-          minimum, and the two lines of text are what makes it the reference's.
-          They appear with the room to carry them, not at a width where they would
-          each be truncated to a syllable.
-        */}
+        {/* The name and role appear from `lg`, where there's room for them. */}
         <span className="hidden min-w-0 text-left lg:block">
           <span className="block truncate text-sm leading-tight font-medium text-foreground">
             {name}

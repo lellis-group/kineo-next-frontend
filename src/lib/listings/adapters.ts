@@ -1,7 +1,6 @@
 /**
  * Adapters — turn raw API payloads into the presentation contracts of
- * `./contracts`: French labels, formatted dates, and the display fallbacks an
- * anonymized candidate requires.
+ * `./contracts`.
  */
 
 import { formatRelativeTime, plural } from "../format";
@@ -37,18 +36,9 @@ export const RECEIVED_STATUS_LABELS: Record<ApplicationStatus, string> = {
 };
 
 /**
- * Why the practice ruled the way it did, in its own vocabulary.
- *
- * The mirror of `DECISION_SUMMARIES` on the applicant side, and for the same
- * reason: `REJECTED` covers four histories, but only one of them is a judgement
- * of the candidate — the posting was cancelled, or it closed with nobody kept,
- * or the candidate withdrew. Printing a flat « Refusé » on such a row reads as a
- * decision the practice took and did not, so the label is per row, from that
- * row's own `decisionSource`. The same rule runs on the applicant side.
- *
- * From the practice's point of view the candidate withdrew, so this file says
- * « a retiré sa candidature » where the applicant screen says « vous avez retiré
- * votre candidature ».
+ * Why the practice ruled the way it did, per row's `decisionSource`: a flat
+ * « Refusé » would read as the practice's decision when the posting may have
+ * been cancelled or closed. Mirrors `DECISION_SUMMARIES` on the applicant side.
  */
 export const RECEIVED_DECISION_LABELS: Record<
   ApplicationDecisionSource,
@@ -76,12 +66,8 @@ export function adaptMyListing(listing: ApiReplacementListing): MyListing {
 }
 
 /**
- * Resolves how a candidate should be named.
- *
- * The backend blanks `user.name` and `user.image` on erasure, so a missing
- * name alone is not evidence of anything. The `anonymized` flag is the only
- * trustworthy signal, and it drives both the label and whether the card tries
- * to show a location at all.
+ * The backend blanks `user.name` and `user.image` on erasure, so only the
+ * `anonymized` flag tells an erased candidate apart.
  */
 export function adaptApplicant(
   application: ApiApplicationRow,
@@ -127,8 +113,6 @@ export function adaptReceivedApplication(
   return {
     id: application.id,
     status: application.status,
-    // Null on every open application, whichever side of the shortlist it is on:
-    // a candidate nobody has ruled on has no decision to report.
     decisionSource: application.decisionSource ?? null,
     submittedLabel: `Candidature ${formatRelativeTime(application.createdAt)}`,
     message: application.message?.trim() || undefined,
@@ -141,13 +125,7 @@ export function adaptReceivedApplication(
   };
 }
 
-/**
- * Sums the per-status totals a bucket covers.
- *
- * Sourced from the server's unfiltered counts, so the chips keep showing the
- * size of every bucket while one of them is selected — the behaviour the
- * applications screen already relies on.
- */
+/** Sums the server's unfiltered per-status totals a bucket covers. */
 export function countForFilter(
   option: { statuses: ReplacementListingStatus[] },
   counts: Record<ReplacementListingStatus | "total", number>,
@@ -162,19 +140,8 @@ export function countForFilter(
 }
 
 /**
- * How many of the listings *on hand* are still recruiting.
- *
- * Sourced from `RECRUITING_STATUSES` rather than spelled out, because the
- * concept already has a name and two other surfaces use it: the « En cours »
- * filter bucket on /listings/mine, and the gate that decides whether a listing
- * card offers close/cancel. Writing `OPEN` + `IN_DISCUSSION` out by hand would
- * count a FULL listing as "En cours" on one screen and leave it out of the
- * homepage headline on the next.
- *
- * Counts rows, so it answers about the rows and nothing else: a caller that needs
- * the figure for the whole collection wants `recruitingCount` over the server's
- * totals. The rail uses this one because its share is deliberately page-scoped —
- * it divides by the listings on screen, not by the collection.
+ * How many of the listings *on hand* are still recruiting. For the whole
+ * collection, use `recruitingCount` over the server's totals.
  */
 export function countRecruitingListings(
   listings: ReadonlyArray<{ status: ReplacementListingStatus }>,
@@ -183,16 +150,7 @@ export function countRecruitingListings(
     .length;
 }
 
-/**
- * How many listings are still recruiting, from the server's totals.
- *
- * Sums the breakdown rather than counting rows: the figure describes the whole
- * collection, and a caller holding one page of it would report a page. The set
- * stays `RECRUITING_STATUSES`, the same one the close/cancel gate uses — it used
- * to be spelled out again here, and a status marked recruiting in the table but
- * missing from that list counted as a FULL listing on one screen and as active on
- * the next.
- */
+/** How many listings are still recruiting, from the server's totals. */
 export function recruitingCount(counts: ListingStatusCounts): number {
   let total = 0;
   for (const status of RECRUITING_STATUSES) {
@@ -225,12 +183,6 @@ export function specialtyLabel(specialty: keyof typeof SPECIALTY_LABELS) {
   return SPECIALTY_LABELS[specialty];
 }
 
-/**
- * Counter for a bucket of received candidates.
- *
- * One status per bucket, so this is a single lookup — `?? 0` because a status the
- * backend did not report must read as « nobody in this case », never as NaN.
- */
 export function countForReceivedFilter(
   option: ReceivedApplicationsFilterOption,
   counts: ReceivedApplicationCounts,
@@ -242,12 +194,8 @@ export function countForReceivedFilter(
 }
 
 /**
- * « Publiée il y a 3 semaines », « Créée il y a 2 jours ».
- *
- * The verb follows the status rather than the clock: a draft has never been
- * published, and saying « Publiée » about one is a small lie the reader notices
- * on the page where they decide to publish it. A terminal posting was published
- * too, so the past participle stays — what changed is not when it appeared.
+ * « Publiée il y a 3 semaines », or « Créée » for a draft, which has never been
+ * published.
  */
 export function formatListingAge(listing: {
   status: ReplacementListingStatus;
@@ -258,18 +206,8 @@ export function formatListingAge(listing: {
 }
 
 /**
- * Why the practice ruled the way it did, when it has.
- *
- * Only a decided application has one. A fallback like « À traiter » on the open
- * statuses would print right under the badge that already reads « En attente »
- * or « Présélectionné » — the same fact twice, in two sizes, on the row a
- * practice scans the fastest. There is nothing to add while nobody has ruled:
- * the badge is the whole of it.
- *
- * Prefers the decision source over the status, for the reason
- * `RECEIVED_DECISION_LABELS` gives: `REJECTED` alone reads as a refusal the
- * practice chose, and most of the time it is something that happened to the
- * posting.
+ * Why the practice ruled the way it did; undefined while nobody has, since the
+ * status badge already says so.
  */
 export function receivedDecisionLabel(
   application: Pick<ReceivedApplication, "decisionSource">,

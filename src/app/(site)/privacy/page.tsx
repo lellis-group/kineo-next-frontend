@@ -22,14 +22,7 @@ export const metadata: Metadata = {
     "Politique de confidentialité (RGPD) de la console de remplacement Kineo.",
 };
 
-/**
- * Privacy policy.
- *
- * Structure and pending items come from `@/lib/legal/privacy`; the prose
- * vocabulary from `legal-primitives`. What is left here is the composition — and
- * the copy itself, which is the point of the page and has no business in a
- * module about routing.
- */
+/** Privacy policy; structure in `@/lib/legal/privacy`, prose primitives in `legal-primitives`. */
 export default function PrivacyPage() {
   return (
     <LegalDocument
@@ -39,8 +32,6 @@ export default function PrivacyPage() {
       backLabel="← Retour à l'accueil"
       containerClassName="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6 sm:py-14"
     >
-      {/* Intro sits above the two-column grid: centred like the header above
-          it, so the document opens as one block before the body starts. */}
       <div className="mx-auto max-w-[52ch] space-y-4 text-center text-sm leading-relaxed text-foreground/85">
         <p>
           Cette page décrit la manière dont Kineo traite les données
@@ -175,9 +166,6 @@ export default function PrivacyPage() {
                 <tbody>
                   {RETENTION_PERIODS.map((row) => (
                     <tr key={row.data}>
-                      {/* `scope="row"`: the first column carries what each
-                            row is about, and a screen reader reading cell by
-                            cell needs it to name the duration next to it. */}
                       <th scope="row" className="font-normal">
                         <span className="block font-medium text-foreground">
                           {row.data}

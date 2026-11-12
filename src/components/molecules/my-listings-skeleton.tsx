@@ -1,18 +1,7 @@
 import { cn } from "@/lib/cn";
 import { SITE_SHELL } from "@/lib/layout";
 
-/**
- * The board while its first read is in flight.
- *
- * Reproduces the workspace's geometry rather than a generic list's: rail and card
- * side by side, filling the height the real page will fill. A placeholder of the
- * wrong shape would show a stacked list where a two-column workspace lands, and
- * every panel would move at the moment the reader starts reading.
- *
- * Pulsing blocks rather than `ListSkeleton`'s card rhythm: this screen has no
- * cards, and a skeleton shaped like the thing it is about to be replaced by is
- * the kind that does not shift.
- */
+/** The board while its first read is in flight, in the workspace's own geometry. */
 export function MyListingsSkeleton() {
   return (
     <div
@@ -25,9 +14,6 @@ export function MyListingsSkeleton() {
               key={row}
               className={cn(
                 "animate-pulse rounded-card border border-border bg-surface",
-                // Three different heights, because the three panels are three
-                // different heights and one block of each would put them where
-                // they will not be.
                 row === 0 && "h-[19rem]",
                 row === 1 && "h-[15rem]",
                 row === 2 && "h-[17rem]",

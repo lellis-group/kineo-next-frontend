@@ -5,12 +5,8 @@ import { useCallback, useEffect, useState } from "react";
 import type { ListingsTableHandle } from "@/lib/listings";
 
 /**
- * Scrolls a listing row into view once it is rendered, without the container
- * reaching into the table's DOM.
- *
- * `pickListing` and `selectListing` both need to turn a listing id into a
- * scroll once the page turn that holds it has landed. The hook owns the pending id and retries the
- * scroll on each render until the row is on screen, then clears itself.
+ * Scrolls a listing row into view once it is rendered: holds the pending id
+ * and retries on each render until the row is on screen.
  */
 export function useScrollToRow(
   tableRef: RefObject<ListingsTableHandle | null>,

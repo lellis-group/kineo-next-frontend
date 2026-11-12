@@ -2,10 +2,7 @@ import Link from "next/link";
 import { Button } from "@/components/atoms/button";
 import { ArrowLeftIcon } from "@/components/atoms/icons";
 
-/**
- * The "already have an account / back home" tail shared by the auth forms.
- * Written out separately on each page, with the spacing drifting between them.
- */
+/** The "already have an account / back home" tail shared by the auth forms. */
 export function AuthPageFooter({
   lead,
   actionLabel,

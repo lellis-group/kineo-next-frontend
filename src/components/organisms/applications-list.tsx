@@ -8,9 +8,7 @@ export function ApplicationsList({
 }: {
   applications: ApplicationEntry[];
 }) {
-  // The page-level empty state is handled by `ApplicationsView`; reaching here
-  // with nothing means the active filter hid everything. Mirrors the listings
-  // screen, which shows the same state the same way.
+  // The page-level empty state is `ApplicationsView`'s; here the filter hid everything.
   if (applications.length === 0) {
     return (
       <EmptyState

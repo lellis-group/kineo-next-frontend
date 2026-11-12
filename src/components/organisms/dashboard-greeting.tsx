@@ -18,10 +18,7 @@ export function DashboardGreeting({
 }) {
   return (
     <Card className="p-5 sm:p-8">
-      {/* City · speciality, when there is a profile to read them from. The
-          previous fallback was the literal string "Console Live", which said
-          nothing and left the line reading differently depending on whether the
-          member had filled in their profile. No eyebrow beats a meaningless one. */}
+      {/* City · speciality, when there is a profile to read them from. */}
       {greeting.meta && <p className="text-sm text-muted">{greeting.meta}</p>}
       <h1
         className={`text-2xl font-medium tracking-tight text-balance sm:text-3xl ${

@@ -4,12 +4,8 @@ import { SignUpContainer } from "@/components/templates/signup-container";
 import { EMAIL_MAX_LENGTH } from "@/lib/auth-validation";
 
 /**
- * `?email=` arrives from the landing page call to action, which submits a plain
- * GET form so it works before hydration.
- *
- * Reading search params opts a route out of prerendering, so the read happens
- * behind a Suspense boundary: the shell stays static and streams, and the form
- * arrives with the address already in it.
+ * `?email=` arrives from the landing page's plain GET form. Read behind a
+ * Suspense boundary so the shell stays static.
  */
 export default function SignUpPage({
   searchParams,
@@ -32,11 +28,7 @@ async function SignUpFromQuery({
   return <SignUpContainer prefillEmail={sanitizeEmail(email)} />;
 }
 
-/**
- * Only a plausible address is echoed back into the field: `defaultValue` is
- * escaped, but there is no reason to render an arbitrary query string as the
- * starting value of the form.
- */
+/** Only a plausible address is echoed back into the field. */
 function sanitizeEmail(raw: string | undefined): string | undefined {
   if (!raw) return undefined;
   const trimmed = raw.trim();

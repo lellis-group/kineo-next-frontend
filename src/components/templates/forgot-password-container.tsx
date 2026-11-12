@@ -15,16 +15,9 @@ import {
 } from "@/lib/auth-errors";
 
 /**
- * Orchestrator for /forgot-password.
- *
- * Three screens, and the middle one is a trap worth naming: `sent` deliberately
- * does not say whether the address exists. Answering "no such account" would leak
- * which addresses are registered, so a request for an unknown address produces
- * the same « si un compte existe… » screen as a successful one.
- *
- * `not-enabled` is a deployment fact rather than anything about the reader — the
- * reset endpoint is switched off on this instance — so it gets its own screen
- * instead of being folded into the generic failure.
+ * Orchestrator for /forgot-password. `sent` never says whether the address
+ * exists, so registered addresses don't leak. `not-enabled` means reset is
+ * switched off on this instance.
  */
 export function ForgotPasswordContainer() {
   const [stage, setStage] = useState<ForgotPasswordStage>("form");
@@ -46,8 +39,6 @@ export function ForgotPasswordContainer() {
           setStage("not-enabled");
         } else {
           setStage("form");
-          // A 5xx is not a refused request: it is not the reader's address that
-          // is at fault, so the sentence says so.
           setError(
             isAuthServiceUnavailable(failure)
               ? AUTH_SERVICE_UNAVAILABLE_MESSAGE

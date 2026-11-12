@@ -12,19 +12,8 @@ import {
 import { type ProfileFeedback, ProfileView } from "./profile-view";
 
 /**
- * Orchestrator for the /profile screen in view mode.
- *
- * The view is markup; this file is the three account writes it offers and the
- * one thing they have in common. Every better-auth rejection arrives as a plain
- * object rather than an `Error`, so each handler has to turn it into French
- * before it crosses into the view — the row that reports a failed save knows
- * nothing about the auth client. Keeping that mapping here means the view can
- * be rendered from static data with no service import at all.
- *
- * It also owns the refresh: an account write changes what the server page would
- * read next, so the handlers refresh after success. The delete request does not
- * need one — the account stays active until the emailed link is opened, and the
- * section switches itself to the « check your mailbox » state on its own.
+ * Orchestrator for /profile in view mode: the account writes, each turning
+ * better-auth's rejection into French, and a refresh after success.
  */
 export function ProfileContainer({
   profile,
@@ -41,11 +30,7 @@ export function ProfileContainer({
     router.push("/profile/edit");
   }, [router]);
 
-  /**
-   * Requests account erasure: better-auth emails a confirmation link and the
-   * account is anonymized only once that link is opened (see /goodbye).
-   * No sign-out here: the account stays active until confirmation.
-   */
+  /** No sign-out: the account stays active until the emailed link is opened. */
   const onDeleteAccount = useCallback(async () => {
     await deleteAccount();
   }, []);

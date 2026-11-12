@@ -8,11 +8,7 @@ export const metadata: Metadata = {
   description: "Choisissez un nouveau mot de passe pour votre compte Kineo.",
 };
 
-/**
- * The Suspense boundary is the route's only job left: the container reads the
- * token with `useSearchParams`, and that cannot happen while the route is being
- * prerendered.
- */
+/** The Suspense boundary the container's `useSearchParams` needs. */
 export default function ResetPasswordPage() {
   return (
     <Suspense fallback={<LoadingState className="min-h-dvh bg-background" />}>

@@ -26,62 +26,22 @@ import type {
 import { SPECIALTY_SHORT_LABELS } from "@/lib/profile";
 
 /**
- * The three summary panels down the left of the screen.
- *
- * Every number in here comes from `GET /replacement-listings/facets`, which
- * counts the whole matching collection rather than the page on screen. That is
- * the only reason these panels can exist at all: derived from the rows at hand
- * they would renumber themselves as the reader pages, and say "3 urgent" on page
- * 1 and "0 urgent" on page 2 of the same search.
- *
- * The first two panels are also controls, not reports: the « Urgentes » figure
- * toggles `urgentOnly`, and each specialty row toggles `specialty`. That is the
- * whole point of drawing a count the reader can act on — the number and the
- * filter are the same fact, and separating them made the rail a column of
- * numbers about a search the reader changed somewhere else.
- *
- * The last panel is the one thing the rail can say that is not an aggregate: the
- * posting the reader just chose, with the way back to its row — not a volume
- * panel restating the first panel's totals and the specialty bars in a second
- * shape.
- *
- * The first two panel bodies are molecules shared with the practice's board
- * (`RailGauge`, `RailDistribution`): the two rails are the same column of
- * panels filled from different numbers, written once.
- * The third is this rail's alone, because it is about a choice, not a count.
+ * The summary panels down the left of the screen. Every number comes from
+ * `GET /replacement-listings/facets` (the whole matching collection, not the
+ * page), and the first two panels double as filter toggles.
  */
 
-/**
- * How many rows the specialty panel shows before folding the rest into a line.
- *
- * Five is what the reference's distribution card carries, and it is also the
- * number a column this narrow can show without the bars going shorter than the
- * labels beside them. Everything past it is counted rather than dropped: the
- * panel is a summary of a collection, and « et 3 autres » is the only honest way
- * to shorten it.
- */
+/** Rows the specialty panel shows before folding the rest into a counted line. */
 const SPECIALTY_ROWS = 5;
 
 export interface ListingsFacetsRailProps {
-  /** The collection's aggregates, from the server. */
   facets: BrowseFacets;
-  /** The filters currently applied — what the rail's controls light up. */
   filters: BrowseFormFilters;
-  /** Applies a filter patch and returns to the first page. */
   onFiltersChange: (patch: Partial<BrowseFormFilters>) => void;
-  /** The posting the reader has chosen, or null. */
   selection: BrowseSelection | null;
-  /** Brings the chosen posting's row into view. */
   onSelectionReveal: () => void;
-  /** Drops the choice. */
   onSelectionClear: () => void;
-  /**
-   * A filter or sort change is in flight.
-   *
-   * A page turn is deliberately not one: the rail's figures are aggregates of
-   * the collection and do not change when the reader pages, so dimming them for
-   * a page would claim they are being recomputed when they are not.
-   */
+  /** A filter or sort change is in flight (a page turn changes no aggregate). */
   busy?: boolean;
 }
 
@@ -99,11 +59,8 @@ export function ListingsFacetsRail({
 
   const open = Math.max(0, facets.total - facets.urgent);
 
-  /*
-    The active specialty is drawn even when it falls outside the top five.
-    Otherwise applying a filter from the rail could make its own row disappear,
-    and the only control that clears it would be in the toolbar above.
-  */
+  // The active specialty is drawn even outside the top five, so applying it
+  // from the rail cannot hide its own row.
   const topRows = facets.bySpecialty.slice(0, SPECIALTY_ROWS);
   const activeFacet = filters.specialty
     ? facets.bySpecialty.find((row) => row.specialty === filters.specialty)
@@ -130,13 +87,7 @@ export function ListingsFacetsRail({
       )}
       aria-busy={busy}
     >
-      {/*
-        For a screen reader only. On screen the rail dims while it refreshes
-        (above), and a visible line here — even reserved and invisible when
-        idle — pushed every panel below the top of the map beside it, so the
-        rail never lined up with the column next to it. The content is
-        conditional so the region announces the refresh and then goes quiet.
-      */}
+      {/* Screen-reader only: a visible line would push the rail out of line with the map. */}
       <output className="sr-only" aria-live="polite">
         {busy ? "Actualisation…" : ""}
       </output>
@@ -164,16 +115,6 @@ export function ListingsFacetsRail({
               facets.urgent,
             )} urgente${plural(facets.urgent)} sur ${facets.total}`}
           >
-            {/*
-              The four figures of this collection, as the reference states its
-              category breakdown: four boxes in a 2×2 grid, each one an icon, a
-              label and a number, sitting above the arc.
-
-              They are four readings of the same two numbers rather than four
-              separate counts, which is what makes them worth drawing — a reader
-              takes the share from the arc and the absolute from a chip, without
-              leaving the card.
-            */}
             <StatChip
               icon={<LayersIcon className="size-3.5" />}
               label="Annonces"
@@ -225,10 +166,6 @@ export function ListingsFacetsRail({
           <>
             <RailDistribution rows={specialtyRows} />
 
-            {/*
-              The fold. Named, and counted: five rows is a summary, and a summary
-              that silently drops three categories reads as the whole collection.
-            */}
             {folded > 0 && (
               <p className="mt-3 text-xs text-muted">
                 et {foldedCount} annonce{plural(foldedCount)} sur {folded} autre
@@ -239,11 +176,7 @@ export function ListingsFacetsRail({
         )}
       </Panel>
 
-      {/*
-        Absent rather than empty when the series did not come back: a backend
-        one release behind sends no weeks, and twelve zero bars would claim a
-        quiet quarter nobody measured.
-      */}
+      {/* Absent rather than twelve zero bars when an older backend sends no series. */}
       {facets.byStartWeek.length > 0 && (
         <Panel title="Départs à venir" action={<PanelExpand />}>
           <RailWeeks weeks={facets.byStartWeek} />
@@ -259,14 +192,7 @@ export function ListingsFacetsRail({
   );
 }
 
-/**
- * One specialty, as the rail draws it: mark, short name, count, share — and the
- * toggle that applies it.
- *
- * Extracted from the map below so the active row and the folded one are built
- * by the same function. The row that falls outside the top five has no business
- * looking different from the ones that did.
- */
+/** One specialty row, with the toggle that applies it. */
 function specialtyRow(
   row: SpecialtyFacet,
   active: boolean,
@@ -280,12 +206,7 @@ function specialtyRow(
         className="size-4 shrink-0 text-muted"
       />
     ),
-    /*
-      The short name, not the one the endpoint sends: « Chirurgien-dentiste » and
-      « Autre spécialité » are both wider than the column, and a label cut
-      mid-word is worse than a terse one — the reader cannot tell which bar is
-      theirs. The full name is the row's `title`.
-    */
+    // The short name fits the column; the full one is the row's `title`.
     label: SPECIALTY_SHORT_LABELS[row.specialty],
     title: row.label,
     count: row.count,

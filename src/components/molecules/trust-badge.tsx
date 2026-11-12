@@ -7,10 +7,7 @@ export interface TrustBadgeProps {
   className?: string;
 }
 
-/**
- * Compact horizontal trust pill (icon + label) — matches the hero trust row
- * of the landing mockup: pill shape, icon tinted in primary.
- */
+/** Compact trust pill (icon + label) for the hero row. */
 export function TrustBadge({ icon: Icon, label, className }: TrustBadgeProps) {
   return (
     <span

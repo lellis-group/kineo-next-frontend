@@ -1,25 +1,9 @@
 import type { ReactNode } from "react";
 import { ChevronDownIcon } from "@/components/atoms/icons";
 
-/**
- * The prose vocabulary the long-form legal documents are written in.
- *
- * Shared by the privacy policy and the terms — two documents in the same
- * language, on the same screen — so their paragraphs share one measure and
- * their bullet rows one geometry, instead of each page rewriting them inline.
- *
- * They are here rather than in `legal-document.tsx` because that file is the
- * shell — the title, the logo, the back link — and these are the body. A document
- * that used only a `Paragraph` should not have to read the sidebar's code to find
- * out how wide a paragraph is.
- */
+/** The prose primitives shared by the privacy policy and the terms. */
 
-/**
- * Paragraph measure: ~70 characters, where French prose reads comfortably.
- *
- * One value for both legal pages: two measures would show as a visible seam
- * when a reader goes from one to the other.
- */
+/** Paragraph measure: ~70 characters, shared by both legal pages. */
 export const LEGAL_PROSE = "max-w-[70ch] text-[0.925rem] leading-relaxed";
 
 /** A numbered section, anchored so the sidebar's links land on it. */
@@ -29,7 +13,6 @@ export function Section({
   title,
   children,
 }: {
-  /** Anchor id — shared with the sidebar, which links to `#id`. */
   id: string;
   /** 1-based position, shown in the heading and in the sidebar. */
   index: number;
@@ -58,7 +41,7 @@ export function Paragraph({ children }: { children: ReactNode }) {
   return <p className={LEGAL_PROSE}>{children}</p>;
 }
 
-/** Unordered list with the project's square bullet. */
+/** Unordered list with the project's dot bullet. */
 export function BulletList({ items }: { items: readonly string[] }) {
   return (
     <ul className={`${LEGAL_PROSE} list-none space-y-2.5`}>
@@ -105,14 +88,7 @@ export function PendingNote({ children }: { children: ReactNode }) {
   );
 }
 
-/**
- * The collapsible summary of everything still awaiting legal validation.
- *
- * Collected once at the top rather than as a badge interrupting each pending
- * section: a notice that invents those facts is worse than one that admits it is
- * incomplete, so the open items are named — and naming them in one place is what
- * makes the count meaningful.
- */
+/** The collapsible summary of everything still awaiting legal validation. */
 export function PendingCallout({ items }: { items: readonly string[] }) {
   return (
     <details className="group mt-8 rounded-card border border-warning/25 bg-warning/5">

@@ -12,16 +12,10 @@ function GoodbyeContent() {
   const { data: session } = useSession();
   const { status, error, signedOut, retry } = useDeletionConfirmation(token);
 
-  /**
-   * Focus target: the card's heading. The whole card is replaced as the flow
-   * settles, so without this a keyboard user is left tabbing back through
-   * whatever was on the page before.
-   */
+  /** Focus target, since the whole card is replaced as the flow settles. */
   const headingRef = useRef<HTMLHeadingElement>(null);
 
-  // Skipped while the request is in flight and on the way to success: both keep
-  // the same heading on screen, and moving focus mid-flight would interrupt
-  // whatever the reader was doing.
+  // Skipped while in flight and on success: the heading doesn't change.
   useEffect(() => {
     if (status === "deleting" || status === "success") {
       return;

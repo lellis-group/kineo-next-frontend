@@ -7,19 +7,7 @@ import { SITE_SHELL } from "@/lib/layout";
 import type { BrowseLayout } from "@/lib/listings";
 
 /**
- * The browse screen's shell — one screenful, no page scroll from `lg` up.
- *
- * The page is a fixed-height region (`main` in the site layout is `flex-1
- * min-h-0 overflow-y-auto`, and this fills it): the facets rail on the left and,
- * on the right, the map card over the results table, both sized by the height
- * the shell has rather than by their content. `py` is kept to a minimum and the
- * max width is widened past the console default — the point of this screen is to
- * show as much of the collection at once as the window allows, and every spare
- * pixel of padding or margin is a row the reader has to scroll for.
- *
- * Below `lg` none of that holds: there is no height to fill and the rail would
- * sit beside a squeezed map, so it is ordinary document flow — rail first, then
- * the map and table — and the page scrolls as a page should.
+ * One screenful from `lg` up, no page scroll; ordinary document flow below.
  */
 const SHELL = cn(
   SITE_SHELL,
@@ -27,18 +15,8 @@ const SHELL = cn(
   "lg:h-full lg:min-h-0 lg:gap-3 lg:py-3",
 );
 
-/**
- * The props each section takes, read off the section itself.
- *
- * `ComponentProps` rather than a hand-written mirror: a duplicated interface is
- * free to drift from the component it describes, and the drift only shows up as
- * a type error somewhere else entirely. This way, adding a prop to a section is
- * a one-line change and the layout's interface follows.
- *
- * `children` is omitted because the map is not part of the card's own interface —
- * it is the layout's slot. Leaving it in would mean the layout had to supply it
- * twice, once as a prop and once as a child, and the two could disagree.
- */
+// Read off the sections themselves, so the layout's props can't drift.
+// `children` is omitted: the map is the layout's slot.
 type ResultsProps = ComponentProps<typeof ListingsResultsPanel>;
 type ToolbarProps = Omit<
   ComponentProps<typeof ListingsToolbarCard>,
@@ -47,38 +25,18 @@ type ToolbarProps = Omit<
 type RailProps = ComponentProps<typeof ListingsFacetsRail>;
 
 export interface ListingsViewProps {
-  /** The three panels down the left, and what they control. */
   rail: RailProps;
-  /** Everything the results section needs, passed straight through. */
   results: ResultsProps;
-  /** Everything the filter card needs, passed straight through. */
   toolbar: ToolbarProps;
-  /** The map. A slot because it can only be rendered in a browser. */
+  /** A slot because it can only be rendered in a browser. */
   map: ReactNode;
-  /** Which halves are on screen. Drives what this layout shows, nothing else. */
   layout: BrowseLayout;
 }
 
 /**
- * The browse screen's layout, and nothing else.
- *
- * A template: it positions three sections and owns no behaviour. Its props are
- * sections, not a flat list of everything the page shows — a layout told about
- * date ranges and pager state is a layout that breaks the first time a section
- * changes. Each section takes its own narrow props instead.
- *
- * The rail stacks above the map below `lg` rather than beside it: three panels
- * at the column width is fine, three at phone width would push the map — the
- * reason the screen exists — entirely off the first screenful.
- *
- * The layout prop decides which of the two right-hand sections show. `split`
- * (the desktop default) is map-over-list, each about half the height; `list`
- * drops the map so the whole height goes to the rows; `map` drops the list so it
- * all goes to the map. The filter bar stays in every mode — it is where the
- * switch itself lives, so hiding it with the map would leave a `list` reader
- * with no way back. That is why the bar and the map are one section that can
- * show the bar without the map (`hideMap`), rather than the map hiding the bar
- * with it.
+ * The browse screen's layout. The filter bar shows in every layout (it holds
+ * the layout switch), so the card can show the bar without the map
+ * (`hideMap`).
  */
 export function ListingsView({
   rail,
@@ -93,11 +51,8 @@ export function ListingsView({
   return (
     <div className={SHELL}>
       {/*
-        The whole screen is one grid from `lg` up: the facets rail takes the left
-        column and scrolls on its own, and the right column is the map card over
-        the results table — both stretched to the shell's height so nothing runs
-        off the bottom of the window. Below `lg` it collapses to a single column
-        in reading order (rail, then map + table) and scrolls as a page.
+        From `lg`: rail on the left (scrolling on its own), map over results on
+        the right. Below: map and results first, then the rail.
       */}
       <div className="grid gap-3 lg:min-h-0 lg:flex-1 lg:grid-cols-[22.5rem_minmax(0,1fr)] lg:gap-3">
         <div className="scrollbar-quiet order-2 lg:order-1 lg:flex lg:min-h-0 lg:flex-col lg:overflow-y-auto lg:pr-1">
@@ -105,20 +60,7 @@ export function ListingsView({
         </div>
 
         <div className="order-1 flex min-w-0 flex-col gap-3 lg:order-2 lg:min-h-0 lg:flex-1">
-          {/*
-            The map card and the results panel share the column's height, map
-            first, in the reference's proportions: 4 to 5 (`lg:flex-[4]` on the
-            card, `lg:flex-[5]` on the panel, `lg:min-h-0` letting both shrink).
-            The panel's share also pays for its title and pager, so the two
-            visible areas come out near even, and the table scrolls inside its
-            own region. A fixed height would stop either from following the
-            window.
-
-            The reset row that used to sit between the two is gone, and on the
-            reference's own evidence: its screen has no line of chrome under the
-            map. The reset now lives where the filters it clears are — inside
-            « Filtres », which also says how many of them are applied.
-          */}
+          {/* Map and results share the column 4:5; both may shrink. */}
           <ListingsToolbarCard {...toolbar} hideMap={!showMap}>
             {map}
           </ListingsToolbarCard>

@@ -18,11 +18,7 @@ import {
 } from "@/lib/auth-validation";
 import { useResendVerification } from "@/lib/hooks/use-resend-verification";
 
-/**
- * Orchestrator for /signup — the form, and the "check your mailbox" screen that
- * replaces it. Lives in `templates/` next to the view, like every other
- * multi-state page here.
- */
+/** Orchestrator for /signup — the form, then the "check your mailbox" screen. */
 export function SignUpContainer({ prefillEmail }: { prefillEmail?: string }) {
   const [error, setError] = useState("");
   const [existingAccount, setExistingAccount] = useState(false);
@@ -40,8 +36,7 @@ export function SignUpContainer({ prefillEmail }: { prefillEmail?: string }) {
     const email = normalizeEmail(formData.get("email") as string);
     const password = formData.get("password") as string;
 
-    // Client-side mirror of the backend `before` hook rules — instant UX
-    // feedback and no useless round-trip.
+    // Mirrors the backend's `before` hook rules.
     if (!isValidName(name)) {
       setError(NAME_ERROR_MESSAGE);
       return;

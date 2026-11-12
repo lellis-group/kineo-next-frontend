@@ -1,33 +1,14 @@
-/**
- * Listing error mapping — French sentences for refused or failed listing reads
- * and writes.
- *
- * Extracted from `./service` so the service module keeps only transport and
- * data fetching. The typed `ApiError` (status + code) is read here and turned
- * into a sentence; the service lets it through untouched.
- */
+/** French sentences for refused or failed listing reads and writes. */
 import { ApiError } from "../api-client";
 import { errorMessage } from "../api-errors";
 import type { ListingActionKind } from "./service";
 
-/** The owner actions on a listing this module performs. */
 export type { ListingActionKind };
 
 /**
- * The refusal codes the backend sends on a listing write, mirrored one for one.
- *
- * `common/refusal.ts` on the other side is the source; these are the listing
- * codes of its `REFUSAL_CODES` — the application and profile ones belong to
- * screens this module does not serve. The names follow the backend's *semantics*
- * rather than its internal keys, so a rename there reads here as a rename.
- *
- * This is the only copy. A second mirror elsewhere is how a mirror drifts: a
- * table naming codes the backend does not send makes every refusal fall back to
- * parsing English prose, and the reader never sees the French.
- *
- * `LISTING_HAS_THIRD_PARTY_APPLICATIONS` is deliberately absent: the backend
- * declares it but throws it as a bare `ConflictException` with no code
- * (`common/application-guard.ts:135`), so it is answered by status, below.
+ * The listing refusal codes of the backend's `REFUSAL_CODES`
+ * (`common/refusal.ts`). `LISTING_HAS_THIRD_PARTY_APPLICATIONS` is absent: the
+ * backend throws it without a code, so it is answered by status below.
  */
 export const LISTING_TRANSITION_CODES = {
   NOT_DRAFT: "LISTING_NOT_DRAFT",
@@ -39,29 +20,20 @@ export const LISTING_TRANSITION_CODES = {
   QUOTA_REACHED: "LISTING_QUOTA_REACHED",
 } as const;
 
-/**
- * The French for each action: the infinitive the refusal sentences interpolate
- * (« clôturer », « annuler »), and the past participle the outage sentence needs
- * (« l'annonce n'a pas été clôturée »).
- */
+/** The infinitive the refusals interpolate, and the participle for outages. */
 const ACTION_COPY: Record<ListingActionKind, { verb: string; done: string }> = {
   close: { verb: "clôturer", done: "clôturée" },
   cancel: { verb: "annuler", done: "annulée" },
 };
 
-/** The confirmation sentence each owner action reports on success. */
 export const ACTION_SUCCESS: Record<ListingActionKind, string> = {
   close: "Annonce clôturée. Les candidatures en cours ont été terminées.",
   cancel: "Annonce annulée. Les candidatures en cours ont été terminées.",
 };
 
 /**
- * What each refusal code means, in French.
- *
- * A function rather than a string only where the sentence names the action: the
- * backend sends the same `LISTING_NOT_CLOSEABLE` whether the practice asked to
- * close or to cancel, and « Impossible de clôturer » on a cancel button is a
- * sentence about the wrong thing.
+ * A function where the sentence names the action: the backend sends the same
+ * code for close and cancel.
  */
 const LISTING_REFUSAL_MESSAGES: Record<
   (typeof LISTING_TRANSITION_CODES)[keyof typeof LISTING_TRANSITION_CODES],
@@ -83,9 +55,6 @@ const LISTING_REFUSAL_MESSAGES: Record<
     "Vous avez atteint le nombre maximal d'annonces. Libérez-en une ou contactez-nous.",
 };
 
-/**
- * A refused or failed owner action, in French.
- */
 export function listingActionErrorMessage(
   error: unknown,
   action: ListingActionKind,
@@ -112,8 +81,7 @@ export function listingActionErrorMessage(
           "Vous n'êtes pas le propriétaire de cette annonce, ou votre adresse e-mail n'est pas validée.",
       });
     }
-    // The one 409 the backend sends without a code: third-party applications
-    // are still active on the listing (see the note on the code table above).
+    // The one 409 the backend sends without a code (see the table above).
     if (error.status === 409) {
       return `Impossible de ${verb} l'annonce : des candidatures d'autres candidats lui sont encore actives.`;
     }
@@ -128,9 +96,6 @@ export function listingActionErrorMessage(
   });
 }
 
-/**
- * A failed *read* on a listing, in French, with the 403 case spelled out.
- */
 export function listingReadErrorMessage(error: unknown): string {
   return errorMessage(error, {
     forbidden:

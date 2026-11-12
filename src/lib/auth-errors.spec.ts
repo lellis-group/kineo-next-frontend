@@ -26,8 +26,7 @@ describe("mapResetPasswordError", () => {
   });
 
   test("no longer depends on a French sentence the backend never writes", () => {
-    // The form validates the length before calling, and this string is the
-    // frontend's own copy: matching it could only ever be dead code.
+    // The frontend's own copy, never sent by the backend.
     expect(mapResetPasswordError({ message: "8 ET 128 CARACTÈRES" })).not.toBe(
       PASSWORD_LENGTH_MESSAGE,
     );

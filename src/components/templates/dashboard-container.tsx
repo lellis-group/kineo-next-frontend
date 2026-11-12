@@ -7,13 +7,8 @@ import { type DashboardData, fetchDashboardData } from "@/lib/dashboard";
 import { useReloadable } from "@/lib/hooks/use-reloadable";
 
 /**
- * Orchestrator for the logged-in page: delegates rendering to MemberHome.
- * Lives in `templates/` — organisms must never import templates.
- *
- * The data arrives already loaded from the server page, so there is no fetch on
- * mount and no skeleton on a warm navigation: what renders first is the real
- * dashboard. `reload` still exists for the client-side paths that have to
- * re-read — retrying after a failure, mainly.
+ * Orchestrator for the logged-in page. The data arrives from the server page;
+ * `reload` serves retries.
  */
 export function DashboardContainer({
   userName,

@@ -1,59 +1,33 @@
 /**
  * Shared API client — base URL, typed errors, fetch helper.
- * Consumed by the domain services (dashboard, profile…).
  *
- * Isomorphic: the same service functions serve the browser and the server, and
- * the only thing that differs between the two is how the request leaves the
- * process. That difference is expressed as an `ApiTransport`, passed in by
- * whoever is calling — `browserTransport` from a client component,
- * `serverTransport` from a server component. Nothing here reaches for a runtime
- * environment check, so no server-only module can be pulled into the browser
- * bundle by accident.
+ * Isomorphic: callers pass an `ApiTransport` (`browserTransport` by default,
+ * `serverTransport` from a server component), so no runtime check can pull a
+ * server-only module into the browser bundle.
  */
 
 import type { ApiPaginated } from "./types/api";
 
-/**
- * Backend base URL — same-origin. Requests are sent to /api/* on this Next.js
- * app and proxied server-side to the real backend (see
- * src/app/api/[...path]/route.ts). No backend IP/port is ever embedded in
- * client code, so the app works from any device/network (mobile included).
- */
+/** Same-origin: proxied server-side to the backend by `app/api/[...path]/route.ts`. */
 const API_BASE = "/api";
 
-/**
- * How a request reaches the backend.
- *
- * Takes the API path (`/profile/me`) rather than a full URL, because what the
- * full URL is depends on where the caller is running.
- */
+/** How a request reaches the backend, from an API path (`/profile/me`). */
 export type ApiTransport = (
   path: string,
   init?: RequestInit,
 ) => Promise<Response>;
 
-/**
- * Default: the browser calling this Next.js app, which proxies to the backend.
- * `credentials: "include"` is what carries the session cookie.
- */
+/** `credentials: "include"` carries the session cookie. */
 const browserTransport: ApiTransport = (path, init) =>
   fetch(`${API_BASE}${path}`, { credentials: "include", ...init });
 
-/** Typed API error — status, optional business message, optional machine code. */
 export class ApiError extends Error {
   constructor(
     public readonly status: number,
     path: string,
-    /** Business message from the API body, if JSON. */
     public readonly apiMessage?: string,
-    /** Per-field Zod validation issues when the backend replies with { errors }. */
     public readonly fieldErrors?: ReadonlyArray<FieldError>,
-    /**
-     * Discriminator sent by routes where one status means several unrelated
-     * things. The account erasure returns 409 both for "another candidate
-     * blocks this" and "no pending request matches", and those need opposite
-     * screens, so the status alone is not enough to act on.
-     */
+    /** Discriminator for routes where one status means several things. */
     public readonly code?: string,
   ) {
     super(
@@ -65,7 +39,6 @@ export class ApiError extends Error {
   }
 }
 
-/** One validation issue surfaced by the backend `{ errors: [...] }` envelope. */
 export interface FieldError {
   /** Path segments pointing at the invalid field (e.g. ["city"]). */
   path: unknown[];
@@ -73,21 +46,11 @@ export interface FieldError {
 }
 
 /**
- * Ceiling for one request.
- *
- * The race guard's signal fires when the *next* view starts, not when the
- * current one hangs — so a backend that stops answering would leave the screen
- * loading until the reader navigated away. Twenty seconds is well beyond any
- * endpoint this app calls.
+ * Ceiling for one request. The caller's abort signal only fires when the next
+ * view starts, so a hung backend would otherwise load forever.
  */
 const REQUEST_TIMEOUT_MS = 20_000;
 
-/**
- * The caller's signal, if any, plus a deadline.
- *
- * `AbortSignal.any` keeps both reasons: the race guard can still cancel a
- * superseded read, and the deadline can still end one nobody cancelled.
- */
 function withTimeout(init: RequestInit | undefined): RequestInit {
   const deadline = AbortSignal.timeout(REQUEST_TIMEOUT_MS);
   const signal = init?.signal
@@ -96,21 +59,14 @@ function withTimeout(init: RequestInit | undefined): RequestInit {
   return { ...init, signal };
 }
 
-/**
- * Fetch through `transport`. Throws typed ApiError on non-OK so callers can
- * distinguish expected states (soft 404, see `notFoundAs`) from real failures.
- *
- * `transport` defaults to the browser, so every existing call site keeps
- * working unchanged; only the server-side callers pass one.
- */
+/** Fetch through `transport`; throws `ApiError` on a non-OK response. */
 export async function apiFetch<T>(
   path: string,
   init?: RequestInit,
   transport: ApiTransport = browserTransport,
 ): Promise<T> {
   const { headers: callerHeaders, ...rest } = init ?? {};
-  // One `Headers`, so a caller's value replaces a default whatever its case or
-  // shape — an object spread would drop a `Headers` instance entirely.
+  // One `Headers`: an object spread would drop a `Headers` instance.
   const headers = new Headers({ Accept: "application/json" });
   if (rest.body) headers.set("Content-Type", "application/json");
   new Headers(callerHeaders).forEach((value, name) => {
@@ -119,9 +75,6 @@ export async function apiFetch<T>(
   const res = await transport(path, withTimeout({ ...rest, headers }));
 
   if (!res.ok) {
-    // NestJS returns { message, error, statusCode } or, for Zod validation,
-    // { message: "Validation failed", errors: [{ path, message }] } — surface
-    // both the business message and the per-field issues.
     let apiMessage: string | undefined;
     let fieldErrors: FieldError[] | undefined;
     let code: string | undefined;
@@ -146,7 +99,7 @@ export async function apiFetch<T>(
     throw new ApiError(res.status, path, apiMessage, fieldErrors, code);
   }
 
-  // 204 No Content / empty body (e.g. DELETE) → no JSON to parse.
+  // 204 / empty body.
   const text = await res.text();
   if (!text) {
     return null as T;
@@ -155,21 +108,12 @@ export async function apiFetch<T>(
 }
 
 /**
- * Which of the three shapes a collection endpoint answered with.
- *
- * `GET /applications/mine` is documented to answer either as a bare array or as
- * the `{ data, meta }` envelope, and the array form carries no pagination or
- * totals at all. Both callers of this needed to tell the two apart — and needed
- * a third answer for "neither", which is what a backend that changed the shape
- * looks like — so the detection lives here once.
- *
- * `unknown` is not an error. A screen that can still show something useful from
- * an empty list should; that is each caller's decision.
+ * Which shape a collection endpoint answered with: `GET /applications/mine`
+ * may answer a bare array or the `{ data, meta }` envelope.
  */
 export type CollectionShape<T, TMeta = ApiPaginated<T>["meta"]> =
   | { kind: "array"; rows: T[] }
   | { kind: "envelope"; rows: T[]; meta: TMeta }
-  /** Nothing readable came back — `rows` is empty so callers can spread it. */
   | { kind: "unknown"; rows: [] };
 
 export function unwrapCollection<T, TMeta = ApiPaginated<T>["meta"]>(
@@ -185,14 +129,9 @@ export function unwrapCollection<T, TMeta = ApiPaginated<T>["meta"]>(
   return { kind: "unknown", rows: [] };
 }
 
-/** A query string from a record of optional parameters.
- *
- * `undefined`, `null` and `""` are left out; everything else is sent, including
- * `false` and `0`. That is deliberate — a flag whose value is genuinely `false`
- * is not the same as one the caller had no opinion about, and silently dropping
- * it would make `urgentOnly: false` indistinguishable from not narrowing at all
- * at the call site that can only pass one of the two. Callers with a truthiness
- * rule (`urgentOnly || undefined`) say so themselves.
+/**
+ * A query string from optional parameters. `undefined`, `null` and `""` are
+ * left out; `false` and `0` are sent.
  */
 export function buildQuery(
   params: Record<string, string | number | boolean | undefined | null>,

@@ -12,18 +12,9 @@ import type { BrowseSelection } from "@/lib/listings";
 import { SPECIALTY_LABELS } from "@/lib/profile";
 
 /**
- * The posting the reader chose, and the way back to its row.
- *
- * The third panel of the browse rail, and the only one about a single posting
- * rather than the collection. It replaces « Volume de la recherche », which
- * restated the two panels above in a second shape and said nothing about what
- * the reader had just clicked.
- *
- * It reads from what the screen already holds — the row on the current page
- * when there is one, the map's preview otherwise — so choosing a posting on the
- * map never costs a request. That is why `specialty` and `urgent` are optional:
- * the map preview knows where a practice is, not what the posting pays, and the
- * row may be on another page.
+ * The posting the reader chose, and the way back to its row. Read from what
+ * the screen holds (the row, or the map preview), so `specialty` and `urgent`
+ * may be missing.
  */
 export function ListingSelectionPanel({
   selection,

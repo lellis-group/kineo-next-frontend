@@ -1,30 +1,18 @@
 /**
  * Presentation contracts for the browse feed (`/listings`) — the replacement
  * doctor's side: every open posting the platform has, on a map and in a list.
- *
- * Kept apart from `./contracts`, which describes the practice's own listings.
- * The two surfaces read the same backend statuses but answer different
- * questions: `/listings/mine` asks "what happened to mine", this one asks "what
- * can I take". They have different filters, different summaries and different
- * audiences, and folding one into the other would give a single filter vocabulary
- * that fits neither.
- *
- * Components depend only on these types; `./browse-service` fetches and
- * `./browse-adapters` translates. The URL serialisation lives in `./browse-url`,
- * the horizon arithmetic in `./browse-horizon`, and the badge copy in
- * `./browse-badges`.
+ * Kept apart from `./contracts`, which describes the practice's own listings:
+ * same statuses, different filters and audiences.
  */
 
 import type { MapPlace, MapPlaceListing, MapPoint } from "@/lib/map/types";
 import type { ReplacementListingStatus, Specialty } from "@/lib/types/api";
 
-/** Where a listing sits, as the map needs it. */
 export interface ListingLocation {
   latitude: number;
   longitude: number;
 }
 
-/** A posting in the public feed, ready to render. */
 export interface BrowseListing {
   id: string;
   title: string;
@@ -38,14 +26,7 @@ export interface BrowseListing {
   description?: string;
   practiceName: string;
   city: string;
-  /**
-   * Null when the practice has never been geocoded.
-   *
-   * Not a rare case to be handled at the edges: the coordinates are nullable in
-   * the database, so every listing published before its practice got an address
-   * sits here. The listing is still real and
-   * still belongs in the list — it simply cannot take a pin.
-   */
+  /** Null when the practice has never been geocoded — common, not an edge case. */
   location: ListingLocation | null;
   applicationsCount: number;
   /** Cap on simultaneous candidates; absent when the posting is uncapped. */
@@ -53,24 +34,14 @@ export interface BrowseListing {
   createdAt: string;
 }
 
-/**
- * One posting, with everything its public detail page shows.
- *
- * `BrowseListing` is the row: the feed slims `description` away and never
- * carries the backend status. The detail endpoint returns both, so this extends
- * the row with the two fields the page needs and nothing else.
- */
+/** The feed row plus the backend status, which only the detail endpoint sends. */
 export interface BrowseListingDetail extends BrowseListing {
   status: ReplacementListingStatus;
 }
 
 /**
- * The posting the reader has chosen, as the rail's selection panel draws it.
- *
- * A shape both a row and a map preview satisfy. The map's preview carries no
- * specialty or urgency — the popup is about where a practice is, not what it
- * pays — so those two are optional rather than borrowed from the row at the
- * cost of a second request when the chosen posting is on another page.
+ * The posting the reader has chosen. A shape both a row and a map preview
+ * satisfy — the preview carries no specialty or urgency, hence optional.
  */
 export interface BrowseSelection {
   id: string;
@@ -85,13 +56,8 @@ export interface BrowseSelection {
 }
 
 /**
- * The filters the feed endpoint accepts.
- *
- * Flat and optional rather than a discriminated union, because they combine: a
- * reader narrows to a city *and* a period *and* the urgent ones, and any shape
- * that only allowed one at a time would be a shape the toolbar cannot express.
- * `undefined` means "not narrowed" — never "match nothing", which is why the
- * service omits the key rather than sending an empty value.
+ * The filters the feed endpoint accepts. `undefined` means "not narrowed" —
+ * never "match nothing", so the service omits the key.
  */
 export interface BrowseFilters {
   specialty?: Specialty;
@@ -103,74 +69,34 @@ export interface BrowseFilters {
   /** ISO date, inclusive upper bound on `startDate`. */
   startDateTo?: string;
   urgentOnly?: boolean;
-  /** How the rows are ordered. */
   sort?: BrowseSort;
 }
 
-/** Filter + page + ordering, the three things that identify a view of the feed. */
 export interface BrowseView extends BrowseFilters {
   page: number;
 }
 
-/**
- * How the reader wants the rows ordered.
- *
- * A view, not a filter: it changes no result set, only which row comes first.
- * That is why it sits with the contracts rather than beside the toolbar, and
- * why the server takes it — the endpoint owns the ordering.
- */
 export type BrowseSort = "recent" | "urgent" | "startDate";
 
 /**
- * How the two halves of the screen are arranged.
- *
- * A presentation choice, not a view of the feed: it changes no result set, only
- * how much of the screen the map and the list each take. `split` is the desktop
- * default — map above list, each about half the height; `list` gives the whole
- * height to the list for scanning many rows; `map` gives it to the map for
- * exploring. It lives here, beside the sort, because it is the same kind of
- * thing: a preference that does not narrow anything.
- *
- * It deliberately does *not* live in the URL, unlike the filters and the page.
- * On this screen a URL write re-renders the route and re-reads all three
- * endpoints, and a purely visual reflow is not worth a round trip. So it is
- * client state, like the map's fullscreen — reset on a reload, which is the
- * right life for a preference rather than for a search.
+ * How the map and the list share the screen. Client state rather than URL: a
+ * URL write re-reads all three endpoints, not worth it for a visual reflow.
  */
 export type BrowseLayout = "split" | "list" | "map";
 
 /**
- * The map card's id, so a choice made in the list can bring it back into view.
- *
- * It lives here because two files need it and neither owns the other: the
- * toolbar card sets it on the element that wraps the map, and the container
- * looks it up to scroll it. Looked up by id rather than held in a ref because
- * the map is rendered through a `Suspense` boundary by a component this pair
- * does not own the markup of; the id is the one thing that crosses it.
- *
- * Declared once, here: a literal written in both places is two literals that
- * agree until a typo makes them disagree, and the failure is a camera move
- * nobody sees rather than an error.
+ * The map card's id, so a choice made in the list can scroll it back into view.
+ * An id rather than a ref because the map sits behind a `Suspense` boundary.
  */
 export const BROWSE_MAP_ID = "browse-map";
 
 /**
- * The same filters as the form holds them.
- *
- * Distinct from `BrowseFilters` on purpose, and the difference is what a control
- * can express rather than what the endpoint accepts. An unfilled date field is
- * `""`, not an absent key: it is a value the input can hold and the reader can
- * clear, and folding it into `undefined` the moment it changes would make every
- * control's "no filter" state a special case instead of an ordinary value.
- *
- * `from` and `to` stay `YYYY-MM-DD` here — what a `<input type="date">` gives —
- * and are widened to ISO instants in `toBrowseView`, once, in a place that can
- * be tested.
+ * The same filters as the form holds them: an unfilled field is `""`, and
+ * `from`/`to` stay `YYYY-MM-DD` until `toBrowseView` widens them.
  */
 export interface BrowseFormFilters {
   specialty: Specialty | "";
   city: string;
-  /** What the reader typed to search the postings' words. */
   q: string;
   from: string;
   to: string;
@@ -191,13 +117,7 @@ export interface SpecialtyFacet {
   specialty: Specialty;
   label: string;
   count: number;
-  /**
-   * Share of the collection, 0–100, rounded.
-   *
-   * A share rather than an absolute target width: the panel draws the same
-   * number of bars whatever the collection holds, and on a quiet week an
-   * absolute scale would render every row as a hairline.
-   */
+  /** Share of the collection, 0–100, rounded. */
   percent: number;
 }
 
@@ -208,37 +128,22 @@ export interface StartWeekFacet {
   count: number;
 }
 
-/** The counts the summary panels are built from. */
 export interface BrowseFacets {
   total: number;
   urgent: number;
   bySpecialty: SpecialtyFacet[];
   /**
-   * Starts per week over the next twelve, current week first. Empty from a
-   * backend that does not send the series, which the panel reads as « no
-   * data », never as twelve zero weeks.
+   * Starts per week over the next twelve, current week first. Empty means « no
+   * data », never twelve zero weeks.
    */
   byStartWeek: StartWeekFacet[];
 }
 
-/**
- * One place on the map, with the postings that sit on it.
- *
- * A place, not a posting: a practice publishes several openings and they all
- * carry its coordinates, so one pin per posting stacks identical buttons on the
- * same pixel — the top one takes every click and the rest cannot be reached.
- */
 export type { MapPlace, MapPlaceListing, MapPoint };
 
 /**
- * Everything the map needs, in one answer.
- *
- * No ordering of the collection, and no listing ids. The popup can name a
- * posting the list is not showing — the places are ordered by population and
- * each holds four previews of its own — and turning the list to it is a
- * question asked when the reader asks it (`fetchListingPageOf`): carrying the
- * id of every matching posting here would be a rare click paid for on every
- * page render, every filter change and every reordering.
+ * Everything the map needs, in one answer. No listing ids: finding a posting's
+ * page in the list is asked on demand (`fetchListingPageOf`).
  */
 export interface BrowsePlacesData {
   places: MapPlace[];
@@ -251,14 +156,8 @@ export interface BrowsePlacesData {
 }
 
 /**
- * One page of the feed — the rows, and the facts about the page they came from.
- *
- * No `facets`, and that is not an omission. The panels the facets feed answer
- * (repartition par spécialité, urgentes) depend on a strict subset of the
- * filters, and the feed depends on all of them plus the page; carrying the
- * panels inside the page's answer meant every page turn and every reordering
- * re-asked for them. Two reads with two lifetimes, kept apart: this one for the
- * rows, `fetchFacets` for the panels.
+ * One page of the feed. No facets: they don't depend on the page or the sort,
+ * so `fetchFacets` reads them separately.
  */
 export interface BrowseListingsData {
   listings: BrowseListing[];
@@ -269,15 +168,8 @@ export interface BrowseListingsData {
 }
 
 /**
- * How soon a posting has to start — the question the segmented row above the
- * results answers, in one tap.
- *
- * A horizon and the bounds it produces are the same filter expressed two ways:
- * the row is the quick way in, the two date fields are the exact one, and both
- * write the same `from` **and `to`**. A horizon names a *period*, not a lower
- * bound — writing only a `from` reads « Ce mois » as « from the 1st of next
- * month » and silently drops every posting starting this month, which is the
- * one month the chip is named for.
+ * How soon a posting has to start. A horizon names a *period*: it writes both
+ * `from` and `to`, the same fields the date inputs hold.
  */
 export type BrowseHorizon = "ALL" | "WEEK" | "MONTH" | "LATER";
 

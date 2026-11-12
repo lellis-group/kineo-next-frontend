@@ -1,13 +1,7 @@
 import type { ApiApplicationStatusCounts } from "../types/api";
 import type { DashboardData, ReactivityStat } from "./contracts";
 
-/**
- * How many of the member's applications got an answer.
- *
- * Read from the totals rather than counted off a page: the rate below is a figure
- * about every application sent, and a numerator drawn from the four newest rows
- * would divide a page by a collection.
- */
+/** How many of the member's applications got an answer, from the totals. */
 export function adaptReactivity(applications: {
   counts: ApiApplicationStatusCounts;
   respondedCount: number;
@@ -15,17 +9,8 @@ export function adaptReactivity(applications: {
   const { counts, respondedCount } = applications;
   const sent = counts.total;
 
-  /**
-   * Withdrawn applications stay out of the response rate.
-   *
-   * The rate answers "how often do cabinets answer me", and a withdrawn
-   * application is one the user pulled back — it can never be answered, so
-   * leaving it in the denominator would turn a deliberate withdrawal into a mark
-   * against the practice — someone who withdrew four of five applications would
-   * see 20% under a metric that has nothing to do with the practices they wrote
-   * to. The backend draws that same line in `respondedCount`, so the two
-   * ends of the division describe one collection.
-   */
+  // Withdrawn applications can never be answered, so they stay out of the
+  // denominator — as they do in the backend's `respondedCount`.
   const answerable = sent - counts.WITHDRAWN;
   const rate =
     answerable > 0 ? Math.round((respondedCount / answerable) * 100) : 0;

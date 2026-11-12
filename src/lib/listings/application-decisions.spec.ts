@@ -1,11 +1,6 @@
 /**
- * The practice's decisions on one received application — the request each
- * write lands, and the French a refusal is reported in.
- *
- * The statuses that gate the four writes live with the backend; what this
- * spec pins is that each write goes to the route the document publishes, and
- * that every refusal the backend names has a distinct sentence in front of
- * the card it belongs to.
+ * The practice's decisions on one received application: the route each write
+ * lands on, and a distinct French sentence per refusal.
  */
 import { describe, expect, test } from "bun:test";
 import { ApiError, type ApiTransport } from "../api-client";

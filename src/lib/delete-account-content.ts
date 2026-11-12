@@ -1,14 +1,9 @@
 /**
- * Copy for the account-erasure panel (`/profile`).
- *
- * Kept out of the component for the same reason as `lib/marketing.ts`: this is
- * legal wording that gets reviewed and revised on its own schedule, and a copy
- * edit should not mean editing JSX. What the platform does is described exactly
- * as it happens — the backend anonymizes on confirmation and purges later, so
- * "supprimé définitivement" would promise something it does not do on the spot.
+ * Copy for the account-erasure panel (`/profile`), kept out of the component as
+ * legal wording. It says « remplacées » because the backend anonymizes on
+ * confirmation and purges later.
  */
 
-/** One item per line, rather than a parenthetical — this is the scannable part. */
 export const erasedFields = [
   "votre nom, votre photo et votre adresse e-mail",
   "votre numéro RPPS et votre localisation",
@@ -33,18 +28,8 @@ export const deleteAccount = {
 } as const;
 
 /**
- * What an erasure leaves behind, stated once.
- *
- * The backend's `DataDeletionRequest` keeps two keyed fingerprints — one over the
- * user id, one over the email — plus the request's own dates, so the trail can
- * answer « was this request processed? » without keeping the address it is about.
- * The pepper that produces them never reaches the database, so neither can be
- * turned back into either value.
- *
- * Five places say it — the erasure screens and the privacy policy — and all
- * read it from here. A statement about what a company retains after erasing
- * someone is not a thing to say five ways, least of all on the screens a person
- * reads right before deleting their account.
+ * What an erasure leaves behind (two keyed, non-reversible fingerprints plus
+ * the dates), stated once for every screen and the privacy policy.
  */
 export const ERASURE_RETENTION_FACT =
   "deux empreintes non réversibles — une sur votre identifiant, une sur votre adresse e-mail — ainsi que les dates de la demande";

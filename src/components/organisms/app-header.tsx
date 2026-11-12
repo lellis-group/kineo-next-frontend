@@ -10,31 +10,16 @@ import { getMemberNav, publicNav, resolveActiveLink } from "@/lib/navigation";
 import type { ServerAuthState } from "@/lib/server-auth";
 
 /**
- * Authenticated-aware header.
+ * Authenticated-aware header. It renders from the server's `initialAuth`, and
+ * the client session may only confirm it:
  *
- * The rule that keeps it from flickering: the server already resolved the
- * whole state, so the header renders from `initialAuth` and the client session
- * only ever *confirms* it. Two consequences:
+ * - while pending, the server state is replayed (no hydration mismatch);
+ * - the client may demote a member, never promote `anonymous`;
+ * - only a successful read demotes — a failed one (e.g. a 429) proves nothing;
+ * - over `unavailable`, the client may confirm the session; until then the
+ *   header shows its skeleton.
  *
- * - while the client session loads (`isPending`) the server state is replayed
- *   verbatim, which also keeps the first client render identical to the SSR
- *   markup — no hydration mismatch;
- * - the client session is never allowed to promote `anonymous` to `member`.
- *   It may demote a member (sign-out elsewhere) but not the reverse, because
- *   only the server saw the cookie. A stale client cache could otherwise
- *   resurrect account controls for a signed-out user.
- * - only an *answer* demotes. A client read that failed — a `429` from the
- *   session rate limit, above all — proves nothing about the session, so the
- *   server state holds. Treating it as a sign-out is what flipped the header
- *   to « Se connecter » for readers who were browsing at a normal pace.
- * - when the server could not read the session either (`unavailable`), a
- *   cookie was there, so the client is allowed to confirm it. Until it does,
- *   the header shows its loading skeleton rather than claiming either state.
- *
- * The role follows the same rule: it is refreshed on navigation (the layout
- * payload is cached, so a prop alone cannot signal a role change) and never
- * reset to null while the fetch is in flight, so the nav cannot flicker back
- * to the default links and forward again.
+ * The role is refreshed on navigation and never reset to null mid-fetch.
  */
 export function AppHeader({ initialAuth }: { initialAuth: ServerAuthState }) {
   const router = useRouter();
@@ -42,16 +27,9 @@ export function AppHeader({ initialAuth }: { initialAuth: ServerAuthState }) {
   const { data: session, isPending, error } = useSession();
 
   const clientUser = session?.user;
-  // A read that failed is not an answer: it can neither demote nor promote.
   const clientUnsure = isPending || Boolean(error);
 
-  // The client session has one authority over a server-confirmed member:
-  // proving the session is *gone*, with a successful read that names nobody.
-  // Until then the server answer holds. A stale client cache therefore cannot
-  // resurrect account controls for someone who just signed out.
-  //
-  // Over an `unavailable` server read it may confirm the session instead —
-  // the server did see a cookie, it just could not ask about it.
+  // Over `unavailable`, the server saw a cookie but could not ask about it.
   const isSignedIn =
     initialAuth.status === "member"
       ? clientUnsure || Boolean(clientUser)
@@ -61,8 +39,6 @@ export function AppHeader({ initialAuth }: { initialAuth: ServerAuthState }) {
 
   const serverName = initialAuth.status === "member" ? initialAuth.name : null;
 
-  // The server name is the SSR-stable one and is replayed while pending, so
-  // the first client render matches the server markup exactly.
   const name =
     clientUnsure || !clientUser
       ? serverName
@@ -83,16 +59,7 @@ export function AppHeader({ initialAuth }: { initialAuth: ServerAuthState }) {
           try {
             await signOut();
           } finally {
-            // Always leave the member area, even if sign-out fails.
-            //
-            // `/signin`, not `/signup`: the account the user just left exists
-            // and they hold its credentials, so the next thing they want is to
-            // log back in. Landing on « Créer un compte » reads as being asked
-            // to register again, and the way back would be to submit the
-            // signup form and discover the « Se connecter avec cet e-mail »
-            // escape hatch. `/signin` links to `/signup` in one click, so
-            // registration stays reachable with the funnel pointing the right
-            // way.
+            // `/signin`, not `/signup`: the account still exists.
             router.push("/signin");
             router.refresh();
           }
@@ -101,8 +68,7 @@ export function AppHeader({ initialAuth }: { initialAuth: ServerAuthState }) {
     );
   }
 
-  // Nobody could say who is reading: neither the server nor, yet, the client.
-  // The skeleton claims nothing; « Se connecter » would claim a sign-out.
+  // Neither server nor client can say yet: claim nothing.
   if (initialAuth.status === "unavailable" && clientUnsure) {
     return <HeaderSkeleton />;
   }

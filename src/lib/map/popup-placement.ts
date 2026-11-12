@@ -1,28 +1,12 @@
 /**
- * Where a popup goes, decided before it is drawn.
+ * Where a popup goes, decided before it is drawn — pure geometry in container
+ * pixels. The caller caps the card's height at the free area's, so a pan that
+ * shows all of it always exists (MapLibre's own placement only flips and
+ * clips).
  *
- * Pure geometry, in the map container's own pixels (origin at its top-left):
- * given the free area of the map, the marker's point and the card's size, it
- * picks the side of the marker the card opens on and the camera pan that brings
- * the whole card into the free area. No DOM, no MapLibre — the caller measures,
- * this decides, and the decision is tested.
- *
- * ## Why the card always fits
- *
- * The caller caps the card's height at the free area's height (the group list
- * scrolls inside it), so there is always a camera position that shows all of
- * it. MapLibre's own placement cannot promise that: it only flips the card to
- * the roomier side of the marker and clips whatever is still outside — the
- * bottom of a tall card on a short map, the « Voir l'annonce » button included.
- *
- * ## Which side
- *
- * Beside the marker, vertically centred, as the reference draws its card: to
- * the right when the card fits there, to the left otherwise. Beside rather than
- * above or below because the map is wide and short — half a screen tall at best
- * — so the vertical room is the scarce one, and centring on the marker spends
- * it evenly. Only a map too narrow for the card beside its marker falls back to
- * above/below, on whichever side has more room.
+ * The card opens beside the marker, vertically centred (right if it fits,
+ * else left), since the map is wide and short; only a map too narrow falls
+ * back to above/below.
  */
 
 /** A MapLibre popup anchor: the side of the *card* that touches the marker. */
@@ -38,11 +22,8 @@ export interface Rect {
 export interface PopupPlacement {
   anchor: PopupAnchor;
   /**
-   * The `panBy` offset that brings the card inside the free area — `[0, 0]`
-   * when it already is.
-   *
-   * `panBy` moves the *camera*, so the content travels the other way: a card
-   * overflowing the bottom by 40px needs `[0, 40]`, which moves it up.
+   * The `panBy` offset that brings the card inside the free area. `panBy`
+   * moves the camera, so a card overflowing the bottom by 40px needs `[0, 40]`.
    */
   pan: [number, number];
 }
@@ -86,7 +67,6 @@ function chooseAnchor(
   return below >= above ? "top" : "bottom";
 }
 
-/** The card's box once anchored, before any pan. */
 function cardBox(
   anchor: PopupAnchor,
   point: { x: number; y: number },
@@ -119,11 +99,9 @@ function box(
 }
 
 /**
- * The pan along one axis that brings `[start, end]` inside `[min, max]`.
- *
- * The start edge wins when the card is larger than the room: its heading and
- * the close button are there, and a card cut at its far end can still be read
- * from the top.
+ * The pan along one axis that brings `[start, end]` inside `[min, max]`. When
+ * the card is larger than the room, the start edge (heading, close button)
+ * wins.
  */
 function overflow(start: number, end: number, min: number, max: number) {
   if (start < min) return start - min;

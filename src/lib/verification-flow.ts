@@ -1,7 +1,4 @@
-/**
- * Verification flow helpers — what a verification link is for, as the backend
- * labelled it. Extracted from `verify-email-view.tsx` so the view only renders.
- */
+/** What a verification link is for, as the backend labelled it. */
 export type VerificationFlow = "change-email" | "change-email-approval";
 
 export function isAddressChangeFlow(

@@ -17,23 +17,11 @@ export const STRIP_CONTAINER =
 export const BACK_LINK =
   "inline-flex items-center gap-2 text-sm font-medium text-muted transition-colors hover:text-foreground";
 
-/**
- * Page title, sized to the same rhythm on every console screen. */
 export const PAGE_TITLE = "text-2xl font-medium tracking-tight sm:text-3xl";
 
 /**
- * The horizontal geometry every full-width band on a `(site)` page shares —
- * the header, the working content, and the footer.
- *
- * One `max-width` and one horizontal padding, so those three bands line up on
- * the same left and right edges instead of each picking its own width — past
- * ~1700px the content would otherwise overhang the footer and the header
- * overhang the content. This is the header's geometry, kept as the shared
- * value because it is already the widest — and a working screen wants every
- * pixel of width.
- *
- * `max-w-360` resolves against the theme's spacing unit (0.3rem), so it is
- * 108rem. Drawn from the same unit as the padding so the pair scales together.
+ * The horizontal geometry shared by the header, the content and the footer, so
+ * the three bands line up. `max-w-360` is 108rem on the 0.3rem spacing unit.
  */
 export const SITE_SHELL = "mx-auto w-full max-w-360 px-4 sm:px-8 lg:px-10";
 

@@ -20,16 +20,8 @@ const ICON_CLASSES = {
 } as const;
 
 /**
- * The "verified" marker — shield plus label, in success green.
- *
- * Extracted because the signal is shown in two unrelated places: beside a
- * candidate's name in a listing, and in the member's own profile facts. Both
- * must read identically, otherwise a practice sees "Vérifié" on a candidate
- * and the candidate sees something else for the same field.
- *
- * Renders nothing when `verified` is false rather than a greyed-out version:
- * an absent marker and an unverified marker are different facts, and a
- * dimmed badge tends to be read as "pending" rather than "not done".
+ * The "verified" marker, shared by the candidate card and the member's own
+ * profile. Renders nothing when not verified (a dimmed badge reads as pending).
  */
 export function VerifiedBadge({
   label = "Vérifié",

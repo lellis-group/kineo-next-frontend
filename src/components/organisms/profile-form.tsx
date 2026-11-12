@@ -16,10 +16,7 @@ import {
   validateProfileForm,
 } from "@/lib/profile";
 
-/**
- * Create/edit profile form — uncontrolled fields (auth pages pattern).
- * Validation and API errors surface through a danger InlineAlert.
- */
+/** Create/edit profile form, with uncontrolled fields. */
 export function ProfileForm({
   initialValues,
   submitLabel,

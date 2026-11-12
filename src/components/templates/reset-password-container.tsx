@@ -17,14 +17,8 @@ import {
 } from "@/lib/auth-validation";
 
 /**
- * Orchestrator for /reset-password.
- *
- * The token is read here rather than by the route because `useSearchParams` needs
- * a Suspense boundary, and this is the component that already sits inside one.
- *
- * The mismatch check comes before the length check on purpose: a reader who typed
- * two different passwords is being told about *that*, not about a rule they may
- * or may not also have broken.
+ * Orchestrator for /reset-password. The mismatch check runs before the length
+ * check: two different passwords is the thing to report.
  */
 export function ResetPasswordContainer() {
   const router = useRouter();
@@ -32,8 +26,7 @@ export function ResetPasswordContainer() {
   const [error, setError] = useState("");
   const [done, setDone] = useState(false);
 
-  // Checked in this order so a URL with no token can never be "confirmed" by a
-  // stale success flag left over from a previous visit.
+  // No token always wins over a stale success flag.
   const stage: ResetPasswordStage = !token
     ? "invalid-link"
     : done

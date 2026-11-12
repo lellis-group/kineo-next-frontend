@@ -3,15 +3,11 @@ import { shouldAdoptCommitted } from "./use-committed-input";
 
 describe("shouldAdoptCommitted", () => {
   it("ignores the echo of the field's own commit", () => {
-    // The reader committed "marseill", kept typing, and the navigation just
-    // landed with the value they sent. The draft ("marseille") is newer and
-    // must survive; the timer re-commits it.
+    // The echo of our own commit: the newer draft must survive.
     expect(shouldAdoptCommitted("marseill", "marseill")).toBe(false);
   });
 
   it("adopts a reset that lands while the reader is typing", () => {
-    // « Réinitialiser » clears the URL to "" — nothing the field sent — so
-    // the box must clear too, even mid-burst.
     expect(shouldAdoptCommitted("", "marseill")).toBe(true);
   });
 

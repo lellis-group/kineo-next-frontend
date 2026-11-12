@@ -11,11 +11,8 @@ import {
 } from "@/lib/applications";
 
 /**
- * Orchestrator for /applications/[id] — renders ApplicationDetailView.
- *
- * The application arrives from the server page. The refetch paths remain: the
- * backend does not always echo the updated row on a write, and a withdrawal has
- * to re-read the listing the candidates were attached to.
+ * Orchestrator for /applications/[id]. Refetches after a write when the
+ * backend doesn't echo the updated row.
  */
 export function ApplicationDetailContainer({
   id,

@@ -19,12 +19,7 @@ function Svg({ children, ...props }: SVGProps<SVGSVGElement>) {
   );
 }
 
-/**
- * Disclosure chevron. Same geometry as the `Select` atom's private one
- * (6 9 → 12 15 → 18 9) so both dropdown affordances are identical, and
- * vertically centered in the 24 box so it does not hang low in a line of
- * text.
- */
+/** Disclosure chevron — same geometry as the `Select` atom's own. */
 export function ChevronDownIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <Svg {...props}>
@@ -219,15 +214,7 @@ export function ExpandIcon(props: SVGProps<SVGSVGElement>) {
   );
 }
 
-/**
- * Crosshair — "centre on this". The map's frame-this-page control.
- *
- * Lucide's own geometry — the circle with its four sights — like every other
- * mark in this set, so the two controls the reference puts in its map's corner
- * share one stroke weight and one visual density instead of being drawn twice
- * by two hands. The geometry is what a crosshair actually reads as, and
- * « Cadrer » asks exactly this move.
- */
+/** Crosshair — the map's frame-this-page control. */
 export function CrosshairIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <Svg {...props}>
@@ -240,14 +227,7 @@ export function CrosshairIcon(props: SVGProps<SVGSVGElement>) {
   );
 }
 
-/**
- * Map — the folded sheet, "see it on the map".
- *
- * The list rows' « voir sur la carte » control. A crosshair there read as the
- * map's own move (frame, centre), an action the control does not take; the
- * sheet names the destination, which is what the button promises. Lucide's own
- * geometry, like every other mark in this set.
- */
+/** Map — the folded sheet: the list rows' « voir sur la carte » control. */
 export function MapIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <Svg {...props}>
@@ -258,10 +238,7 @@ export function MapIcon(props: SVGProps<SVGSVGElement>) {
   );
 }
 
-/**
- * Stethoscope — the generalist's mark. Lucide's own path, so every specialty
- * icon shares one geometry and stroke weight.
- */
+/** Stethoscope — the generalist's mark. */
 export function StethoscopeIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <Svg {...props}>
@@ -274,13 +251,7 @@ export function StethoscopeIcon(props: SVGProps<SVGSVGElement>) {
   );
 }
 
-/**
- * Tooth — the dentist's mark. MDI's silhouette (Lucide ships no tooth), drawn
- * as stroke like every other icon here: the shared `Svg` wrapper sets
- * `fill="none" stroke="currentColor"`, so the filled original reads as a clean
- * line-art tooth. The shape is a crown over two roots with the notch between
- * them left open — that gap is what makes it read as a tooth, not a pebble.
- */
+/** Tooth — the dentist's mark. MDI's silhouette (Lucide has none), as stroke. */
 export function ToothIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <Svg {...props}>
@@ -289,10 +260,7 @@ export function ToothIcon(props: SVGProps<SVGSVGElement>) {
   );
 }
 
-/**
- * Sparkles — dermatology, read as skin's radiance rather than a body part.
- * Lucide's mark: one large four-point star with a smaller cross and dot.
- */
+/** Sparkles — dermatology. */
 export function SparkleIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <Svg {...props}>
@@ -304,9 +272,7 @@ export function SparkleIcon(props: SVGProps<SVGSVGElement>) {
   );
 }
 
-/**
- * Brain — psychiatry. Lucide's two-lobe outline with the central fold.
- */
+/** Brain — psychiatry. */
 export function BrainIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <Svg {...props}>
@@ -322,11 +288,7 @@ export function BrainIcon(props: SVGProps<SVGSVGElement>) {
   );
 }
 
-/**
- * Activity — the generic medical mark, standing in for "Autre spécialité".
- * Lucide's ECG trace: the idiom every reader recognises as "medicine", with no
- * single discipline attached to it.
- */
+/** Activity — the generic medical mark, for "Autre spécialité". */
 export function ActivityIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <Svg {...props}>
@@ -437,14 +399,7 @@ export function TrashIcon(props: SVGProps<SVGSVGElement>) {
   );
 }
 
-/**
- * Undo — curved arrow returning to its origin.
- *
- * Distinct from `ArrowLeftIcon` (straight arrow = navigate back) and from
- * `CloseIcon` (cross = dismiss). Used for « Retirer ma candidature »: the
- * reader takes back something they sent, rather than going back a page or
- * closing a dialog. Same 24 box, 2px round stroke as the rest of the library.
- */
+/** Undo — « Retirer ma candidature »: taking back something sent. */
 export function UndoIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <Svg {...props}>

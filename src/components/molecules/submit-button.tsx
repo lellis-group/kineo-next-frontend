@@ -9,11 +9,8 @@ export interface SubmitButtonProps {
 }
 
 /**
- * Form submit button for a `next/form` `action`.
- *
- * The pending state comes from `useFormStatus` rather than a prop, because the
- * form that owns the submission is the parent. For an inline `<form onSubmit>`
- * driven by local state, use `PendingButton` instead.
+ * Submit button for a `next/form` `action`; pending comes from
+ * `useFormStatus`. For a locally-driven submit, see `PendingButton`.
  */
 export function SubmitButton({ label, pendingLabel }: SubmitButtonProps) {
   const { pending } = useFormStatus();

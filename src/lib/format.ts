@@ -1,9 +1,5 @@
-/**
- * Shared formatting helpers (French locale) — date ranges, relative time and
- * pluralization. Kept free of React/Next imports so any module can rely on them.
- */
+/** Shared French formatting helpers, free of React/Next imports. */
 
-/** Appends a French plural suffix according to the count. */
 export function plural(count: number, suffix = "s"): string {
   return count > 1 ? suffix : "";
 }
@@ -44,16 +40,7 @@ export function formatRelativeTime(dateStr: string): string {
   return `il y a ${Math.floor(diffDays / 7)} semaines`;
 }
 
-/**
- * A single day in French, without the year — « 15 sept. ».
- *
- * For the places that carry a period across two lines: a start day on the first
- * and an end day under it reads as a range without the two halves having to be
- * worded (« Du … au … » wraps, and a wrapped range is three lines where the
- * reference has two). The year is dropped because every date in a listing that is
- * open for taking now falls in the current or the coming year — and where it did
- * not, the full date is one `title` away.
- */
+/** A single day without the year — « 15 sept. » — for periods drawn on two lines. */
 export function formatDayMonth(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString("fr-FR", {
     day: "numeric",
@@ -62,17 +49,8 @@ export function formatDayMonth(dateStr: string): string {
 }
 
 /**
- * Widens a calendar date — what an `<input type="date">` gives — to the ISO
- * instant an API validates.
- *
- * The input produces `YYYY-MM-DD`: no time, no zone. Reading that as midnight
- * UTC is only right for the lower bound. For the upper bound it silently drops
- * every posting published on the day the reader picked, so `endOfDay` lands on
- * the last millisecond instead.
- *
- * Lives here rather than in a domain service because it is a date concern with
- * no domain knowledge, and the browse contracts need it — which a contract
- * importing a service to get it would be a dependency pointing the wrong way.
+ * Widens a `YYYY-MM-DD` input value to an ISO instant; `endOfDay` lands on the
+ * last millisecond, so an upper bound includes the day picked.
  */
 export function toIsoDayBound(
   date: string,

@@ -13,23 +13,17 @@ describe("rowEnterStyle", () => {
   });
 
   it("caps, so the last row of a long page is not held back", () => {
-    // The cap is the reason the helper exists: at a fixed 26 ms per rank a
-    // twenty-row page would delay its last row by 494 ms — longer than the
-    // fade itself, so the reader watches the table fill in top-down.
     expect(delayOf(10)).toBe("260ms");
     expect(delayOf(19)).toBe("260ms");
     expect(delayOf(1000)).toBe("260ms");
   });
 
   it("never produces a negative delay", () => {
-    // A negative `animation-delay` is valid CSS and replays the animation as if
-    // it had already been running, which lands a row mid-fade on first paint.
+    // A negative delay would land a row mid-fade on first paint.
     expect(delayOf(-1)).toBe("0ms");
   });
 
   it("returns a fresh object, not a shared one", () => {
-    // These become React `style` props; a shared mutable object is one caller
-    // away from configuring every row at once.
     const first = rowEnterStyle(1);
     expect(rowEnterStyle(1)).not.toBe(first);
     expect(rowEnterStyle(1)).toEqual(first);

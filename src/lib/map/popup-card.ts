@@ -11,29 +11,15 @@ import {
 import type { MapPlace, MapPlaceListing } from "./types";
 
 /**
- * The popup body, built as DOM — drawn after the reference's marker card.
+ * The popup body, built as DOM. Every piece of data goes through `textContent`;
+ * the only markup set directly is the icon geometry at the bottom.
  *
- * The reference's card is a small white label beside its pin: a black disc
- * carrying the pin's own glyph, the reference in bold, and a two-tone line
- * under it (« Electronics » in grey, « 25kg » in ink). No rules, no tip, no
- * borders — the groups are told apart by space and by weight, and every
- * secondary line pairs a grey word with an ink value, as the reference's
- * « South Bronx, New York » does. Buttons are pills, as its « Sort by » is.
- *
- * Every piece of data goes through `textContent`: a string template is one
- * field away from a title that renders as markup. The only markup set directly
- * is the icon geometry at the bottom — constants of this file, never data.
- *
- * The root is a flex column whose `max-height` the caller sets to the map's free
- * height (see `openPopupForKey`): a group's list is the part that gives way and
- * scrolls, so the header and the actions are always on screen.
+ * The caller caps the root's `max-height` (see `openPopupForKey`): a group's
+ * list is the part that scrolls, so the header and actions stay on screen.
  */
 export interface PopupHandlers {
-  /** A group's row chosen: the posting is selected and shown in the list. */
   onPick: (listing: MapPlaceListing) => void;
-  /** A group's row pointed at or focused — the same preview a table row gives. */
   onHover: (id: string | null) => void;
-  /** The posting's own page — see `listingLink`. */
   onOpen?: (listing: MapPlaceListing) => void;
 }
 
@@ -50,12 +36,8 @@ export function popupContent(
 }
 
 /**
- * Marks the chosen posting's row in a group's card, and unmarks the others.
- *
- * The card stays open when a row is picked, and the list scrolls to the posting
- * — so without a mark the card never says which of its rows the list is now
- * showing. Exported because the choice can change from outside the card (a
- * table row, another pin) while it is open.
+ * Marks the chosen posting's row in a group's card. Exported because the choice
+ * can change from outside the card while it is open.
  */
 export function markSelectedEntry(
   card: HTMLElement,
@@ -74,7 +56,6 @@ export function markSelectedEntry(
 
 const CARD = "flex flex-col gap-3 p-3 text-left text-map-ink";
 
-/** One posting: the reference's label, the posting, and its two actions. */
 function singleCard(
   place: MapPlace,
   listing: MapPlaceListing,
@@ -109,7 +90,6 @@ function singleCard(
   return root;
 }
 
-/** Several postings at one place: the count, where, then one row each. */
 function groupCard(
   place: MapPlace,
   map: MapLibreMap,
@@ -132,21 +112,12 @@ function groupCard(
     ),
   );
 
-  /*
-    A count the endpoint claims with no previews behind it should not happen,
-    but a reader whose map is up must not pay for it with a TypeError that takes
-    every pin down. The header names the count; the camera move stays.
-  */
+  // Guards a count with no previews behind it rather than throwing.
   if (place.listings.length > 0) {
     // The practice is already in the header when there is only one, so a row
     // names it only when the group spans several.
     const showPractice = practiceCount(place) > 1;
 
-    /*
-      `min-h-0` + `flex-1` make this the part that gives way when the caller
-      caps the card's height; past roughly three and a half rows it scrolls on
-      its own anyway — a row cut in half says there is more below.
-    */
     const list = el(
       "ul",
       "-mx-1.5 flex max-h-[14rem] min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto overscroll-contain",
@@ -170,12 +141,7 @@ function groupCard(
 
 /* ── Pieces ────────────────────────────────────────────────────────────── */
 
-/**
- * The card's first line, as the reference draws it: a black disc, a bold
- * label, and a line under it.
- *
- * Right padding clears MapLibre's close button over the top-right corner.
- */
+/** The card's first line. Right padding clears MapLibre's close button. */
 function identity(
   mark: HTMLElement,
   label: string,
@@ -195,7 +161,6 @@ function identity(
   return row;
 }
 
-/** The marker's own disc — black, white glyph — so the card names its pin. */
 function disc(content: Node): HTMLElement {
   const mark = el(
     "span",
@@ -205,14 +170,7 @@ function disc(content: Node): HTMLElement {
   return mark;
 }
 
-/**
- * A grey word and an ink value on one line.
- *
- * `label` mode reads « Période 1 – 15 déc. » — the grey word names the value,
- * like the reference's « Electronics 25kg ». `place` mode reads « Cabinet
- * Gambetta, Bordeaux » — the ink name first, the grey city after, like its
- * « South Bronx, New York ».
- */
+/** A grey word and an ink value on one line (`place`: ink name, grey city). */
 function twoTone(
   first: string,
   second: string,
@@ -238,18 +196,8 @@ function muted(text: string): HTMLElement {
 }
 
 /**
- * One posting in a group: its title, then when (and where, in a cluster).
- *
- * A button: the map and the list are two views of the same rows, and this is
- * the way from one to the other. The chevron says it can be clicked.
- *
- * - **Click** picks the posting: it is selected, its row in the list scrolls
- *   into view, and the card stays open with this row marked (`aria-current`,
- *   see `markSelectedEntry`) so the reader can go on to the next one.
- * - **Double-click** is the same pick, once: its second click is ignored, so
- *   the list does not replay its landing.
- * - **Pointing or focusing** previews the posting the way a table row does —
- *   its row in the list lights up — and leaving drops the preview.
+ * One posting in a group. Click picks it (the card stays open with the row
+ * marked); pointing or focusing previews it like a table row.
  */
 function entryButton(
   listing: MapPlaceListing,
@@ -261,8 +209,6 @@ function entryButton(
     "group/entry flex w-full cursor-pointer items-center gap-2.5 rounded-control px-2 py-2 text-left transition-colors hover:bg-map-wash aria-[current=true]:bg-map-line",
   );
   row.type = "button";
-  // Same handle as the table rows carry, so the two views of a posting can be
-  // matched from the outside.
   row.dataset.listingId = listing.id;
   row.addEventListener("click", (event) => {
     if (event.detail > 1) return;
@@ -299,21 +245,13 @@ function entryButton(
 
 /* ── Actions ───────────────────────────────────────────────────────────── */
 
-/** White pill on the white card: the reference's « Sort by » control. */
 const PILL_OUTLINE =
   "flex h-8 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-full border border-map-line bg-map-card text-xs font-medium text-map-ink transition-colors hover:bg-map-wash";
 
 /**
- * The camera move.
- *
- * A button, because the marker's double-click is a mouse shortcut nobody can
- * reach from a keyboard. `icon` is the round button beside « Voir l'annonce »,
- * named by `aria-label` and a tooltip; `wide` is a group card's own action.
- *
- * Taking the move dismisses the popup first: it is anchored where the markers
- * it describes are about to separate, and a popup still in the DOM is
- * repositioned on every `move` frame — one left open would be carried across
- * the viewport and land on top of what the reader asked to see.
+ * The camera move — a button, since the marker's double-click is unreachable
+ * from a keyboard. Dismisses the popup first, or it would ride along with the
+ * camera and land on top of what the reader asked to see.
  */
 function zoomButton(
   place: MapPlace,
@@ -336,11 +274,8 @@ function zoomButton(
   }
 
   button.addEventListener("click", (event) => {
-    // The popup lives inside the map container, so this click is a map click as
-    // far as MapLibre is concerned and would dismiss the popup it lives in.
+    // Otherwise MapLibre treats it as a map click.
     event.stopPropagation();
-    // A double-click's second click never reaches here — the card is gone by
-    // then — but it lands on the map, which `useMapDismiss` ignores.
     dismiss();
     zoomToPlace(map, place);
   });
@@ -349,13 +284,8 @@ function zoomButton(
 }
 
 /**
- * The posting's own page — the card's main action, a black pill.
- *
- * A real `<a>`: middle-click, copy and the status bar keep working, and a click
- * with a modifier is left to the browser. A plain left-click takes the soft
- * route the rest of the screen uses — a full reload would land the reader at
- * the top of a page they left scrolled. With no `onOpen`, the anchor still
- * navigates, just the hard way.
+ * The posting's own page. A real `<a>` so modifier clicks stay the browser's;
+ * a plain left-click takes the soft route.
  */
 function listingLink(
   listing: MapPlaceListing,
@@ -388,7 +318,6 @@ function listingLink(
 
 /* ── Primitives ────────────────────────────────────────────────────────── */
 
-/** An element with its classes and, optionally, its text — as `textContent`. */
 function el<K extends keyof HTMLElementTagNameMap>(
   tag: K,
   className?: string,
@@ -401,12 +330,8 @@ function el<K extends keyof HTMLElementTagNameMap>(
 }
 
 /**
- * The icon geometry, in the 24-unit stroke style of `atoms/icons.tsx`. `box` is
- * the marker's own glyph (`markers.ts`), so the disc matches the pin.
- *
- * Duplicated rather than imported: those are React components, and this card is
- * plain DOM handed to MapLibre. Constants only — the one place this file sets
- * markup directly, and nothing here comes from data.
+ * The icon geometry, duplicated from `atoms/icons.tsx` because this card is
+ * plain DOM. Constants only — nothing here comes from data.
  */
 const GLYPHS = {
   box: '<path d="M12 3 3 7.5v9L12 21l9-4.5v-9L12 3Zm-9 4.5 9 4.75 9-4.75M12 12.25V21"/>',

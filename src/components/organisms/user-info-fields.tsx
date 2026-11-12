@@ -16,13 +16,7 @@ import {
 } from "@/lib/auth-validation";
 import type { ApiUser } from "@/lib/types/api";
 
-/**
- * The account's own name, picture and email address.
- *
- * Two editable values, two different write endpoints and two different validation
- * rules — which is why this is not one generic form. Everything around them (the
- * row, the inline editor, the error and success slots) is `EditableRow`.
- */
+/** The account's name and email, each an `EditableRow` with its own endpoint and rules. */
 export function UserInfoFields({
   user,
   onUpdateInfo,
@@ -76,8 +70,7 @@ export function UserInfoFields({
         onSubmit={async (values) => {
           const name = values.name ?? "";
           const image = values.image ?? "";
-          // Client-side mirror of the backend `before` hook validation, so the
-          // obvious cases never cost a round trip. The backend still validates.
+          // Mirrors the backend's validation, so the obvious cases skip a round trip.
           if (!isValidName(name)) {
             throw new Error(NAME_ERROR_MESSAGE);
           }

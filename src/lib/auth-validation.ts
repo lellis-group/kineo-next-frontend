@@ -1,10 +1,7 @@
 /**
- * Client-side mirrors of the backend input-policy rules
- * (backend: `kineo-nest-backend/src/lib/auth/schemas.ts`).
- *
- * These constants keep forms in phase with the server-side validation that
- * runs in the Better-Auth `before` hook. The server stays the source of
- * truth — this layer only avoids useless round-trips and gives instant UX.
+ * Client-side mirrors of the backend's input rules
+ * (`kineo-nest-backend/src/lib/auth/schemas.ts`), for instant feedback; the
+ * server stays the source of truth.
  */
 
 export const EMAIL_MAX_LENGTH = 254;

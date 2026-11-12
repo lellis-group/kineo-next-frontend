@@ -19,17 +19,8 @@ interface MyListingsTableProps {
 }
 
 /**
- * The practice's listings, as the reference's orders table.
- *
- * One row per posting, and the whole row is the way into the posting's own page
- * — the screen's job here is to scan the board, and every decision (candidates,
- * close, cancel) belongs to `/listings/mine/[id]`. The in-row « Voir » toggle
- * this replaces expanded the candidates under the row, which made the list a
- * second, narrower version of the page it could already open.
- *
- * Detail (title, meta, status) is not repeated twice: below `sm` the five
- * columns do not fit and `MyListingCard` is the row, rendered from the same
- * data and opening the same page.
+ * The practice's listings as a table; each row opens `/listings/mine/[id]`.
+ * Below `sm`, `MyListingCard` takes over.
  */
 export function MyListingsTable({ listings }: MyListingsTableProps) {
   const router = useRouter();
@@ -60,8 +51,7 @@ export function MyListingsTable({ listings }: MyListingsTableProps) {
                 key={listing.id}
                 className="row-enter cursor-pointer"
                 onClick={(event) => {
-                  // The title is a real link, so a click on it must not navigate
-                  // twice.
+                  // The title is a real link: don't navigate twice.
                   if ((event.target as Element).closest("a, button")) return;
                   router.push(href);
                 }}
@@ -73,12 +63,6 @@ export function MyListingsTable({ listings }: MyListingsTableProps) {
                       className="size-[var(--cell-icon)] shrink-0 text-foreground"
                     />
                     <div className="min-w-0">
-                      {/*
-                        The title is the keyboard path as well as the pointer's
-                        destination: the mobile card is a link, and a reader who
-                        tabs through the board needs a named destination rather
-                        than a row that only answers the mouse.
-                      */}
                       <Link
                         href={href}
                         title={listing.title}
@@ -94,10 +78,6 @@ export function MyListingsTable({ listings }: MyListingsTableProps) {
                 </td>
 
                 <td>
-                  {/*
-                    The period on two lines, the way the reference draws a
-                    route — see `ListingPeriodCell`, which both tables share.
-                  */}
                   <ListingPeriodCell
                     dateRange={listing.dateRange}
                     startDate={listing.startDate}
@@ -106,13 +86,6 @@ export function MyListingsTable({ listings }: MyListingsTableProps) {
                 </td>
 
                 <td>
-                  {/*
-                    Candidats, au trait de la maquette — see
-                    `ListingCandidatesCell`, which both tables share. The
-                    ceiling carries here the meaning the « Capacité atteinte »
-                    filter names: a full bar is the state the badge's legend
-                    describes.
-                  */}
                   <ListingCandidatesCell
                     count={listing.applicationsCount}
                     max={listing.maxApplications}
@@ -120,12 +93,6 @@ export function MyListingsTable({ listings }: MyListingsTableProps) {
                 </td>
 
                 <td className="leading-[var(--cell-icon)] text-foreground">
-                  {/*
-                    One line, truncated rather than wrapped: the reference's ETA
-                    column is a single short date, and a column that folds to two
-                    lines makes its own row the tall one. The full sentence is
-                    the cell's `title`.
-                  */}
                   <span
                     className="block truncate"
                     title={formatListingAge(listing)}
@@ -134,8 +101,6 @@ export function MyListingsTable({ listings }: MyListingsTableProps) {
                   </span>
                 </td>
 
-                {/* Last and right-aligned, as on the browse table and the
-                    reference's « Status » column. */}
                 <td className="text-right">
                   <Badge tone={status.tone} variant="plain">
                     {status.label}
@@ -150,14 +115,7 @@ export function MyListingsTable({ listings }: MyListingsTableProps) {
   );
 }
 
-/**
- * The narrow-screen counterpart, from the same row.
- *
- * `MyListingCard` is that row without a table: it carries the same facts in the
- * same order and is a fuller surface for the same data. Both presentations are
- * rendered and one is removed by CSS, which is not the same as being hidden:
- * `display:none` also takes it out of the accessibility tree.
- */
+/** The narrow-screen counterpart; the table is removed by CSS. */
 export function MyListingsMobileList({
   listings,
 }: {

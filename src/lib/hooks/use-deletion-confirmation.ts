@@ -10,20 +10,12 @@ import {
 import { signOut } from "@/lib/auth-client";
 import { authCallFailed } from "@/lib/auth-errors";
 
-/** What a confirmation attempt settled on, with the wording to show. */
 export interface DeletionResult {
   status: DeletionOutcome;
   error?: string;
 }
 
-/**
- * Drives the account-erasure confirmation.
- *
- * The whole flow lives here rather than in the route: one in-flight job per
- * token, the outcome mapping, the sign-out and the retry. `app/goodbye/page.tsx`
- * is left holding the token from the URL and a focus ref, which are the only two
- * things that genuinely belong to the screen.
- */
+/** Drives the account-erasure confirmation: the job, the outcome, the sign-out and the retry. */
 export function useDeletionConfirmation(token: string | null) {
   const [status, setStatus] = useState<DeletionOutcome>(
     token ? "deleting" : "invalid",
@@ -31,7 +23,6 @@ export function useDeletionConfirmation(token: string | null) {
   const [error, setError] = useState("");
   const [signedOut, setSignedOut] = useState(false);
 
-  /** Empty deps: the two setters are stable, so this never needs to be rebuilt. */
   const applyOutcome = useCallback((result: DeletionResult) => {
     setStatus(result.status);
     setError(result.error ?? "");
@@ -54,11 +45,8 @@ export function useDeletionConfirmation(token: string | null) {
   }, [token, applyOutcome]);
 
   /**
-   * Replays the confirmation, from the retry button on the transient failures.
-   *
-   * Safe to call repeatedly: a failed job was evicted from the cache, and a
-   * refused confirmation rolls back without consuming the token, so the
-   * single-use credential is still there.
+   * Replays the confirmation. Safe: a failed job is evicted from the cache, and
+   * a refused confirmation does not consume the token.
    */
   const retry = useCallback(() => {
     if (!token) {
@@ -69,15 +57,8 @@ export function useDeletionConfirmation(token: string | null) {
     requestDeletion(token).then(applyOutcome);
   }, [token, applyOutcome]);
 
-  // The sessionless confirm-deletion endpoint wipes sessions server-side but
-  // cannot clear browser cookies (no Set-Cookie on its response). Signing out
-  // drops the ghost cookie and the cookie-cache JWT; it clears cookies even when
-  // the session row is already gone. Never blocks the screen: a failure just
-  // leaves the button to /signup, which is public anyway.
-  //
-  // Only on success — every failure rolls the transaction back and leaves the
-  // account intact, so signing out early would lock someone out of an account
-  // that still works.
+  // The sessionless endpoint can't clear browser cookies, so sign out once it
+  // succeeds. Only on success: on failure the account still works.
   useEffect(() => {
     if (status !== "success") {
       return;
@@ -86,9 +67,7 @@ export function useDeletionConfirmation(token: string | null) {
     let cancelled = false;
 
     signOut()
-      .catch(() => {
-        // Cookie cleanup is best-effort — the account is already anonymized.
-      })
+      .catch(() => {})
       .finally(() => {
         if (!cancelled) {
           setSignedOut(true);
@@ -104,15 +83,9 @@ export function useDeletionConfirmation(token: string | null) {
 }
 
 /**
- * One in-flight deletion job per token, shared across component remounts (React
- * StrictMode double-mounts effects in dev). The confirmation POST consumes a
- * single-use server-side token, so it must be sent exactly once: a double request
- * would anonymize the account on the first call and fail with an invalid-token
- * error on the second.
- *
- * Only successful and in-flight jobs are kept. A failure is dropped on purpose:
- * nothing was consumed server-side, so re-confirming the same link has to be able
- * to succeed on a second attempt.
+ * One in-flight job per token, shared across remounts (StrictMode): the token
+ * is single-use, so the POST must be sent once. Failures are dropped so the
+ * same link can be retried.
  */
 const deletionJobs = new Map<string, Promise<DeletionResult>>();
 
@@ -122,8 +95,6 @@ function requestDeletion(token: string): Promise<DeletionResult> {
     return existing;
   }
 
-  // Sessionless confirmation: the email link alone is enough, no session cookie
-  // needed (see @/lib/account-deletion-service).
   const job = confirmAccountDeletion(token).then(
     (): DeletionResult => ({ status: "success" }),
     (error: unknown): DeletionResult => {
@@ -145,13 +116,9 @@ function requestDeletion(token: string): Promise<DeletionResult> {
   return job;
 }
 
-/** Exhaustively maps a failure onto an outcome; no silent fallthrough. */
 function toOutcome(failure: DeletionFailure): DeletionOutcome {
   switch (failure) {
-    // The backend detaches third-party applications onto ghost listings before
-    // an erasure, so it only answers `blocked` for a backend one deploy behind.
-    // The generic error is the honest answer here: advice to close listings
-    // first would not help.
+    // Only from a backend one deploy behind.
     case "blocked":
     case "no-pending-request":
       return "no-pending-request";

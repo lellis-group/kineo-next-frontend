@@ -1,7 +1,4 @@
-/**
- * Applications domain — presentation contracts, status adapters and the data
- * service. Public surface of the module (imports stay `@/lib/applications`).
- */
+/** Applications domain — public surface (`@/lib/applications`). */
 
 export {
   AWAITING_DECISION_STATUSES,

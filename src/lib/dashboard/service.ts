@@ -9,26 +9,13 @@ import { adaptGreeting } from "./greeting";
 import { adaptReactivity } from "./response-rate";
 import { adaptStats } from "./stats";
 
-/**
- * Why the listings read asks for one row.
- *
- * Nothing on the home screen is derived from them: the counters come from the
- * endpoint's own totals, and « Prochain remplacement » is answered beside them,
- * over the whole collection, by the server. One row is what it takes to carry a
- * page's worth of `meta`.
- *
- * This read asks for one row, not the member's whole collection — which would
- * be up to twenty requests per visit to count figures the endpoints already
- * count, correctly only until the twentieth page.
- */
+/** One row: the home screen only needs the listings endpoint's `meta`. */
 const LISTINGS_LIMIT = 1;
 
 export async function fetchDashboardData(
   userName?: string,
   transport?: ApiTransport,
 ): Promise<DashboardData> {
-  // `fetchMyProfile` answers a missing profile with null (onboarding, not an
-  // error) — the same soft-404 policy the other screens read it under.
   const [profile, listings, applications] = await Promise.all([
     fetchMyProfile(transport),
     fetchMyListings({ limit: LISTINGS_LIMIT }, transport),

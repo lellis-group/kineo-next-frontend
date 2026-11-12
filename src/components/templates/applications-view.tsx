@@ -26,10 +26,8 @@ interface ApplicationsViewProps {
   currentFilter: ApplicationsFilter;
   currentSituation: RejectionSituationFilter;
   onSituationChange: (situation: RejectionSituationFilter) => void;
-  /** Rows per page — 10/25/50/100 on this screen, see `Pagination`. */
   pageSize: ApplicationsPageSize;
   onPageSizeChange: (size: ApplicationsPageSize) => void;
-  /** A read is in flight: the pager holds, so the reader cannot burst it. */
   loading: boolean;
 }
 
@@ -74,12 +72,7 @@ export function ApplicationsView({
         onChange={onFilterChange}
       />
 
-      {/*
-       * Only under « Refusées », and only for the situations that exist. Every
-       * rejected row a candidate holds is in one of the three or in none — the
-       * backend says which — so an empty list here is a reason to hide the row, not
-       * three chips reading 0.
-       */}
+      {/* Only under « Refusées », and only when some situation is non-empty. */}
       {currentFilter === "REFUSED" && hasSituation(data) && (
         <FilterChips
           ariaLabel="Filtrer les candidatures refusées par situation"
@@ -97,7 +90,6 @@ export function ApplicationsView({
         <ApplicationsList applications={data.applications} />
       </div>
 
-      {/* Hidden for single-page results. */}
       <Pagination
         currentPage={data.pagination.page}
         totalPages={data.pagination.totalPages}
@@ -122,16 +114,8 @@ function ApplicationsHeader() {
 }
 
 /**
- * Whether any of the three situations is confirmed to have happened.
- *
- * Over the named buckets only, never over « Toutes »: that one reads the rejected
- * total, and an erasure settles a rejection without putting it in any of the three.
- * Including it would show three chips reading 0 under a row of applications the
- * candidate can plainly see.
- *
- * The totals describe the whole collection, so this stays true while a situation is
- * selected and the list below is narrowed to it — hiding the row then would take
- * away the only way back out.
+ * Whether any situation has rows. « Toutes » is excluded: an erasure settles a
+ * rejection without putting it in any of the three.
  */
 function hasSituation(data: ApplicationsData): boolean {
   return REJECTION_SITUATIONS.some(

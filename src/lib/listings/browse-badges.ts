@@ -1,11 +1,4 @@
-/**
- * How a browse posting is badged.
- *
- * The table and the mobile card both decide between « Urgent » and « Ouverte ».
- * Writing the label and the tone out twice is how a card ends up reading
- * « Urgent » in red on phones and in something else on a desktop. One decision,
- * two renderings.
- */
+/** How a browse posting is badged (« Urgent » or « Ouverte »), for the table and the card. */
 
 import type { BadgeTone } from "@/lib/ui-tokens";
 

@@ -16,14 +16,7 @@ import {
 } from "@/lib/auth-validation";
 import type { ResendStatus } from "@/lib/hooks/use-resend-verification";
 
-/**
- * The two screens signup has: the form, and the "check your mailbox"
- * confirmation that replaces it once the account exists.
- *
- * Split out from the container because they share no state beyond the
- * confirmation address, and every other multi-state page in the app keeps its
- * markup in a `*-view` next to the orchestrating container.
- */
+/** The signup form, and the "check your mailbox" confirmation that replaces it. */
 export function SignUpView({
   prefillEmail,
   passwordLength,

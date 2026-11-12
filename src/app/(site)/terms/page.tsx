@@ -12,14 +12,8 @@ export const metadata: Metadata = {
 };
 
 /**
- * Terms of service — definitive text is being drafted. The sections listed below
- * are the standard ToS structure; the legal team completes them before
- * production. Stating what the page does not yet say is better than shipping
- * placeholder terms that read as final.
- *
- * The prose is the privacy policy's, from `legal-primitives` — no paragraph
- * measure or bullet rows of its own, so the two documents on the site share one
- * width.
+ * Terms of service — the definitive text is being drafted; the sections are
+ * listed and marked pending rather than shipping placeholder terms.
  */
 export default function TermsPage() {
   return (

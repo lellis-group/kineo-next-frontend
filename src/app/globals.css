@@ -1,14 +1,8 @@
 @import "tailwindcss";
 /*
- * MapLibre GL's stylesheet, imported here so the map component carries no CSS
- * import of its own: in the App Router a global import is reserved for the root.
- *
- * `layer(components)` is not cosmetic. Tailwind ranges its utilities across CSS
- * layers, and a sheet imported without one arrives **outside** every layer —
- * where it beats anything inside `@layer components`, whatever the specificity.
- * Without this `layer()`, the handful of `.maplibregl-*` rules further down did
- * not apply: the popup kept its white background and the zoom controls their
- * light theme.
+ * MapLibre's stylesheet, imported here because the App Router reserves global
+ * CSS imports for the root. `layer(components)` is required: unlayered, it
+ * would beat every `.maplibregl-*` override below.
  */
 @import "maplibre-gl/dist/maplibre-gl.css" layer(components);
 
@@ -16,15 +10,8 @@
   color-scheme: dark;
 
   /*
-   * The cards are lighter than the page they sit on.
-   *
-   * These are the brand palette's two darks: `#11100F` is the frame behind
-   * everything, `#201F1E` every card on it. Each step up is one more layer of
-   * the same card — `surface-2` is a band inside a card (a table's header row,
-   * a segmented track, a chosen row), `surface-3` a control on that band.
-   *
-   * Nothing inside a card is darker than the card: a well drawn in the page's
-   * colour reads as a hole through it. Inset blocks use `surface-2`.
+   * Cards are lighter than the page; `surface-2` is a band inside a card,
+   * `surface-3` a control on that band. Nothing inside a card is darker than it.
    */
   --background: #11100f;
   --surface: #201f1e;
@@ -40,34 +27,20 @@
   --primary-hover: #e3ddc4;
   --primary-foreground: #11100f;
 
-  /*
-   * A card's rim and a row's divider are the same faint line: on `--surface`
-   * this lands on `#2B2A29`, the reference's own divider.
-   */
   --border: rgb(255 255 255 / 5%);
   --border-strong: rgb(255 255 255 / 11%);
   --ring: rgb(215 209 176 / 35%);
 
   /*
-   * The map's own paper.
-   *
-   * The console is dark and the reference map is not: it is a light warm sheet
-   * of streets, which is what makes it the one bright plane on the screen in the
-   * reference too. This is the colour behind the raster tiles and under the
-   * loading and failure states, so the map never flashes a dark rectangle
-   * before its tiles arrive — the surface token would be wrong here precisely
-   * because the map is not a surface.
+   * The map's light paper, behind the tiles and the loading/failure states, so
+   * it never flashes a dark rectangle.
    */
   --map-base: #f3f0e8;
   --map-ink: #16150f;
 
   /*
-   * What sits *on* the map: the popup card and the white controls.
-   *
-   * The inks are the map ink at two strengths rather than greys of their own,
-   * so they stay warm on the cream paper. `--map-muted` holds 5.7:1 on white —
-   * readable at 12px; `--map-faint` is for marks that repeat something said
-   * elsewhere (a reference, a chevron, a count).
+   * On the map: the popup card and the white controls. `--map-muted` holds
+   * 5.7:1 on white.
    */
   --map-card: #ffffff;
   --map-muted: rgb(22 21 15 / 64%);
@@ -75,13 +48,7 @@
   --map-line: rgb(22 21 15 / 10%);
   --map-wash: rgb(22 21 15 / 5%);
 
-  /*
-   * The status tones, muted to sit in a cream-and-charcoal palette.
-   *
-   * The reference is monochrome but for its cream; the only other hues it
-   * draws are the dusty red-to-sage of its progress curve. These are that
-   * family. Saturated web greens and ambers read as a second brand.
-   */
+  /* The status tones, muted to sit in the cream-and-charcoal palette. */
   --danger: #e48a7c;
   --danger-hover: #ec9d90;
   --danger-foreground: #11100f;
@@ -94,20 +61,6 @@
 
   --radius-control: 0.75rem;
 
-  /*
-   * The radius every card-shaped box is drawn at.
-   *
-   * One token because the console's panels, the results table's frame, the map
-   * and the marketing cards are one family: the reference's cards are rounded far
-   * more generously than the `1rem` this used to be, and a single value is what
-   * keeps a panel and the map beside it reading as one screen rather than as
-   * boxes assembled from a scale.
-   *
-   * Larger than `--radius-control` on purpose. A control is a control at either
-   * size; a card is read as a card by how little of its corner the reader has to
-   * imagine, and at 20px on a 300px panel that is already a third of the half
-   * corner.
-   */
   --radius-card: 1.25rem;
 }
 
@@ -141,40 +94,21 @@
   --color-info: var(--info);
 
   /*
-   * Three radii, as in the reference: `rounded-full` for pills, chips and icon
-   * buttons, `rounded-control` for anything clickable or inset inside a card,
-   * `rounded-card` for cards, panels and popovers. Tailwind's own `rounded-lg`
-   * / `-xl` / `-2xl` are not used, so a new box picks one of these three.
+   * Three radii: `rounded-full` for pills, `rounded-control` for controls and
+   * insets, `rounded-card` for cards and popovers. Tailwind's own `rounded-lg`
+   * etc. are not used.
    */
   --radius-control: var(--radius-control);
   --radius-card: var(--radius-card);
 
-  /*
-   * The two steps the reference uses between Tailwind's: 11px for secondary
-   * lines under a value (« Dispatch Officer », a stat's label), 13px for
-   * controls (chips, segmented options, the pager).
-   */
+  /* 11px for secondary lines under a value, 13px for controls. */
   --text-2xs: 0.6875rem;
   --text-control: 0.8125rem;
 
   /*
-   * The base spacing unit.
-   *
-   * Tailwind steps by 0.25rem, and the original design system was written against
-   * that scale: `gap-2` (8px), `mt-3` (12px), `p-4` (16px). On a marketing page
-   * with large images that is fine; on the working screens — application lists,
-   * listing details, dashboards — it stacks the blocks on top of one another and
-   * leaves no breathing room between two sub-components.
-   *
-   * Raising the unit here rather than in each component is the only way the change
-   * can be coherent: every spacing class already exists in the code, it is simply
-   * computed from this token. Going from 0.25rem to 0.3rem multiplies every
-   * spacing by 1.2 without touching a single utility class — `gap-3` is 14.4px,
-   * `p-6` 28.8px, `space-y-5` 30px.
-   *
-   * Hand-written `rem` values (`.chip`, `.badge`, `.field-input`, the radii) do
-   * not follow: they are adjusted in the `@layer components` block below, or the
-   * controls would shrink relative to the layout holding them.
+   * The base spacing unit, raised from Tailwind's 0.25rem: every spacing
+   * utility scales by 1.2 (`gap-3` is 14.4px). Hand-written `rem` values in
+   * `@layer components` don't follow it and are adjusted there.
    */
   --spacing: 0.3rem;
 
@@ -246,14 +180,7 @@
 }
 
 @layer components {
-  /*
-   * A scroller whose thumb shows only while the pointer is over it.
-   *
-   * The workspace rails scroll on their own, and a permanent thumb drew a
-   * full-height line between the rail and the map — a rule the reference does
-   * not have. The track is still there and still scrolls; it appears where the
-   * reader is already looking.
-   */
+  /* A scroller whose thumb shows only on hover or focus (the workspace rails). */
   .scrollbar-quiet {
     scrollbar-color: transparent transparent;
     transition: scrollbar-color 200ms ease;
@@ -272,19 +199,13 @@
     background: rgb(255 255 255 / 14%);
   }
 
-  /* Boutons et cartes : voir les atomes Button et Card (source unique). */
-
   .chip {
     border-radius: 9999px;
     padding: 0.75rem 1.125rem;
     min-height: 3rem;
     font-size: 0.875rem;
     font-weight: 500;
-    /*
-     * Locked to the same line-height as `.badge` and `text-sm`, so a chip, a
-     * badge and a `md` Button standing in one row share a baseline instead of
-     * each being vertically centred inside a box of a different height.
-     */
+    /* Same line-height as `.badge` and `text-sm`, so they share a baseline. */
     line-height: 1.2;
     color: var(--muted);
     background: rgb(255 255 255 / 3%);
@@ -308,22 +229,8 @@
   }
 
   /*
-   * The three other sizes a chip is drawn at, and the only reason `Chip` exists
-   * rather than `className="chip"`.
-   *
-   * `.chip`'s own height is a touch target — 3rem of padding and a floor — and
-   * that is right for a filter row and wrong elsewhere: a chip beside another
-   * control on a toolbar wants to be shorter without losing it, a chip inside a
-   * popover has no room for a floor at all, and the one standing alone in that
-   * popover has a row to itself and the room to be comfortable in. All three were
-   * the same numbers written inline at three call sites.
-   *
-   * These are the theme's own numbers, spelled out: the call sites used `px-3` and
-   * `py-1.5` / `py-2`, which on this sheet's `--spacing` of 0.3rem are 0.9rem and
-   * 0.45 / 0.6rem — *not* the 0.75 / 0.375 / 0.5rem a reader of the source would
-   * assume. Writing those decimals instead is how the chips lost four pixels of
-   * padding each when this was extracted, so the scaled values are what is here,
-   * with the utilities they came from named beside them.
+   * The other sizes a chip is drawn at. Values are the scaled utilities they
+   * replace (`--spacing` is 0.3rem, so `px-3` is 0.9rem, not 0.75rem).
    */
   .chip-sm {
     /* was: min-h-0 px-3 py-1.5 */
@@ -348,15 +255,6 @@
     display: inline-flex;
     align-items: center;
     gap: 0.375rem;
-    /* A squarer chip, and a little wider than the pill it used to be.
-     *
-     * The old one was a pill (`border-radius: 9999px`) with a narrow padding,
-     * so a medium word like « En attente » still fit but the chip felt like a
-     * thin stripe and the text was tight inside its own border. The choice of
-     * `border-radius` follows the control scale rather than a pill radius, and
-     * the padding grows on both axes so the label has room to breathe without
-     * making the chip sprawling on a small toolbar. 
-     */
     border-radius: 0.5rem;
     padding: 0.375rem 0.875rem;
     font-size: 0.75rem;
@@ -368,14 +266,7 @@
     border: 1px solid var(--border);
   }
 
-  /*
-   * The tone is a dot, not a paint job.
-   *
-   * The reference writes a status as plain text in the row's own colour. A
-   * column of green, amber and red chips is the loudest thing on such a
-   * screen, so the label stays neutral and only a 6px dot carries the hue:
-   * still scannable down a column, without a second palette.
-   */
+  /* The tone is a 6px dot; the label stays neutral. */
   .badge::before {
     content: "";
     flex: none;
@@ -391,7 +282,7 @@
     }
   }
 
-  /* The dot and the label, without the box — see `Badge`'s `variant`. */
+  /* The dot and the label, without the box — `Badge`'s `variant="plain"`. */
   .badge-plain {
     padding: 0;
     background: none;
@@ -425,32 +316,16 @@
   .table thead th {
     text-align: left;
     font-weight: 500;
-    /*
-     * 12px, and muted. The reference's column labels sit well under the row
-     * text and at the edge of legibility: they are there to name the column for
-     * a reader who is already looking at it, not to be read first.
-     */
     font-size: 0.75rem;
     color: var(--muted);
     padding: 0.875rem 1rem;
-    /*
-     * A filled band rather than a rule: the reference names its columns on a
-     * strip one step lighter than the card, which is what separates the labels
-     * from the first row without a line of its own.
-     */
     background: var(--surface-2);
     white-space: nowrap;
   }
 
   /*
-   * A table that runs to its card's edges.
-   *
-   * The reference's table is not a box inside the card: its header band and
-   * its row dividers span the card's full width, and only the text keeps the
-   * card's inset. The wrapper cancels the panel's side padding (`Panel`'s
-   * `sm:px-6`; the tables are only drawn from `sm`) and hands the same inset
-   * back to the outer cells, so the first column still lines up with the
-   * card's title.
+   * A table whose header band and dividers run to its card's edges: cancels the
+   * panel's side padding and gives the inset back to the outer cells.
    */
   .table-flush {
     --table-inset: calc(var(--spacing) * 6);
@@ -466,16 +341,7 @@
   }
 
   .table tbody td {
-    /*
-     * The row height is the reference's: a two-line cell (title over specialty)
-     * with this much air above and below is what makes the rows read as rows
-     * rather than as a dense list.
-     *
-     * A literal `rem`, not a spacing step — this block is hand-written CSS and the
-     * theme's `--spacing` does not reach it. At this scale the pair is 14px of
-     * air on the header and 16px on a row, which is roughly the reference's own
-     * 12-to-18px.
-     */
+    /* A literal `rem`: the theme's `--spacing` does not reach this block. */
     padding: 1rem;
     border-bottom: 1px solid var(--border);
     vertical-align: middle;
@@ -493,11 +359,6 @@
     border-bottom: none;
   }
 
-  /*
-   * Sentence case, as every label in the reference is: « Order ID »,
-   * « Sort by », « Average Fuel Efficiency ». Tracked capitals were the one
-   * typographic register the reference never uses.
-   */
   .field-label {
     display: block;
     font-size: 0.8125rem;
@@ -555,12 +416,8 @@
   }
 
   /*
-   * The ticks of `SegmentedBar`: 2px marks on a 4px pitch, in `currentColor`,
-   * repeated across whatever width the track has.
-   *
-   * `.tick-fill` is the lit layer. Its width is the row's share of the real
-   * track, rounded down to a whole pitch where `round()` exists so the last
-   * lit mark is never sliced; elsewhere it is the plain percentage.
+   * The ticks of `SegmentedBar`: 2px marks on a 4px pitch. `.tick-fill` is
+   * rounded down to a whole pitch where `round()` exists.
    */
   .tick-track {
     --tick-pitch: 4px;
@@ -709,12 +566,8 @@
   }
 
   /*
-   * The card's half of the map → list spotlight.
-   *
-   * The same two layers as the table row: an outline that fades through a
-   * transition, and a sheen drawn on a pseudo-element. Neither touches the
-   * card's own `row-enter` animation, so clearing the spotlight cannot replay
-   * the entrance.
+   * The card's half of the map → list spotlight: a transitioned outline and a
+   * sheen on a pseudo-element, so clearing it can't replay `row-enter`.
    */
   .card-lift.row-spotlight {
     position: relative;
@@ -748,11 +601,8 @@
   }
 
   /*
-   * Two identical keyframe sets, one per modifier.
-   *
-   * CSS restarts an animation when its `animation-name` changes, not when a
-   * custom property or a class that keeps the same name changes. The pair is
-   * what makes a second pick of the same posting sweep again.
+   * Two identical keyframe sets: CSS only restarts an animation when its
+   * `animation-name` changes, so alternating them replays the sweep.
    */
   @keyframes kineo-spotlight-sheen-a {
     from {
@@ -772,13 +622,7 @@
     }
   }
 
-  /*
-   * The pager's page count, when a pick turned the list to another page.
-   *
-   * The row is the main signal; this is the one other thing that changed, and
-   * naming it in the same gesture is what stops a reader from wondering why the
-   * table was replaced.
-   */
+  /* The pager's page count, when a pick turned the list to another page. */
   @keyframes kineo-pager-spotlight {
     0% {
       color: var(--primary);
@@ -819,19 +663,8 @@
   }
 
   /*
-   * The browse screen's results arriving.
-   *
-   * The same family as `.hero-enter`, played on rows rather than page blocks:
-   * this screen has no above-the-fold to unfold, it has a list replaced all at
-   * once on every page, filter or sort change — and that replacement is the
-   * thing worth signalling, or the list simply changes with nothing saying so.
-   *
-   * The delay steps by rank, capped in the component (`rowEnterStyle`) rather
-   * than here: a twenty-row page would hold its last row back by close to half a
-   * second, and the reader then watches the top of the table arrive first.
-   *
-   * `translateY(8px)` and not the hero's 14-16 px: on a 60px-tall table row a
-   * wider travel reads as the page scrolling rather than as an arrival.
+   * The browse results arriving. The stagger is capped in `rowEnterStyle`;
+   * 8px of travel, since more reads as scrolling on a short row.
    */
   @property --row-delay {
     syntax: "<time>";
@@ -856,24 +689,9 @@
   }
 
   /*
-   * The browse table's columns: a header has to label the text, not the gutter.
-   *
-   * A cell whose value carries a leading icon starts that text one gutter in, and
-   * the header above it has to start there too. Measured on this table, both sides
-   * were set from the same padding and disagreed by 31px on the first column and
-   * 24px on the three icon columns carrying one — the header was labelling the
-   * gutter, and the reader was measuring the column against the wrong edge.
-   *
-   * The gutter is a variable that the cells' own icon and gap are sized from, so
-   * the two sides cannot drift. They have: with the padding and the icon each
-   * hard-coded to their own number, nothing failed until one icon changed size.
-   *
-   * `--cell-icon` doubles as the line-height of every icon-bearing line — each
-   * cell sets `leading-[var(--cell-icon)]` beside an icon of
-   * `size-[var(--cell-icon)]`. An icon whose box equals the line it sits in is
-   * centred on that line by construction: no per-column `mt`, no nudge that only
-   * held for one font size. This is the fix for icons that were neither centred
-   * on their text nor aligned across the row.
+   * Header labels start where icon-bearing cells' text starts. `--cell-icon` is
+   * also the line-height of icon-bearing lines, which centres the icon on its
+   * text by construction.
    */
   .listings-table {
     --cell-icon: 1.25rem;
@@ -890,23 +708,8 @@
   }
 
   /*
-   * The column labels, pinned to the top of the scrolling box.
-   *
-   * The table lives in a box of fixed height (`RESULTS_BOX` in
-   * `listings-results-panel`), so its rows scroll — and a reader
-   * scrolled to row eight was looking at six cells whose names they
-   * had left behind. The header is what makes a column a column.
-   *
-   * The background is not optional: a sticky `th` is transparent by
-   * default, so the rows sliding under it would show through their
-   * labels. The band's own `surface-2` from `.table thead th` is
-   * opaque, and it is restated here so this rule holds on its own.
-   *
-   * Scoped to `.listings-table` on purpose. `.table` is shared by
-   * every list in the product, and most of those lists are short
-   * enough to never scroll: a sticky header on a table that fits is
-   * a border that never moves, painted over rows that are already in
-   * view.
+   * Sticky column labels, scoped to `.listings-table` (the one table that
+   * scrolls). The background is restated: a sticky `th` is transparent.
    */
   .listings-table thead th {
     position: sticky;
@@ -916,42 +719,16 @@
   }
 
   /*
-   * Centred, where the rule this replaced kept every column's first line on
-   * one row.
-   *
-   * The `top` this was — set so a two-line title cell and its one-line
-   * neighbours opened on the same line — priced out the moment rows began to
-   * stretch: `fill` hands a short page's spare height to the rows themselves,
-   * and a top-aligned cell poured all of it under its text, so with two or
-   * three rows on screen the content lived in the top quarter of every cell
-   * over a stretch of nothing. Centred, the air splits above and below and the
-   * content owns the middle, which is what a tall row reads as.
-   *
-   * Rows of natural height don't move: there the content *is* the height, so
-   * top and middle coincide. The one body case that still diffs is a wrapped
-   * title, which now centres its single-line neighbours instead of leading
-   * them — a fair trade, the more so because the detail row keeps its
-   * `align-top`: a candidates panel opens from the top of its own row, it does
-   * not float into the middle of one.
+   * Centred: rows can stretch to fill a short page, and top-aligned content
+   * would leave the air all below.
    */
   .listings-table tbody td {
     vertical-align: middle;
   }
 
   /*
-   * The chosen row of the listings table, and the bar that says so.
-   *
-   * Carried by `box-shadow` rather than a `border-left` or a positioned
-   * `::before`: both of those reserve room — the row would change height on
-   * selection and the cell's content would shift by a hair. An inset shadow
-   * reserves nothing, and it is the only one of the three that survives the
-   * table's `border-collapse` without an edge-merging artefact.
-   *
-   * It reads `is-selected`, not `:hover`: the bar now marks a *choice* made in
-   * the list, which has to outlive the pointer that made it. Hover still washes
-   * the row lightly, because a reader sweeping the table needs to know which row
-   * the pointer is on — but the wash is a wash and the bar is the bar, and the
-   * two must never be the same thing.
+   * The chosen row's bar, as an inset `box-shadow`: it reserves no room and
+   * survives `border-collapse`. Hover shows a fainter bar.
    */
   .listings-table tbody td:first-child {
     box-shadow: inset 0 0 0 transparent;
@@ -971,16 +748,9 @@
   }
 
   /*
-   * The row's half of the map → list spotlight.
-   *
-   * The outline and the background are transitions rather than animations, and
-   * the sheen lives on the cells' pseudo-element. Animating the row itself would
-   * change its `animation-name`, and removing the spotlight would then replay
-   * `row-enter` — a row that slides in a second time at the end of the glow.
-   *
-   * The outline is transparent at rest, so the row reserves no space for it and
-   * the table's geometry does not move when the glow arrives. `-2px` keeps it
-   * inside the scrolling frame, where an outer offset would be clipped.
+   * The row's half of the map → list spotlight: transitions on the row, the
+   * sheen on the cells' pseudo-element, so `row-enter` never replays. `-2px`
+   * keeps the outline inside the scrolling frame.
    */
   .listings-table tbody tr {
     outline: 2px solid transparent;
@@ -1017,10 +787,7 @@
     animation-fill-mode: both;
   }
 
-  /*
-   * A small stagger across the columns, so the sheen reads as one sweep over
-   * the row rather than seven independent flashes.
-   */
+  /* Staggered across columns so the sheen reads as one sweep. */
   .listings-table tbody tr.row-spotlight td:nth-child(2)::after {
     animation-delay: 35ms;
   }
@@ -1053,30 +820,12 @@
     animation-name: kineo-spotlight-sheen-b;
   }
 
-  /*
-   * MapLibre's own chrome, on the map's own paper.
-   *
-   * The map is a light plane now, so these controls follow it rather than the
-   * page: MapLibre's light theme is close to what the reference draws, and the
-   * rules below are about matching that sheet — a white pill, dark glyphs, one
-   * hairline between the two buttons — rather than repainting a dark one.
-   *
-   * They live here rather than in a tag injected by the component: no style that
-   * exists only after the first effect (so no flash of unstyled chrome on load),
-   * and no `getElementById` guard to keep it from being injected twice.
-   */
+  /* MapLibre's own chrome, matched to the light map rather than the page. */
 
   /*
-   * The marker's own box: sized by the hook, positioned by MapLibre, and never
-   * animated. See the golden rule above — the element MapLibre writes its
-   * `translate(-50%, -50%) translate(x, y)` onto is off limits for anything that
-   * changes what the box measures.
-   *
-   * Deliberately no `transition` rule here. MapLibre's own stylesheet puts
-   * `transition: opacity .2s` on this element for its marker fades, and a
-   * `transition` declaration of ours would replace that whole shorthand rather
-   * than add to it — silently costing a third-party behaviour to animate a
-   * property nothing here changes.
+   * Nothing here may change the size of `.maplibregl-marker` (MapLibre centres
+   * it by percentage), nor set `transition` on it (that would replace
+   * MapLibre's own opacity fade).
    */
 
   /* Keyboard focus must stay visible even when the pointer does not move. */
@@ -1086,18 +835,8 @@
   }
 
   /*
-   * The dot drawn inside that box.
-   *
-   * The box keeps the size the hook gave it; the transformation happens here.
-   * That is what makes the entrance animation possible without breaking the
-   * golden rule: a `scale` on this child does not resize the box MapLibre
-   * centres, so the `translate`'s percentage keeps aiming at the same point of
-   * the marker while the disc grows inside it.
-   *
-   * A near-black disc on the map's light paper, which is the reference's marker
-   * exactly. The shadow carries it off the streets: on a light map a dark disc
-   * separates by contrast alone, and the shadow is what keeps it from looking
-   * printed onto the tiles rather than laid over them.
+   * The dot inside the marker box: animations scale this child, never the box.
+   * The shadow lifts it off the light tiles.
    */
   .maplibregl-marker .marker-dot {
     box-shadow: 0 2px 6px rgb(0 0 0 / 35%);
@@ -1107,31 +846,13 @@
   .maplibregl-marker:hover .marker-dot,
   .maplibregl-marker:focus-visible .marker-dot,
   .maplibregl-marker.is-preview .marker-dot {
-    /*
-      * The preview — a row being pointed at. A wash of ink rather than a ring of
-      * it, because it is the state that appears and vanishes with the pointer:
-      * a strong ring here would make the map flicker as the mouse crosses the
-      * table, which is the most repeated gesture on this screen.
-      */
+    /* The preview: a soft wash, since it flickers with the pointer. */
     box-shadow:
       0 0 0 3px rgb(22 21 15 / 22%),
       0 2px 6px rgb(0 0 0 / 35%);
   }
 
-  /*
-   * The row being pointed at in the table, and its marker.
-   *
-   * The state was set by the hook and had no style at all: pointing at a row
-   * highlighted a marker indistinguishable from any other. The solid ring, with
-   * none of the preview's translucency, says "this is the one" — cream here rather
-   * than ink, because a cream ring on a dark disc over light streets is a claim
-   * about the *marker*, while a dark ring would only restate the disc.
-   *
-   * It is the *selection*'s ring now, not the hover's. The two were one state
-   * here, so the cream ring meant "the mouse is on this row" and left the moment
-   * it moved — and a choice made in the table now has to outlive the pointer that
-   * made it.
-   */
+  /* The selection: a solid cream ring that outlives the pointer. */
   .maplibregl-marker.is-active .marker-dot {
     box-shadow:
       0 0 0 3px var(--primary),
@@ -1139,21 +860,9 @@
   }
 
   /*
-   * The points gathering and splitting.
-   *
-   * A zoom recomputes the groups and the hook replaces the markers involved. The
-   * only honest animation is therefore a crossfade: the old dot contracts where
-   * it stood, the new one unfolds into place. Positions are not interpolated —
-   * MapLibre writes each marker's transform on every frame, so a CSS transition
-   * on the movement would be overwritten by the next frame of the same zoom.
-   *
-   * `scale(0.4)` and not a plain fade: a dot that merely disappears and reappears
-   * reads as two separate events, where one round contracting while another
-   * expands reads as a single group changing shape.
-   *
-   * Exit shorter than enter on purpose — the dot being replaced should clear out
-   * of the way before its replacement starts arriving, or the two overlap and the
-   * count appears to double on the way through.
+   * Groups merging and splitting: a crossfade, since MapLibre rewrites marker
+   * positions every frame. The exit is shorter than the enter so the two don't
+   * overlap.
    */
   @keyframes kineo-marker-exit {
     from {
@@ -1186,17 +895,8 @@
   }
 
   /*
-   * The zoom buttons: two white discs with a gap, as the reference draws them.
-   *
-   * MapLibre ships them as one box with a divider. The group is made
-   * transparent and laid out as a column, and each button carries its own
-   * disc and shadow, at the same size as the « Cadrer » and fullscreen buttons
-   * in the opposite corner (`size-9`).
-   *
-   * The selectors match MapLibre's own: its sheet squares a focused button's
-   * corners (`:focus:first-child`), drops its shadow after a click
-   * (`:focus:not(:focus-visible)`), shades it on hover and rings the group
-   * (`:not(:empty)`). Each of those outranks a bare `button` rule.
+   * The zoom buttons as two white discs (`size-9`). Selectors mirror MapLibre's
+   * own, which each outrank a bare `button` rule.
    */
   .maplibregl-ctrl-group,
   .maplibregl-ctrl-group:not(:empty) {
@@ -1228,12 +928,8 @@
   }
 
   /*
-   * The attribution pill.
-   *
-   * The control is created in compact mode, and MapLibre then writes
-   * `.maplibregl-ctrl-attrib.maplibregl-compact`: two classes against one for the
-   * rule here, so its own won and the pill kept MapLibre's default. Both forms are
-   * targeted rather than playing on specificity. Light to match the map it credits.
+   * The attribution pill. Both forms are targeted: compact mode adds a second
+   * class that would otherwise win.
    */
   .maplibregl-ctrl-attrib,
   .maplibregl-ctrl-attrib.maplibregl-compact {
@@ -1249,41 +945,15 @@
     color: #6b675e;
   }
 
-  /*
-   * The popup: the reference's marker card.
-   *
-   * A white card with dark ink, sitting on the light map — which is what the
-   * reference draws for the place it has selected, and the one element on the
-   * screen allowed to be as bright as the streets. That is the whole reason it
-   * is light: on this map, a near-black card would be the darkest thing on the
-   * plane rather than a note pinned to it.
-   *
-   * MapLibre paints the surface on `.maplibregl-popup-content` and leaves the
-   * frame transparent, so its default theme has to be brought back to the
-   * product's here. Its padding is the only one: the component adds no `p-4` of
-   * its own, which used to double MapLibre's margins.
-   *
-   * `z-index` above the filter bar, which is a sibling of the map and therefore
-   * passes in front of everything the map contains. A popup opened near the top
-   * edge disappeared under the bar.
-   */
+  /* Above the filter bar, a sibling that otherwise covers popups near the top. */
   .maplibregl-popup {
     z-index: 20;
   }
 
   /*
-   * The popup opening.
-   *
-   * On `.maplibregl-popup-content`, never on `.maplibregl-popup`: the wrapper is
-   * what carries the positioning transform MapLibre recomputes on every map
-   * move. Animating that node fights it — the popup drifts off its tip while it
-   * appears, or worse, freezes at the old spot.
-   *
-   * `scale` and not `translateY`: the wrapper has already placed the popup to
-   * the pixel, and a vertical offset on top of that makes it slide across its
-   * marker instead of settling onto it.
-   *
-   * 180 ms: long enough to be seen, too short to be waited for.
+   * The popup opening, on `.maplibregl-popup-content`: the wrapper carries the
+   * positioning transform MapLibre recomputes on every move. `scale` rather
+   * than `translateY`, so it settles onto its marker instead of sliding.
    */
   @keyframes kineo-popup-enter {
     from {
@@ -1300,11 +970,7 @@
     animation: kineo-popup-enter 180ms cubic-bezier(0.22, 0.68, 0.28, 1) both;
     transform-origin: center;
     margin: 0;
-    /*
-     * The reference's label card: white, softly lifted, no rim. No padding —
-     * the body pads itself (`popup-card.ts`), so the height cap set on it is
-     * the whole card's.
-     */
+    /* The body pads itself, so the height cap set on it is the card's. */
     padding: 0;
     overflow: hidden;
     width: 17.5rem;
@@ -1316,11 +982,7 @@
       0 1px 3px rgb(22 21 15 / 10%),
       0 8px 24px rgb(22 21 15 / 16%);
     color: var(--map-ink);
-    /*
-     * MapLibre sets `font: 12px/20px Helvetica Neue` on the whole map, and the
-     * card lives inside it: without this it inherited Helvetica and a fixed
-     * 20px line height instead of the console's type.
-     */
+    /* MapLibre sets `font: 12px/20px Helvetica Neue` on the whole map. */
     font-family: var(--font-sans);
     font-size: 0.75rem;
     line-height: 1.4;
@@ -1343,24 +1005,13 @@
     color: var(--map-ink);
   }
 
-  /*
-   * Keyboard focus inside the card.
-   *
-   * The global `:focus-visible` ring is the console's gold, drawn for a dark
-   * surface; on the white card it reads as a stray yellow box. The card's own
-   * ink takes its place — still a 2px ring, so focus stays as visible as
-   * anywhere else on the screen.
-   */
+  /* The console's gold focus ring reads as a stray box on the white card. */
   .maplibregl-popup-content :is(a, button):focus-visible,
   .maplibregl-popup-close-button:focus-visible {
     outline: 2px solid var(--map-ink);
     outline-offset: 2px;
   }
 
-  /*
-   * No tip: the reference's card sits beside its pin with nothing pointing at
-   * it — the black disc repeating the pin's own is what ties the two together.
-   */
   .maplibregl-popup-tip {
     display: none;
   }
@@ -1394,9 +1045,8 @@
   }
 
   /*
-   * The pager keeps a static tint instead of its flash: with every animation
-   * duration at zero, the keyframes' final colour would otherwise be applied
-   * immediately and the signal would disappear.
+   * The pager keeps a static tint: at zero duration the keyframes' final colour
+   * would apply at once and erase the signal.
    */
   .pager-spotlight {
     animation: none;

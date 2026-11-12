@@ -35,36 +35,20 @@ import {
 import type { ApplicationEntry, ApplicationsData } from "./contracts";
 
 /**
- * Rows per page on the applications screen.
- *
- * Lives here rather than in the container because the server page needs it to
- * fetch the first slice: if the two disagreed, the page would send a limit the
- * container did not expect and the first client-driven page change would skip a
- * row.
+ * Rows per page on the applications screen. Shared by the server page and the
+ * container, which must agree on the limit.
  */
 export const APPLICATIONS_PAGE_SIZE = 5;
 
-/** Pagination parameters for fetching applications. */
 export interface PaginationParams {
   page: number;
   limit: number;
   /**
-   * Backend status filter, comma-separated when a bucket spans several.
-   *
-   * The buckets are not the backend statuses — « Un autre candidat retenu » is
-   * a `REJECTED` narrowed to one decision source — so this stays a string
-   * rather than the enum. What protects it is the backend, which 400s on a
-   * value outside the enum instead of ignoring it.
+   * Backend status filter, comma-separated when a bucket spans several. A
+   * string rather than the enum; the backend 400s on an unknown value.
    */
   status?: string;
-  /**
-   * Which situation, among the rejected applications. Sent only alongside
-   * `status: "REJECTED"`, which is the chip row it belongs to.
-   *
-   * Distinct from `decisionSource`, which is never sent: a situation is
-   * read by the backend off fields it already stores, and it is named by the
-   * backend rather than guessed here.
-   */
+  /** Situation among the rejected applications; only with `status: "REJECTED"`. */
   bucket?: ApplicationRejectionBucket;
 }
 
@@ -79,22 +63,13 @@ async function fetchMyApplications(
   applications: ApiApplicationRow[];
   meta: ApiApplicationPage<ApiApplicationRow>["meta"];
 }> {
-  // The filtering stays server-side, so the counters keep describing the whole
-  // collection rather than the page that came back. "ALL" is the no-filter case,
-  // and sending it would narrow to rows that do not exist.
-  //
-  // No `decisionSource`: the backend's query schema is strict and rejects it. The
-  // situations it would select are `bucket`, which the backend computes off
-  // fields it already stores.
+  // "ALL" is the no-filter case. No `decisionSource`: the backend's strict
+  // query schema rejects it.
   const narrowed = params.status !== "ALL";
   const query = buildQuery({
     page: params.page,
     limit: params.limit,
     status: narrowed ? params.status : undefined,
-    // Sent whenever the caller sets it: it only ever accompanies `REJECTED`, so
-    // there is nothing to guard against here, and dropping it would silently
-    // widen the query — the chips would then show a situation filter that changes
-    // no rows, which reads as a broken screen rather than a missing parameter.
     bucket: params.bucket,
   });
 
@@ -114,27 +89,18 @@ async function fetchMyApplications(
   }
 
   if (shape.kind === "array") {
-    // Legacy shape: a bare array is the whole collection, with no totals of its
-    // own. The counts are summed here so the chips stay stable — the counters
-    // must describe the collection either way, and this response carries
-    // everything in it, so nothing is being guessed.
+    // Legacy shape: a bare array is the whole collection, so every counter
+    // can be computed from it.
     const counts = statusCounts(shape.rows.length);
     for (const application of shape.rows) {
       counts[application.status] += 1;
     }
-    // A bare array carries no meta of its own. The situations can still be counted
-    // here without any classification — every row already names its own bucket, so
-    // this only adds up what the backend decided, unlike the status counts above
-    // which have to be read off `status`.
     const bucketCounts = zeroBucketCounts();
     for (const application of shape.rows) {
       if (application.rejectionBucket) {
         bucketCounts[application.rejectionBucket] += 1;
       }
     }
-    // Same for the two counters a newer backend sends: every row is here, so they
-    // are counted rather than zeroed — a zero on a collection of thirty would be a
-    // claim the rows in hand already contradict.
     const open = shape.rows.filter(
       (application) =>
         AWAITING_DECISION_STATUSES.has(application.status) &&
@@ -192,19 +158,8 @@ export async function fetchApplicationDetail(
 }
 
 /**
- * POST /applications — applies to one listing with an optional message
- * (trimmed server-side rules: 1-2000 chars when present).
- *
- * The 201 body is the created row, bare: no embedded listing or applicant, the
- * reader was on the listing's page so there is nothing to show back that they do
- * not already have. `adaptApplicationEntry` handles precisely that shape.
- *
- * Eligibility is decided by the backend, and only there: a not-yet-created
- * profile (404), an installed practice profile (403), the applicant's own
- * listing (403), a listing that left circulation (400
- * APPLICATION_LISTING_NOT_ACCEPTING), or their candidate or listing quotas (400
- * APPLICATION_QUOTA_REACHED / APPLICATION_LISTING_LIMIT_REACHED) — each mapped
- * to a French sentence by `applyErrorMessage`, beside this module.
+ * POST /applications — applies to one listing with an optional message.
+ * Eligibility is decided by the backend; `applyErrorMessage` maps its refusals.
  */
 export async function applyToListing(
   listingId: string,
@@ -231,7 +186,7 @@ export async function fetchApplicationsData(
   transport?: ApiTransport,
 ): Promise<ApplicationsData> {
   const { applications, meta } = await fetchMyApplications(params, transport);
-  // Newest submissions first — matches the backend orderBy, kept as a guard
+  // Matches the backend orderBy, kept as a guard.
   const entries: ApplicationEntry[] = applications
     .slice()
     .sort(byNewestFirst)
@@ -245,32 +200,21 @@ export async function fetchApplicationsData(
       limit: meta.limit,
       totalPages: meta.totalPages,
     },
-    // Server-computed totals — never derived from the loaded page. Completed
-    // from a partial breakdown so a missing status reads 0, not undefined.
+    // Completed from a partial breakdown so a missing status reads 0.
     counts: withZeroCounts(meta.counts, COUNT_KEYS.applicationStatus),
-    // Zeroed when absent, for the same reason as the status totals: a chip claiming
-    // a situation exists when the backend confirmed nothing is worse than one that
-    // shows nothing.
     bucketCounts: withZeroCounts(
       meta.bucketCounts,
       COUNT_KEYS.rejectionBucket,
     ) as ApplicationsData["bucketCounts"],
-    // `?? 0`, not derived: a backend one release behind sends neither, and these
-    // two describe the whole collection while the rows on hand are one page of it.
+    // Absent from a backend one release behind.
     unseenOpenCount: meta.unseenOpenCount ?? 0,
     respondedCount: meta.respondedCount ?? 0,
   };
 }
 
 /**
- * Whether a mutation answered by echoing the row back.
- *
- * Two of the write endpoints here answer with the updated application and two
- * answer `204` — both are legitimate, and the caller refetches when there is
- * nothing to adapt. The check is on the *shape* of the body rather than on the
- * status code, because a `200` with a body the backend has since changed should
- * be treated as "no echo" and refetched rather than adapted into a broken
- * entry.
+ * Some write endpoints echo the updated row, others answer 204. Checked on the
+ * body's shape: anything else is treated as "no echo" and the caller refetches.
  */
 function echoedApplicationEntry(raw: unknown): ApplicationEntry | null {
   if (raw && typeof raw === "object" && "id" in raw && "status" in raw) {

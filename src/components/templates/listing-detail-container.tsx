@@ -42,11 +42,9 @@ function statusForFilter(
 }
 
 /**
- * Orchestrator for /listings/mine/[id] — renders ListingDetailView.
- *
- * The listing and the first page of candidates both arrive from the server page,
- * so the route is readable on arrival. Everything after that is client state:
- * filtering the candidates, paging them, and re-reading after an action.
+ * Orchestrator for /listings/mine/[id]. The listing and the first page of
+ * candidates arrive from the server; filtering, paging and re-reads are client
+ * state.
  */
 export function ListingDetailContainer({
   listingId,
@@ -87,15 +85,8 @@ export function ListingDetailContainer({
   });
 
   /**
-   * Both halves are re-read rather than patched. `close` and `cancel` terminate
-   * the active applications server-side and recompute the listing status, so the
-   * authoritative numbers only come from the API — and the candidates just moved
-   * status, which means the current filter may now be describing an empty bucket
-   * for a real reason.
-   *
-   * The active filter and page are carried over: refetching without them would
-   * swap the rows under a chip row still showing the old selection, and page 3 of
-   * a bucket that just lost a row is page 3 of nothing.
+   * Both halves are re-read rather than patched: the actions change statuses
+   * server-side. The current filter and page are kept.
    */
   const reread = useCallback(async () => {
     const [freshListing, freshReceived] = await Promise.all([
@@ -116,14 +107,8 @@ export function ListingDetailContainer({
   const action = useListingAction({ refresh: reread, onSettled: adopt });
 
   /**
-   * The decisions on one received application, made to look like one call: the
-   * write lands, then the bytes it invalidated come back before the button
-   * unlocks (the same re-read the listing actions make, since acceptance
-   * recomputes the listing status and settles the other candidates). No global
-   * feedback and no per-listing `acting`: the row moving status on the page is
-   * its own confirmation, and a refusal sentence is rendered by the card that
-   * has the row in front of it — the page banner cannot say which card was
-   * busy.
+   * After a decision on one application, re-read like the listing actions do.
+   * Refusals are rendered by the card that made the call.
    */
   const refreshAfterDecision = useCallback(
     async () => adopt(await reread()),
@@ -153,14 +138,7 @@ export function ListingDetailContainer({
     [refreshAfterDecision],
   );
 
-  /**
-   * One listing is in scope here, so the scoping the list screen needs (which
-   * card shows the message) collapses to the message itself.
-   *
-   * The writes report their own refusals (`listingActionErrorMessage`, called by
-   * the hook); only the re-reads that follow can throw a raw API error, so the
-   * classifier covers what they leave behind.
-   */
+  // The writes report their own refusals; this covers the re-reads.
   const readError =
     error === null
       ? undefined
@@ -176,8 +154,6 @@ export function ListingDetailContainer({
       onReceivedFilterChange={(next) => {
         setFilter(next);
         setPage(1);
-        // A confirmation about the previous filter's rows is not an answer to
-        // anything on the new ones.
         action.reset();
       }}
       onPageChange={setPage}

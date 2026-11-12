@@ -11,14 +11,8 @@ import { HEADER_HEIGHT, HEADER_HEIGHT_SM, SITE_SHELL } from "@/lib/layout";
 import type { HeaderLink } from "@/lib/navigation";
 
 /**
- * The two icon buttons the reference puts between the nav and the account plate.
- *
- * Round, outlined and out of the way at every width above `lg` — the same
- * geometry as the plate they sit beside. The notifications button is still the
- * placeholder it has always been (nothing in the product emits one yet), and
- * `hidden` below `lg` because at that width the plate is already avatar-only and
- * a row of three icon buttons ahead of the mobile menu is more chrome than the
- * bar can carry.
+ * A round icon button between the nav and the account plate; hidden below
+ * `lg`. The notifications one is a placeholder.
  */
 function HeaderIconButton({
   href,
@@ -87,8 +81,7 @@ export function SiteHeader({
         <div className="flex self-stretch items-center gap-2 sm:gap-3">
           {user ? (
             <>
-              {/* To the browse feed, which is where the product's only search
-                  lives — a city field over a map, not a site-wide index. */}
+              {/* The only search is the browse feed's. */}
               <HeaderIconButton href="/listings" label="Rechercher">
                 <SearchIcon className="size-4" />
               </HeaderIconButton>
@@ -97,13 +90,6 @@ export function SiteHeader({
                 <BellIcon className="size-4" />
               </HeaderIconButton>
 
-              {/*
-                Name, role and every account action behind one plate. This is
-                where the separate sign-out button used to sit: the reference's
-                bar carries an avatar, a name, a role and a chevron, and no
-                other control — which is only possible if leaving is one click
-                away rather than one row across.
-              */}
               <UserMenu
                 name={user.name}
                 subtitle={user.subtitle}

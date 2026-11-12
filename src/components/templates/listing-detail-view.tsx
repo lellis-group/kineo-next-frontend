@@ -37,14 +37,7 @@ export interface ListingDetailViewProps {
   ) => Promise<void>;
 }
 
-/**
- * Listing detail page — the record of the posting, then the candidates it
- * received with their own filter row.
- *
- * The two halves are the same page rather than a page and a tab: what a practice
- * opens this route for is always the pair « is it still out there » and « who
- * applied », and separating them put one behind a navigation step.
- */
+/** Listing detail: the posting, then the candidates it received with their filter row. */
 export function ListingDetailView({
   listing,
   received,
@@ -98,13 +91,7 @@ export function ListingDetailView({
           </InlineAlert>
         )}
 
-        {/* The chips are the navigation of this section, so they are rendered in
-            every state — including an empty listing. Hiding them behind
-            `total > 0` turned the one screen a practice opens when it has *no*
-            candidate into the one screen with nowhere to go: the row was gone,
-            the bucket you were in was gone, and the section below it said
-            nothing could be filtered. A row of counters reading (0) explains the
-            empty state; a missing row just hides the structure. */}
+        {/* Rendered in every state: counters reading (0) explain an empty bucket. */}
         <FilterChips
           ariaLabel="Filtrer les candidats par statut"
           className="mt-4"
@@ -170,21 +157,13 @@ export function ListingDetailView({
   );
 }
 
-/** Label of the selected bucket, lowercased into a sentence. */
 function bucketLabel(filter: ReceivedApplicationsFilter): string {
   return (
     RECEIVED_FILTERS.find((option) => option.id === filter)?.label ?? "Tous"
   );
 }
 
-/**
- * The heading's count, scoped to what is on screen.
- *
- * `total` is the backend's count *for the active filter*, so « 0 candidature au
- * total » next to a « Présélectionnés » chip is a number about the bucket and not
- * about the posting. Naming the scope keeps the two from reading as a claim
- * about the listing.
- */
+/** The heading's count, scoped to the active filter. */
 function countLabel(
   received: ListingApplicationsData,
   filter: ReceivedApplicationsFilter,

@@ -16,8 +16,6 @@ describe("classifyError", () => {
   });
 
   test("keeps a backend 500 apart from a proxy failure", () => {
-    // The request did reach the service and the service answered; that is a
-    // degraded endpoint, not a hop that never landed.
     expect(classifyError(new ApiError(500, "/profile/me"))).toBe("unavailable");
   });
 

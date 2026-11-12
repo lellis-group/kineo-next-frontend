@@ -15,21 +15,14 @@ import { isAddressChangeFlow } from "@/lib/verification-flow";
 /** Shape of the fallback used when the verify call itself could not be made. */
 type AuthError = Parameters<typeof mapVerificationError>[0];
 
-/**
- * Orchestrator for /verify-email.
- *
- * The verification runs on mount, once the token is known: this screen *is* the
- * link's destination, so there is nothing to wait for a click on.
- */
+/** Orchestrator for /verify-email; verifies on mount. */
 export function VerifyEmailContainer() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
   const callbackURL = safeInternalPath(searchParams.get("callbackURL"));
   const email = searchParams.get("email");
-  // The backend reads the flow off the token and labels the link with it: a
-  // change of address and a sign-up land on the same page, and only the server
-  // can tell them apart.
+  // Set by the backend: only it can tell a sign-up from an address change.
   const flow = searchParams.get("flow");
   const isAddressChange = isAddressChangeFlow(flow);
 
@@ -37,9 +30,7 @@ export function VerifyEmailContainer() {
     token ? "verifying" : "invalid",
   );
   const [error, setError] = useState("");
-  // On a change of address the resend would issue a *sign-up* link, which
-  // verifies the address without ever applying the pending change — worse than
-  // no button, so the hook is left idle and the screen offers the profile.
+  // On an address change a resend would issue a *sign-up* link, so it stays idle.
   const { status: resend, resend: resendEmail } = useResendVerification(
     isAddressChange ? null : email,
   );

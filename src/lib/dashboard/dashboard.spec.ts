@@ -68,8 +68,7 @@ describe("adaptStats", () => {
     }) as Parameters<typeof adaptStats>[1];
 
   test("counts the listings headline off the totals, whatever rows came back", () => {
-    // Thirty-one OPEN postings exist; the page that came back holds one. A figure
-    // read off the rows would report that one.
+    // 31 OPEN postings exist; the page holds one.
     const stats = adaptStats(
       listings(listingCounts({ total: 31, OPEN: 30, IN_DISCUSSION: 1 })),
       applications(applicationCounts({ total: 0 })),
@@ -126,9 +125,6 @@ describe("adaptStats", () => {
   });
 
   test("says « Aucun » when the server found nothing coming", () => {
-    // A period that has passed, a DRAFT that was never published, a posting that
-    // left circulation: all of it is the server's answer, and « nothing » is an
-    // answer rather than a missing field.
     const stats = adaptStats(
       listings(listingCounts({ total: 1, OPEN: 1 }), null),
       applications(applicationCounts({ total: 0 })),
@@ -172,9 +168,6 @@ describe("adaptActivity", () => {
   });
 
   test("names the posting from the listing the application embeds", () => {
-    // No listing map is needed: the row carries its own title, so an activity
-    // line never falls back to « Titre d'annonce indisponible » for a posting
-    // outside the member's page.
     const [first] = adaptActivity([entry("1")]);
     expect(first?.message[1]?.text).toBe("Annonce 1");
   });

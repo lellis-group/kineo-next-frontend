@@ -5,10 +5,7 @@ export interface SpinnerProps {
   className?: string;
 }
 
-/**
- * Circular loading indicator — stateless visual primitive.
- * Size and colors are injected by the caller to stay conflict-free.
- */
+/** Circular loading indicator; size and colours come from the caller. */
 export function Spinner({ className }: SpinnerProps) {
   return (
     <span

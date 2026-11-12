@@ -4,15 +4,7 @@ import { ArrowLeftIcon } from "@/components/atoms/icons";
 import { cn } from "@/lib/cn";
 import { BACK_LINK } from "@/lib/layout";
 
-/**
- * Back link to the parent screen — the first thing on every detail page.
- *
- * A component rather than a className constant because the whole thing is
- * three parts that have to stay together: the arrow, the weight and the hover
- * state. Two hand-written copies drift — one nudged out of alignment with the
- * arrow on the other — which is exactly what a token cannot prevent and a
- * component can.
- */
+/** Back link to the parent screen — the first thing on every detail page. */
 export function BackLink({
   href,
   children,

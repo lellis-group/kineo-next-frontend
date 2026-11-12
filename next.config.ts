@@ -1,11 +1,8 @@
 import type { NextConfig } from "next";
 
 /**
- * Browser-side hardening, applied to every route.
- *
- * `X-Frame-Options` and `frame-ancestors` both deny framing: the first for
- * older browsers, the second for the ones that follow CSP. HSTS is only sent in
- * production — on a plain-HTTP local run it would pin `localhost` for a year.
+ * Browser-side hardening, applied to every route. HSTS is production-only: on
+ * plain-HTTP local runs it would pin `localhost` for a year.
  */
 const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
@@ -26,13 +23,9 @@ const securityHeaders = [
 ];
 
 /**
- * Report-only for now, and production-only.
- *
- * Next injects inline scripts at runtime, so `'unsafe-inline'`/`'unsafe-eval'`
- * stay until a nonce is wired; MapLibre needs `blob:` workers and reads tiles
- * from OpenStreetMap. Enforcing this before the report is clean would break the
- * map, so the header reports and nothing blocks. Flip the key to
- * `Content-Security-Policy` once the console shows no legitimate violation.
+ * Report-only, production-only: Next injects inline scripts (no nonce yet) and
+ * MapLibre needs `blob:` workers and OSM tiles. Switch the key to
+ * `Content-Security-Policy` once the reports are clean.
  */
 const contentSecurityPolicy = [
   "default-src 'self'",
@@ -52,18 +45,13 @@ const nextConfig: NextConfig = {
   reactCompiler: true,
   poweredByHeader: false,
   cacheComponents: true,
-  // Dev-only list of extra hosts allowed to open the dev server (e.g. your
-  // phone on the LAN). Keep it out of source control via ALLOWED_DEV_ORIGINS.
+  // Dev-only extra hosts allowed to open the dev server (e.g. a phone on the LAN).
   allowedDevOrigins: (process.env.ALLOWED_DEV_ORIGINS ?? "")
     .split(",")
     .map((origin) => origin.trim())
     .filter(Boolean),
-  // /goodbye is a static page (○) whose URL carries a single-use deletion
-  // token from the email link. Production would otherwise serve it with
-  // `Cache-Control: s-maxage=31536000` (1-year CDN/shared cache): pin it to
-  // no-store and never leak the token through the Referer or search engines.
-  // `headers()` CAN override Cache-Control for pages (only SHA-hashed
-  // immutable assets are locked, see next docs) — verified against `next start`.
+  // /goodbye's URL carries a single-use deletion token: never cache it, never
+  // leak it via Referer or search engines.
   headers: async () => [
     {
       source: "/(.*)",

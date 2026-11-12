@@ -17,22 +17,14 @@ interface View {
   page: number;
   filter: ListingsFilter;
   urgentOnly: boolean;
-  /** Rows per page — the reader's choice, and part of what identifies a page. */
   pageSize: MyListingsPageSize;
 }
 
 const DEFAULT_FILTER: ListingsFilter = "ALL";
 
 /**
- * The urgency toggle is part of the default-view test, and that is the point: it
- * is a narrowing the *server* has to apply, so a « Toutes » first page reached
- * with the toggle on is not the view the server delivered. Restoring
- * `initialData` there would silently drop the filter the reader just asked for.
- *
- * The page size joins them for the same reason. `initialData` is the server's
- * answer at the size *it* seeded the page with, so a reader who asks for another
- * size is no longer looking at that answer: restoring it would put the rows they
- * had before the choice back on screen, at the size they just rejected.
+ * The urgency toggle and the page size are part of the test: `initialData` is
+ * the server's answer without the toggle and at the seeded size.
  */
 function isDefaultView(
   view: View,
@@ -46,12 +38,7 @@ function isDefaultView(
   );
 }
 
-/**
- * The backend statuses behind a chip; an empty list means « no filter ».
- *
- * Every read on this screen goes through here, so a refetch cannot end up asking
- * for a different slice than the one the chips are describing.
- */
+/** The backend statuses behind a chip; empty means « no filter ». */
 function statusesForFilter(filter: ListingsFilter): ReplacementListingStatus[] {
   return LISTING_FILTERS.find((option) => option.id === filter)?.statuses ?? [];
 }
@@ -66,20 +53,14 @@ function loadListings(target: View) {
 }
 
 /**
- * Orchestrator for /listings/mine — buckets, listings and the pager.
- *
- * The unfiltered first page arrives from the server page, so a cold load shows the
- * listings rather than a skeleton. Switching bucket still fetches, and so does
- * re-reading after a failed read: both change which rows the chips describe.
- * Candidates and the close/cancel actions belong to `/listings/mine/[id]`, which
- * every row and card opens.
+ * Orchestrator for /listings/mine. The unfiltered first page arrives from the
+ * server, so a cold load shows listings rather than a skeleton.
  */
 export function MyListingsContainer({
   initialData,
   initialPageSize,
 }: {
   initialData: MyListingsData;
-  /** The size the server seeded the first page with — the reader's own choice. */
   initialPageSize: MyListingsPageSize;
 }) {
   const [page, setPage] = useState(1);
@@ -99,21 +80,12 @@ export function MyListingsContainer({
     initialData,
     view,
     isDefaultView: (target) => isDefaultView(target, initialPageSize),
-    // The chosen size travels with the view rather than beside it: the size is
-    // part of what a page *is*, so a read asking for another one is a different
-    // view — and a closure over the size would hide that from the hook.
     load: loadListings,
   });
 
   /**
-   * Client-side safety net: the toggle sends `urgent=true` and the backend
-   * applies it (`buildListingsWhere` carries `urgent` on every read), so this is
-   * a no-op against the server it is written for — kept because it is the one
-   * guarantee that « Urgentes seulement » never shows a non-urgent posting,
-   * whatever a future server revision does. One price, known and accepted: when
-   * it *does* bite, the totals behind the pager still describe the unfiltered
-   * collection, and the safe rows and the pager then disagree about how much
-   * there is.
+   * Safety net: the backend already applies `urgent=true`. If it ever bites,
+   * the pager's totals and the rows will disagree.
    */
   const visibleListings = useMemo(
     () =>
@@ -148,12 +120,7 @@ export function MyListingsContainer({
         pageSize={pageSize}
         onPageSizeChange={(next) => {
           setPageSize(next);
-          // Back to the first page: the reader asked for a different slice, and
-          // page 7 of 500 rows is not page 7 of what is on screen.
           setPage(1);
-          // Written from the browser: the server page reads this on the next
-          // visit, and a round trip to store four bytes would make the list show
-          // the old size until it came back.
           rememberPageSize(next);
         }}
         loading={loading}

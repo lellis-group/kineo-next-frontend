@@ -15,20 +15,8 @@ import {
 } from "@/lib/listings";
 
 /**
- * One candidate on a listing the user owns.
- *
- * The `anonymized` branch is the reason this component takes the applicant
- * separately: after an erasure (art. 17 GDPR) the backend blanks the name, the
- * city and the avatar, so the card has to say *why* it is empty rather than
- * render a nameless row the practice would read as a bug.
- *
- * Everything below the identity is optional and none of it is predictable —
- * a message, a reason, a read state — so the card is built as a stack of
- * separated blocks rather than one padded box. Five things in a row with
- * `mt-3` between them read as a wall of text: a practice comparing a dozen
- * candidates needs to find the name first, then the status, then decide whether
- * the message is worth reading at all, and hairlines between the blocks are what
- * let the eye drop the rest.
+ * One candidate on a listing the user owns. After an erasure the backend
+ * blanks name, city and avatar, so the card says why it is empty.
  */
 export function ReceivedApplicationCard({
   application,
@@ -36,11 +24,7 @@ export function ReceivedApplicationCard({
   className,
 }: {
   application: ReceivedApplication;
-  /**
-   * Present only while the parent still lets the practice decide — a listing
-   * outside circulation shows no buttons at all, which is cheaper and more
-   * honest than a disabled row explaining itself five lines down.
-   */
+  /** Present only while the practice can still decide. */
   actions?: {
     onShortlist: () => Promise<void>;
     onAccept: () => Promise<void>;
@@ -50,14 +34,9 @@ export function ReceivedApplicationCard({
   className?: string;
 }) {
   const { applicant } = application;
-  // Why a decided row reached its status, which is not the status itself: a
-  // refused candidate on a cancelled posting was not refused by anybody. Absent
-  // while nobody has ruled — the badge above already says « En attente ».
   const decision = receivedDecisionLabel(application);
 
-  // Only one of the two can be set in practice, and they are the same kind of
-  // thing — a line of free text the reader needs after the message — so they
-  // share one renderer and one rhythm instead of two near-identical blocks.
+  // Only one of the two can be set.
   const reason = application.rejectionReason
     ? {
         label: "Motif indiqué par le cabinet",
@@ -79,9 +58,7 @@ export function ReceivedApplicationCard({
           <Avatar
             name={applicant.displayName}
             image={applicant.image}
-            // The default avatar wears a `border-primary/60` ring meant to read
-            // as "verified member". On an erased identity that ring would
-            // claim a verification the backend no longer stands behind.
+            // The default ring reads as "verified": not on an erased identity.
             className={cn("h-12 w-12", applicant.anonymized && "border-border")}
           />
 
@@ -122,10 +99,6 @@ export function ReceivedApplicationCard({
         </InlineAlert>
       ) : (
         application.message && (
-          /* A left rule rather than a filled block: a tinted rectangle inside a
-             bordered card is a box in a box, and the quote is the one part of
-             the row that is the candidate's own words — it should read as
-             quoted, not as another field. */
           <blockquote className="mt-7 border-l-2 border-primary/30 pl-5 text-base leading-loose break-words text-muted">
             {application.message}
           </blockquote>
@@ -141,9 +114,6 @@ export function ReceivedApplicationCard({
         </p>
       )}
 
-      {/* Read state, not a status: a candidate the practice never opened is
-          still waiting to be read, which is the one thing a triage list cannot
-          show any other way. */}
       <MetaRow className="mt-6 border-t border-border pt-5">
         <MetaRowItem dot={application.viewed ? "success" : "muted"}>
           {application.viewed ? "Consultée" : "Non consultée"}

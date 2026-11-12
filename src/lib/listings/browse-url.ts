@@ -1,15 +1,7 @@
 /**
- * The browse feed's view as it round-trips through the URL.
- *
- * The two halves of the same boundary: a filtered search has to be shareable
- * (write) and restorable from a link or the back button (read). They live
- * together, beside the `toBrowseView` they mirror, because the URL is a second
- * serialisation of the same view — and a value that survives a round-trip
- * unchanged is what makes the two agree.
- *
- * The reader accepts a `URLSearchParams`-shaped source (`get`) so both ends pass
- * the same value unchanged: the server's `searchParams` wrapped once, and the
- * client's `useSearchParams()` as-is.
+ * The browse feed's view as it round-trips through the URL. The reader takes
+ * a `URLSearchParams`-shaped source, so the server's `searchParams` and the
+ * client's `useSearchParams()` both fit.
  */
 
 import { toIsoDayBound } from "@/lib/format";
@@ -25,15 +17,9 @@ import type {
 export const DEFAULT_BROWSE_VIEW = { page: 1, sort: "recent" } as const;
 
 /**
- * The form's filters as a view of the feed.
- *
- * The one place the widening happens. Every empty value becomes `undefined`
- * rather than an empty string, because the endpoint reads `city=""` as a search
- * for a city literally called nothing and rejects it.
- *
- * The upper bound lands on the last millisecond of its day: `YYYY-MM-DD` is a
- * calendar date with no time, and stopping at midnight would silently drop every
- * posting published on the day the reader picked.
+ * The form's filters as a view of the feed. Empty values become `undefined`
+ * (the endpoint rejects `city=""`), and the upper date bound lands on the last
+ * millisecond of its day.
  */
 export function toBrowseView(
   filters: BrowseFormFilters,
@@ -67,31 +53,22 @@ export function isDefaultBrowseView(view: BrowseView): boolean {
 }
 
 /**
- * The only sort values the URL is allowed to carry; anything else falls back.
- *
- * `urgent` is not one of them any more. « Urgentes d'abord » reordered the
- * whole collection and kept every posting, so the map and the counts did not
- * move, and a reader who picked it expected to see the urgent ones only. That
- * is the `urgent=true` filter, now a toggle beside the sort; an old link
- * carrying `sort=urgent` is read as that filter (see `browseViewFromParams`).
+ * The sort values the URL may carry. An old `sort=urgent` link is read as the
+ * `urgent=true` filter instead (see `browseViewFromParams`).
  */
 const BROWSE_SORT_IDS: readonly BrowseSort[] = ["recent", "startDate"];
 
-/** The one date shape the two `<input type="date">` fields produce and read. */
 const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
 
 function readSpecialty(raw: string): Specialty | "" {
-  // A has-own check, not `in`: the value comes off the query string, so it must
-  // be a real specialty rather than a key that happens to sit on the prototype.
+  // `hasOwn`, not `in`: a prototype key is not a specialty.
   return Object.hasOwn(SPECIALTY_LABELS, raw) ? (raw as Specialty) : "";
 }
 
 function readDate(raw: string): string {
   if (!ISO_DAY.test(raw)) return "";
-  // The shape alone is not enough — `Date.parse("2026-02-30")` does not fail, it
-  // rolls over to March 2nd. So the day is re-read back and compared: a real day
-  // survives the round-trip, a rolled-over one does not. Handing the feed an
-  // impossible bound reads as a request that matched nothing.
+  // `Date.parse("2026-02-30")` rolls over rather than failing, so the day is
+  // re-read and compared.
   const [year, month, day] = raw.split("-").map(Number);
   if (year === undefined || month === undefined || day === undefined) {
     return "";
@@ -104,7 +81,6 @@ function readDate(raw: string): string {
   return isReal ? raw : "";
 }
 
-/** Reads the feed's view back from a query string. */
 export function browseViewFromParams(params: Pick<URLSearchParams, "get">): {
   filters: BrowseFormFilters;
   page: number;
@@ -135,13 +111,8 @@ export function browseViewFromParams(params: Pick<URLSearchParams, "get">): {
 }
 
 /**
- * Writes a view back to a query string, omitting every default.
- *
- * The omissions are the point: a default view serialises to an empty string, so
- * `/listings` and not `/listings?page=1&sort=recent`. The two halves round-trip
- * against `browseViewFromParams`, and a value that reads back as the same view
- * it was written from is the only guarantee that the URL and the screen never
- * drift.
+ * Writes a view back to a query string, omitting every default, so the default
+ * view is plain `/listings`.
  */
 export function browseViewToParams(
   filters: BrowseFormFilters,
@@ -165,16 +136,8 @@ export function browseViewToParams(
 }
 
 /**
- * The page to land on when the requested one is past the end, or `null`.
- *
- * The URL accepts any positive integer, and a shared or hand-edited link that
- * names `page=5` under a two-page collection asks a question the read can only
- * answer honestly by turning it down: empty rows under a pager claiming
- * « Page 5 sur 2 ». The caller redirects to the answer this returns — the last
- * page that exists — so the URL names the view the reader is actually looking
- * at. A `totalPages` of 0 means the collection itself is empty: nothing to
- * clamp, and the empty state answers an empty collection better than a redirect
- * to nowhere.
+ * The last page that exists when the requested one is past the end, or `null`
+ * (including for an empty collection, which the empty state answers).
  */
 export function browsePageClamp(
   page: number,

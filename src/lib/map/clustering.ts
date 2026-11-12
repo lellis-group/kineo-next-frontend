@@ -1,41 +1,18 @@
 import type { Map as MapLibreMap } from "maplibre-gl";
 import type { MapPlace } from "./types";
 
-/**
- * Which places the map draws as one marker.
- *
- * Pure geometry plus one call into MapLibre — `map.project`, to turn degrees into
- * the pixels the decision is actually made in — so the grouping itself is split
- * out below and testable without a map.
- */
-
-/**
- * How close two markers have to be, in pixels, to count as one.
- *
- * A marker is around 28px across, so 44 leaves them touching but still told
- * apart: close enough that a reader would call them one blob, far enough that
- * neither looks as though it swallowed the other.
- */
+/** How close two markers have to be, in pixels, to merge. */
 const CLUSTER_RADIUS_PX = 44;
 
-/** A place and where it currently stands on screen. */
 export interface ProjectedPlace {
   place: MapPlace;
   /**
-   * A point in screen pixels.
-   *
-   * `dist` is declared as a *method* so its parameter is checked bivariantly.
-   * MapLibre's own `Point.dist(p: Point)` is narrower than any structural type we
-   * could write here, and under strict contravariance a real `Point` would be
-   * rejected while a test double built from two plain numbers would be accepted.
-   * As a method, both fit — so the grouping can be exercised without a WebGL
-   * context, and the distance it measures in production is still MapLibre's
-   * rather than a hand-rolled copy of it.
+   * `dist` is a method so its parameter is checked bivariantly: both MapLibre's
+   * `Point` and a plain test double fit.
    */
   point: { x: number; y: number; dist(other: ScreenPoint): number };
 }
 
-/** The screen position half of `ProjectedPlace`, named for its own sake. */
 interface ScreenPoint {
   x: number;
   y: number;
@@ -43,19 +20,9 @@ interface ScreenPoint {
 }
 
 /**
- * Merges the places that sit on top of each other *on screen*, right now.
- *
- * `/places` already grouped by practice, and exactly — by `practiceId`, not by
- * rounded coordinates. But that is a fact about the practices and says nothing
- * about the current zoom: two cabinets 2.5km apart are one marker's distance
- * apart at country scale and two markers apart once the reader is over the city.
- * At the zoom this map opens on, such a pair stacks on the same pixel — the
- * upper one takes every click and the lower one cannot be opened at all.
- *
- * The test is therefore a distance in *pixels*, recomputed whenever the viewport
- * settles. Zoom out and the pair merges again behind a count; zoom in over
- * Bordeaux and they separate. No dependency: a greedy pass over a handful of
- * places, whose only input is the reader's current zoom.
+ * Merges the places that overlap *on screen* at the current zoom. `/places`
+ * groups by practice, but two practices can still stack on one pixel when
+ * zoomed out.
  */
 export function clusterPlaces(
   map: MapLibreMap,
@@ -75,16 +42,8 @@ export function clusterPlaces(
 }
 
 /**
- * The greedy pass, over places already projected.
- *
- * Separated from `clusterPlaces` because that is the only part of the decision
- * that does not need a live map: given a set of screen positions and a radius,
- * it is a short loop, and the loop is where a grouping bug would live. Exported
- * so it can be exercised directly rather than through a WebGL context.
- *
- * Each unmerged place opens a cluster and absorbs every later place within the
- * radius; a place already absorbed is never reconsidered, which is what makes the
- * result depend only on the input and not on the order it was reached in.
+ * The greedy pass over projected places, exported to test without a map. Each
+ * unmerged place absorbs every later one within the radius.
  */
 export function groupByDistance(
   points: readonly ProjectedPlace[],
@@ -118,16 +77,13 @@ export function groupByDistance(
   return clusters;
 }
 
-/** One marker standing for several places: at their centre, holding all of them. */
 export function mergePlaces(members: MapPlace[]): MapPlace {
   const total = members.length;
 
   return {
-    // The sum of what the members hold, never `flatMap(listings).length`: the
-    // count of postings at a merged place is not the number of previews.
+    // Not the number of previews: a place may hold more postings than previews.
     count: members.reduce((sum, place) => sum + place.count, 0),
-    // Sorted, so the key does not depend on the order the places happened to
-    // arrive in: an unstable key rebuilds every marker for nothing.
+    // Sorted, so the key is stable and markers aren't rebuilt for nothing.
     key: members
       .map((place) => place.key)
       .sort()

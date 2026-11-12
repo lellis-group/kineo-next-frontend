@@ -16,16 +16,7 @@ interface FilterChipsProps<T extends string> {
   className?: string;
 }
 
-/**
- * A status filter row — the applications screens and the candidates panel of a
- * listing.
- *
- * Drawn as the outlined track every other filter on the console uses
- * (`SegmentedControl`), as the reference draws its « All / Pending / … » row:
- * a row of separate filled chips was the one filter on the product that did
- * not look like the others. The name stays because the call sites describe
- * what it is for, not how it is drawn.
- */
+/** A status filter row (applications, a listing's candidates). */
 export function FilterChips<T extends string>({
   options,
   value,

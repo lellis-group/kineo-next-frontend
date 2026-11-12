@@ -34,20 +34,10 @@ export const metadata: Metadata = {
 };
 
 /**
- * The entry the listing detail page offers for applying.
- *
- * The backend decides eligibility against facts only it holds, but the page can
- * already know who it is talking to, and hiding a button that the backend would
- * refuse is the honest version of the decision: a member without a profile
- * gets the way to build one, and an installed-practice-only profile — the one
- * type the backend refuses — gets nothing, because there is no sentence about
- * applying that would be true for them. There is no signed-out reader to
- * address: the listing itself is a members-only read, so by the time this
- * renders the backend has accepted the session. `anonymous` can only mean the
- * session read failed on its own, and then the entry stays out rather than
- * inviting a member to sign in again. What the page cannot cheaply know (own listing, quotas, a listing that
- * left circulation since) stays with the backend, and the refused apply says
- * so in French.
+ * The apply entry, matched to who is reading: no profile gets a link to create
+ * one, an installed-practice profile (which the backend refuses) gets nothing.
+ * The listing is members-only, so `anonymous` means the session read failed on
+ * its own. Everything else (own listing, quotas…) is refused by the backend.
  */
 function ApplyEntry({ listingId }: { listingId: string }) {
   return (
@@ -64,8 +54,7 @@ async function ApplyEntryInner({ listingId }: { listingId: string }) {
     case "anonymous":
       return null;
     case "unavailable":
-      // The posting is public and stays readable; only the apply entry
-      // depends on who is reading, and that could not be checked.
+      // The posting stays readable; only the apply entry needs the session.
       return (
         <p className="text-sm text-muted">
           Impossible de vérifier votre session pour le moment. Rechargez la page
@@ -89,14 +78,7 @@ async function ApplyEntryInner({ listingId }: { listingId: string }) {
   }
 }
 
-/**
- * Public detail of one posting.
- *
- * Reads the listing for everyone and the session beside it, so the apply entry
- * matches who is reading; the section branches on that, and the actual write
- * lives in `ApplyToListing`. A richer layout (map, related postings) is noted in
- * `PLAN-listings-detail-page.md` rather than built here.
- */
+/** The detail of one posting, with an apply entry matched to the reader. */
 export default function BrowseListingDetailPage({
   params,
 }: {

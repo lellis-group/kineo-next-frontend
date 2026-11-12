@@ -35,8 +35,6 @@ describe("listingActionErrorMessage", () => {
       const action = ACTIONS[index];
       expect(message, action).toContain("Impossible de");
       expect(message, action).not.toContain("English");
-      // The sentence names the action that was refused: « clôturee » is not
-      // French, and a sentence about closing shown on a cancel is wrong.
       expect(message, action).toContain(
         action === "close" ? "clôturer" : "annuler",
       );
@@ -53,9 +51,7 @@ describe("listingActionErrorMessage", () => {
   });
 
   test("ignores the English message and reads the code alone", () => {
-    // The server rewords its prose; a client matching it stops translating the
-    // day it does, and tells the practice to retry a posting that is already
-    // terminal.
+    // The client must match on the code, not the server's prose.
     const reworded = refusal(
       LISTING_TRANSITION_CODES.NOT_CLOSEABLE,
       "Only a listing still in circulation can be closed",
@@ -69,9 +65,6 @@ describe("listingActionErrorMessage", () => {
   });
 
   test("covers the terminal statuses a cancel is refused for, without advice that would be wrong for one of them", () => {
-    // `LISTING_ALREADY_CLOSED` is what the backend answers for a filled listing;
-    // « Clôturez-la à la place » would be nonsense on a listing that is already
-    // closed.
     const message = listingActionErrorMessage(
       refusal(LISTING_TRANSITION_CODES.ALREADY_CLOSED),
       "cancel",
@@ -100,8 +93,7 @@ describe("listingActionErrorMessage", () => {
   });
 
   test("reads a 409 as someone else's application blocking the cascade", () => {
-    // Thrown by `common/application-guard.ts` as a bare ConflictException: no
-    // code on the wire, so this one can only be answered by status.
+    // No code on the wire: answered by status.
     expect(
       listingActionErrorMessage(
         new ApiError(409, "/replacement-listings/x"),

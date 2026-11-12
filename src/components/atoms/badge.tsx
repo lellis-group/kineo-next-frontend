@@ -2,12 +2,9 @@ import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
 import type { BadgeTone } from "@/lib/ui-tokens";
 
-/** Named sizes for the badge chip: `sm` is the original pill, the rest are
- * wider and squarer so a medium label has room to breathe. */
 export type BadgeSize = "sm" | "md" | "lg";
 
-/** Tones map to the global badge classes of `globals.css` — the site's
- * canonical badge look: a tinted chip with a tinted variant per tone. */
+/** Tones map to the `.badge-*` classes of `globals.css`. */
 const TONE_CLASSES: Record<BadgeTone, string> = {
   neutral: "badge",
   success: "badge badge-success",
@@ -32,11 +29,7 @@ export function Badge({
   tone?: BadgeTone;
   /** Same `sm` as before; `md` and `lg` are wider and squarer. */
   size?: BadgeSize;
-  /**
-   * `plain` drops the box and keeps the dot and the label: the status column
-   * of a table, where the reference writes a status as text and a column of
-   * framed chips would be the loudest thing on the screen.
-   */
+  /** `plain` drops the box and keeps the dot and the label (table status column). */
   variant?: "boxed" | "plain";
   className?: string;
   children: ReactNode;

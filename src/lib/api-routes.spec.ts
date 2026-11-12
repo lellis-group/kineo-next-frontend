@@ -1,23 +1,8 @@
 /**
- * Route audit — does this frontend call the routes the backend publishes?
- *
- * Every service function is invoked with a transport that records the request
- * and rejects it; each recorded call is held against the generated contract
- * (`api.gen.ts`, regenerated from the running backend's `/api-json` with
- * `bun run api:types`): the method-path pair must be published there, and the
- * call must have gone exactly there. A backend rename, a typo in a template
- * literal or a route that drifted shows up as a failing test instead of a 404
- * in a browser, after login.
- *
- * The audit goes both ways. A route the document gains must be either audited
- * on a call the frontend makes or named with a reason on `NOT_CONSUMED` — an
- * endpoint with no consumer is usually a screen half-built, and an unexplained
- * route would hide it. The better-auth session routes (`/api/auth/*`) are not
- * the backend's document and stay out, as do the probes a screen has no reason
- * to call.
- *
- * Methods and paths are in scope; bodies and query parameters are the
- * call-site contract the service specs test beside each adapter.
+ * Route audit — every service function is called with a recording transport,
+ * and each call is held against the generated contract (`api.gen.ts`). Both
+ * ways: a route the document gains must be audited or listed in
+ * `NOT_CONSUMED` with a reason.
  */
 import { describe, expect, it } from "bun:test";
 import { confirmAccountDeletion } from "./account-deletion-service";
@@ -55,32 +40,13 @@ import {
 } from "./profile-service";
 import type { paths } from "./types/api.gen";
 
-/**
- * The HTTP methods the backend document actually books — the operation keys of
- * the path items, beside the path-level `parameters` a document can carry and
- * which is not an operation.
- */
 type HttpMethod = "get" | "post" | "put" | "patch" | "delete";
 
 /**
- * Every operation the contract publishes, as `METHOD /path` — derived from the
- * generated `paths`, so the names below are checked against the *live* truth.
- *
- * The generator emits every method key on every path item and types the
- * unbooked ones `?: never` (and path-level `parameters` alongside them), so an
- * entry is kept only when the thing it points at is actually declared there —
- * required, and not `never`. The contract itself left the repository:
- * `api.gen.ts` is its only resident copy, regenerated with `bun run api:types`
- * against the dist the backend is serving. Nothing is imported at runtime —
- * the union is built at type level, and it is what gives the audit its teeth:
- *
- * - `DOCUMENTED_ROUTES` below is checked element-against-`satisfies`: any name
- *   the document does not publish (a typo, a removed route) is a compile error
- *   on the offending line;
- * - the counterpart `DOCUMENTED_COVERS_ALL` makes the written list *equal* the
- *   derived union, so a route the freshly regenerated document gained cannot
- *   slip past unaccounted — it surfaces as a compile error here, in this file,
- *   before any test runs.
+ * Every operation the contract publishes, as `METHOD /path`. The generator
+ * types unbooked methods `?: never`, so only declared ones are kept.
+ * `DOCUMENTED_ROUTES` must equal this union (`DOCUMENTED_COVERS_ALL`), so a
+ * route added or removed upstream is a compile error here.
  */
 type DocumentedRoute = {
   [P in keyof paths & string]: {
@@ -90,24 +56,13 @@ type DocumentedRoute = {
   }[keyof paths[P] & HttpMethod];
 }[keyof paths & string];
 
-/**
- * Two types are identical when each extends the other; mutual assignability of
- * a concrete literal union against the derived one is the strongest statement
- * TypeScript offers for "no member left out, none invented".
- */
 type Identical<_A, _B> = [_A] extends [_B]
   ? [_B] extends [_A]
     ? true
     : false
   : false;
 
-/**
- * The document's routes, written out in full.
- *
- * `api.gen.ts` publishes only types, so the list exists as values here — and,
- * constrained as above, it *is* the audit: both reductions funnel through the
- * compiler, which is a stricter reader of the document than `Object.keys`.
- */
+/** The document's routes as values (`api.gen.ts` only publishes types). */
 const DOCUMENTED_ROUTES = [
   // Probes and the welcome route — the document's own scaffolding.
   "GET /",
@@ -166,10 +121,8 @@ const DOCUMENTED_COVERS_ALL: Identical<
   (typeof DOCUMENTED_ROUTES)[number]
 > = true;
 
-/** Every operation the document publishes, as a set. */
 const PUBLISHED = new Set<string>(DOCUMENTED_ROUTES);
 
-/** Verbatim records of the call each audit case must produce. */
 const METHOD_PATH = {
   GET: "GET",
   POST: "POST",

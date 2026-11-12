@@ -7,13 +7,7 @@ import {
 } from "@/components/atoms/button";
 import { Spinner } from "@/components/atoms/spinner";
 
-/**
- * The spinner border colour per button variant.
- *
- * A spinner inherits `currentColor`, so the border has to name the *foreground*
- * of the variant it sits on. Keyed by variant so no call site hand-picks these
- * strings, and a new variant cannot inherit whatever the last one used.
- */
+/** The spinner border per variant: it must name the variant's foreground. */
 const SPINNER_BORDER: Record<ButtonVariant, string> = {
   primary: "border-primary-foreground/30 border-t-primary-foreground",
   secondary: "border-foreground/30 border-t-foreground",
@@ -33,12 +27,8 @@ export interface PendingButtonProps
 }
 
 /**
- * A submit button that shows a spinner and swaps its label while an inline
- * `<form onSubmit>` is in flight.
- *
- * `SubmitButton` covers the other case — a `next/form` `action`, where the
- * pending state comes from `useFormStatus` — and this covers every form in the
- * app that drives its submit handler from local state instead.
+ * A button that shows a spinner and swaps its label while a locally-driven
+ * submit is in flight. For a `next/form` `action`, see `SubmitButton`.
  */
 export function PendingButton({
   pending,

@@ -9,77 +9,31 @@ import { cn } from "@/lib/cn";
 import { PAGE_SIZE_CHOICES, type PageSize } from "@/lib/page-size";
 
 interface PaginationProps<C extends PageSize = PageSize> {
-  /** Current page number (1-based). */
   currentPage: number;
   totalPages: number;
   onPageChange: (page: number) => void;
   /**
-   * A page turn is in flight. Disables both arrows for its duration.
-   *
-   * Not cosmetic. Each turn is a request the backend rate-limits, and a reader
-   * clicking through pages faster than the network answers sends a burst that
-   * earns a 429 — the very situation where they most need to be told something
-   * went wrong, and where the previous request being cancelled would otherwise
-   * swallow that message. Holding the arrows for the length of one turn both
-   * stops the burst and keeps the pager honest about what is being loaded.
+   * A page turn is in flight: disables the arrows, so clicking faster than the
+   * network answers can't send a burst the backend rate-limits.
    */
   loading?: boolean;
-  /**
-   * A pick on the map turned the list to another page — flashes the count.
-   *
-   * The value is the pick's nonce, not a boolean: the span is keyed on it, so a
-   * second page-changing pick remounts the element and replays the animation
-   * instead of leaving the first flash finished.
-   */
+  /** The nonce of a pick that changed page: keys the count so the flash replays. */
   highlight?: number | null;
-  /**
-   * The current page size, and the handler for a new one.
-   *
-   * The handler decides: a size control with nothing to change it to is a
-   * decoration, and the browse feed — which offers no choice — passes neither.
-   *
-   * A change returns to page 1 in both callers: the reader asked for a different
-   * slice, and page 7 of the new size is rarely page 7 of what is on screen.
-   *
-   * `choices` narrows the list per screen: 500 stays offered on /listings/mine
-   * (light rows, ~40 ko gzip) but not on /applications (heavy cards, ~78 ko
-   * gzip + ~12 000 DOM nodes nobody scrolls through). Defaults to the shared
-   * list so existing callers keep working unchanged.
-   */
+  /** Without a handler, no size control is drawn. `choices` narrows the list per screen. */
   pageSize?: C;
   onPageSizeChange?: (size: C) => void;
   choices?: readonly C[];
-  /**
-   * Extra classes, headline use: tighter air between the table and this row.
-   *
-   * `mt-8` is the document-flow margin — a pager under content the page scrolls,
-   * where nothing above it is a bounded frame. In a full-height card the table
-   * frame already reaches for the foot (`lg:flex-1`), and its border is the
-   * boundary this row reads against, so `mt-8` is a step of air repeated twice
-   * on one edge. Pass `mt-3` instead: `twMerge` resolves the two against each
-   * other, and callers who pass nothing keep the flow margin.
-   */
+  /** E.g. `mt-3` to replace the flow margin under a bordered table frame. */
   className?: string;
 }
 
-/**
- * One call to page through, drawn in the site's own control language.
- *
- * The disposition is the classic one — « Précédent », the count, « Suivant » on
- * a single line, each element on the same vertical centre — dressed in the
- * site's pill kit: the turn lives in a recessed track, the container
- * `SegmentedControl` draws, and the size choice is an outlined pill beside it,
- * reading as the small field it is next to the bigger controls above. The
- * buttons are `inline-flex` *deliberately*: an icon in an undressed `<button>`
- * stacks itself over (or under) the word, and the row reads as three
- * misaligned fragments.
- *
- * Below 400px the arrows' words give way and the icons answer alone; the row
- * never wraps, and `aria-label` carries what the icons stand for.
- */
 const TRACK_PILL =
   "inline-flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1 text-control font-medium whitespace-nowrap text-foreground transition-colors hover:bg-surface-hover disabled:pointer-events-none disabled:opacity-50";
 
+/**
+ * Previous / count / next in a recessed track, with an optional page-size
+ * pill. Below 400px the arrows' words hide and `aria-label` carries them.
+ */
 export function Pagination<C extends PageSize = PageSize>({
   currentPage,
   totalPages,
@@ -94,10 +48,7 @@ export function Pagination<C extends PageSize = PageSize>({
   const canChooseSize = onPageSizeChange !== undefined;
   const hasMoreThanOnePage = totalPages > 1;
 
-  // A member with three rows has one page and nothing to page through, but the
-  // size that got them there is still theirs to change, and this control is what
-  // says so. Hiding it on a single page would make the choice appear and
-  // disappear with the collection.
+  // Still drawn on a single page when the size can be changed.
   if (!hasMoreThanOnePage && !canChooseSize) {
     return null;
   }
@@ -153,20 +104,9 @@ export function Pagination<C extends PageSize = PageSize>({
       )}
 
       {canChooseSize && (
-        /*
-          A `<label>` wrapped *around* the control rather than a `for`: the
-          association is native, so the whole pill is the click target and a
-          screen reader reads « Par page » into the control — the `Select`
-          molecule cannot, whose label renders as a stacked block above the field.
-          The select itself is transparent and unfurnished; the pill around it is
-          the field chrome.
-        */
+        // Wrapping the control makes the whole pill the click target.
         <label
           className={cn(
-            // `py-1.5`, not `py-1`: the outlined pill stands beside the recessed
-            // track, and the two answer for their height independently — a
-            // thinner field next to a thicker track reads as sitting on a
-            // different baseline.
             "flex shrink-0 cursor-pointer items-center rounded-full border border-border py-1.5 pr-1.5 pl-3.5 transition-colors",
             "hover:border-border-strong has-[select:focus-visible]:ring-2 has-[select:focus-visible]:ring-ring",
             loading && "pointer-events-none opacity-50",

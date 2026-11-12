@@ -1,34 +1,16 @@
 /**
- * Visual vocabulary shared between the service layer and the components.
- *
- * The type unions live below `components` on purpose: the adapters decide what
- * a status looks like and the components render it, so the vocabulary belongs
- * below both — `lib` importing a tone from `components` is the dependency
- * running backwards.
- *
- * One vocabulary, several renderings. A chip, a bordered banner, a dot and an
- * alert are four different components with four different CSS treatments, so
- * each keeps its own class map — what must not happen is four different
- * *vocabularies*, where the same meaning gets a different name depending on
- * which component asked for it. That is why the sets below are derived from
- * `Tone` rather than written out: a tone added here is either renderable
- * everywhere or a compile error at every site that cannot honour it.
+ * Visual vocabulary shared by the adapters (in `lib`) and the components, so
+ * `lib` never imports from `components`. Each component keeps its own class
+ * map; the sets below derive from `Tone` so the names can't diverge.
  */
 
-/**
- * The semantic tones the product speaks in.
- *
- * Each maps to a CSS color token (`--color-success`, `--color-danger`, …).
- */
+/** The semantic tones, each mapped to a CSS color token (`--color-success`, …). */
 export type Tone = "neutral" | "success" | "warning" | "danger" | "info";
 
 /** Status chip: a neutral label whose dot takes the tone (`.badge-*` in `globals.css`). */
 export type BadgeTone = Tone;
 
-/**
- * Alert tones: every tone except `neutral`, because a bordered alert is always
- * saying something — a neutral one would read as a panel and say nothing.
- */
+/** Every tone but `neutral`: a neutral alert would say nothing. */
 export type InlineAlertTone = Exclude<Tone, "neutral">;
 
 /** Button treatments, mapped to the variant classes on `Button`. */

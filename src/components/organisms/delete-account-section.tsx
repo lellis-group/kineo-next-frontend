@@ -19,11 +19,7 @@ export interface DeleteAccountSectionProps {
   onDeleteAccount: () => Promise<void>;
 }
 
-/**
- * Destructive "Supprimer mon compte" panel.
- * Requires an explicit confirmation checkbox before the delete button is
- * enabled; surfaces errors inline. Placed at the bottom of the profile view.
- */
+/** The destructive « Supprimer mon compte » panel, behind a confirmation checkbox. */
 export function DeleteAccountSection({
   onDeleteAccount,
 }: DeleteAccountSectionProps) {
@@ -39,9 +35,7 @@ export function DeleteAccountSection({
 
   async function handleDelete() {
     if (!confirmed) return;
-    // Success = the deletion request is registered and a confirmation email is
-    // on its way; the account is anonymized only once the email link is opened
-    // (see /goodbye).
+    // The account is only anonymized once the emailed link is opened.
     if (await run(onDeleteAccount)) setRequested(true);
   }
 
@@ -115,12 +109,6 @@ export function DeleteAccountSection({
   );
 }
 
-/**
- * The state after the request is sent.
- *
- * Its own tree rather than a branch inside the panel above: it replaces every
- * action on the page, so it is not a variant of the same thing.
- */
 function ErasureRequested() {
   return (
     <section aria-label="Suppression du compte">

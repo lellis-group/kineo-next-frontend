@@ -1,7 +1,4 @@
-/**
- * Profile data service — fetch, create and update the current user's profile.
- * Soft/blocking 404 policy: only GET /profile/me treats 404 as expected.
- */
+/** The current user's profile: fetch, create, update. */
 
 import { cache } from "react";
 import {
@@ -17,23 +14,9 @@ import { RPPS_DIGITS } from "./profile";
 import type { ApiProfile } from "./types/api";
 
 /**
- * GET /profile/me — soft 404 when the profile does not exist yet (documented
- * by the API); returns null so callers can show the create form instead.
- *
- * Cached per request. `fetchServerAuth` reads this same row to resolve the
- * role for the header, and the profile and dashboard routes read it for the
- * page itself; React dedupes on the arguments and the `serverTransport` a
- * server component passes is a module constant, so those call sites collapse
- * into a single request. Only the two callers that pass the same transport
- * share a result — the header reads it from a client component with no
- * transport at all, and gets its own.
- *
- * The soft 404 stays exactly this narrow. The function is best-effort for the
- * header's sake, but a page still has to tell « no profile yet » apart from
- * « the backend is down », and it can: only a 404 resolves to null, everything
- * else still throws. Reading the profile out of `fetchServerAuth` instead
- * would collapse precisely those two cases — that read swallows any failure
- * and reports `null` — and turn an outage into a redirect to onboarding.
+ * GET /profile/me — null when there is no profile yet; any other failure
+ * throws, so a page can tell « no profile » from an outage. Cached per
+ * request, so server callers passing `serverTransport` share one read.
  */
 export const fetchMyProfile = cache(
   async (transport?: ApiTransport): Promise<ApiProfile | null> =>
@@ -73,23 +56,13 @@ export async function updateProfile(
   );
 }
 
-/**
- * Maps a profile failure to a user-facing French message.
- *
- * The backend's own `message` is not passed through: it is written in English
- * ("City must contain only letters"), and this UI is French — only the Zod
- * field issues are translated, one by one, in `PROFILE_MESSAGE_OVERRIDES`.
- */
+/** The backend's English `message` is never passed through; field issues are translated. */
 export function mapProfileError(error: unknown): string {
   if (error instanceof ApiError) {
-    // Zod field-level errors (e.g. {"message":"Validation failed","errors":[{"path":["city"],"message":"City must contain only letters..."}]})
     if (error.fieldErrors && error.fieldErrors.length > 0) {
       return formatFieldErrors(error.fieldErrors, PROFILE_FIELD_LABELS, {
         "City must contain only letters, spaces, hyphens or apostrophes":
           "ne peut contenir que des lettres, espaces, tirets ou apostrophes.",
-        // Keyed on better-auth's English zod message, and rendered with the
-        // same sentence the client-side validator uses: the same mistake has
-        // exactly one description.
         "String must be 11 digits": `doit contenir exactement ${RPPS_DIGITS} chiffres.`,
         "latitude and longitude must be provided together":
           "la latitude et la longitude doivent être renseignées ensemble.",
@@ -99,9 +72,7 @@ export function mapProfileError(error: unknown): string {
       return "Ce numéro RPPS est déjà utilisé par un autre profil.";
     }
     if (error.status === 403) {
-      // The backend gates every profile write on a verified email — so the
-      // sentence has to name the address, not only the ownership the user
-      // cannot fix.
+      // Every profile write is gated on a verified email too.
       return "Vous n'êtes pas le propriétaire de ce profil, ou votre adresse e-mail n'est pas validée.";
     }
   }
@@ -115,7 +86,6 @@ export function mapProfileError(error: unknown): string {
   });
 }
 
-/** French labels for profile fields — used when formatting Zod `path` issues. */
 const PROFILE_FIELD_LABELS: Record<string, string> = {
   specialty: "Spécialité",
   profileType: "Type de pratique",
@@ -126,10 +96,7 @@ const PROFILE_FIELD_LABELS: Record<string, string> = {
   isPublic: "Visibilité publique",
 };
 
-/**
- * Formats a list of backend field errors into a single user-facing string.
- * Each issue is rendered as "Label : translated message" joined by " · ".
- */
+/** One "Label : message" line per backend field issue. */
 function formatFieldErrors(
   fieldErrors: ReadonlyArray<FieldError>,
   labels: Record<string, string>,

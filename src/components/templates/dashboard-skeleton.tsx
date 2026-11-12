@@ -1,12 +1,6 @@
 import { PAGE_CONTAINER } from "@/lib/layout";
 
-/**
- * Streaming fallback for the member dashboard.
- *
- * The home page resolves the session, then streams the dashboard behind this.
- * It reproduces the real grid — greeting, three stat cards, activity feed,
- * sidebar — so the swap when data lands does not shift the layout.
- */
+/** Streaming fallback for the member dashboard, matching its grid. */
 export function DashboardSkeleton() {
   return (
     <div className={PAGE_CONTAINER}>

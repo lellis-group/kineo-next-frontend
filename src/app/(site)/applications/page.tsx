@@ -23,10 +23,8 @@ export default function ApplicationsPage() {
 }
 
 async function Applications() {
-  // Seeded at the size the reader chose, so the cold load is the page they are
-  // coming back to rather than the default one they then have to grow into.
-  // Clamped to this screen's list: the cookie is shared with /listings/mine,
-  // which still offers 500 — a size this pager never proposes.
+  // Seeded at the reader's chosen size, clamped to this screen's list (the
+  // cookie is shared with /listings/mine, which offers 500).
   const pageSize = clampPageSize(
     await readServerPageSize(),
     APPLICATIONS_PAGE_SIZE_CHOICES,

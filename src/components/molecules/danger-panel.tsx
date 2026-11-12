@@ -4,14 +4,8 @@ import { AlertIcon } from "@/components/atoms/icons";
 import { cn } from "@/lib/cn";
 
 /**
- * The panel that warns before something irreversible — one danger chrome, down
- * to the icon-chip classes, for the three screens that need it (closing a
- * listing, withdrawing an application, deleting an account).
- *
- * `title` is optional because one caller uses the shell purely as a danger
- * notice, with no heading of its own. `headingLevel` is a prop because the panel
- * is used both as a page section and inside a card, and getting it wrong breaks
- * the document outline.
+ * The panel that warns before something irreversible. `title` is optional;
+ * `headingLevel` fits it into the surrounding outline.
  */
 export function DangerPanel({
   icon,
@@ -29,12 +23,8 @@ export function DangerPanel({
   return (
     <Card className={cn("border-danger/30 bg-danger/5 p-5 sm:p-6", className)}>
       {/*
-        On a phone the icon and the title share the first line and the body
-        runs the card's full width under them: kept in the icon's column, the
-        body lost a fifth of a 375px screen to the icon's gutter and read ten
-        words a line. From `sm` the body sits beside the icon again. With no
-        title there is nothing to share the line with, so the body stays in
-        the second column at every size.
+        On a phone the body runs full width under the icon and title; from `sm`
+        it sits beside the icon. Without a title it stays in the second column.
       */}
       <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 sm:items-start">
         <span

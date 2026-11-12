@@ -29,13 +29,7 @@ const myApplicationsAction: DashboardAction = {
   icon: "file",
 };
 
-/**
- * Home actions, filtered by `profileType`.
- *
- * Nothing here points at a page that does not exist: there is no `/practices`
- * on either side of the wire — the practice side is `/listings/mine` until a
- * real practice screen is built.
- */
+/** Home actions, filtered by `profileType`. */
 export function adaptActions(
   profileType?: ProfileType | null,
 ): DashboardAction[] {

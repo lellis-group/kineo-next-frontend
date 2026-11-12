@@ -18,14 +18,7 @@ import {
   horizonBounds,
 } from "@/lib/listings";
 
-/**
- * The map, loaded only in the browser.
- *
- * `ssr: false` is not an optimisation here, it is a requirement: MapLibre opens
- * a WebGL context and reads `window` on import, so a server render of this module
- * throws before the first byte of HTML. Next only honours `ssr: false` from a
- * client component, which is why this file is one.
- */
+/** The map, browser-only: MapLibre needs WebGL and `window` on import. */
 const ListingsMap = dynamic(
   () =>
     import("@/components/organisms/listings-map").then((m) => m.ListingsMap),
@@ -38,24 +31,11 @@ const ListingsMap = dynamic(
 );
 
 /**
- * The browse screen's composition root.
- *
- * The work is split three ways, and the split is the point:
- *
- * - `useBrowseView` owns the URL — filters, page, sort, layout — because a
- *   filtered search here has to be shareable and walkable with the back button;
- * - `useBrowseResource` owns the server-seeded rows and the table/map handles;
- * - `useBrowsePicking` owns pointing at a posting, in both directions.
- *
- * What remains here is composition: a filter change also drops the current
- * choice, a page turn also drops the transient glow, and a horizon chip is a
- * filter change with bounds. Those are cross-cutting rules, so they stay in the
- * one place that can see all three hooks.
- *
- * The server answers every view by re-rendering: `page.tsx` reads the same query
- * string and seeds the three reads, so all of them arrive as fresh
- * `initialData`/`initialFacets`/`initialPlaces` on each navigation. There is no
- * client fetch on this screen.
+ * The browse screen's composition root: `useBrowseView` owns the URL,
+ * `useBrowseResource` the server-seeded rows, `useBrowsePicking` the hover and
+ * selection. Cross-cutting rules (a filter change drops the choice, a page
+ * turn drops the glow) live here. There is no client fetch: `page.tsx`
+ * re-seeds every read on each navigation.
  */
 export function ListingsContainer({
   initialData,
@@ -111,11 +91,7 @@ export function ListingsContainer({
     browse.resetFilters();
   }, [browse.resetFilters, dropChoice]);
 
-  /**
-   * A page turn drops only the transient pick. The choice itself stays: the
-   * reader is looking at another slice of the same collection, not at a
-   * different question.
-   */
+  /** A page turn drops only the transient pick; the choice stays. */
   const onPageChange = useCallback(
     (next: number) => {
       picking.clearTransientPick();
@@ -125,12 +101,6 @@ export function ListingsContainer({
   );
 
   return (
-    /*
-      The rail's busy state, read off what is in flight: the panels are
-      aggregates of the collection, so a page turn — however it was asked for —
-      gives them nothing to recompute, and a filter or a sort does. The results
-      panel dims for both; this is the one that must not lie.
-    */
     <ListingsView
       rail={{
         facets: initialFacets,
@@ -160,10 +130,7 @@ export function ListingsContainer({
         totalPages: resource.data.totalPages,
         page: resource.data.page,
         onPageChange,
-        // The pagination hook's `loading` never fires on this screen — there is
-        // no client fetch. The pending signal that matters is the server
-        // navigation the URL write started, so the list dims while the new rows
-        // are in flight.
+        // No client fetch here: the pending signal is the server navigation.
         loading: resource.loading || browse.isNavigating,
         filtered: browse.filtered,
         horizon: browse.horizon,
@@ -172,8 +139,6 @@ export function ListingsContainer({
         onHoveredChange: picking.setHoveredListingId,
         selectedListingId: picking.selectedListing?.id ?? null,
         onListingSelect: picking.selectListing,
-        // The mark itself, the words about it, and the pager flash — the three
-        // answers to « what changed » one pick can make on this half.
         spotlight: picking.spotlight,
         announcement: picking.announcement,
         pageHighlight:
@@ -213,23 +178,8 @@ export function ListingsContainer({
 }
 
 /**
- * The map, and the promise its first read arrived in.
- *
- * The seed for this map is not awaited in the page: `/places` is the heaviest
- * read on this screen and the biggest payload in the response, and holding the
- * rows behind it meant the list a reader actually reads waited on a map that is
- * drawn by a chunk that has not loaded yet. So the read stays a promise until
- * here, inside its own boundary, and the rows paint without it.
- *
- * `use()` suspends this component — not the container — which is what puts the
- * boundary in the right place. It is called on a promise either way, whether the
- * data is the server's seed or one a filter change has since resolved, so the
- * order of the hook never changes.
- *
- * The `ref` passes straight through: a handle is a prop, and the component that
- * owns it is the one that forwards it. Holding it here instead would mean the
- * container reached *through* a `Suspense` boundary to a node this component
- * renders, which is the one thing a boundary exists to prevent.
+ * The map, behind its own `Suspense` boundary: `/places` is the heaviest read,
+ * so its promise is unwrapped here with `use()` and the rows paint without it.
  */
 type MapSlotProps = Omit<
   React.ComponentProps<typeof ListingsMap>,
