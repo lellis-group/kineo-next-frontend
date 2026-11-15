@@ -1,13 +1,6 @@
 import { Avatar } from "@/components/atoms/avatar";
 import { Button } from "@/components/atoms/button";
-import {
-  CalendarIcon,
-  CheckIcon,
-  PencilIcon,
-  ShieldIcon,
-} from "@/components/atoms/icons";
-import { Panel } from "@/components/molecules/panel";
-import { StatChip } from "@/components/molecules/panel-chrome";
+import { PencilIcon } from "@/components/atoms/icons";
 import { VerifiedBadge } from "@/components/molecules/verified-badge";
 import {
   completenessSentence,
@@ -19,34 +12,24 @@ import {
 import type { ApiProfile, ApiUser } from "@/lib/types/api";
 
 /**
- * The opening panel of /profile: who the member is, three figures about the
- * account in the console's chips, and what is missing, in one sentence.
+ * The top of /profile: who the member is, in one line, and what is missing
+ * from their profile, in one sentence.
  */
 export function ProfileIdentity({
   user,
   profile,
   onEditProfile,
-  className,
 }: {
   user: ApiUser;
   profile: ApiProfile;
   onEditProfile: () => void;
-  className?: string;
 }) {
-  const completeness = profileCompleteness(user, profile);
-  const missing = completenessSentence(completeness.items);
+  const missing = completenessSentence(
+    profileCompleteness(user, profile).items,
+  );
 
   return (
-    <Panel
-      title="Mon profil"
-      className={className}
-      action={
-        <Button variant="outline" onClick={onEditProfile} className="px-4 py-2">
-          <PencilIcon className="size-4" />
-          Modifier le profil pro
-        </Button>
-      }
-    >
+    <header className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex min-w-0 items-center gap-4 sm:gap-5">
         <Avatar
           name={user.name ?? user.email}
@@ -60,33 +43,26 @@ export function ProfileIdentity({
             </h1>
             {profile.verified && <VerifiedBadge label="Identité vérifiée" />}
           </div>
-          <p className="mt-1 truncate text-sm text-muted">
-            {PROFILE_TYPE_LABELS[profile.profileType]} ·{" "}
-            {SPECIALTY_LABELS[profile.specialty]}
+          <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted">
+            <span>{PROFILE_TYPE_LABELS[profile.profileType]}</span>
+            <span aria-hidden="true">·</span>
+            <span>{SPECIALTY_LABELS[profile.specialty]}</span>
           </p>
-          <p className="mt-0.5 truncate text-xs text-faint">{user.email}</p>
+          <p className="mt-1 text-xs text-faint">
+            Membre depuis {formatMemberSince(user.createdAt)}
+            {missing && <> · {missing}</>}
+          </p>
         </div>
       </div>
 
-      <div className="mt-6 grid grid-cols-1 gap-2 sm:grid-cols-3">
-        <StatChip
-          icon={<CalendarIcon className="size-3.5" />}
-          label="Membre depuis"
-          value={formatMemberSince(user.createdAt)}
-        />
-        <StatChip
-          icon={<CheckIcon className="size-3.5" />}
-          label="Profil complété"
-          value={`${completeness.done} / ${completeness.items.length}`}
-        />
-        <StatChip
-          icon={<ShieldIcon className="size-3.5" />}
-          label="Identité"
-          value={profile.verified ? "Vérifiée" : "Non vérifiée"}
-        />
-      </div>
-
-      {missing && <p className="mt-3 text-xs text-muted">{missing}</p>}
-    </Panel>
+      <Button
+        variant="outline"
+        onClick={onEditProfile}
+        className="w-full shrink-0 sm:w-auto"
+      >
+        <PencilIcon className="size-4" />
+        Modifier le profil pro
+      </Button>
+    </header>
   );
 }
