@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/atoms/button";
-import { CloseIcon } from "@/components/atoms/icons";
-import { DangerPanel } from "@/components/molecules/danger-panel";
+import { AlertIcon, CloseIcon } from "@/components/atoms/icons";
 import { FormActions } from "@/components/molecules/form-actions";
 import { PendingButton } from "@/components/molecules/pending-button";
 import { plural } from "@/lib/format";
@@ -50,35 +49,39 @@ export function ListingActions({
 
   const needsConfirm = activeCount > 0;
 
-  // The same trigger row either way, so the buttons never move.
-  const triggers = (
-    <>
-      <PendingButton
-        variant="outline"
-        pending={acting === true}
-        onClick={() => (needsConfirm ? setPending("close") : onClose())}
-        idleLabel="Clôturer l'annonce"
-      />{" "}
-      <Button
-        variant="ghost"
-        onClick={() => (needsConfirm ? setPending("cancel") : onCancel())}
-        disabled={acting}
-        className="mt-3 text-danger hover:bg-danger/10 sm:ml-3 sm:mt-0"
-      >
-        Annuler l&apos;annonce
-      </Button>
-    </>
-  );
-
   if (!needsConfirm || !pending) {
-    return <div>{triggers}</div>;
+    // Two full-width buttons, one per line: the rail is narrow, and neither
+    // action is the default one.
+    return (
+      <div className="grid gap-2">
+        <PendingButton
+          variant="outline"
+          pending={acting === true}
+          onClick={() => (needsConfirm ? setPending("close") : onClose())}
+          idleLabel="Clôturer l'annonce"
+          className="w-full"
+        />
+        <Button
+          variant="outline"
+          onClick={() => (needsConfirm ? setPending("cancel") : onCancel())}
+          disabled={acting}
+          className="w-full border-danger/35 text-danger hover:bg-danger/10"
+        >
+          Annuler l&apos;annonce
+        </Button>
+      </div>
+    );
   }
 
   const copy = ACTION_COPY[pending];
 
   return (
-    <DangerPanel title={copy.title}>
-      <p className="mt-0.5 text-sm leading-relaxed text-muted">{copy.intro}</p>
+    <div className="rounded-control border border-danger/30 bg-danger/5 p-4">
+      <p className="flex items-center gap-2 text-sm font-medium text-danger">
+        <AlertIcon className="size-4 shrink-0" />
+        {copy.title}
+      </p>
+      <p className="mt-2 text-sm leading-relaxed text-muted">{copy.intro}</p>
 
       <p className="mt-4 text-sm font-medium text-foreground">
         {activeCount} candidature{plural(activeCount)} en cours{" "}
@@ -86,7 +89,7 @@ export function ListingActions({
       </p>
 
       <FormActions
-        className="mt-4"
+        className="mt-4 sm:flex-col"
         type="button"
         variant="danger"
         pending={acting === true}
@@ -96,6 +99,6 @@ export function ListingActions({
         cancelIcon={<CloseIcon className="h-4 w-4" />}
         cancelLabel="Revenir en arrière"
       />
-    </DangerPanel>
+    </div>
   );
 }
