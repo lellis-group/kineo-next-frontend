@@ -1,4 +1,4 @@
-import type { ComponentType, ReactNode, SVGProps } from "react";
+import type { ComponentType, SVGProps } from "react";
 import {
   AlertTriangleIcon,
   CalendarIcon,
@@ -10,6 +10,7 @@ import {
   UsersIcon,
 } from "@/components/atoms/icons";
 import { CapacityBar } from "@/components/molecules/capacity-bar";
+import { FactRow } from "@/components/molecules/fact-row";
 import { Panel } from "@/components/molecules/panel";
 import { StatChip } from "@/components/molecules/panel-chrome";
 import { RailDistribution } from "@/components/molecules/rail-distribution";
@@ -103,7 +104,7 @@ export function ListingDetailRail({
 
       <Panel title="Annonce">
         <dl className="cell-scope divide-y divide-border">
-          <ListingFact mark={<CalendarIcon />} label="Période">
+          <FactRow mark={<CalendarIcon />} label="Période">
             <span className="block whitespace-nowrap">
               {formatDayMonth(listing.startDate)} →{" "}
               {formatDayMonth(listing.endDate)}
@@ -111,22 +112,22 @@ export function ListingDetailRail({
             <span className="block text-xs font-normal text-muted">
               {formatDurationDays(listing.startDate, listing.endDate)}
             </span>
-          </ListingFact>
-          <ListingFact
+          </FactRow>
+          <FactRow
             mark={<SpecialtyIcon specialty={listing.specialty} />}
             label="Spécialité"
           >
             {specialtyLabel(listing.specialty)}
-          </ListingFact>
-          <ListingFact mark={<UsersIcon />} label="Candidats actifs">
+          </FactRow>
+          <FactRow mark={<UsersIcon />} label="Candidats actifs">
             <CapacityBar
               count={listing.applicationsCount}
               max={listing.maxApplications}
             />
-          </ListingFact>
-          <ListingFact mark={<ClockIcon />} label="Diffusion">
+          </FactRow>
+          <FactRow mark={<ClockIcon />} label="Diffusion">
             {formatListingAge(listing)}
-          </ListingFact>
+          </FactRow>
         </dl>
 
         {listing.description && (
@@ -144,33 +145,6 @@ export function ListingDetailRail({
           </p>
         )}
       </Panel>
-    </div>
-  );
-}
-
-/** One fact of the posting: a muted mark and label, the value on the right. */
-function ListingFact({
-  mark,
-  label,
-  children,
-}: {
-  /** An icon; sized and toned here. */
-  mark: ReactNode;
-  label: string;
-  children: ReactNode;
-}) {
-  return (
-    <div className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
-      <span
-        aria-hidden="true"
-        className="grid size-4 shrink-0 place-items-center text-muted [&>svg]:size-4"
-      >
-        {mark}
-      </span>
-      <dt className="min-w-0 flex-1 text-sm text-muted">{label}</dt>
-      <dd className="shrink-0 text-right text-sm font-medium text-foreground tabular-nums">
-        {children}
-      </dd>
     </div>
   );
 }

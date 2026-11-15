@@ -48,10 +48,7 @@ export function ApplyToListing({ listingId }: { listingId: string }) {
 
   if (state === "sent") {
     return (
-      <section
-        aria-label="Candidature envoyée"
-        className="border-t border-border pt-6"
-      >
+      <section aria-label="Candidature envoyée">
         <p className="text-sm font-medium">{APPLY_SUCCESS}</p>
         <p className="mt-2 text-sm text-muted">
           Vous pouvez suivre son état depuis vos candidatures.
@@ -67,14 +64,18 @@ export function ApplyToListing({ listingId }: { listingId: string }) {
 
   if (state === "closed") {
     return (
-      <section aria-label="Postuler" className="border-t border-border pt-6">
+      <section aria-label="Postuler">
+        <p className="mb-4 text-sm leading-relaxed text-muted">
+          Présentez-vous au cabinet en quelques lignes : expérience,
+          disponibilités. Le message est facultatif.
+        </p>
         <Button onClick={() => setState("open")}>Postuler</Button>
       </section>
     );
   }
 
   return (
-    <section aria-label="Postuler" className="border-t border-border pt-6">
+    <section aria-label="Postuler">
       <form onSubmit={handleSubmit}>
         <CountedTextarea
           label="Message au cabinet (optionnel)"
