@@ -1,5 +1,5 @@
-import { ApplicationCard } from "@/components/molecules/application-card";
 import { EmptyState } from "@/components/molecules/empty-state";
+import { ApplicationCard } from "@/components/organisms/application-card";
 import type { ApplicationEntry } from "@/lib/applications";
 
 export function ApplicationsList({

@@ -106,7 +106,7 @@ function ApplicationsHeader() {
     // No total here: the « Toutes (n) » chip already carries it.
     <PageHeader
       title="Mes candidatures"
-      subtitle="Suivez l&apos;état de vos candidatures envoyées aux cabinets."
+      subtitle="Suivez l'état de vos candidatures envoyées aux cabinets."
     />
   );
 }

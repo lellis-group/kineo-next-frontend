@@ -2,6 +2,7 @@ import {
   type ApplicationEntry,
   decisionHeadline,
   decisionSummary,
+  isAwaitingDecision,
   STATUS_HEADLINES,
   STATUS_META,
 } from "@/lib/applications";
@@ -46,8 +47,7 @@ export function ApplicationStatusBanner({
   application: ApplicationEntry;
   className?: string;
 }) {
-  const stillOpen =
-    application.status === "PENDING" || application.status === "SHORTLISTED";
+  const stillOpen = isAwaitingDecision(application.status);
 
   // The status covers rows written before `decisionSource` existed.
   const headline = decisionHeadline(

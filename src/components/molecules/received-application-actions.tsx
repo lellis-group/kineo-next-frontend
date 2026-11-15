@@ -11,7 +11,7 @@ import { CountedTextarea } from "@/components/molecules/counted-textarea";
 import { FormActions } from "@/components/molecules/form-actions";
 import { InlineAlert } from "@/components/molecules/inline-alert";
 import { PendingButton } from "@/components/molecules/pending-button";
-import { REASON_MAX_LENGTH } from "@/lib/applications";
+import { isAwaitingDecision, REASON_MAX_LENGTH } from "@/lib/applications";
 import { useAsyncSubmit } from "@/lib/hooks/use-async-submit";
 import type { ReceivedApplication } from "@/lib/listings";
 import { applicationDecisionErrorMessage } from "@/lib/listings";
@@ -115,8 +115,7 @@ export function ReceivedApplicationActions({
               pendingLabel="Présélection…"
             />
           )}
-          {(application.status === "PENDING" ||
-            application.status === "SHORTLISTED") && (
+          {isAwaitingDecision(application.status) && (
             <>
               <PendingButton
                 variant="primary"

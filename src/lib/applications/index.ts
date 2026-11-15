@@ -9,6 +9,7 @@ export {
   DECISION_SUMMARIES,
   decisionHeadline,
   decisionSummary,
+  isAwaitingDecision,
   LISTING_FALLBACK_TITLE,
   practiceLabel,
   STATUS_HEADLINES,

@@ -145,6 +145,11 @@ export const WITHDRAWABLE_STATUSES: ReadonlySet<ApplicationStatus> = new Set([
 export const AWAITING_DECISION_STATUSES: ReadonlySet<ApplicationStatus> =
   new Set(["PENDING", "SHORTLISTED"]);
 
+/** Whether the practice can still decide on an application in `status`. */
+export function isAwaitingDecision(status: ApplicationStatus): boolean {
+  return AWAITING_DECISION_STATUSES.has(status);
+}
+
 /**
  * Sums the server's totals rather than counting rows: a caller holding one page
  * would report a page.

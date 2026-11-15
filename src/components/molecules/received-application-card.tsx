@@ -5,6 +5,7 @@ import { InlineAlert } from "@/components/molecules/inline-alert";
 import { MetaRow, MetaRowItem } from "@/components/molecules/meta-row";
 import { ReceivedApplicationActions } from "@/components/molecules/received-application-actions";
 import { VerifiedBadge } from "@/components/molecules/verified-badge";
+import { isAwaitingDecision, STATUS_META } from "@/lib/applications";
 import { cn } from "@/lib/cn";
 import { formatRelativeTime } from "@/lib/format";
 import {
@@ -81,7 +82,7 @@ export function ReceivedApplicationCard({
         </div>
 
         <div className="flex min-w-0 flex-col items-end gap-2.5 sm:min-w-44">
-          <Badge tone={statusTone(application.status)} size="md">
+          <Badge tone={STATUS_META[application.status].badgeTone} size="md">
             {RECEIVED_STATUS_LABELS[application.status]}
           </Badge>
           {decision && (
@@ -126,32 +127,15 @@ export function ReceivedApplicationCard({
         )}
       </MetaRow>
 
-      {actions &&
-        (application.status === "PENDING" ||
-          application.status === "SHORTLISTED") && (
-          <ReceivedApplicationActions
-            application={application}
-            onShortlist={actions.onShortlist}
-            onAccept={actions.onAccept}
-            onReject={actions.onReject}
-            onMarkViewed={actions.onMarkViewed}
-          />
-        )}
+      {actions && isAwaitingDecision(application.status) && (
+        <ReceivedApplicationActions
+          application={application}
+          onShortlist={actions.onShortlist}
+          onAccept={actions.onAccept}
+          onReject={actions.onReject}
+          onMarkViewed={actions.onMarkViewed}
+        />
+      )}
     </article>
   );
-}
-
-function statusTone(status: ReceivedApplication["status"]) {
-  switch (status) {
-    case "PENDING":
-      return "warning" as const;
-    case "SHORTLISTED":
-      return "info" as const;
-    case "ACCEPTED":
-      return "success" as const;
-    case "REJECTED":
-      return "danger" as const;
-    default:
-      return "neutral" as const;
-  }
 }
