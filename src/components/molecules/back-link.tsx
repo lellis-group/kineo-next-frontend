@@ -8,14 +8,17 @@ import { BACK_LINK } from "@/lib/layout";
 export function BackLink({
   href,
   children,
+  replace,
   className,
 }: {
   href: string;
   children: ReactNode;
+  /** Replaces the history entry instead of pushing one (leaving a form). */
+  replace?: boolean;
   className?: string;
 }) {
   return (
-    <Link href={href} className={cn(BACK_LINK, className)}>
+    <Link href={href} replace={replace} className={cn(BACK_LINK, className)}>
       <ArrowLeftIcon className="h-4 w-4" />
       {children}
     </Link>

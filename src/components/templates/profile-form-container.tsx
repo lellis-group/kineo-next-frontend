@@ -77,7 +77,7 @@ export function ProfileFormContainer(props: Props) {
   return (
     <ProfileFormPage
       backLabel={copy.backLabel}
-      onBack={() => router.replace(copy.backHref)}
+      backHref={copy.backHref}
       title={copy.title}
       subtitle={copy.subtitle}
     >

@@ -1,12 +1,12 @@
 import type { ReactNode } from "react";
-import { Button } from "@/components/atoms/button";
 import { Card } from "@/components/atoms/card";
-import { ArrowLeftIcon } from "@/components/atoms/icons";
+import { BackLink } from "@/components/molecules/back-link";
 import { PROSE_CONTAINER } from "@/lib/layout";
 
 export interface ProfileFormPageProps {
   backLabel: string;
-  onBack: () => void;
+  /** Where « back » goes; the form is left with a history replace. */
+  backHref: string;
   title: string;
   subtitle: string;
   children: ReactNode;
@@ -14,17 +14,16 @@ export interface ProfileFormPageProps {
 
 export function ProfileFormPage({
   backLabel,
-  onBack,
+  backHref,
   title,
   subtitle,
   children,
 }: ProfileFormPageProps) {
   return (
     <div className={PROSE_CONTAINER}>
-      <Button variant="ghost" onClick={onBack} className="mb-6">
-        <ArrowLeftIcon className="h-4 w-4" />
+      <BackLink href={backHref} replace className="mb-6">
         {backLabel}
-      </Button>
+      </BackLink>
 
       <Card className="p-6 sm:p-8">
         <h1 className="text-xl font-medium tracking-tight sm:text-2xl">
