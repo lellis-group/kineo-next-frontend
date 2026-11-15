@@ -1,22 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import type { ApplicationEntry } from "../applications";
-import {
-  COUNT_KEYS,
-  zeroCounts,
-  zeroCounts as zeroListingCounts,
-} from "../counts";
-import type { MyListingsData } from "../listings";
+import { COUNT_KEYS, zeroCounts } from "../counts";
 import type { ApiApplicationStatusCounts } from "../types/api";
 import { ACTIVITY_FEED_SIZE, adaptActivity } from "./activity";
+import { adaptNextReplacement } from "./next-replacement";
 import { adaptReactivity } from "./response-rate";
-import { adaptStats } from "./stats";
-
-const listingCounts = (
-  partial: Partial<MyListingsData["counts"]>,
-): MyListingsData["counts"] => ({
-  ...zeroListingCounts(0, COUNT_KEYS.listingStatus),
-  ...partial,
-});
 
 const applicationCounts = (
   partial: Partial<ApiApplicationStatusCounts>,
@@ -38,99 +26,27 @@ const entry = (id: string, over: Partial<ApplicationEntry> = {}) =>
     ...over,
   }) satisfies ApplicationEntry;
 
-const stat = (stats: ReturnType<typeof adaptStats>, id: string) =>
-  stats.find((entry) => entry.id === id);
-
-describe("adaptStats", () => {
-  const listings = (
-    counts: MyListingsData["counts"],
-    nextRecruitingListing: MyListingsData["nextRecruitingListing"] = null,
-  ) =>
-    ({
-      listings: [],
-      counts,
-      page: 1,
-      totalPages: 1,
-      total: 0,
-      nextRecruitingListing,
-    }) satisfies MyListingsData;
-
-  const applications = (counts: ApiApplicationStatusCounts, over = {}) =>
-    ({
-      total: counts.total,
-      applications: [],
-      pagination: { page: 1, limit: 1, totalPages: 1 },
-      counts,
-      bucketCounts: { PASSED_OVER: 0, POSTING_ENDED: 0, REFUSED: 0 },
-      unseenOpenCount: 0,
-      respondedCount: 0,
-      ...over,
-    }) as Parameters<typeof adaptStats>[1];
-
-  test("counts the listings headline off the totals, whatever rows came back", () => {
-    // 31 OPEN postings exist; the page holds one.
-    const stats = adaptStats(
-      listings(listingCounts({ total: 31, OPEN: 30, IN_DISCUSSION: 1 })),
-      applications(applicationCounts({ total: 0 })),
-    );
-
-    expect(stat(stats, "listings")?.value).toBe("31");
-    expect(stat(stats, "listings")?.detail).toContain("30 ouvertes");
-  });
-
-  test("counts a shortlisted application as still outstanding", () => {
-    const stats = adaptStats(
-      listings(listingCounts({ total: 0 })),
-      applications(applicationCounts({ total: 5, SHORTLISTED: 2 })),
-    );
-
-    expect(stat(stats, "applications")?.value).toBe("2");
-  });
-
-  test("qualifies the total with the server's unseen counter", () => {
-    const stats = adaptStats(
-      listings(listingCounts({ total: 0 })),
-      applications(applicationCounts({ total: 9, PENDING: 3 }), {
-        unseenOpenCount: 2,
-      }),
-    );
-
-    expect(stat(stats, "applications")?.detail).toContain(
-      "dont 2 pas encore vues par le cabinet",
-    );
-  });
-
-  test("drops the qualifier when the backend sends no counter", () => {
-    const stats = adaptStats(
-      listings(listingCounts({ total: 0 })),
-      applications(applicationCounts({ total: 9, PENDING: 3 })),
-    );
-
-    expect(stat(stats, "applications")?.detail).toBe("3 en attente");
-  });
-
-  test("names the posting the server picked as the next one", () => {
-    const stats = adaptStats(
-      listings(listingCounts({ total: 3, OPEN: 2 }), {
+describe("adaptNextReplacement", () => {
+  test("names the posting the server picked as the next one, with its page", () => {
+    const next = adaptNextReplacement({
+      nextRecruitingListing: {
         id: "soon",
         title: "Annonce soon",
         startDate: "2026-11-01T00:00:00.000Z",
         endDate: "2026-11-05T00:00:00.000Z",
-      }),
-      applications(applicationCounts({ total: 0 })),
-    );
+      },
+    });
 
-    expect(stat(stats, "next-replacement")?.detail).toBe("Annonce soon");
-    expect(stat(stats, "next-replacement")?.value).not.toBe("Aucun");
+    expect(next.title).toBe("Annonce soon");
+    expect(next.href).toBe("/listings/mine/soon");
+    expect(next.period).not.toBeNull();
   });
 
-  test("says « Aucun » when the server found nothing coming", () => {
-    const stats = adaptStats(
-      listings(listingCounts({ total: 1, OPEN: 1 }), null),
-      applications(applicationCounts({ total: 0 })),
-    );
+  test("says nothing is coming when the server found nothing", () => {
+    const next = adaptNextReplacement({ nextRecruitingListing: null });
 
-    expect(stat(stats, "next-replacement")?.value).toBe("Aucun");
+    expect(next.period).toBeNull();
+    expect(next.href).toBeUndefined();
   });
 });
 
@@ -164,6 +80,23 @@ describe("adaptReactivity", () => {
 
     expect(reactivity.rate).toBe(50);
     expect(reactivity.rateCaption).toBe("4 réponses sur 8 candidatures");
+  });
+
+  test("carries the server's count of applications no practice has opened", () => {
+    const { unseen } = adaptReactivity({
+      counts: applicationCounts({ total: 9, PENDING: 3 }),
+      respondedCount: 0,
+      unseenOpenCount: 2,
+    });
+    expect(unseen).toBe(2);
+  });
+
+  test("reads a missing counter as none", () => {
+    const { unseen } = adaptReactivity({
+      counts: applicationCounts({ total: 9, PENDING: 3 }),
+      respondedCount: 0,
+    });
+    expect(unseen).toBe(0);
   });
 
   test("reports no rate rather than a division by zero", () => {

@@ -6,8 +6,10 @@ import type { DashboardData, ReactivityFigure } from "./contracts";
 export function adaptReactivity(applications: {
   counts: ApiApplicationStatusCounts;
   respondedCount: number;
+  /** Absent from an older backend: read as none. */
+  unseenOpenCount?: number;
 }): DashboardData["reactivity"] {
-  const { counts, respondedCount } = applications;
+  const { counts, respondedCount, unseenOpenCount = 0 } = applications;
   const sent = counts.total;
 
   // Withdrawn applications can never be answered, so they stay out of the
@@ -30,6 +32,7 @@ export function adaptReactivity(applications: {
     rate,
     rateCaption: `${respondedCount} réponse${plural(respondedCount)} sur ${answerable} candidature${plural(answerable)}`,
     figures,
+    unseen: unseenOpenCount,
     tipTitle: "Conseil Kineo",
     tip: "Un message personnalisé fait la différence : mentionnez votre expérience et vos disponibilités dans chaque candidature pour augmenter vos chances d'acceptation.",
   };

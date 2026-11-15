@@ -4,7 +4,7 @@ export type {
   ActivityEntry,
   DashboardAction,
   DashboardData,
-  DashboardStat,
+  NextReplacement,
   ReactivityFigure,
   UserSummary,
 } from "./contracts";

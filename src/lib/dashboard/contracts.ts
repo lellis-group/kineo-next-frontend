@@ -20,14 +20,14 @@ export interface DashboardAction {
   icon?: DashboardActionIcon;
 }
 
-export interface DashboardStat {
-  id: string;
-  title: string;
-  /** Large-displayed value — number or key fact. */
-  value: string;
-  icon: "layers" | "users" | "calendar";
-  label?: string;
-  detail?: string;
+/** The soonest recruiting posting still to come, or none. */
+export interface NextReplacement {
+  /** « Du 15 févr. au 22 févr. 2027 », or null when nothing is coming. */
+  period: string | null;
+  label: string;
+  /** The posting's title and page, when there is one. */
+  title?: string;
+  href?: string;
 }
 
 export interface ActivityEntry {
@@ -54,7 +54,7 @@ export interface ReactivityFigure {
 export interface DashboardData {
   greeting: UserSummary;
   actions: DashboardAction[];
-  stats: DashboardStat[];
+  nextReplacement: NextReplacement;
   activity: ActivityEntry[];
   /** True when GET /profile/me returns 404 — account exists, profile not yet created (onboarding, not an error). */
   needsProfile: boolean;
@@ -65,6 +65,8 @@ export interface DashboardData {
     rate: number;
     /** What `rate` is of, in words — the gauge's caption. */
     rateCaption: string;
+    /** Open applications no practice has opened yet, over the whole collection. */
+    unseen: number;
     figures: ReactivityFigure[];
     tipTitle: string;
     tip: string;

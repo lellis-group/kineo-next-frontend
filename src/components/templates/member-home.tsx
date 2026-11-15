@@ -1,14 +1,14 @@
 import { ActivityFeed } from "@/components/organisms/activity-feed";
 import { DashboardGreeting } from "@/components/organisms/dashboard-greeting";
 import { DashboardRail } from "@/components/organisms/dashboard-rail";
-import { DashboardStats } from "@/components/organisms/dashboard-stats";
+import { NextReplacementPanel } from "@/components/organisms/next-replacement-panel";
 import { ProfileOnboardingCard } from "@/components/organisms/profile-onboarding-card";
 import { BoardShell } from "@/components/templates/board-shell";
 import type { DashboardData } from "@/lib/dashboard";
 
 /**
- * The member's home, on the console's board: summary panels down the rail,
- * the greeting, the headline figures and the latest activity beside it.
+ * The member's home, on the console's board: the figures down the rail, the
+ * greeting, the next replacement and the latest activity beside it.
  * Unlike the workspaces it scrolls as a document.
  */
 export function MemberHome({ data }: { data: DashboardData }) {
@@ -23,7 +23,7 @@ export function MemberHome({ data }: { data: DashboardData }) {
 
       {data.needsProfile && <ProfileOnboardingCard />}
 
-      <DashboardStats stats={data.stats} />
+      <NextReplacementPanel next={data.nextReplacement} />
 
       <ActivityFeed
         items={data.activity}
