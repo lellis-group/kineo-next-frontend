@@ -136,23 +136,43 @@ describe("adaptStats", () => {
 
 describe("adaptReactivity", () => {
   test("divides answered applications by the answerable ones", () => {
-    const { stats } = adaptReactivity({
-      counts: applicationCounts({ total: 10, ACCEPTED: 3, WITHDRAWN: 2 }),
+    const { rate, figures } = adaptReactivity({
+      counts: applicationCounts({
+        total: 10,
+        PENDING: 2,
+        SHORTLISTED: 1,
+        ACCEPTED: 3,
+        WITHDRAWN: 2,
+      }),
       respondedCount: 4,
     });
 
-    expect(stats[0]?.value).toBe("50%"); // 4 of 8, not 4 of 10
-    expect(stats[1]?.value).toBe("10");
-    expect(stats[2]?.value).toBe("3");
+    expect(rate).toBe(50); // 4 of 8, not 4 of 10
+    expect(figures.map((figure) => figure.value)).toEqual([
+      "10",
+      "3",
+      "3",
+      "0",
+    ]);
+  });
+
+  test("hands the gauge the same rate, and says what it is of", () => {
+    const reactivity = adaptReactivity({
+      counts: applicationCounts({ total: 10, WITHDRAWN: 2 }),
+      respondedCount: 4,
+    });
+
+    expect(reactivity.rate).toBe(50);
+    expect(reactivity.rateCaption).toBe("4 réponses sur 8 candidatures");
   });
 
   test("reports no rate rather than a division by zero", () => {
-    const { stats } = adaptReactivity({
+    const { rate } = adaptReactivity({
       counts: applicationCounts({ total: 0 }),
       respondedCount: 0,
     });
 
-    expect(stats[0]?.value).toBe("0%");
+    expect(rate).toBe(0);
   });
 });
 
@@ -170,5 +190,27 @@ describe("adaptActivity", () => {
   test("names the posting from the listing the application embeds", () => {
     const [first] = adaptActivity([entry("1")]);
     expect(first?.message[1]?.text).toBe("Annonce 1");
+  });
+
+  test("carries the status chip and the listing's practice", () => {
+    const [first] = adaptActivity([
+      entry("1", {
+        status: "ACCEPTED",
+        listing: {
+          id: "l-1",
+          title: "Annonce 1",
+          practiceName: "Cabinet des Pins",
+          practiceCity: "Bordeaux",
+        },
+      }),
+    ]);
+
+    expect(first?.status).toEqual({ label: "Acceptée", tone: "success" });
+    expect(first?.place).toBe("Cabinet des Pins · Bordeaux");
+  });
+
+  test("leaves the place out rather than printing an empty one", () => {
+    const [first] = adaptActivity([entry("1")]);
+    expect(first?.place).toBeUndefined();
   });
 });

@@ -1,24 +1,25 @@
 import { Skeleton } from "@/components/atoms/skeleton";
-import { PAGE_CONTAINER } from "@/lib/layout";
+import { BoardShell } from "@/components/templates/board-shell";
 
-/** Streaming fallback for the member dashboard, matching its grid. */
+/** Streaming fallback for the member's home, on the same board geometry. */
 export function DashboardSkeleton() {
   return (
-    <div className={PAGE_CONTAINER}>
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
-        <div className="min-w-0 space-y-6">
-          <Skeleton className="h-28" />
-          <div className="grid gap-4 sm:grid-cols-3">
-            <Skeleton className="h-32" />
-            <Skeleton className="h-32" />
-            <Skeleton className="h-32" />
-          </div>
-          <Skeleton className="h-64" />
+    <BoardShell
+      className="lg:py-4"
+      rail={
+        <div className="flex flex-col gap-3">
+          <Skeleton shape="card" className="h-96" />
+          <Skeleton shape="card" className="h-64" />
         </div>
-        <aside>
-          <Skeleton className="h-96" />
-        </aside>
+      }
+    >
+      <Skeleton shape="card" className="h-44" />
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        <Skeleton shape="card" className="h-44" />
+        <Skeleton shape="card" className="h-44" />
+        <Skeleton shape="card" className="h-44 sm:col-span-2 xl:col-span-1" />
       </div>
-    </div>
+      <Skeleton shape="card" className="h-72" />
+    </BoardShell>
   );
 }

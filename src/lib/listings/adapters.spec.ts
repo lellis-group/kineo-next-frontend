@@ -1,9 +1,11 @@
 import { describe, expect, test } from "bun:test";
+import { COUNT_KEYS, zeroCounts } from "../counts";
 import { SPECIALTY_LABELS } from "../profile";
 import { REPLACEMENT_LISTING_STATUSES } from "../types/api";
 import {
   adaptFacetsRail,
   adaptMyListingsRail,
+  listingStatusRows,
   SPECIALTY_RAIL_ROWS,
 } from "./adapters";
 import type { ListingStatusCounts, MyListing } from "./contracts";
@@ -174,5 +176,21 @@ describe("adaptMyListingsRail", () => {
 
     expect(rail.recruitingTotal).toBe(3);
     expect(rail.filledPercent).toBe(0);
+  });
+});
+
+describe("listingStatusRows", () => {
+  test("lists the statuses that hold listings, in lifecycle order", () => {
+    const rows = listingStatusRows({
+      ...zeroCounts(0, COUNT_KEYS.listingStatus),
+      FILLED: 1,
+      OPEN: 3,
+      total: 4,
+    });
+
+    expect(rows.map((row) => [row.status, row.count, row.percent])).toEqual([
+      ["OPEN", 3, 75],
+      ["FILLED", 1, 25],
+    ]);
   });
 });

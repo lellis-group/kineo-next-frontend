@@ -5,6 +5,7 @@
 
 export type {
   FacetsRail,
+  ListingStatusRow,
   MyListingsRailData,
   SpecialtyRailRow,
 } from "./adapters";
@@ -18,6 +19,7 @@ export {
   formatCapacity,
   formatListingAge,
   listingFilterBuckets,
+  listingStatusRows,
   RECEIVED_DECISION_LABELS,
   RECEIVED_STATUS_LABELS,
   receivedDecisionLabel,

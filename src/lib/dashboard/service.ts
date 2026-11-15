@@ -1,6 +1,10 @@
 import type { ApiTransport } from "../api-client";
 import { awaitingDecisionCount, fetchApplicationsData } from "../applications";
-import { fetchMyListings, recruitingCount } from "../listings";
+import {
+  fetchMyListings,
+  listingStatusRows,
+  recruitingCount,
+} from "../listings";
 import { fetchMyProfile } from "../profile-service";
 import { adaptActions } from "./action-links";
 import { ACTIVITY_FEED_SIZE, adaptActivity } from "./activity";
@@ -34,6 +38,11 @@ export async function fetchDashboardData(
     stats: adaptStats(listings, applications),
     activity: adaptActivity(applications.applications),
     needsProfile: profile === null,
+    listings: {
+      total: listings.counts.total,
+      recruiting,
+      rows: listingStatusRows(listings.counts),
+    },
     reactivity: adaptReactivity(applications),
   };
 }

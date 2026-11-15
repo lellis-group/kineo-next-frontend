@@ -1,6 +1,7 @@
 /** Presentation contracts for the logged-in homepage. */
 
-import type { ButtonVariant } from "../ui-tokens";
+import type { ListingStatusRow } from "../listings";
+import type { BadgeTone, ButtonVariant } from "../ui-tokens";
 
 export interface UserSummary {
   name: string;
@@ -35,12 +36,19 @@ export interface ActivityEntry {
   message: Array<{ text: string; bold?: boolean }>;
   timestamp: string;
   href?: string;
+  /** The application's status, as its chip. */
+  status: { label: string; tone: BadgeTone };
+  /** The listing's period, when it still resolves. */
+  period?: string;
+  /** Practice · city, when known. */
+  place?: string;
 }
 
-export interface ReactivityStat {
+/** One figure in the applications panel's grid. */
+export interface ReactivityFigure {
+  icon: "file" | "clock" | "check" | "alert";
   label: string;
   value: string;
-  accent?: boolean;
 }
 
 export interface DashboardData {
@@ -50,9 +58,14 @@ export interface DashboardData {
   activity: ActivityEntry[];
   /** True when GET /profile/me returns 404 — account exists, profile not yet created (onboarding, not an error). */
   needsProfile: boolean;
+  /** The member's listings by status, over the whole collection. */
+  listings: { total: number; recruiting: number; rows: ListingStatusRow[] };
   reactivity: {
-    title: string;
-    stats: ReactivityStat[];
+    /** Answered share of the answerable applications, 0–100. */
+    rate: number;
+    /** What `rate` is of, in words — the gauge's caption. */
+    rateCaption: string;
+    figures: ReactivityFigure[];
     tipTitle: string;
     tip: string;
   };

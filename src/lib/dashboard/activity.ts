@@ -1,4 +1,4 @@
-import type { ApplicationEntry } from "@/lib/applications";
+import { type ApplicationEntry, STATUS_META } from "@/lib/applications";
 import { formatRelativeTime } from "../format";
 import type { ActivityEntry } from "./contracts";
 
@@ -47,6 +47,15 @@ export function adaptActivity(
       message,
       timestamp: formatRelativeTime(app.createdAt),
       href: `/applications/${app.id}`,
+      status: {
+        label: STATUS_META[app.status].label,
+        tone: STATUS_META[app.status].badgeTone,
+      },
+      period: app.listing.dateRange,
+      place:
+        [app.listing.practiceName, app.listing.practiceCity]
+          .filter(Boolean)
+          .join(" · ") || undefined,
     };
   });
 }

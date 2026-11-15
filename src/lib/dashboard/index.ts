@@ -5,7 +5,7 @@ export type {
   DashboardAction,
   DashboardData,
   DashboardStat,
-  ReactivityStat,
+  ReactivityFigure,
   UserSummary,
 } from "./contracts";
 export { fetchDashboardData } from "./service";

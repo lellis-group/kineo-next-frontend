@@ -295,6 +295,33 @@ export function adaptFacetsRail(
   };
 }
 
+/** One status in a distribution of the member's listings. */
+export interface ListingStatusRow {
+  status: keyof typeof LISTING_STATUS_META;
+  label: string;
+  shortLabel: string;
+  count: number;
+  percent: number;
+}
+
+/**
+ * The member's listings by status, over the whole collection: only the
+ * statuses that hold any, in the order a listing moves through them.
+ */
+export function listingStatusRows(
+  counts: ListingStatusCounts,
+): ListingStatusRow[] {
+  return LISTING_STATUS_ORDER.filter((status) => (counts[status] ?? 0) > 0).map(
+    (status) => ({
+      status,
+      label: LISTING_STATUS_META[status].label,
+      shortLabel: LISTING_STATUS_META[status].shortLabel,
+      count: counts[status] ?? 0,
+      percent: percentOf(counts[status] ?? 0, counts.total),
+    }),
+  );
+}
+
 export interface MyListingsRailData {
   recruiting: number;
   recruitingPercent: number;
@@ -303,13 +330,7 @@ export interface MyListingsRailData {
   filled: number;
   filledPercent: number;
   recruitingTotal: number;
-  statusRows: Array<{
-    status: keyof typeof LISTING_STATUS_META;
-    label: string;
-    shortLabel: string;
-    count: number;
-    percent: number;
-  }>;
+  statusRows: ListingStatusRow[];
   specialtyBars: Array<{
     key: keyof typeof SPECIALTY_LABELS;
     label: string;
@@ -349,15 +370,7 @@ export function adaptMyListingsRail(
     filled: counts.FILLED,
     filledPercent: percentOf(counts.FILLED, counts.total),
     recruitingTotal: recruitingCount(counts),
-    statusRows: LISTING_STATUS_ORDER.filter(
-      (status) => (counts[status] ?? 0) > 0,
-    ).map((status) => ({
-      status,
-      label: LISTING_STATUS_META[status].label,
-      shortLabel: LISTING_STATUS_META[status].shortLabel,
-      count: counts[status] ?? 0,
-      percent: percentOf(counts[status] ?? 0, counts.total),
-    })),
+    statusRows: listingStatusRows(counts),
     specialtyBars: [...perSpecialty.entries()]
       .sort((a, b) => b[1] - a[1])
       .slice(0, MAX_SPECIALTY_BARS)
