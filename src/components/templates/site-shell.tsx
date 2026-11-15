@@ -3,11 +3,12 @@
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
+import { WORKSPACE_ROUTES } from "@/lib/navigation";
 
 /**
- * The site shell, sized by route. `/listings` and `/listings/mine` are
- * full-height workspaces (`h-dvh`, `<main>` scrolls, no footer); every other
- * page is a scrolling document. `usePathname` also runs during SSR, so the
+ * The site shell, sized by route. `WORKSPACE_ROUTES` are full-height
+ * workspaces (`h-dvh`, `<main>` scrolls, no footer); every other page is a
+ * scrolling document. `usePathname` also runs during SSR, so the
  * right shape is in the first HTML.
  *
  * `header` and `footer` are passed in because they are server components.
@@ -23,9 +24,7 @@ export function SiteShell({
 }) {
   const pathname = usePathname();
 
-  // An exact pair: `/listings/mine/[id]` is an ordinary document.
-  const isFullHeightWorkspace =
-    pathname === "/listings" || pathname === "/listings/mine";
+  const isFullHeightWorkspace = WORKSPACE_ROUTES.has(pathname);
 
   return (
     <div

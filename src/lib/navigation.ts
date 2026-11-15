@@ -33,6 +33,15 @@ const bothNav: HeaderLink[] = [
   { label: "Mon Profil", href: "/profile" },
 ];
 
+/**
+ * Routes that own the viewport: the page doesn't scroll, their panels do.
+ * Exact matches only — `/listings/mine/[id]` is an ordinary document.
+ */
+export const WORKSPACE_ROUTES: ReadonlySet<string> = new Set([
+  "/listings",
+  "/listings/mine",
+]);
+
 /** Member nav by role; a member without a profile gets the replacement links. */
 export function getMemberNav(profileType?: ProfileType | null): HeaderLink[] {
   switch (profileType) {
