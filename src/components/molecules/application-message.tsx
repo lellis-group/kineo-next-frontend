@@ -87,7 +87,9 @@ export function ApplicationMessage({
   return (
     <section aria-label="Votre message">
       <div className="flex items-center justify-between gap-4">
-        <SectionTitle>Votre message</SectionTitle>
+        <SectionTitle className="text-lg leading-tight">
+          Votre message
+        </SectionTitle>
         {canEdit && (
           <button
             type="button"

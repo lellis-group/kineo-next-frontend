@@ -62,10 +62,6 @@ export const BOARD_MAIN =
 export const MAP_PILL =
   "xl:border-0 xl:bg-white xl:text-map-ink xl:shadow-[0_2px_10px_rgb(22_21_15/0.18)] xl:hover:bg-white xl:hover:text-map-ink";
 
-/** A centred page narrower than the console, for a form or a detail. */
-export const NARROW_PAGE =
-  "mx-auto w-full max-w-3xl px-4 py-8 sm:px-6 sm:py-10";
-
 /**
  * A recessed box for a message that belongs to the flow rather than to the
  * chrome: an empty state, a note under a form, a hint inside a card.
