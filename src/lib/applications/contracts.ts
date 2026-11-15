@@ -112,3 +112,13 @@ export interface ApplicationsData {
   /** Applications that got an answer, withdrawn excluded — the response rate's numerator. */
   respondedCount: number;
 }
+
+/** Backend message DTOs (create / update) — optional, 1-2000 chars. */
+export const MESSAGE_MAX_LENGTH = 2000;
+
+/** Backend reason DTOs (withdraw / reject) — optional, 1-500 chars. */
+export const REASON_MAX_LENGTH = 500;
+
+/** The nudge shown above an optional message field. */
+export const MESSAGE_PLACEHOLDER =
+  "Précisez vos disponibilités, votre expérience sur ce type de remplacement…";

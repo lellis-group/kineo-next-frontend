@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/atoms/button";
 import { CloseIcon } from "@/components/atoms/icons";
 import { DangerPanel } from "@/components/molecules/danger-panel";
+import { FormActions } from "@/components/molecules/form-actions";
 import { PendingButton } from "@/components/molecules/pending-button";
 import { plural } from "@/lib/format";
 
@@ -84,22 +85,17 @@ export function ListingActions({
         {activeCount > 1 ? "seront terminées" : "sera terminée"}.
       </p>
 
-      <div className="mt-4 flex flex-col gap-3 sm:flex-row">
-        <PendingButton
-          variant="danger"
-          pending={acting === true}
-          onClick={pending === "close" ? onClose : onCancel}
-          idleLabel={`Confirmer : ${copy.confirm.toLowerCase()}`}
-        />
-        <Button
-          variant="ghost"
-          disabled={acting}
-          onClick={() => setPending(null)}
-        >
-          <CloseIcon className="h-4 w-4" />
-          Revenir en arrière
-        </Button>
-      </div>
+      <FormActions
+        className="mt-4"
+        type="button"
+        variant="danger"
+        pending={acting === true}
+        submitLabel={`Confirmer : ${copy.confirm.toLowerCase()}`}
+        onSubmit={pending === "close" ? onClose : onCancel}
+        onCancel={() => setPending(null)}
+        cancelIcon={<CloseIcon className="h-4 w-4" />}
+        cancelLabel="Revenir en arrière"
+      />
     </DangerPanel>
   );
 }

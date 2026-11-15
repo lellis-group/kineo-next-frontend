@@ -10,18 +10,17 @@ import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
 import { Button } from "@/components/atoms/button";
 import { CountedTextarea } from "@/components/molecules/counted-textarea";
+import { FormActions } from "@/components/molecules/form-actions";
 import { InlineAlert } from "@/components/molecules/inline-alert";
-import { PendingButton } from "@/components/molecules/pending-button";
 import {
   APPLY_SUCCESS,
   applyErrorMessage,
   applyToListing,
+  MESSAGE_MAX_LENGTH,
+  MESSAGE_PLACEHOLDER,
 } from "@/lib/applications";
 import { useAsyncSubmit } from "@/lib/hooks/use-async-submit";
 import { signInOnExpiredSession } from "@/lib/session-redirect";
-
-/** Backend CreateApplicationDto — optional message, 1-2000 chars. */
-const MAX_MESSAGE_LENGTH = 2000;
 
 /** `sent` is terminal: nothing here un-applies. */
 type ApplyState = "closed" | "open" | "sent";
@@ -82,8 +81,8 @@ export function ApplyToListing({ listingId }: { listingId: string }) {
           value={draft}
           onChange={setDraft}
           rows={4}
-          maxLength={MAX_MESSAGE_LENGTH}
-          placeholder="Précisez vos disponibilités, votre expérience sur ce type de remplacement…"
+          maxLength={MESSAGE_MAX_LENGTH}
+          placeholder={MESSAGE_PLACEHOLDER}
         />
 
         {error && (
@@ -92,21 +91,12 @@ export function ApplyToListing({ listingId }: { listingId: string }) {
           </InlineAlert>
         )}
 
-        <div className="mt-3 flex flex-col gap-3 sm:flex-row">
-          <PendingButton
-            type="submit"
-            pending={sending}
-            idleLabel="Envoyer la candidature"
-            pendingLabel="Envoi…"
-          />
-          <Button
-            variant="ghost"
-            disabled={sending}
-            onClick={() => setState("closed")}
-          >
-            Annuler
-          </Button>
-        </div>
+        <FormActions
+          pending={sending}
+          submitLabel="Envoyer la candidature"
+          pendingLabel="Envoi…"
+          onCancel={() => setState("closed")}
+        />
       </form>
     </section>
   );

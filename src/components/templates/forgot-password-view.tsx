@@ -1,9 +1,7 @@
-import Form from "next/form";
 import Link from "next/link";
+import { AuthForm } from "@/components/molecules/auth-form";
 import { AuthScreen } from "@/components/molecules/auth-screen";
 import { EmailField } from "@/components/molecules/email-field";
-import { InlineAlert } from "@/components/molecules/inline-alert";
-import { SubmitButton } from "@/components/molecules/submit-button";
 import { AuthCard } from "@/components/organisms/auth-card";
 
 /** Which of the three screens this route is showing. */
@@ -61,20 +59,14 @@ export function ForgotPasswordView({
 
   return (
     <AuthCard title={card.title} subtitle={card.subtitle}>
-      <Form action={onSubmit} className="flex flex-col gap-5">
+      <AuthForm
+        action={onSubmit}
+        error={error}
+        submitLabel="Recevoir le lien"
+        pendingLabel="Envoi du lien..."
+      >
         <EmailField id="email" />
-
-        {error && (
-          <InlineAlert as="p" tone="danger">
-            {error}
-          </InlineAlert>
-        )}
-
-        <SubmitButton
-          label="Recevoir le lien"
-          pendingLabel="Envoi du lien..."
-        />
-      </Form>
+      </AuthForm>
 
       <p className="mt-6 text-center text-sm text-muted">
         Mot de passe retrouvé ?{" "}

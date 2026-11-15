@@ -7,16 +7,14 @@
  */
 
 import { type FormEvent, useState } from "react";
-import { Button } from "@/components/atoms/button";
 import { CountedTextarea } from "@/components/molecules/counted-textarea";
+import { FormActions } from "@/components/molecules/form-actions";
 import { InlineAlert } from "@/components/molecules/inline-alert";
 import { PendingButton } from "@/components/molecules/pending-button";
+import { REASON_MAX_LENGTH } from "@/lib/applications";
 import { useAsyncSubmit } from "@/lib/hooks/use-async-submit";
 import type { ReceivedApplication } from "@/lib/listings";
 import { applicationDecisionErrorMessage } from "@/lib/listings";
-
-/** Backend RejectApplicationDto — optional reason, 1-500 chars. */
-const MAX_REASON_LENGTH = 500;
 
 /**
  * `idle` — buttons; `reject` — the optional-reason form; `confirm` — the
@@ -70,22 +68,14 @@ export function ReceivedApplicationActions({
             L'annonce sera pourvue et les autres candidatures actives seront
             refusées pour vous.
           </p>
-          <div className="mt-3 flex flex-col gap-3 sm:flex-row">
-            <PendingButton
-              pending={pending}
-              disabled={pending}
-              onClick={() => settle(() => onAccept())}
-              idleLabel="Confirmer l'acceptation"
-              pendingLabel="Acceptation…"
-            />
-            <Button
-              variant="ghost"
-              disabled={pending}
-              onClick={() => setStage("idle")}
-            >
-              Annuler
-            </Button>
-          </div>
+          <FormActions
+            type="button"
+            pending={pending}
+            submitLabel="Confirmer l'acceptation"
+            pendingLabel="Acceptation…"
+            onSubmit={() => settle(() => onAccept())}
+            onCancel={() => setStage("idle")}
+          />
         </div>
       ) : stage === "reject" ? (
         <form onSubmit={handleReject}>
@@ -93,24 +83,15 @@ export function ReceivedApplicationActions({
             label="Motif communiqué au candidat (optionnel)"
             value={reason}
             onChange={setReason}
-            maxLength={MAX_REASON_LENGTH}
+            maxLength={REASON_MAX_LENGTH}
             placeholder="Indiquez si vous le souhaitez la raison de votre refus…"
           />
-          <div className="mt-3 flex flex-col gap-3 sm:flex-row">
-            <PendingButton
-              type="submit"
-              pending={pending}
-              idleLabel="Refuser cette candidature"
-              pendingLabel="Refus…"
-            />
-            <Button
-              variant="ghost"
-              disabled={pending}
-              onClick={() => setStage("idle")}
-            >
-              Annuler
-            </Button>
-          </div>
+          <FormActions
+            pending={pending}
+            submitLabel="Refuser cette candidature"
+            pendingLabel="Refus…"
+            onCancel={() => setStage("idle")}
+          />
         </form>
       ) : (
         <div className="flex flex-wrap items-center gap-3">

@@ -1,10 +1,8 @@
-import Form from "next/form";
 import Link from "next/link";
+import { AuthForm } from "@/components/molecules/auth-form";
 import { AuthPageFooter } from "@/components/molecules/auth-page-footer";
 import { EmailField } from "@/components/molecules/email-field";
-import { InlineAlert } from "@/components/molecules/inline-alert";
-import { PasswordInput } from "@/components/molecules/password-input";
-import { SubmitButton } from "@/components/molecules/submit-button";
+import { PasswordField } from "@/components/molecules/password-field";
 import { AuthCard } from "@/components/organisms/auth-card";
 import { PASSWORD_MAX_LENGTH } from "@/lib/auth-validation";
 
@@ -21,40 +19,28 @@ export function SignInView({
       title="Connexion"
       subtitle="Accédez à la console de remplacement Kineo"
     >
-      <Form action={onSubmit} className="flex flex-col gap-5">
+      <AuthForm
+        action={onSubmit}
+        error={error}
+        submitLabel="Se connecter"
+        pendingLabel="Connexion en cours..."
+      >
         <EmailField />
 
-        <label className="flex flex-col gap-2" htmlFor="password">
-          <span className="flex items-center justify-between">
-            <span className="field-label">Mot de passe</span>
+        <PasswordField
+          id="password"
+          autoComplete="current-password"
+          maxLength={PASSWORD_MAX_LENGTH}
+          action={
             <Link
               href="/forgot-password"
               className="text-xs text-muted transition-colors hover:text-primary"
             >
               Oublié ?
             </Link>
-          </span>
-          <PasswordInput
-            name="password"
-            id="password"
-            required
-            maxLength={PASSWORD_MAX_LENGTH}
-            autoComplete="current-password"
-            placeholder="••••••••••••"
-          />
-        </label>
-
-        {error && (
-          <InlineAlert as="p" tone="danger">
-            {error}
-          </InlineAlert>
-        )}
-
-        <SubmitButton
-          label="Se connecter"
-          pendingLabel="Connexion en cours..."
+          }
         />
-      </Form>
+      </AuthForm>
 
       <AuthPageFooter
         lead="Nouveau sur Kineo ?"

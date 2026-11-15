@@ -6,18 +6,16 @@ import { Button } from "@/components/atoms/button";
 import { UndoIcon } from "@/components/atoms/icons";
 import { CountedTextarea } from "@/components/molecules/counted-textarea";
 import { DangerPanel } from "@/components/molecules/danger-panel";
+import { FormActions } from "@/components/molecules/form-actions";
 import { InlineAlert } from "@/components/molecules/inline-alert";
-import { PendingButton } from "@/components/molecules/pending-button";
 import { errorMessage } from "@/lib/api-errors";
+import { REASON_MAX_LENGTH } from "@/lib/applications";
 import { useAsyncSubmit } from "@/lib/hooks/use-async-submit";
 
 export interface ApplicationWithdrawProps {
   onWithdraw: (reason: string) => Promise<void>;
   className?: string;
 }
-
-/** Backend WithdrawApplicationDto — optional reason, 1-500 chars. */
-const MAX_REASON_LENGTH = 500;
 
 /** Withdrawing is refused once the practice has answered: a state, not a fault. */
 const WITHDRAW_COPY = {
@@ -65,7 +63,7 @@ export function ApplicationWithdraw({
               label="Motif du retrait (optionnel)"
               value={reason}
               onChange={setReason}
-              maxLength={MAX_REASON_LENGTH}
+              maxLength={REASON_MAX_LENGTH}
               placeholder="Ex. : j'ai finalement trouvé un remplacement sur la même période…"
             />
 
@@ -75,25 +73,17 @@ export function ApplicationWithdraw({
               </InlineAlert>
             )}
 
-            <div className="mt-4 flex flex-col gap-3 sm:flex-row">
-              <PendingButton
-                type="submit"
-                variant="danger"
-                pending={submitting}
-                idleLabel="Confirmer le retrait"
-                pendingLabel="Retrait en cours…"
-              />
-              <Button
-                variant="ghost"
-                disabled={submitting}
-                onClick={() => {
-                  setConfirming(false);
-                  clearError();
-                }}
-              >
-                Annuler
-              </Button>
-            </div>
+            <FormActions
+              className="mt-4"
+              variant="danger"
+              pending={submitting}
+              submitLabel="Confirmer le retrait"
+              pendingLabel="Retrait en cours…"
+              onCancel={() => {
+                setConfirming(false);
+                clearError();
+              }}
+            />
           </form>
         ) : (
           <Button

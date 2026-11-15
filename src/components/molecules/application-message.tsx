@@ -2,12 +2,12 @@
 
 import type { FormEvent } from "react";
 import { useState } from "react";
-import { Button } from "@/components/atoms/button";
 import { PencilIcon } from "@/components/atoms/icons";
 import { CountedTextarea } from "@/components/molecules/counted-textarea";
+import { FormActions } from "@/components/molecules/form-actions";
 import { InlineAlert } from "@/components/molecules/inline-alert";
-import { PendingButton } from "@/components/molecules/pending-button";
 import { errorMessage } from "@/lib/api-errors";
+import { MESSAGE_MAX_LENGTH, MESSAGE_PLACEHOLDER } from "@/lib/applications";
 import { useAsyncSubmit } from "@/lib/hooks/use-async-submit";
 
 export interface ApplicationMessageProps {
@@ -16,9 +16,6 @@ export interface ApplicationMessageProps {
   canEdit?: boolean;
   onSaveMessage: (message: string) => Promise<void>;
 }
-
-/** Backend UpdateApplicationDto — required message, 1-2000 chars. */
-const MAX_MESSAGE_LENGTH = 2000;
 
 /** Editing is refused once the practice has answered: a state, not a fault. */
 const MESSAGE_COPY = {
@@ -64,8 +61,8 @@ export function ApplicationMessage({
             value={draft}
             onChange={setDraft}
             rows={4}
-            maxLength={MAX_MESSAGE_LENGTH}
-            placeholder="Précisez vos disponibilités, votre expérience sur ce type de remplacement…"
+            maxLength={MESSAGE_MAX_LENGTH}
+            placeholder={MESSAGE_PLACEHOLDER}
           />
 
           {error && (
@@ -74,22 +71,13 @@ export function ApplicationMessage({
             </InlineAlert>
           )}
 
-          <div className="mt-3 flex flex-col gap-3 sm:flex-row">
-            <PendingButton
-              type="submit"
-              pending={saving}
-              disabled={!draft.trim()}
-              idleLabel="Enregistrer"
-              pendingLabel="Enregistrement…"
-            />
-            <Button
-              variant="ghost"
-              disabled={saving}
-              onClick={() => setEditing(false)}
-            >
-              Annuler
-            </Button>
-          </div>
+          <FormActions
+            pending={saving}
+            submitDisabled={!draft.trim()}
+            submitLabel="Enregistrer"
+            pendingLabel="Enregistrement…"
+            onCancel={() => setEditing(false)}
+          />
         </form>
       </section>
     );

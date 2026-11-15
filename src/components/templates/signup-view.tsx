@@ -1,12 +1,11 @@
-import Form from "next/form";
 import Link from "next/link";
 import { Button } from "@/components/atoms/button";
+import { AuthForm } from "@/components/molecules/auth-form";
 import { AuthPageFooter } from "@/components/molecules/auth-page-footer";
 import { EmailField } from "@/components/molecules/email-field";
 import { InlineAlert } from "@/components/molecules/inline-alert";
-import { PasswordInput } from "@/components/molecules/password-input";
+import { PasswordField } from "@/components/molecules/password-field";
 import { ResendVerification } from "@/components/molecules/resend-verification";
-import { SubmitButton } from "@/components/molecules/submit-button";
 import { AuthCard } from "@/components/organisms/auth-card";
 import {
   NAME_MAX_LENGTH,
@@ -42,7 +41,37 @@ export function SignUpView({
       title="Créer un compte"
       subtitle="Rejoignez la console de remplacement Kineo"
     >
-      <Form action={onSubmit} className="flex flex-col gap-5">
+      <AuthForm
+        action={onSubmit}
+        error={error}
+        submitLabel="Créer mon compte"
+        pendingLabel="Création du compte..."
+        errorExtra={
+          error &&
+          existingAccount && (
+            <p className="-mt-3 text-center text-sm">
+              <Link
+                href="/signin"
+                className="font-medium text-primary transition-colors hover:text-primary-hover"
+              >
+                Se connecter avec cet e-mail
+              </Link>
+            </p>
+          )
+        }
+        footer={
+          <p className="text-center text-xs leading-relaxed text-muted">
+            En créant un compte, vous acceptez nos{" "}
+            <Link
+              href="/terms"
+              className="underline decoration-border underline-offset-2 transition-colors hover:text-foreground"
+            >
+              conditions d'utilisation
+            </Link>
+            .
+          </p>
+        }
+      >
         <label className="flex flex-col gap-2">
           <span className="field-label">Nom complet</span>
           <input
@@ -59,9 +88,13 @@ export function SignUpView({
 
         <EmailField defaultValue={prefillEmail} />
 
-        <label className="flex flex-col gap-2" htmlFor="password">
-          <span className="flex items-center justify-between">
-            <span className="field-label">Mot de passe</span>
+        <PasswordField
+          id="password"
+          autoComplete="new-password"
+          minLength={PASSWORD_MIN_LENGTH}
+          maxLength={PASSWORD_MAX_LENGTH}
+          onInput={onPasswordInput}
+          action={
             <span
               className={
                 passwordInRange
@@ -73,54 +106,9 @@ export function SignUpView({
                 ? `✓ Longueur valide (${PASSWORD_MIN_LENGTH} à ${PASSWORD_MAX_LENGTH})`
                 : `${PASSWORD_MIN_LENGTH} à ${PASSWORD_MAX_LENGTH} caractères`}
             </span>
-          </span>
-          <PasswordInput
-            name="password"
-            id="password"
-            required
-            minLength={PASSWORD_MIN_LENGTH}
-            maxLength={PASSWORD_MAX_LENGTH}
-            autoComplete="new-password"
-            placeholder="••••••••••••"
-            onInput={(event) =>
-              onPasswordInput(event.currentTarget.value.length)
-            }
-          />
-        </label>
-
-        {error && (
-          <InlineAlert as="p" tone="danger">
-            {error}
-          </InlineAlert>
-        )}
-
-        {error && existingAccount && (
-          <p className="-mt-3 text-center text-sm">
-            <Link
-              href="/signin"
-              className="font-medium text-primary transition-colors hover:text-primary-hover"
-            >
-              Se connecter avec cet e-mail
-            </Link>
-          </p>
-        )}
-
-        <SubmitButton
-          label="Créer mon compte"
-          pendingLabel="Création du compte..."
+          }
         />
-
-        <p className="text-center text-xs leading-relaxed text-muted">
-          En créant un compte, vous acceptez nos{" "}
-          <Link
-            href="/terms"
-            className="underline decoration-border underline-offset-2 transition-colors hover:text-foreground"
-          >
-            conditions d'utilisation
-          </Link>
-          .
-        </p>
-      </Form>
+      </AuthForm>
 
       <AuthPageFooter
         lead="Déjà sur Kineo ?"

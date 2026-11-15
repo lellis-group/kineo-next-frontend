@@ -30,6 +30,9 @@ export type {
 } from "./contracts";
 export {
   APPLICATION_FILTERS,
+  MESSAGE_MAX_LENGTH,
+  MESSAGE_PLACEHOLDER,
+  REASON_MAX_LENGTH,
   REJECTION_SITUATIONS,
 } from "./contracts";
 export type { PaginationParams } from "./service";

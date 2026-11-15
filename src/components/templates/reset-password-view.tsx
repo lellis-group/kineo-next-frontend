@@ -1,8 +1,6 @@
-import Form from "next/form";
+import { AuthForm } from "@/components/molecules/auth-form";
 import { AuthScreen } from "@/components/molecules/auth-screen";
-import { InlineAlert } from "@/components/molecules/inline-alert";
-import { PasswordInput } from "@/components/molecules/password-input";
-import { SubmitButton } from "@/components/molecules/submit-button";
+import { PasswordField } from "@/components/molecules/password-field";
 import { AuthCard } from "@/components/organisms/auth-card";
 import {
   PASSWORD_MAX_LENGTH,
@@ -62,50 +60,36 @@ export function ResetPasswordView({
       title="Nouveau mot de passe"
       subtitle="Choisissez un mot de passe pour votre compte Kineo"
     >
-      <Form action={onSubmit} className="flex flex-col gap-5">
-        <label className="flex flex-col gap-2" htmlFor="password">
-          <span className="field-label">Nouveau mot de passe</span>
-          <PasswordInput
-            name="password"
-            id="password"
-            required
-            minLength={PASSWORD_MIN_LENGTH}
-            maxLength={PASSWORD_MAX_LENGTH}
-            autoComplete="new-password"
-            placeholder="••••••••••••"
-          />
-        </label>
-
-        <label className="flex flex-col gap-2" htmlFor="confirm">
-          <span className="field-label">Confirmer le mot de passe</span>
-          <PasswordInput
-            name="confirm"
-            id="confirm"
-            required
-            minLength={PASSWORD_MIN_LENGTH}
-            maxLength={PASSWORD_MAX_LENGTH}
-            autoComplete="new-password"
-            placeholder="••••••••••••"
-          />
-        </label>
-
-        {error && (
-          <InlineAlert as="p" tone="danger">
-            {error}
-          </InlineAlert>
-        )}
-
-        <SubmitButton
-          label="Enregistrer le mot de passe"
-          pendingLabel="Enregistrement..."
+      <AuthForm
+        action={onSubmit}
+        error={error}
+        submitLabel="Enregistrer le mot de passe"
+        pendingLabel="Enregistrement..."
+        footer={
+          <p className="text-center text-xs text-muted">
+            Entre {PASSWORD_MIN_LENGTH} et {PASSWORD_MAX_LENGTH} caractères.
+            Astuce : une phrase longue est plus facile à retenir qu&apos;un mot
+            compliqué.
+          </p>
+        }
+      >
+        <PasswordField
+          id="password"
+          label="Nouveau mot de passe"
+          autoComplete="new-password"
+          minLength={PASSWORD_MIN_LENGTH}
+          maxLength={PASSWORD_MAX_LENGTH}
         />
 
-        <p className="text-center text-xs text-muted">
-          Entre {PASSWORD_MIN_LENGTH} et {PASSWORD_MAX_LENGTH} caractères.
-          Astuce : une phrase longue est plus facile à retenir qu&apos;un mot
-          compliqué.
-        </p>
-      </Form>
+        <PasswordField
+          id="confirm"
+          name="confirm"
+          label="Confirmer le mot de passe"
+          autoComplete="new-password"
+          minLength={PASSWORD_MIN_LENGTH}
+          maxLength={PASSWORD_MAX_LENGTH}
+        />
+      </AuthForm>
     </AuthCard>
   );
 }
