@@ -9,6 +9,11 @@ import { InlineAlert } from "@/components/molecules/inline-alert";
 import { Pagination } from "@/components/molecules/pagination";
 import { Panel } from "@/components/molecules/panel";
 import { ReceivedApplicationCard } from "@/components/molecules/received-application-card";
+import {
+  type ListingAction,
+  ListingActionButtons,
+  ListingActionConfirm,
+} from "@/components/organisms/listing-actions";
 import { ListingDetailRail } from "@/components/organisms/listing-detail-rail";
 import { ReceivedApplicationsTable } from "@/components/organisms/received-applications-table";
 import { isAwaitingDecision } from "@/lib/applications";
@@ -19,6 +24,7 @@ import {
   type ListingApplicationsData,
   type MyListing,
   RECEIVED_FILTERS,
+  RECRUITING_STATUSES,
   type ReceivedApplication,
   type ReceivedApplicationsFilter,
 } from "@/lib/listings";
@@ -56,8 +62,8 @@ function firstToDecide(
 }
 
 /**
- * The owner's page for one listing, as a console board: the posting and its
- * recruiting down the rail, the candidates as a table, and the one picked in
+ * The owner's page for one listing, as a console board: the take-down
+ * actions beside the title, the posting and its recruiting down the rail, the candidates as a table, and the one picked in
  * a panel beside it with the decisions. Phones get the candidates as cards.
  */
 export function ListingDetailView({
@@ -78,7 +84,9 @@ export function ListingDetailView({
   onApplicationReject,
 }: ListingDetailViewProps) {
   const [selectedId, setSelectedId] = useState<string>();
+  const [asking, setAsking] = useState<ListingAction | null>(null);
   const status = LISTING_STATUS_META[listing.status];
+  const recruiting = RECRUITING_STATUSES.has(listing.status);
 
   // A filter or a page change can take the pick off screen: fall back.
   const selected =
@@ -97,22 +105,47 @@ export function ListingDetailView({
     <div className={BOARD_SHELL}>
       <header className="flex flex-col gap-3 pt-2">
         <BackLink href="/listings/mine">Mes offres</BackLink>
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-          <h1 className="min-w-0 text-2xl leading-tight font-medium tracking-tight break-words sm:text-3xl">
-            {listing.title}
-          </h1>
-          <div className="flex items-center gap-2">
-            {listing.urgent && (
-              <Badge tone="danger" size="md">
-                Urgent
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2">
+            <h1 className="min-w-0 text-2xl leading-tight font-medium tracking-tight break-words sm:text-3xl">
+              {listing.title}
+            </h1>
+            <div className="flex items-center gap-2">
+              {listing.urgent && (
+                <Badge tone="danger" size="md">
+                  Urgent
+                </Badge>
+              )}
+              <Badge tone={status.tone} size="md">
+                {status.label}
               </Badge>
-            )}
-            <Badge tone={status.tone} size="md">
-              {status.label}
-            </Badge>
+            </div>
           </div>
+
+          {/* Only while the listing can still take someone. */}
+          {recruiting && (
+            <ListingActionButtons
+              activeCount={listing.applicationsCount}
+              acting={acting}
+              asking={asking}
+              onAsk={setAsking}
+              onClose={onClose}
+              onCancel={onCancel}
+              className="shrink-0"
+            />
+          )}
         </div>
       </header>
+
+      {recruiting && asking && (
+        <ListingActionConfirm
+          action={asking}
+          activeCount={listing.applicationsCount}
+          acting={acting}
+          onConfirm={asking === "close" ? onClose : onCancel}
+          onBack={() => setAsking(null)}
+        />
+      )}
 
       {(feedback || error) && (
         <div className="flex flex-col gap-2">
@@ -128,13 +161,7 @@ export function ListingDetailView({
       <div className="grid items-start gap-3 lg:grid-cols-[22.5rem_minmax(0,1fr)]">
         {/* The candidates are the page's job: first on a phone, beside from `lg`. */}
         <div className="order-2 lg:order-1">
-          <ListingDetailRail
-            listing={listing}
-            counts={received.counts}
-            acting={acting}
-            onClose={onClose}
-            onCancel={onCancel}
-          />
+          <ListingDetailRail listing={listing} counts={received.counts} />
         </div>
 
         <div className="order-1 flex min-w-0 flex-col gap-3 lg:order-2">

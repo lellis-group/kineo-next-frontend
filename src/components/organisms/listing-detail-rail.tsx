@@ -16,14 +16,12 @@ import { RailDistribution } from "@/components/molecules/rail-distribution";
 import { RailEmpty } from "@/components/molecules/rail-empty";
 import { RailGauge } from "@/components/molecules/rail-gauge";
 import { SpecialtyIcon } from "@/components/molecules/specialty-icon";
-import { ListingActions } from "@/components/organisms/listing-actions";
 import { formatDateTime } from "@/lib/format";
 import {
   adaptListingDetailRail,
   formatListingAge,
   type ListingApplicationsData,
   type MyListing,
-  RECRUITING_STATUSES,
   specialtyLabel,
 } from "@/lib/listings";
 import type { ApplicationStatus } from "@/lib/types/api";
@@ -41,20 +39,14 @@ const STATUS_MARKS: Record<
 
 /**
  * The left of a listing's page: how recruiting goes, where the candidates
- * stand, the posting itself, and the way to take it down.
+ * stand, and the posting itself.
  */
 export function ListingDetailRail({
   listing,
   counts,
-  acting,
-  onClose,
-  onCancel,
 }: {
   listing: MyListing;
   counts: ListingApplicationsData["counts"];
-  acting?: boolean;
-  onClose: () => void;
-  onCancel: () => void;
 }) {
   const rail = adaptListingDetailRail(listing, counts);
 
@@ -157,21 +149,6 @@ export function ListingDetailRail({
           </p>
         )}
       </Panel>
-
-      {RECRUITING_STATUSES.has(listing.status) && (
-        <Panel title="Retirer de la diffusion">
-          <p className="mb-4 text-sm leading-relaxed text-muted">
-            Les deux actions terminent les candidatures en cours et ne sont pas
-            réversibles.
-          </p>
-          <ListingActions
-            activeCount={listing.applicationsCount}
-            acting={acting}
-            onClose={onClose}
-            onCancel={onCancel}
-          />
-        </Panel>
-      )}
     </div>
   );
 }
