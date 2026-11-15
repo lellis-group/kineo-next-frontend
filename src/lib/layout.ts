@@ -19,8 +19,6 @@ export const STRIP_CONTAINER =
 export const BACK_LINK =
   "inline-flex items-center gap-2 text-sm font-medium text-muted transition-colors hover:text-foreground";
 
-export const PAGE_TITLE = "text-2xl font-medium tracking-tight sm:text-3xl";
-
 /**
  * The horizontal geometry shared by the header, the content and the footer, so
  * the three bands line up. `max-w-360` is 108rem on the 0.3rem spacing unit.
@@ -70,9 +68,6 @@ export const NARROW_PAGE =
 
 /** The same, wider, for a detail that carries a side panel. */
 export const WIDE_PAGE = "mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 sm:py-10";
-
-/** One line under a page title, or under a section heading inside a page. */
-export const PAGE_SUBTITLE = "mt-1.5 text-sm leading-relaxed text-muted";
 
 /**
  * A recessed box for a message that belongs to the flow rather than to the
