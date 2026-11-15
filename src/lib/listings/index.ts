@@ -132,6 +132,7 @@ export {
   browseViewToParams,
   DEFAULT_BROWSE_VIEW,
   isDefaultBrowseView,
+  narrowsCollection,
   toBrowseView,
 } from "./browse-url";
 export type { ListingSpotlight } from "./spotlight";

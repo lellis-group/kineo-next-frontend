@@ -33,6 +33,7 @@ export function useMapMarkers({
   mapRef,
   places,
   ready,
+  autoFrame = true,
   hoveredListingId,
   onHoveredChange,
   selectedListing,
@@ -44,6 +45,12 @@ export function useMapMarkers({
   mapRef: RefObject<MapLibreMap | null>;
   places: MapPlace[];
   ready: boolean;
+  /**
+   * Whether a new set of places frames the camera. The browse map frames only
+   * a filtered set: unfiltered, the camera stays on the member's region, or
+   * wherever they took it.
+   */
+  autoFrame?: boolean;
   hoveredListingId?: string | null;
   onHoveredChange?: (id: string | null) => void;
   /**
@@ -84,6 +91,9 @@ export function useMapMarkers({
   const onOpenRef = useLatest(onListingOpen);
 
   const lastFramedKeyRef = useRef<string | null>(null);
+  // A ref: the framing effect must not re-run when only this flips.
+  const autoFrameRef = useRef(autoFrame);
+  autoFrameRef.current = autoFrame;
 
   const lastSignatureRef = useRef<string | null>(null);
 
@@ -130,7 +140,7 @@ export function useMapMarkers({
     const framedKey = framingKey(places);
     if (framedKey !== lastFramedKeyRef.current) {
       lastFramedKeyRef.current = framedKey;
-      fitToPlaces(map, places);
+      if (autoFrameRef.current) fitToPlaces(map, places);
     }
 
     // Applied here too, so markers created after a selection come up highlighted.

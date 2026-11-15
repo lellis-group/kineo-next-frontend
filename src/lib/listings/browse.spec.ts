@@ -16,6 +16,7 @@ import {
   browseViewFromParams,
   browseViewToParams,
   isDefaultBrowseView,
+  narrowsCollection,
   toBrowseView,
 } from "./browse-url";
 
@@ -748,5 +749,25 @@ describe("pagePoints", () => {
     expect(
       pagePoints([{ location: a }, { location: null }, { location: b }]),
     ).toEqual([a, b]);
+  });
+});
+
+describe("narrowsCollection", () => {
+  it("ignores the page and the order: they keep every posting", () => {
+    expect(
+      narrowsCollection(toBrowseView(EMPTY_BROWSE_FILTERS, 3, "startDate")),
+    ).toBe(false);
+  });
+
+  it("counts any filter", () => {
+    expect(
+      narrowsCollection(
+        toBrowseView(
+          { ...EMPTY_BROWSE_FILTERS, urgentOnly: true },
+          1,
+          "recent",
+        ),
+      ),
+    ).toBe(true);
   });
 });

@@ -3,6 +3,8 @@
 import type { Map as MapLibreMap } from "maplibre-gl";
 import * as maplibregl from "maplibre-gl";
 import { useEffect, useRef, useState } from "react";
+import { browserTimeZone, homeRegion } from "@/lib/map/home-region";
+import type { MapPoint } from "@/lib/map/types";
 
 /** OSM's standard tile server: no API key. The attribution is required by the ODbL. */
 const OSM_TILE_URL = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
@@ -24,13 +26,13 @@ const MAP_BASE_COLOR = "#f3f0e8";
 /** The deepest zoom OSM serves (z20 answers 400). */
 const OSM_MAX_ZOOM = 19;
 
-const FALLBACK_CENTER: [number, number] = [46.603354, 2.373722];
-
 /**
  * The map instance: created once, torn down once. Knows nothing about markers
  * or popups — see `useMapMarkers`.
  */
-export function useMapInstance() {
+export function useMapInstance(homeCoordinates?: MapPoint | null) {
+  // Read once, at creation: the camera is the reader's after that.
+  const homeRef = useRef(homeCoordinates);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
 
@@ -48,13 +50,18 @@ export function useMapInstance() {
       new URL("maplibre-gl/dist/maplibre-gl-worker.mjs", import.meta.url).href,
     );
 
+    const home = homeRegion({
+      coordinates: homeRef.current,
+      timeZone: browserTimeZone(),
+    });
+
     let map: MapLibreMap;
     try {
       map = new maplibregl.Map({
         container: containerRef.current,
         style: buildStyle(),
-        center: FALLBACK_CENTER,
-        zoom: 5.2,
+        center: home.center,
+        zoom: home.zoom,
         attributionControl: false,
         locale: MAP_LOCALE,
       });

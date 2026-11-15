@@ -16,8 +16,10 @@ import {
   type BrowsePlacesData,
   type BrowseSort,
   horizonBounds,
+  narrowsCollection,
   pagePoints,
 } from "@/lib/listings";
+import type { MapPoint } from "@/lib/map/types";
 
 /** The map, browser-only: MapLibre needs WebGL and `window` on import. */
 const ListingsMap = dynamic(
@@ -42,10 +44,13 @@ export function ListingsContainer({
   initialData,
   initialFacets,
   initialPlaces,
+  homeCoordinates,
 }: {
   initialData: BrowseListingsData;
   initialFacets: BrowseFacets;
   initialPlaces: Promise<BrowsePlacesData | null>;
+  /** The member's geocoded city, where the map opens; null without one. */
+  homeCoordinates: MapPoint | null;
 }) {
   const browse = useBrowseView();
   const resource = useBrowseResource(initialData, browse.view);
@@ -161,6 +166,10 @@ export function ListingsContainer({
           <ListingsMapSlot
             ref={resource.mapRef}
             places={initialPlaces}
+            homeCoordinates={homeCoordinates}
+            // Unfiltered, the map stays on the member's region (or where they
+            // took it); a filter frames what it kept.
+            autoFrame={narrowsCollection(browse.view)}
             pagePoints={pagePoints(resource.data.listings)}
             hoveredListingId={picking.hoveredListingId}
             onHoveredChange={picking.setHoveredListingId}

@@ -24,6 +24,10 @@ interface ListingsMapProps {
   pagePoints: readonly MapPoint[];
   unlocated: number;
   totalPlaces: number;
+  /** The member's geocoded city, where the map opens. */
+  homeCoordinates?: MapPoint | null;
+  /** Whether a new set of places frames the camera (a filtered browse). */
+  autoFrame?: boolean;
   truncated: boolean;
   hoveredListingId?: string | null;
   onHoveredChange?: (id: string | null) => void;
@@ -51,6 +55,8 @@ export const ListingsMap = forwardRef<ListingsMapHandle, ListingsMapProps>(
     {
       places,
       pagePoints,
+      homeCoordinates,
+      autoFrame,
       unlocated,
       totalPlaces,
       truncated,
@@ -65,12 +71,14 @@ export const ListingsMap = forwardRef<ListingsMapHandle, ListingsMapProps>(
     },
     ref,
   ) {
-    const { containerRef, mapRef, ready, failed } = useMapInstance();
+    const { containerRef, mapRef, ready, failed } =
+      useMapInstance(homeCoordinates);
 
     const map = useMapMarkers({
       mapRef,
       places,
       ready,
+      autoFrame,
       hoveredListingId,
       onHoveredChange,
       selectedListing,

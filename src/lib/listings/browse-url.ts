@@ -43,12 +43,22 @@ export function isDefaultBrowseView(view: BrowseView): boolean {
   return (
     view.page === DEFAULT_BROWSE_VIEW.page &&
     view.sort === DEFAULT_BROWSE_VIEW.sort &&
-    view.specialty === undefined &&
-    view.city === undefined &&
-    view.q === undefined &&
-    view.startDateFrom === undefined &&
-    view.startDateTo === undefined &&
-    view.urgentOnly !== true
+    !narrowsCollection(view)
+  );
+}
+
+/**
+ * Whether the view keeps only part of the postings — a filter, not a page or
+ * an order. What the map's framing follows: only a narrower set moves it.
+ */
+export function narrowsCollection(view: BrowseView): boolean {
+  return (
+    view.specialty !== undefined ||
+    view.city !== undefined ||
+    view.q !== undefined ||
+    view.startDateFrom !== undefined ||
+    view.startDateTo !== undefined ||
+    view.urgentOnly === true
   );
 }
 

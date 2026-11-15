@@ -13,6 +13,7 @@ import {
   fetchFacets,
   toBrowseView,
 } from "@/lib/listings";
+import { fetchMyProfile } from "@/lib/profile-service";
 import { requireMember } from "@/lib/require-member";
 
 export const metadata: Metadata = {
@@ -56,10 +57,19 @@ async function Listings({
   const { filters, page, sort } = browseViewFromParams(params);
   const view = toBrowseView(filters, page, sort);
 
-  const [data, facets] = await requireMember(
+  const [data, facets, home] = await requireMember(
     Promise.all([
       fetchBrowseListings(view, serverTransport),
       fetchFacets(view, serverTransport),
+      // Where the map opens: the profile's city. Never fatal — the map then
+      // reads the browser's time zone, and failing that shows France.
+      fetchMyProfile(serverTransport).then(
+        (profile) =>
+          profile?.latitude != null && profile.longitude != null
+            ? { latitude: profile.latitude, longitude: profile.longitude }
+            : null,
+        () => null,
+      ),
     ]),
   );
 
@@ -79,6 +89,7 @@ async function Listings({
       initialData={data}
       initialFacets={facets}
       initialPlaces={places}
+      homeCoordinates={home}
     />
   );
 }
