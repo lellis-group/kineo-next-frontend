@@ -4,6 +4,13 @@ export function plural(count: number, suffix = "s"): string {
   return count > 1 ? suffix : "";
 }
 
+/** The rounded share of `total` that `part` is; `clamp` caps it at 100. */
+export function percentOf(part: number, total: number, clamp = false): number {
+  if (total <= 0) return 0;
+  const percent = Math.round((part / total) * 100);
+  return clamp ? Math.min(100, percent) : percent;
+}
+
 export function formatDateRange(start: string, end: string): string {
   const s = new Date(start);
   const e = new Date(end);

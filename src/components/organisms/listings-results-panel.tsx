@@ -1,9 +1,9 @@
 import type { Ref } from "react";
 import { FileTextIcon } from "@/components/atoms/icons";
+import { EmptyState } from "@/components/molecules/empty-state";
 import { Pagination } from "@/components/molecules/pagination";
 import { Panel } from "@/components/molecules/panel";
 import { SegmentedControl } from "@/components/molecules/segmented-control";
-import { EmptyState } from "@/components/organisms/empty-state";
 import { ListingCard } from "@/components/organisms/listing-card";
 import { ListingsTable } from "@/components/organisms/listings-table";
 import { cn } from "@/lib/cn";

@@ -1,3 +1,4 @@
+import { Skeleton } from "@/components/atoms/skeleton";
 import { PAGE_CONTAINER } from "@/lib/layout";
 
 /** Streaming fallback for the member dashboard, matching its grid. */
@@ -6,15 +7,17 @@ export function DashboardSkeleton() {
     <div className={PAGE_CONTAINER}>
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
         <div className="min-w-0 space-y-6">
-          <div className="h-28 animate-pulse rounded-control bg-surface" />
+          <Skeleton className="h-28" />
           <div className="grid gap-4 sm:grid-cols-3">
-            <div className="h-32 animate-pulse rounded-control bg-surface" />
-            <div className="h-32 animate-pulse rounded-control bg-surface" />
-            <div className="h-32 animate-pulse rounded-control bg-surface" />
+            <Skeleton className="h-32" />
+            <Skeleton className="h-32" />
+            <Skeleton className="h-32" />
           </div>
-          <div className="h-64 animate-pulse rounded-control bg-surface" />
+          <Skeleton className="h-64" />
         </div>
-        <aside className="h-96 animate-pulse rounded-control bg-surface" />
+        <aside>
+          <Skeleton className="h-96" />
+        </aside>
       </div>
     </div>
   );

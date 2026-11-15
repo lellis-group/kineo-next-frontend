@@ -1,9 +1,9 @@
 import { FileTextIcon } from "@/components/atoms/icons";
 import { PageHeader } from "@/components/atoms/page-header";
+import { EmptyState } from "@/components/molecules/empty-state";
 import { FilterChips } from "@/components/molecules/filter-chips";
 import { Pagination } from "@/components/molecules/pagination";
 import { ApplicationsList } from "@/components/organisms/applications-list";
-import { EmptyState } from "@/components/organisms/empty-state";
 import {
   APPLICATION_FILTERS,
   type ApplicationsData,

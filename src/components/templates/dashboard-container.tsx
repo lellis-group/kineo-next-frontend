@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback } from "react";
-import { ErrorState } from "@/components/organisms/error-state";
+import { ErrorState } from "@/components/molecules/error-state";
 import { MemberHome } from "@/components/templates/member-home";
 import { type DashboardData, fetchDashboardData } from "@/lib/dashboard";
 import { useReloadable } from "@/lib/hooks/use-reloadable";

@@ -1,6 +1,6 @@
 import { FileTextIcon } from "@/components/atoms/icons";
 import { ApplicationCard } from "@/components/molecules/application-card";
-import { EmptyState } from "@/components/organisms/empty-state";
+import { EmptyState } from "@/components/molecules/empty-state";
 import type { ApplicationEntry } from "@/lib/applications";
 
 export function ApplicationsList({

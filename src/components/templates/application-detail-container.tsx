@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { ErrorState } from "@/components/organisms/error-state";
+import { ErrorState } from "@/components/molecules/error-state";
 import { ApplicationDetailView } from "@/components/templates/application-detail-view";
 import {
   type ApplicationEntry,

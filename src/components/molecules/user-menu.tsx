@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Avatar } from "@/components/atoms/avatar";
 import { ChevronDownIcon, LogOutIcon } from "@/components/atoms/icons";
 import { cn } from "@/lib/cn";
+import { useDismissablePopover } from "@/lib/hooks/use-dismissable-popover";
 
 /**
  * The signed-in member's plate (avatar, name, role) opening the account menu.
@@ -23,29 +24,7 @@ export function UserMenu({
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
 
-  useEffect(() => {
-    if (!open) return;
-
-    const dismiss = () => setOpen(false);
-
-    const onPointerDown = (event: MouseEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) dismiss();
-    };
-
-    // Return focus to the trigger, or the next Tab starts from the top.
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
-      dismiss();
-      triggerRef.current?.focus();
-    };
-
-    document.addEventListener("mousedown", onPointerDown);
-    document.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.removeEventListener("mousedown", onPointerDown);
-      document.removeEventListener("keydown", onKeyDown);
-    };
-  }, [open]);
+  useDismissablePopover({ open, setOpen, rootRef, triggerRef });
 
   return (
     <div ref={rootRef} className="relative shrink-0">

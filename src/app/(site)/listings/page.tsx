@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
-import { ListSkeleton } from "@/components/molecules/list-skeleton";
+import { BrowseSkeleton } from "@/components/molecules/list-skeleton";
 import { ListingsContainer } from "@/components/templates/listings-container";
 import { serverTransport } from "@/lib/api-transport.server";
 import {
@@ -35,9 +35,7 @@ export default function ListingsPage({
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   return (
-    <Suspense
-      fallback={<ListSkeleton mapFirst titleBlock={false} cardCount={4} />}
-    >
+    <Suspense fallback={<BrowseSkeleton />}>
       <Listings searchParams={searchParams} />
     </Suspense>
   );

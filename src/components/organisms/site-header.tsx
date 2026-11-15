@@ -7,7 +7,7 @@ import { MobileMenu } from "@/components/molecules/mobile-menu";
 import { UserMenu } from "@/components/molecules/user-menu";
 import { cn } from "@/lib/cn";
 import type { UserSummary } from "@/lib/dashboard";
-import { HEADER_HEIGHT, HEADER_HEIGHT_SM, SITE_SHELL } from "@/lib/layout";
+import { HEADER_BAR, HEADER_ROW, SITE_SHELL } from "@/lib/layout";
 import type { HeaderLink } from "@/lib/navigation";
 
 /**
@@ -59,13 +59,8 @@ export function SiteHeader({
   pathname?: string;
 }) {
   return (
-    <header className="sticky top-0 z-40 bg-background/95 backdrop-blur">
-      <div
-        className={cn(
-          SITE_SHELL,
-          `flex ${HEADER_HEIGHT} items-center justify-between gap-2 pt-[env(safe-area-inset-top)] ${HEADER_HEIGHT_SM} sm:gap-6`,
-        )}
-      >
+    <header className={HEADER_BAR}>
+      <div className={cn(SITE_SHELL, HEADER_ROW)}>
         <div className="flex min-w-0 items-center gap-6 lg:gap-10">
           <Link href="/" aria-label="Kineo — Accueil">
             <KineoLogo />

@@ -1,19 +1,15 @@
 import { KineoLogo } from "@/components/atoms/kineo-logo";
-import { HEADER_HEIGHT, HEADER_HEIGHT_SM } from "@/lib/layout";
+import { Skeleton } from "@/components/atoms/skeleton";
+import { cn } from "@/lib/cn";
+import { HEADER_BAR, HEADER_ROW, SITE_SHELL } from "@/lib/layout";
 
-/**
- * The header while the session resolves: same geometry as `SiteHeader`, so a
- * member doesn't see the anonymous header flash first.
- */
+const NAV_WIDTHS = [64, 104, 56];
+
+/** The header while the session resolves: same geometry as `SiteHeader`. */
 export function HeaderSkeleton() {
   return (
-    <header
-      className="sticky top-0 z-40 bg-background/95 backdrop-blur"
-      aria-busy="true"
-    >
-      <div
-        className={`mx-auto flex ${HEADER_HEIGHT} w-full max-w-360 items-center justify-between gap-2 px-4 pt-[env(safe-area-inset-top)] ${HEADER_HEIGHT_SM} sm:gap-6 sm:px-8 lg:px-10`}
-      >
+    <header className={HEADER_BAR} aria-busy="true">
+      <div className={cn(SITE_SHELL, HEADER_ROW)}>
         <div className="flex min-w-0 items-center gap-6 lg:gap-10">
           <KineoLogo />
 
@@ -21,10 +17,11 @@ export function HeaderSkeleton() {
             className="hidden items-center gap-1.5 xl:flex"
             aria-hidden="true"
           >
-            {[64, 104, 56].map((width) => (
-              <span
+            {NAV_WIDTHS.map((width) => (
+              <Skeleton
                 key={width}
-                className="h-8 animate-pulse rounded-full bg-surface"
+                shape="full"
+                className="h-8"
                 style={{ width }}
               />
             ))}
@@ -32,9 +29,9 @@ export function HeaderSkeleton() {
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3" aria-hidden="true">
-          <span className="hidden h-10 w-10 animate-pulse rounded-control bg-surface sm:block" />
-          <span className="h-10 w-10 animate-pulse rounded-full bg-surface" />
-          <span className="h-10 w-28 animate-pulse rounded-full bg-surface" />
+          <Skeleton className="hidden h-10 w-10 sm:block" />
+          <Skeleton shape="full" className="h-10 w-10" />
+          <Skeleton shape="full" className="h-10 w-28" />
         </div>
       </div>
     </header>

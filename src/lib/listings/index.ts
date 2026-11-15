@@ -10,6 +10,7 @@ export {
   formatActiveApplications,
   formatCapacity,
   formatListingAge,
+  listingFilterBuckets,
   RECEIVED_DECISION_LABELS,
   RECEIVED_STATUS_LABELS,
   receivedDecisionLabel,

@@ -6,6 +6,7 @@ import { CloseIcon, LogOutIcon, MenuIcon } from "@/components/atoms/icons";
 import { HeaderNav } from "@/components/molecules/header-nav";
 import { cn } from "@/lib/cn";
 import type { UserSummary } from "@/lib/dashboard";
+import { useDismissablePopover } from "@/lib/hooks/use-dismissable-popover";
 import type { HeaderLink } from "@/lib/navigation";
 
 export interface MobileMenuProps {
@@ -48,30 +49,7 @@ export function MobileMenu({
   }, [pathname]);
 
   // Return focus to the trigger on Escape.
-  useEffect(() => {
-    if (!open) return;
-    function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        setOpen(false);
-        triggerRef.current?.focus();
-      }
-    }
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
-  }, [open]);
-
-  // Close on outside tap (no full-screen backdrop: the sticky header's
-  // backdrop-filter would contain a `fixed` overlay to the header box).
-  useEffect(() => {
-    if (!open) return;
-    function onPointerDown(event: PointerEvent) {
-      if (!rootRef.current?.contains(event.target as Node)) {
-        setOpen(false);
-      }
-    }
-    document.addEventListener("pointerdown", onPointerDown);
-    return () => document.removeEventListener("pointerdown", onPointerDown);
-  }, [open]);
+  useDismissablePopover({ open, setOpen, rootRef, triggerRef });
 
   useEffect(() => {
     if (open) panelRef.current?.focus();

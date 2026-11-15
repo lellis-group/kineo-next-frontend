@@ -1,10 +1,7 @@
 "use client";
 
-import {
-  ArrowLeftIcon,
-  ArrowRightIcon,
-  ChevronDownIcon,
-} from "@/components/atoms/icons";
+import { ArrowLeftIcon, ArrowRightIcon } from "@/components/atoms/icons";
+import { SelectPill } from "@/components/atoms/select-pill";
 import { cn } from "@/lib/cn";
 import { PAGE_SIZE_CHOICES, type PageSize } from "@/lib/page-size";
 
@@ -104,36 +101,17 @@ export function Pagination<C extends PageSize = PageSize>({
       )}
 
       {canChooseSize && (
-        // Wrapping the control makes the whole pill the click target.
-        <label
-          className={cn(
-            "flex shrink-0 cursor-pointer items-center rounded-full border border-border py-1.5 pr-1.5 pl-3.5 transition-colors",
-            "hover:border-border-strong has-[select:focus-visible]:ring-2 has-[select:focus-visible]:ring-ring",
-            loading && "pointer-events-none opacity-50",
-          )}
-        >
-          <span className="cursor-pointer text-control text-muted">
-            Par page
-          </span>
-          <span className="relative">
-            <select
-              aria-label="Lignes par page"
-              disabled={loading}
-              value={String(pageSize)}
-              onChange={(event) =>
-                onPageSizeChange(Number(event.target.value) as C)
-              }
-              className="cursor-pointer appearance-none bg-transparent py-0 pr-5 pl-1.5 text-control font-medium whitespace-nowrap text-foreground focus:outline-none disabled:cursor-not-allowed"
-            >
-              {choices.map((size) => (
-                <option key={size} value={size}>
-                  {size} / page
-                </option>
-              ))}
-            </select>
-            <ChevronDownIcon className="pointer-events-none absolute top-1/2 right-1 size-3.5 -translate-y-1/2 text-muted" />
-          </span>
-        </label>
+        <SelectPill
+          label="Par page"
+          ariaLabel="Lignes par page"
+          value={String(pageSize)}
+          disabled={loading}
+          onChange={(value) => onPageSizeChange(Number(value) as C)}
+          options={choices.map((size) => ({
+            value: String(size),
+            label: `${size} / page`,
+          }))}
+        />
       )}
     </nav>
   );

@@ -15,12 +15,13 @@ import type {
 import type {
   ApplicationApplicant,
   ListingStatusCounts,
+  ListingsFilter,
   MyListing,
   ReceivedApplication,
   ReceivedApplicationCounts,
   ReceivedApplicationsFilterOption,
 } from "./contracts";
-import { RECRUITING_STATUSES } from "./contracts";
+import { LISTING_FILTERS, RECRUITING_STATUSES } from "./contracts";
 import { adaptListingBase } from "./shared";
 
 /** Shown in place of a name once the account is erased. */
@@ -157,6 +158,17 @@ export function recruitingCount(counts: ListingStatusCounts): number {
     total += counts[status];
   }
   return total;
+}
+
+/** The status buckets of a filter pill, each with its count. */
+export function listingFilterBuckets(
+  counts: ListingStatusCounts,
+): Array<{ id: ListingsFilter; label: string; count: number }> {
+  return LISTING_FILTERS.map((option) => ({
+    id: option.id,
+    label: option.label,
+    count: countForFilter(option, counts),
+  }));
 }
 
 /** « 3 candidatures actives » — the count that decides whether to act. */
