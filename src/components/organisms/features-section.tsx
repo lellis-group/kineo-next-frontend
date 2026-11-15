@@ -152,7 +152,7 @@ function CandidatesPreview() {
 function MapPreview() {
   const { search, radius, results } = featurePreviews.map;
   return (
-    <MapPaper pins={MAP_PINS} className="h-[12.6rem]">
+    <MapPaper pins={MAP_PINS} className="h-42">
       <span className="absolute top-3 left-3 flex items-center gap-2 rounded-full bg-map-card px-3 py-1.5 text-2xs font-medium text-map-ink shadow-[0_2px_10px_rgb(22_21_15/0.18)]">
         <SearchIcon className="size-3.5" />
         {search}

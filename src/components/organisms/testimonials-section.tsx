@@ -30,7 +30,7 @@ export function TestimonialsSection() {
               delay={index * 90}
               className="h-full"
             >
-              <Card className="card-lift h-full shadow-[var(--shadow-card)]">
+              <Card className="card-lift h-full shadow-(--shadow-card)">
                 <figure className="flex h-full flex-col p-6">
                   <span
                     aria-hidden="true"
