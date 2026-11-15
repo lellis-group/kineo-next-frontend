@@ -3,8 +3,8 @@
  * `./contracts`.
  */
 
-import { formatRelativeTime, plural } from "../format";
-import { SPECIALTY_LABELS } from "../profile";
+import { formatRelativeTime, percentOf, plural } from "../format";
+import { SPECIALTY_LABELS, SPECIALTY_SHORT_LABELS } from "../profile";
 import type {
   ApiApplicationRow,
   ApiReplacementListing,
@@ -21,7 +21,12 @@ import type {
   ReceivedApplicationCounts,
   ReceivedApplicationsFilterOption,
 } from "./contracts";
-import { LISTING_FILTERS, RECRUITING_STATUSES } from "./contracts";
+import {
+  LISTING_FILTERS,
+  LISTING_STATUS_META,
+  LISTING_STATUS_ORDER,
+  RECRUITING_STATUSES,
+} from "./contracts";
 import { adaptListingBase } from "./shared";
 
 /** Shown in place of a name once the account is erased. */
@@ -227,4 +232,140 @@ export function receivedDecisionLabel(
   return application.decisionSource
     ? RECEIVED_DECISION_LABELS[application.decisionSource]
     : undefined;
+}
+
+/** How many specialty rows the browse rail shows before folding the rest. */
+export const SPECIALTY_RAIL_ROWS = 5;
+
+export interface SpecialtyRailRow {
+  specialty: keyof typeof SPECIALTY_LABELS;
+  label: string;
+  shortLabel: string;
+  count: number;
+  percent: number;
+  active: boolean;
+}
+
+export interface FacetsRail {
+  urgentPercent: number;
+  open: number;
+  rows: SpecialtyRailRow[];
+  foldedCount: number;
+  foldedSpecialties: number;
+}
+
+/**
+ * What the browse rail draws: the figures, and the specialty rows it keeps —
+ * the active one is always shown, even outside the top five.
+ */
+export function adaptFacetsRail(
+  facets: {
+    total: number;
+    urgent: number;
+    bySpecialty: ReadonlyArray<{
+      specialty: keyof typeof SPECIALTY_LABELS;
+      label: string;
+      count: number;
+      percent: number;
+    }>;
+  },
+  activeSpecialty: string,
+): FacetsRail {
+  const topRows = facets.bySpecialty.slice(0, SPECIALTY_RAIL_ROWS);
+  const active = activeSpecialty
+    ? facets.bySpecialty.find((row) => row.specialty === activeSpecialty)
+    : undefined;
+  const shown =
+    active && !topRows.includes(active) ? [...topRows, active] : topRows;
+  const folded = facets.bySpecialty.filter((row) => !shown.includes(row));
+
+  return {
+    urgentPercent: percentOf(facets.urgent, facets.total),
+    open: Math.max(0, facets.total - facets.urgent),
+    rows: shown.map((row) => ({
+      specialty: row.specialty,
+      label: row.label,
+      shortLabel: SPECIALTY_SHORT_LABELS[row.specialty],
+      count: row.count,
+      percent: row.percent,
+      active: activeSpecialty === row.specialty,
+    })),
+    foldedCount: folded.reduce((sum, row) => sum + row.count, 0),
+    foldedSpecialties: folded.length,
+  };
+}
+
+export interface MyListingsRailData {
+  recruiting: number;
+  recruitingPercent: number;
+  activeCandidates: number;
+  urgent: number;
+  filled: number;
+  filledPercent: number;
+  recruitingTotal: number;
+  statusRows: Array<{
+    status: keyof typeof LISTING_STATUS_META;
+    label: string;
+    shortLabel: string;
+    count: number;
+    percent: number;
+  }>;
+  specialtyBars: Array<{
+    key: keyof typeof SPECIALTY_LABELS;
+    label: string;
+    short: string;
+    count: number;
+  }>;
+}
+
+const MAX_SPECIALTY_BARS = 6;
+
+/** The practice rail's aggregates: whole-collection totals plus the page's own. */
+export function adaptMyListingsRail(
+  listings: readonly MyListing[],
+  counts: ListingStatusCounts,
+): MyListingsRailData {
+  const recruiting = countRecruitingListings(listings);
+  // Active candidates only: a refused one no longer holds a slot.
+  const activeCandidates = listings.reduce(
+    (sum, listing) => sum + listing.applicationsCount,
+    0,
+  );
+  const urgent = listings.filter((listing) => listing.urgent).length;
+
+  const perSpecialty = new Map<keyof typeof SPECIALTY_LABELS, number>();
+  for (const listing of listings) {
+    perSpecialty.set(
+      listing.specialty,
+      (perSpecialty.get(listing.specialty) ?? 0) + 1,
+    );
+  }
+
+  return {
+    recruiting,
+    recruitingPercent: percentOf(recruiting, listings.length),
+    activeCandidates,
+    urgent,
+    filled: counts.FILLED,
+    filledPercent: percentOf(counts.FILLED, counts.total),
+    recruitingTotal: recruitingCount(counts),
+    statusRows: LISTING_STATUS_ORDER.filter(
+      (status) => (counts[status] ?? 0) > 0,
+    ).map((status) => ({
+      status,
+      label: LISTING_STATUS_META[status].label,
+      shortLabel: LISTING_STATUS_META[status].shortLabel,
+      count: counts[status] ?? 0,
+      percent: percentOf(counts[status] ?? 0, counts.total),
+    })),
+    specialtyBars: [...perSpecialty.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, MAX_SPECIALTY_BARS)
+      .map(([specialty, count]) => ({
+        key: specialty,
+        label: SPECIALTY_LABELS[specialty],
+        short: SPECIALTY_SHORT_LABELS[specialty],
+        count,
+      })),
+  };
 }

@@ -17,24 +17,19 @@ import { RailWeeks } from "@/components/molecules/rail-weeks";
 import { SpecialtyIcon } from "@/components/molecules/specialty-icon";
 import { ListingSelectionPanel } from "@/components/organisms/listing-selection-panel";
 import { cn } from "@/lib/cn";
-import { percentOf, plural } from "@/lib/format";
+import { plural } from "@/lib/format";
 import type {
   BrowseFacets,
   BrowseFormFilters,
   BrowseSelection,
-  SpecialtyFacet,
 } from "@/lib/listings";
-import { SPECIALTY_SHORT_LABELS } from "@/lib/profile";
+import { adaptFacetsRail } from "@/lib/listings";
 
 /**
  * The summary panels down the left of the screen. Every number comes from
  * `GET /replacement-listings/facets` (the whole matching collection, not the
  * page), and the first two panels double as filter toggles.
  */
-
-/** Rows the specialty panel shows before folding the rest into a counted line. */
-const SPECIALTY_ROWS = 5;
-
 export interface ListingsFacetsRailProps {
   facets: BrowseFacets;
   filters: BrowseFormFilters;
@@ -55,29 +50,24 @@ export function ListingsFacetsRail({
   onSelectionClear,
   busy = false,
 }: ListingsFacetsRailProps) {
-  const urgentPercent = percentOf(facets.urgent, facets.total);
+  const rail = adaptFacetsRail(facets, filters.specialty);
 
-  const open = Math.max(0, facets.total - facets.urgent);
-
-  // The active specialty is drawn even outside the top five, so applying it
-  // from the rail cannot hide its own row.
-  const topRows = facets.bySpecialty.slice(0, SPECIALTY_ROWS);
-  const activeFacet = filters.specialty
-    ? facets.bySpecialty.find((row) => row.specialty === filters.specialty)
-    : undefined;
-  const shownRows =
-    activeFacet && !topRows.includes(activeFacet)
-      ? [...topRows, activeFacet]
-      : topRows;
-  const foldedRows = facets.bySpecialty.filter(
-    (row) => !shownRows.includes(row),
-  );
-  const folded = foldedRows.length;
-  const foldedCount = foldedRows.reduce((sum, row) => sum + row.count, 0);
-
-  const specialtyRows: RailDistributionRow[] = shownRows.map((row) =>
-    specialtyRow(row, filters.specialty === row.specialty, onFiltersChange),
-  );
+  const specialtyRows: RailDistributionRow[] = rail.rows.map((row) => ({
+    key: row.specialty,
+    mark: (
+      <SpecialtyIcon
+        specialty={row.specialty}
+        className="size-4 shrink-0 text-muted"
+      />
+    ),
+    label: row.label,
+    title: row.label,
+    count: row.count,
+    percent: row.percent,
+    active: row.active,
+    onSelect: () =>
+      onFiltersChange({ specialty: row.active ? "" : row.specialty }),
+  }));
 
   return (
     <div
@@ -108,7 +98,7 @@ export function ListingsFacetsRail({
           </div>
         ) : (
           <RailGauge
-            percent={urgentPercent}
+            percent={rail.urgentPercent}
             caption={`${facets.urgent} annonce${plural(
               facets.urgent,
             )} urgente${plural(facets.urgent)} sur ${facets.total}`}
@@ -135,12 +125,12 @@ export function ListingsFacetsRail({
             <StatChip
               icon={<FileTextIcon className="size-3.5" />}
               label="Ouvertes"
-              value={String(open)}
+              value={String(rail.open)}
             />
             <StatChip
               icon={<PercentIcon className="size-3.5" />}
               label="% urgentes"
-              value={`${urgentPercent} %`}
+              value={`${rail.urgentPercent} %`}
             />
           </RailGauge>
         )}
@@ -160,10 +150,11 @@ export function ListingsFacetsRail({
           <>
             <RailDistribution rows={specialtyRows} />
 
-            {folded > 0 && (
+            {rail.foldedSpecialties > 0 && (
               <p className="mt-3 text-xs text-muted">
-                et {foldedCount} annonce{plural(foldedCount)} sur {folded} autre
-                {plural(folded)} spécialité{plural(folded)}
+                et {rail.foldedCount} annonce{plural(rail.foldedCount)} sur{" "}
+                {rail.foldedSpecialties} autre{plural(rail.foldedSpecialties)}{" "}
+                spécialité{plural(rail.foldedSpecialties)}
               </p>
             )}
           </>
@@ -184,28 +175,4 @@ export function ListingsFacetsRail({
       />
     </div>
   );
-}
-
-/** One specialty row, with the toggle that applies it. */
-function specialtyRow(
-  row: SpecialtyFacet,
-  active: boolean,
-  onFiltersChange: (patch: Partial<BrowseFormFilters>) => void,
-): RailDistributionRow {
-  return {
-    key: row.specialty,
-    mark: (
-      <SpecialtyIcon
-        specialty={row.specialty}
-        className="size-4 shrink-0 text-muted"
-      />
-    ),
-    // The short name fits the column; the full one is the row's `title`.
-    label: SPECIALTY_SHORT_LABELS[row.specialty],
-    title: row.label,
-    count: row.count,
-    percent: row.percent,
-    active,
-    onSelect: () => onFiltersChange({ specialty: active ? "" : row.specialty }),
-  };
 }

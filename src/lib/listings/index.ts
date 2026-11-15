@@ -3,7 +3,14 @@
  * first, then the browse feed.
  */
 
+export type {
+  FacetsRail,
+  MyListingsRailData,
+  SpecialtyRailRow,
+} from "./adapters";
 export {
+  adaptFacetsRail,
+  adaptMyListingsRail,
   countForFilter,
   countForReceivedFilter,
   countRecruitingListings,
@@ -15,6 +22,7 @@ export {
   RECEIVED_STATUS_LABELS,
   receivedDecisionLabel,
   recruitingCount,
+  SPECIALTY_RAIL_ROWS,
   specialtyLabel,
 } from "./adapters";
 export {
