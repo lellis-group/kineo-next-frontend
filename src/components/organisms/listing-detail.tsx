@@ -6,6 +6,7 @@ import {
   MapPinIcon,
   UsersIcon,
 } from "@/components/atoms/icons";
+import { SectionTitle } from "@/components/atoms/section-title";
 import { Fact, FactList } from "@/components/molecules/fact-list";
 import { ListingActions } from "@/components/organisms/listing-actions";
 import { formatDateTime } from "@/lib/format";
@@ -79,7 +80,7 @@ export function ListingDetail({
 
       {listing.description && (
         <div className="mt-8 border-t border-border pt-6">
-          <h2 className="text-sm font-medium text-foreground">Description</h2>
+          <SectionTitle>Description</SectionTitle>
           <p className="mt-2 text-sm leading-relaxed whitespace-pre-line text-muted">
             {listing.description}
           </p>
@@ -94,9 +95,7 @@ export function ListingDetail({
 
       {RECRUITING_STATUSES.has(listing.status) && (
         <div className="mt-8 border-t border-border pt-6">
-          <h2 className="text-sm font-medium text-foreground">
-            Retirer l&apos;annonce de la diffusion
-          </h2>
+          <SectionTitle>Retirer l&apos;annonce de la diffusion</SectionTitle>
           <p className="mt-1.5 text-sm leading-relaxed text-muted">
             Les deux actions ci-dessous terminent les candidatures en cours et
             ne sont pas réversibles.

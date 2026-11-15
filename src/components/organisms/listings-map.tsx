@@ -9,6 +9,7 @@ import {
 } from "react";
 import { CrosshairIcon, ExpandIcon } from "@/components/atoms/icons";
 import { cn } from "@/lib/cn";
+import { plural } from "@/lib/format";
 import { useMapInstance } from "@/lib/hooks/use-map-instance";
 import type { ListingsMapHandle } from "@/lib/hooks/use-map-markers";
 import { useMapMarkers } from "@/lib/hooks/use-map-markers";
@@ -140,8 +141,8 @@ export const ListingsMap = forwardRef<ListingsMapHandle, ListingsMapProps>(
         >
           {unlocated > 0 && (
             <p className="rounded-full bg-white px-3 py-1.5 text-2xs text-map-ink shadow-[0_2px_10px_rgb(22_21_15/0.12)]">
-              {unlocated} annonce{unlocated > 1 ? "s" : ""} sans coordonnées,
-              visible{unlocated > 1 ? "s" : ""} dans la liste seulement
+              {unlocated} annonce{plural(unlocated)} sans coordonnées, visible
+              {plural(unlocated)} dans la liste seulement
             </p>
           )}
 

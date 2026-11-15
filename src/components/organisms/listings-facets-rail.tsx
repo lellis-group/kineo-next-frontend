@@ -4,6 +4,7 @@ import {
   LayersIcon,
   PercentIcon,
 } from "@/components/atoms/icons";
+import { TextButton } from "@/components/atoms/text-button";
 import { Panel } from "@/components/molecules/panel";
 import { PanelExpand, StatChip } from "@/components/molecules/panel-chrome";
 import {
@@ -16,7 +17,7 @@ import { RailWeeks } from "@/components/molecules/rail-weeks";
 import { SpecialtyIcon } from "@/components/molecules/specialty-icon";
 import { ListingSelectionPanel } from "@/components/organisms/listing-selection-panel";
 import { cn } from "@/lib/cn";
-import { plural } from "@/lib/format";
+import { percentOf, plural } from "@/lib/format";
 import type {
   BrowseFacets,
   BrowseFormFilters,
@@ -54,8 +55,7 @@ export function ListingsFacetsRail({
   onSelectionClear,
   busy = false,
 }: ListingsFacetsRailProps) {
-  const urgentPercent =
-    facets.total > 0 ? Math.round((facets.urgent / facets.total) * 100) : 0;
+  const urgentPercent = percentOf(facets.urgent, facets.total);
 
   const open = Math.max(0, facets.total - facets.urgent);
 
@@ -99,13 +99,11 @@ export function ListingsFacetsRail({
               Aucune annonce ne correspond à votre recherche.
             </RailEmpty>
             {filters.urgentOnly && (
-              <button
-                type="button"
+              <TextButton
                 onClick={() => onFiltersChange({ urgentOnly: false })}
-                className="text-xs font-medium text-primary transition-colors hover:text-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
               >
                 Retirer le filtre « urgentes »
-              </button>
+              </TextButton>
             )}
           </div>
         ) : (
@@ -153,13 +151,9 @@ export function ListingsFacetsRail({
           <div className="flex flex-col items-center gap-2">
             <RailEmpty>Aucune spécialité représentée.</RailEmpty>
             {filters.specialty && (
-              <button
-                type="button"
-                onClick={() => onFiltersChange({ specialty: "" })}
-                className="text-xs font-medium text-primary transition-colors hover:text-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-              >
+              <TextButton onClick={() => onFiltersChange({ specialty: "" })}>
                 Retirer le filtre de spécialité
-              </button>
+              </TextButton>
             )}
           </div>
         ) : (

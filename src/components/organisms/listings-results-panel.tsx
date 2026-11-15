@@ -1,5 +1,4 @@
 import type { Ref } from "react";
-import { FileTextIcon } from "@/components/atoms/icons";
 import { EmptyState } from "@/components/molecules/empty-state";
 import { Pagination } from "@/components/molecules/pagination";
 import { Panel } from "@/components/molecules/panel";
@@ -130,24 +129,21 @@ export function ListingsResultsPanel({
         </output>
 
         {listings.length === 0 ? (
-          <div className="flex flex-1 items-center">
-            <EmptyState
-              className="mt-0 w-full"
-              icon={<FileTextIcon className="h-8 w-8 text-primary" />}
-              title={
-                filtered
-                  ? "Aucune annonce ne correspond à ces filtres"
-                  : "Aucune annonce ouverte pour le moment"
-              }
-              description={
-                filtered
-                  ? "Élargissez votre recherche en retirant un filtre ou une période."
-                  : "Revenez d'ici peu : les cabinets publient leurs remplacements au fil de l'eau."
-              }
-              actionLabel={filtered ? "Réinitialiser les filtres" : undefined}
-              onAction={filtered ? onResetFilters : undefined}
-            />
-          </div>
+          <EmptyState
+            fill
+            title={
+              filtered
+                ? "Aucune annonce ne correspond à ces filtres"
+                : "Aucune annonce ouverte pour le moment"
+            }
+            description={
+              filtered
+                ? "Élargissez votre recherche en retirant un filtre ou une période."
+                : "Revenez d'ici peu : les cabinets publient leurs remplacements au fil de l'eau."
+            }
+            actionLabel={filtered ? "Réinitialiser les filtres" : undefined}
+            onAction={filtered ? onResetFilters : undefined}
+          />
         ) : (
           <>
             {/*

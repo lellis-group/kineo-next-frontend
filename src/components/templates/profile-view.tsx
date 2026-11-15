@@ -80,16 +80,16 @@ export function ProfileView({
             muted={!profile.city}
           />
 
-          <div className="flex items-center justify-between gap-4 border-b border-border py-3.5">
-            <span className="text-sm text-muted">Identité professionnelle</span>
-            {profile.verified ? (
-              <VerifiedBadge label="Vérifiée" size="md" />
-            ) : (
-              <span className="text-sm font-medium text-foreground">
-                Non vérifiée
-              </span>
-            )}
-          </div>
+          <StatRow
+            label="Identité professionnelle"
+            value={
+              profile.verified ? (
+                <VerifiedBadge label="Vérifiée" size="md" />
+              ) : (
+                "Non vérifiée"
+              )
+            }
+          />
         </ProfileSection>
 
         <ProfileSection

@@ -21,7 +21,7 @@ import {
   type BarRow,
   SpecialtyBars,
 } from "@/components/molecules/specialty-bars";
-import { plural } from "@/lib/format";
+import { percentOf, plural } from "@/lib/format";
 import {
   countRecruitingListings,
   LISTING_STATUS_META,
@@ -46,8 +46,7 @@ export function MyListingsRail({
   counts: ListingStatusCounts;
 }) {
   const recruiting = countRecruitingListings(listings);
-  const recruitingPercent =
-    listings.length > 0 ? Math.round((recruiting / listings.length) * 100) : 0;
+  const recruitingPercent = percentOf(recruiting, listings.length);
 
   // Active candidates only: a refused one no longer holds a slot.
   const activeCandidates = listings.reduce(
@@ -57,8 +56,7 @@ export function MyListingsRail({
   const urgent = listings.filter((listing) => listing.urgent).length;
 
   const filled = counts.FILLED;
-  const filledPercent =
-    counts.total > 0 ? Math.round((filled / counts.total) * 100) : 0;
+  const filledPercent = percentOf(filled, counts.total);
 
   const recruitingTotal = LISTING_STATUS_ORDER.reduce(
     (sum, status) =>
@@ -157,9 +155,6 @@ function StatusDistribution({ counts }: { counts: ListingStatusCounts }) {
     return <RailEmpty>Aucune annonce à répartir.</RailEmpty>;
   }
 
-  const percent = (count: number) =>
-    Math.round((count / (counts.total || 1)) * 100);
-
   return (
     <RailDistribution
       rows={rows.map(
@@ -169,7 +164,7 @@ function StatusDistribution({ counts }: { counts: ListingStatusCounts }) {
           label: LISTING_STATUS_META[row.status].shortLabel,
           title: LISTING_STATUS_META[row.status].label,
           count: row.count,
-          percent: percent(row.count),
+          percent: percentOf(row.count, counts.total),
         }),
       )}
     />

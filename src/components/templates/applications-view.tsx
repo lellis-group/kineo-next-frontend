@@ -1,4 +1,3 @@
-import { FileTextIcon } from "@/components/atoms/icons";
 import { PageHeader } from "@/components/atoms/page-header";
 import { EmptyState } from "@/components/molecules/empty-state";
 import { FilterChips } from "@/components/molecules/filter-chips";
@@ -47,7 +46,6 @@ export function ApplicationsView({
       <div className={PAGE_CONTAINER}>
         <ApplicationsHeader />
         <EmptyState
-          icon={<FileTextIcon className="h-8 w-8 text-primary" />}
           title="Aucune candidature pour l'instant"
           description="Parcourez les annonces ouvertes et candidatez en un clic avec un message personnalisé."
           actionLabel="Parcourir les annonces"

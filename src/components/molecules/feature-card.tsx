@@ -1,4 +1,5 @@
 import type { ComponentType, SVGProps } from "react";
+import { Card } from "@/components/atoms/card";
 
 export interface FeatureCardProps {
   icon: ComponentType<SVGProps<SVGSVGElement>>;
@@ -12,7 +13,7 @@ export function FeatureCard({
   description,
 }: FeatureCardProps) {
   return (
-    <div className="card-lift h-full rounded-card border border-border bg-surface p-6">
+    <Card className="card-lift h-full p-6">
       <div
         aria-hidden="true"
         className="icon-tilt mb-5 flex h-11 w-11 items-center justify-center rounded-control bg-primary/15 text-xl text-primary"
@@ -22,6 +23,6 @@ export function FeatureCard({
 
       <h3 className="mb-2 font-medium">{title}</h3>
       <p className="text-sm leading-relaxed text-muted">{description}</p>
-    </div>
+    </Card>
   );
 }

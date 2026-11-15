@@ -1,6 +1,8 @@
+import type { ReactNode } from "react";
+
 export interface StatRowProps {
   label: string;
-  value: string;
+  value: ReactNode;
   /** Highlights the value in green (positive indicator). */
   accent?: boolean;
   /** Renders the value muted (missing/optional data). */

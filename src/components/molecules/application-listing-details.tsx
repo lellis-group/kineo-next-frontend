@@ -1,3 +1,4 @@
+import { SectionTitle } from "@/components/atoms/section-title";
 import { Fact, FactList } from "@/components/molecules/fact-list";
 import type { ApplicationListingInfo } from "@/lib/applications";
 
@@ -8,7 +9,7 @@ export function ApplicationListingDetails({
 }) {
   return (
     <section>
-      <h2 className="text-sm font-medium text-foreground">L&apos;annonce</h2>
+      <SectionTitle>L&apos;annonce</SectionTitle>
 
       <FactList className="mt-6">
         <Fact term="Période">

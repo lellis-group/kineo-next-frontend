@@ -1,3 +1,4 @@
+import { SectionTitle } from "@/components/atoms/section-title";
 import type { ApplicationEntry } from "@/lib/applications";
 import { cn } from "@/lib/cn";
 import { formatDateTime } from "@/lib/format";
@@ -40,7 +41,7 @@ export function ApplicationTimeline({
 
   return (
     <section>
-      <h2 className="text-sm font-medium text-foreground">Suivi</h2>
+      <SectionTitle>Suivi</SectionTitle>
       <ol className="mt-3 divide-y divide-border">
         {events.map((event) => (
           <li

@@ -1,3 +1,4 @@
+import { StatFigure } from "@/components/molecules/stat-figure";
 import { formatDayMonth } from "@/lib/format";
 import type { StartWeekFacet } from "@/lib/listings";
 
@@ -30,28 +31,18 @@ export function RailWeeks({ weeks }: { weeks: StartWeekFacet[] }) {
   return (
     <div>
       <dl className="grid grid-cols-[auto_1fr_auto] items-start gap-3">
-        <div className="flex flex-col-reverse">
-          <dt className="text-2xs leading-tight text-muted">Cette semaine</dt>
-          <dd className="text-base leading-tight font-medium text-foreground tabular-nums">
-            {current.count}
-          </dd>
-        </div>
-        <div className="min-w-0 text-center">
-          <dt className="text-2xs leading-tight text-muted">
-            Sur {weeks.length} semaines
-          </dt>
-          <dd className="mt-1 text-4xl leading-none text-foreground tabular-nums">
-            {total}
-          </dd>
-        </div>
-        <div className="flex flex-col-reverse text-right">
-          <dt className="text-2xs leading-tight text-muted">
-            Pic, sem. du {formatDayMonth(busiest.weekStart)}
-          </dt>
-          <dd className="text-base leading-tight font-medium text-foreground tabular-nums">
-            {busiest.count}
-          </dd>
-        </div>
+        <StatFigure label="Cette semaine" value={current.count} />
+        <StatFigure
+          align="center"
+          size="lg"
+          label={`Sur ${weeks.length} semaines`}
+          value={total}
+        />
+        <StatFigure
+          align="right"
+          label={`Pic, sem. du ${formatDayMonth(busiest.weekStart)}`}
+          value={busiest.count}
+        />
       </dl>
 
       {/* One labelled image: the bars are decorative once their numbers are said. */}

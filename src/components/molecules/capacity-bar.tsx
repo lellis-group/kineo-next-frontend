@@ -1,4 +1,5 @@
 import { cn } from "@/lib/cn";
+import { percentOf } from "@/lib/format";
 import { formatCapacity } from "@/lib/listings";
 
 /** « x / y » candidats with a thin fill bar; no bar without a cap. */
@@ -13,7 +14,7 @@ export function CapacityBar({
   className?: string;
 }) {
   // Capped: the server can hold more applications than the cap.
-  const percent = max ? Math.min(100, Math.round((count / max) * 100)) : 0;
+  const percent = percentOf(count, max ?? 0, true);
 
   return (
     <span
