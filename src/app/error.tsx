@@ -2,8 +2,9 @@
 
 import { Button } from "@/components/atoms/button";
 import { ArrowLeftIcon } from "@/components/atoms/icons";
-import { StatusCard } from "@/components/molecules/status-card";
+import { AuthCard } from "@/components/organisms/auth-card";
 
+/** Outside the `(site)` chrome, so it takes the auth screens' card and logo. */
 export default function RootError({
   reset,
 }: {
@@ -11,19 +12,19 @@ export default function RootError({
   reset: () => void;
 }) {
   return (
-    <StatusCard
-      code="500"
-      message="Quelque chose s’est mal passé. Réessayez ou revenez à l’accueil."
+    <AuthCard
+      title="Une erreur est survenue"
+      subtitle="Quelque chose s’est mal passé. Réessayez dans un instant."
     >
-      <div className="mt-6 flex justify-center gap-3">
-        <Button variant="secondary" onClick={reset}>
-          Réessayer
-        </Button>
-        <Button href="/">
+      <Button size="lg" onClick={reset} className="w-full">
+        Réessayer
+      </Button>
+      <div className="mt-4 text-center">
+        <Button href="/" variant="ghost">
           <ArrowLeftIcon className="h-4 w-4" />
           Accueil
         </Button>
       </div>
-    </StatusCard>
+    </AuthCard>
   );
 }

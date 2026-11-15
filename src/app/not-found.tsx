@@ -1,6 +1,5 @@
 import { Button } from "@/components/atoms/button";
-import { ArrowLeftIcon } from "@/components/atoms/icons";
-import { StatusCard } from "@/components/molecules/status-card";
+import { AuthCard } from "@/components/organisms/auth-card";
 
 export async function generateMetadata() {
   return {
@@ -9,13 +8,16 @@ export async function generateMetadata() {
   };
 }
 
+/** Outside the `(site)` chrome, so it takes the auth screens' card and logo. */
 export default function NotFound() {
   return (
-    <StatusCard code="404" message="Cette page n’existe pas ou a été déplacée.">
-      <Button href="/" className="mt-6">
-        <ArrowLeftIcon className="h-4 w-4" />
+    <AuthCard
+      title="Page introuvable"
+      subtitle="Erreur 404 · cette page n’existe pas ou a été déplacée."
+    >
+      <Button href="/" size="lg" className="w-full">
         Retour à l’accueil
       </Button>
-    </StatusCard>
+    </AuthCard>
   );
 }
