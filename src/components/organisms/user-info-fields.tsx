@@ -1,6 +1,5 @@
 "use client";
 
-import { Card } from "@/components/atoms/card";
 import { MailIcon, PencilIcon } from "@/components/atoms/icons";
 import { EditableRow } from "@/components/molecules/editable-row";
 import {
@@ -17,7 +16,10 @@ import {
 } from "@/lib/auth-validation";
 import type { ApiUser } from "@/lib/types/api";
 
-/** The account's name and email, each an `EditableRow` with its own endpoint and rules. */
+/**
+ * The account's name and email, each an `EditableRow` with its own endpoint
+ * and rules, divided like a panel's rows; the frame is the caller's.
+ */
 export function UserInfoFields({
   user,
   onUpdateInfo,
@@ -31,7 +33,7 @@ export function UserInfoFields({
   onChangeEmail: (email: string) => Promise<string>;
 }) {
   return (
-    <Card className="divide-y divide-border overflow-hidden">
+    <div className="divide-y divide-border">
       <EditableRow
         label="Nom"
         display={
@@ -114,6 +116,6 @@ export function UserInfoFields({
           return onChangeEmail(email);
         }}
       />
-    </Card>
+    </div>
   );
 }
