@@ -11,7 +11,8 @@ export const RPPS_ERROR_MESSAGE = `Le numéro RPPS doit contenir exactement ${RP
 /** Mirrors the backend's `city` bound (`textField(100, "City")`). */
 export const CITY_MAX_LENGTH = 100;
 
-import type { ApiProfile, ProfileType, Specialty } from "./types/api";
+import { percentOf } from "./format";
+import type { ApiProfile, ApiUser, ProfileType, Specialty } from "./types/api";
 
 /**
  * The specialties, with their full name and their name in a fixed-width
@@ -49,6 +50,35 @@ export const PROFILE_TYPE_DESCRIPTIONS: Record<ProfileType, string> = {
   REPLACEMENT: "Vous cherchez des remplacements à pourvoir.",
   BOTH: "Vous publiez des annonces et candidatez aux remplacements.",
 };
+
+/** One step towards a complete profile, as the checklist shows it. */
+export interface CompletenessItem {
+  id: string;
+  label: string;
+  done: boolean;
+}
+
+/**
+ * How much of what practices look at the member has filled in: the account,
+ * the professional details, and the two verifications. Each item weighs the
+ * same; the order is the checklist's, easiest first.
+ */
+export function profileCompleteness(
+  user: Pick<ApiUser, "name" | "image" | "emailVerified">,
+  profile: Pick<ApiProfile, "rppsNumber" | "city" | "verified">,
+): { percent: number; done: number; items: CompletenessItem[] } {
+  const items: CompletenessItem[] = [
+    { id: "name", label: "Nom complet", done: Boolean(user.name?.trim()) },
+    { id: "email", label: "Adresse e-mail vérifiée", done: user.emailVerified },
+    { id: "city", label: "Ville principale", done: Boolean(profile.city) },
+    { id: "rpps", label: "Numéro RPPS", done: Boolean(profile.rppsNumber) },
+    { id: "image", label: "Photo de profil", done: Boolean(user.image) },
+    { id: "verified", label: "Identité vérifiée", done: profile.verified },
+  ];
+
+  const done = items.filter((item) => item.done).length;
+  return { percent: percentOf(done, items.length), done, items };
+}
 
 /** "Membre depuis {month year}" — fr-FR locale. */
 export function formatMemberSince(isoDate: string): string {

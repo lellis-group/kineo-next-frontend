@@ -1,22 +1,24 @@
 "use client";
 
 import { Button } from "@/components/atoms/button";
-import { FileTextIcon, ShieldIcon } from "@/components/atoms/icons";
 import { InlineAlert } from "@/components/molecules/inline-alert";
-import { ProfileSection } from "@/components/molecules/profile-section";
-import { StatRow } from "@/components/molecules/stat-row";
-import { VerifiedBadge } from "@/components/molecules/verified-badge";
+import { Panel } from "@/components/molecules/panel";
 import { DeleteAccountSection } from "@/components/organisms/delete-account-section";
-import { ProfileHeaderCard } from "@/components/organisms/profile-header-card";
-import { PROSE_CONTAINER } from "@/lib/layout";
+import { ProfileProDetails } from "@/components/organisms/profile-pro-details";
+import { ProfileRail } from "@/components/organisms/profile-rail";
+import { UserInfoFields } from "@/components/organisms/user-info-fields";
+import { BoardShell } from "@/components/templates/board-shell";
+import { SITE_SHELL } from "@/lib/layout";
 import type { ApiProfile, ApiUser } from "@/lib/types/api";
 
 /** Which success banner the redirect from the edit form left behind. */
 export type ProfileFeedback = "created" | "saved" | null;
 
 /**
- * The /profile screen in view mode; markup only. The writes and their error
- * mapping live in `ProfileContainer`; the data arrives from the server page.
+ * The /profile screen in view mode, on the console's board: the member's
+ * card, completeness and visibility down the rail; the account, the
+ * professional details and the deletion beside it. Markup only — the writes
+ * and their error mapping live in `ProfileContainer`.
  */
 export function ProfileView({
   profile,
@@ -39,77 +41,51 @@ export function ProfileView({
   onDeleteAccount: () => Promise<void>;
 }) {
   return (
-    <div className={PROSE_CONTAINER}>
-      {feedback === "created" && (
-        <div className="mb-6 space-y-4">
-          <InlineAlert tone="success">
-            Votre profil a été créé avec succès.
-          </InlineAlert>
-          <Button href="/" size="lg" className="w-full">
-            Aller à mon tableau de bord
-          </Button>
+    <>
+      {/* Above the board, so a phone sees it before the rail. */}
+      {feedback && (
+        <div className={`${SITE_SHELL} pt-4`}>
+          {feedback === "created" && (
+            <InlineAlert tone="success" as="div">
+              <span className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                Votre profil a été créé avec succès.
+                <Button href="/" className="shrink-0">
+                  Aller à mon tableau de bord
+                </Button>
+              </span>
+            </InlineAlert>
+          )}
+          {feedback === "saved" && (
+            <InlineAlert tone="success">
+              Vos modifications ont été enregistrées.
+            </InlineAlert>
+          )}
         </div>
       )}
-      {feedback === "saved" && (
-        <InlineAlert tone="success" className="mb-6">
-          Vos modifications ont été enregistrées.
-        </InlineAlert>
-      )}
 
-      <div className="space-y-6">
-        <ProfileHeaderCard
-          user={user}
-          profile={profile}
-          onEditProfile={onEditProfile}
-          onUpdateInfo={onUpdateInfo}
-          onChangeEmail={onChangeEmail}
-        />
+      <BoardShell
+        railFirst
+        className="lg:py-4"
+        rail={
+          <ProfileRail
+            user={user}
+            profile={profile}
+            onEditProfile={onEditProfile}
+          />
+        }
+      >
+        <Panel title="Informations du compte">
+          <UserInfoFields
+            user={user}
+            onUpdateInfo={onUpdateInfo}
+            onChangeEmail={onChangeEmail}
+          />
+        </Panel>
 
-        <ProfileSection
-          icon={FileTextIcon}
-          title="Informations professionnelles"
-        >
-          <StatRow
-            label="Numéro RPPS"
-            value={profile.rppsNumber ?? "Non renseigné"}
-            muted={!profile.rppsNumber}
-          />
-          <StatRow
-            label="Ville principale"
-            value={profile.city ?? "Non renseignée"}
-            muted={!profile.city}
-          />
-
-          <StatRow
-            label="Identité professionnelle"
-            value={
-              profile.verified ? (
-                <VerifiedBadge label="Vérifiée" size="md" />
-              ) : (
-                "Non vérifiée"
-              )
-            }
-          />
-        </ProfileSection>
-
-        <ProfileSection
-          icon={ShieldIcon}
-          title="Visibilité"
-          description={
-            profile.isPublic
-              ? "Votre profil apparaît dans l'annuaire public."
-              : "Votre profil n'apparaît pas dans l'annuaire public."
-          }
-        >
-          <StatRow
-            label="Annuaire public"
-            value={profile.isPublic ? "Visible" : "Masqué"}
-            accent={profile.isPublic}
-          />
-        </ProfileSection>
+        <ProfileProDetails profile={profile} onEdit={onEditProfile} />
 
         <DeleteAccountSection onDeleteAccount={onDeleteAccount} />
-      </div>
-    </div>
+      </BoardShell>
+    </>
   );
 }

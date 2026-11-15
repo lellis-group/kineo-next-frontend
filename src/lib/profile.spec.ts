@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import type { ProfileFormValues } from "./profile";
 import {
+  profileCompleteness,
   RPPS_DIGITS,
   RPPS_ERROR_MESSAGE,
   RPPS_PATTERN,
@@ -52,5 +53,31 @@ describe("validateProfileForm", () => {
     const result = validateProfileForm({ ...valid, rppsNumber: "  " });
     expect(result.error).toBeUndefined();
     expect(result.payload?.rppsNumber).toBeUndefined();
+  });
+});
+
+describe("profileCompleteness", () => {
+  const user = { name: "Jeanne Dupont", image: null, emailVerified: true };
+  const profile = { rppsNumber: null, city: "Lyon", verified: false };
+
+  test("counts each filled item once, over all of them", () => {
+    const { percent, done, items } = profileCompleteness(user, profile);
+
+    expect(done).toBe(3);
+    expect(items).toHaveLength(6);
+    expect(percent).toBe(50);
+  });
+
+  test("does not count a blank name as filled", () => {
+    const { items } = profileCompleteness({ ...user, name: "  " }, profile);
+    expect(items.find((item) => item.id === "name")?.done).toBe(false);
+  });
+
+  test("reaches 100 only when everything is there", () => {
+    const { percent } = profileCompleteness(
+      { ...user, image: "https://exemple.fr/a.jpg" },
+      { rppsNumber: "12345678901", city: "Lyon", verified: true },
+    );
+    expect(percent).toBe(100);
   });
 });
