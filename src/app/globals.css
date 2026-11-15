@@ -47,6 +47,9 @@
   --map-faint: rgb(22 21 15 / 48%);
   --map-line: rgb(22 21 15 / 10%);
   --map-wash: rgb(22 21 15 / 5%);
+  /* The marketing stills of the map (`MapPaper`): parks and water. */
+  --map-park: #cfe0c3;
+  --map-water: #b9d3df;
 
   /* The status tones, muted to sit in the cream-and-charcoal palette. */
   --danger: #e48a7c;
@@ -86,6 +89,8 @@
   --color-map-faint: var(--map-faint);
   --color-map-line: var(--map-line);
   --color-map-wash: var(--map-wash);
+  --color-map-park: var(--map-park);
+  --color-map-water: var(--map-water);
   --color-danger: var(--danger);
   --color-danger-hover: var(--danger-hover);
   --color-danger-foreground: var(--danger-foreground);

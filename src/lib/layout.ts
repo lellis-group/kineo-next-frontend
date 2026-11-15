@@ -2,9 +2,11 @@
 export const PAGE_CONTAINER =
   "mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 sm:py-10";
 
-/** Marketing page shell — landing sections, legal pages. */
-export const MARKETING_CONTAINER =
-  "mx-auto w-full max-w-7xl px-4 py-16 sm:px-6 sm:py-20";
+/**
+ * A landing section: the site's own geometry (`SITE_SHELL`, declared below),
+ * so the sections line up with the header and the footer.
+ */
+export const MARKETING_SECTION = "py-16 sm:py-24";
 
 /** Prose shell for the legal pages: narrower, for reading. */
 export const PROSE_CONTAINER =
