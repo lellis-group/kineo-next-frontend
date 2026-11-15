@@ -7,6 +7,7 @@ import { ReceivedApplicationCard } from "@/components/molecules/received-applica
 import { SoftPanel } from "@/components/molecules/soft-panel";
 import { ListingDetail } from "@/components/organisms/listing-detail";
 import { plural } from "@/lib/format";
+import { WIDE_PAGE } from "@/lib/layout";
 import {
   countForReceivedFilter,
   type ListingApplicationsData,
@@ -56,7 +57,7 @@ export function ListingDetailView({
   onApplicationReject,
 }: ListingDetailViewProps) {
   return (
-    <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 sm:py-10">
+    <div className={WIDE_PAGE}>
       <BackLink href="/listings/mine">Retour à mes offres</BackLink>
 
       <div className="mt-8">

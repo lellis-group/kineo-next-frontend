@@ -5,6 +5,7 @@ import {
   type ApplicationEntry,
   WITHDRAWABLE_STATUSES,
 } from "@/lib/applications";
+import { NARROW_PAGE } from "@/lib/layout";
 
 export function ApplicationDetailView({
   application,
@@ -18,7 +19,7 @@ export function ApplicationDetailView({
   const canWithdraw = WITHDRAWABLE_STATUSES.has(application.status);
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6 sm:py-10">
+    <div className={NARROW_PAGE}>
       <BackLink href="/applications">Retour à mes candidatures</BackLink>
 
       <div className="mt-8">
