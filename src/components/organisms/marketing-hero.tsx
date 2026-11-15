@@ -39,19 +39,8 @@ export function MarketingHero() {
         className={`${SITE_SHELL} relative grid items-center gap-12 pt-12 pb-16 sm:pt-16 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] lg:gap-12 xl:gap-16 lg:pt-20 lg:pb-24`}
       >
         <div className="min-w-0">
-          <p
-            className="hero-enter inline-flex items-center gap-2 rounded-full border border-border-strong bg-surface px-3 py-1 text-xs text-muted"
-            style={heroDelay(0)}
-          >
-            <span
-              aria-hidden="true"
-              className="size-1.5 rounded-full bg-success"
-            />
-            {trustBar.eyebrow}
-          </p>
-
           <h1
-            className="hero-enter mt-6 text-[2.6rem] leading-[1.04] font-medium tracking-tight text-balance sm:text-6xl lg:text-[3.6rem] 2xl:text-7xl"
+            className="hero-enter text-[2.6rem] leading-[1.04] font-medium tracking-tight text-balance sm:text-6xl lg:text-[3.6rem] 2xl:text-7xl"
             style={heroDelay(40)}
           >
             {hero.title}{" "}

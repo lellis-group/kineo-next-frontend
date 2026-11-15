@@ -51,7 +51,6 @@ export function FeaturesSection() {
     <section id="features" className="scroll-mt-20 border-b border-border">
       <div className={`${SITE_SHELL} ${MARKETING_SECTION}`}>
         <MarketingHeading
-          eyebrow={featuresSection.eyebrow}
           title={featuresSection.title}
           subtitle={featuresSection.subtitle}
         />

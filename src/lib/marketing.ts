@@ -62,7 +62,6 @@ export const consolePreview = {
 } as const;
 
 export const trustBar = {
-  eyebrow: "Plateforme régulée & sécurisée",
   items: [
     {
       icon: "shield",
@@ -86,7 +85,6 @@ export interface FeatureItem {
 }
 
 export const featuresSection = {
-  eyebrow: "Fonctionnalités",
   title: "Tout pour gérer vos remplacements",
   subtitle:
     "Une seule console pour publier, recevoir et décider — côté cabinet comme côté remplaçant.",
@@ -159,7 +157,6 @@ export interface Testimonial {
 }
 
 export const testimonialsSection = {
-  eyebrow: "Témoignages",
   title: "Plus de 2000 médecins nous font confiance",
   rating: "4.9/5",
   ratingLabel: "avis professionnels",
@@ -186,7 +183,6 @@ export const testimonialsSection = {
 };
 
 export const howItWorks = {
-  eyebrow: "Parcours",
   title: "Comment ça marche",
   subtitle:
     "Un parcours en trois étapes, pensé pour les deux côtés de la table : du besoin au remplacement finalisé.",

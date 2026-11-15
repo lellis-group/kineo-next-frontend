@@ -32,17 +32,11 @@ export function DashboardGreeting({
         <div className="min-w-0">
           {/* City · speciality, when there is a profile to read them from. */}
           {greeting.meta && (
-            <p className="inline-flex items-center gap-2 rounded-full border border-border-strong bg-surface-2 px-3 py-1 text-xs text-muted">
-              <span
-                aria-hidden="true"
-                className="size-1.5 rounded-full bg-success"
-              />
-              {greeting.meta}
-            </p>
+            <p className="text-sm text-muted">{greeting.meta}</p>
           )}
           <h1
             className={`text-3xl leading-tight font-medium tracking-tight text-balance sm:text-4xl ${
-              greeting.meta ? "mt-4" : ""
+              greeting.meta ? "mt-2" : ""
             }`}
           >
             Bonjour <span className="text-primary">{greeting.name}</span>

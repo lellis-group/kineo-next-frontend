@@ -26,7 +26,6 @@ export function HowItWorksSection() {
     <section id="how-it-works" className="scroll-mt-20 border-b border-border">
       <div className={`${SITE_SHELL} ${MARKETING_SECTION}`}>
         <MarketingHeading
-          eyebrow={howItWorks.eyebrow}
           title={howItWorks.title}
           subtitle={howItWorks.subtitle}
         />

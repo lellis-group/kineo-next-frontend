@@ -11,7 +11,6 @@ export function TestimonialsSection() {
     <section className="border-b border-border">
       <div className={`${SITE_SHELL} ${MARKETING_SECTION}`}>
         <MarketingHeading
-          eyebrow={testimonialsSection.eyebrow}
           title={testimonialsSection.title}
           aside={
             <p className="flex items-center gap-2 rounded-full border border-border bg-surface px-4 py-2 text-sm text-muted">

@@ -3,7 +3,6 @@ import { Button } from "@/components/atoms/button";
 import { Card } from "@/components/atoms/card";
 import { CheckIcon, PencilIcon } from "@/components/atoms/icons";
 import { Panel } from "@/components/molecules/panel";
-import { ProgressCurve } from "@/components/molecules/progress-curve";
 import { VerifiedBadge } from "@/components/molecules/verified-badge";
 import { cn } from "@/lib/cn";
 import {
@@ -33,13 +32,16 @@ export function ProfileRail({
     <div className="flex flex-col gap-3">
       <IdentityCard user={user} profile={profile} onEdit={onEditProfile} />
 
-      <Panel title="Complétude du profil">
-        <ProgressCurve
-          percent={completeness.percent}
-          caption={`${completeness.done} éléments sur ${completeness.items.length}`}
-          bleed="-mx-5 sm:-mx-6"
-        />
-        <ul className="mt-5 flex flex-col gap-2.5 border-t border-border pt-4">
+      <Panel
+        title="Complétude du profil"
+        action={
+          <span className="text-sm text-muted tabular-nums">
+            <span className="text-foreground">{completeness.done}</span> /{" "}
+            {completeness.items.length}
+          </span>
+        }
+      >
+        <ul className="flex flex-col gap-2.5">
           {completeness.items.map((item) => (
             <li key={item.id} className="flex items-center gap-2.5 text-sm">
               <span
