@@ -39,9 +39,13 @@ export function EmptyState({
         description={description}
         action={
           showAction ? (
-            <Button href={actionHref} onClick={onAction} type="button">
-              {actionLabel}
-            </Button>
+            actionHref ? (
+              <Button href={actionHref} onClick={onAction}>
+                {actionLabel}
+              </Button>
+            ) : (
+              <Button onClick={onAction}>{actionLabel}</Button>
+            )
           ) : undefined
         }
       />

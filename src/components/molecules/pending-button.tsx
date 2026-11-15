@@ -2,7 +2,7 @@
 
 import {
   Button,
-  type ButtonProps,
+  type ButtonAsButton,
   type ButtonVariant,
 } from "@/components/atoms/button";
 import { Spinner } from "@/components/atoms/spinner";
@@ -17,7 +17,7 @@ const SPINNER_BORDER: Record<ButtonVariant, string> = {
 };
 
 export interface PendingButtonProps
-  extends Omit<ButtonProps, "children" | "href"> {
+  extends Omit<ButtonAsButton, "children" | "href"> {
   /** True while the request is in flight. */
   pending: boolean;
   /** Label at rest. */

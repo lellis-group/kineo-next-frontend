@@ -3,7 +3,7 @@ import type { ComponentProps, ReactNode } from "react";
 import { cn } from "@/lib/cn";
 import type { ButtonSize, ButtonVariant } from "@/lib/ui-tokens";
 
-export type { ButtonSize, ButtonVariant };
+export type { ButtonVariant };
 
 const VARIANT_CLASSES: Record<ButtonVariant, string> = {
   primary: "bg-primary text-primary-foreground hover:bg-primary-hover",
@@ -21,25 +21,28 @@ const SIZE_CLASSES: Record<ButtonSize, string> = {
   lg: "px-5 py-3.5 text-base",
 };
 
-export interface ButtonProps extends ComponentProps<"button"> {
+interface ButtonOwnProps {
   variant?: ButtonVariant;
   /** md: section actions · lg: primary actions (auth forms). */
   size?: ButtonSize;
   className?: string;
   children: ReactNode;
-  /** Renders as a Next.js Link styled as a button. */
-  href?: string;
 }
 
-export function Button({
-  variant = "primary",
-  size = "md",
-  className,
-  children,
-  href,
-  type,
-  ...rest
-}: ButtonProps) {
+/** A `<button>`. */
+export type ButtonAsButton = ButtonOwnProps &
+  Omit<ComponentProps<"button">, keyof ButtonOwnProps> & { href?: undefined };
+
+/** A Next.js `Link` styled as a button; its other props reach the anchor. */
+type ButtonAsLink = ButtonOwnProps &
+  Omit<ComponentProps<typeof Link>, keyof ButtonOwnProps | "href"> & {
+    href: string;
+  };
+
+export type ButtonProps = ButtonAsButton | ButtonAsLink;
+
+export function Button(props: ButtonProps) {
+  const { variant = "primary", size = "md", className, children } = props;
   const classes = cn(
     "inline-flex items-center justify-center gap-2 rounded-control font-medium transition-colors disabled:pointer-events-none disabled:opacity-60",
     SIZE_CLASSES[size],
@@ -47,16 +50,31 @@ export function Button({
     className,
   );
 
-  if (href) {
+  if (props.href !== undefined) {
+    const {
+      variant: _variant,
+      size: _size,
+      className: _className,
+      children: _children,
+      ...linkProps
+    } = props;
     return (
-      <Link href={href} className={classes}>
+      <Link {...linkProps} className={classes}>
         {children}
       </Link>
     );
   }
 
+  const {
+    variant: _variant,
+    size: _size,
+    className: _className,
+    children: _children,
+    type,
+    ...buttonProps
+  } = props;
   return (
-    <button type={type ?? "button"} className={classes} {...rest}>
+    <button {...buttonProps} type={type ?? "button"} className={classes}>
       {children}
     </button>
   );
