@@ -1,11 +1,12 @@
-import Link from "next/link";
 import type { ReactNode } from "react";
-import { KineoLogo } from "@/components/atoms/kineo-logo";
-import { PROSE_CONTAINER } from "@/lib/layout";
+import { BackLink } from "@/components/molecules/back-link";
+import { cn } from "@/lib/cn";
+import { SITE_SHELL } from "@/lib/layout";
 
 /**
- * Shell for the long-form legal documents. No `<main>` and no header/footer:
- * the `(site)` layout provides them.
+ * Shell for the long-form legal documents, on the site's geometry like the
+ * console pages: the back link, the title, then the text in a reading
+ * column. No `<main>` and no header/footer: the `(site)` layout provides them.
  */
 export function LegalDocument({
   title,
@@ -13,7 +14,7 @@ export function LegalDocument({
   children,
   backHref,
   backLabel,
-  containerClassName = PROSE_CONTAINER,
+  wide = false,
 }: {
   title: string;
   /** Shown under the title as « Dernière mise à jour : … ». */
@@ -22,32 +23,23 @@ export function LegalDocument({
   backHref: string;
   backLabel: string;
   /** The privacy policy is wider: it has a section sidebar beside the prose. */
-  containerClassName?: string;
+  wide?: boolean;
 }) {
   return (
-    <div className={containerClassName}>
-      <header className="mb-10 flex flex-col items-center gap-6 text-center">
-        <Link href="/" aria-label="Kineo — Accueil">
-          <KineoLogo />
-        </Link>
+    <div className={cn(SITE_SHELL, "py-8 sm:py-10")}>
+      <div className={wide ? "max-w-6xl" : "max-w-3xl"}>
+        <BackLink href={backHref}>{backLabel}</BackLink>
 
-        <div className="space-y-2">
-          <h1 className="text-3xl font-medium tracking-tight">{title}</h1>
-          <p className="text-sm text-muted">
+        <header className="mt-6 mb-10 border-b border-border pb-8">
+          <h1 className="text-3xl font-medium tracking-tight sm:text-4xl">
+            {title}
+          </h1>
+          <p className="mt-2 text-sm text-muted">
             Dernière mise à jour : {updatedAt}
           </p>
-        </div>
-      </header>
+        </header>
 
-      <article>{children}</article>
-
-      <div className="mt-14 border-t border-border pt-6 text-center">
-        <Link
-          href={backHref}
-          className="text-sm font-medium text-primary transition-colors hover:text-primary-hover"
-        >
-          {backLabel}
-        </Link>
+        <article>{children}</article>
       </div>
     </div>
   );

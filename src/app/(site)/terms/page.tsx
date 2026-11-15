@@ -21,7 +21,7 @@ export default function TermsPage() {
       title="Conditions d'utilisation"
       updatedAt="3 septembre 2026"
       backHref="/signup"
-      backLabel="← Retour à l'inscription"
+      backLabel="Inscription"
     >
       <Paragraph>
         Les conditions générales d'utilisation de la console Kineo sont en cours

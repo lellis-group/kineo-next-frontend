@@ -29,10 +29,10 @@ export default function PrivacyPage() {
       title="Politique de confidentialité"
       updatedAt="29 septembre 2026"
       backHref="/"
-      backLabel="← Retour à l'accueil"
-      containerClassName="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6 sm:py-14"
+      backLabel="Accueil"
+      wide
     >
-      <div className="mx-auto max-w-[52ch] space-y-4 text-center text-sm leading-relaxed text-foreground/85">
+      <div className="max-w-3xl space-y-4 text-sm leading-relaxed text-foreground/85">
         <p>
           Cette page décrit la manière dont Kineo traite les données
           personnelles de ses utilisateurs. Les sections 1 à 5 décrivent le
