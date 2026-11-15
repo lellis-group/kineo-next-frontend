@@ -41,10 +41,11 @@ export function formatRelativeTime(dateStr: string): string {
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
   if (diffHours < 1) return "il y a moins d'une heure";
-  if (diffHours < 24) return `il y a ${diffHours} heures`;
+  if (diffHours < 24) return `il y a ${diffHours} heure${plural(diffHours)}`;
   if (diffDays === 1) return "hier";
   if (diffDays < 7) return `il y a ${diffDays} jours`;
-  return `il y a ${Math.floor(diffDays / 7)} semaines`;
+  const weeks = Math.floor(diffDays / 7);
+  return `il y a ${weeks} semaine${plural(weeks)}`;
 }
 
 /** A single day without the year — « 15 sept. » — for periods drawn on two lines. */
