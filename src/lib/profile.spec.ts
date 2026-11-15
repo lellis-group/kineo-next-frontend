@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import type { ProfileFormValues } from "./profile";
 import {
+  completenessSentence,
   profileCompleteness,
   RPPS_DIGITS,
   RPPS_ERROR_MESSAGE,
@@ -79,5 +80,35 @@ describe("profileCompleteness", () => {
       { rppsNumber: "12345678901", city: "Lyon", verified: true },
     );
     expect(percent).toBe(100);
+  });
+});
+
+describe("completenessSentence", () => {
+  const item = (missing: string, done: boolean) => ({
+    id: missing,
+    label: missing,
+    missing,
+    done,
+  });
+
+  test("says nothing once the profile is complete", () => {
+    expect(completenessSentence([item("votre photo", true)])).toBeNull();
+  });
+
+  test("joins the last two with « et »", () => {
+    expect(
+      completenessSentence([
+        item("votre photo", false),
+        item("votre ville", true),
+        item("votre numéro RPPS", false),
+        item("votre nom", false),
+      ]),
+    ).toBe("Il manque votre photo, votre numéro RPPS et votre nom.");
+  });
+
+  test("names a single gap alone", () => {
+    expect(completenessSentence([item("votre photo", false)])).toBe(
+      "Il manque votre photo.",
+    );
   });
 });

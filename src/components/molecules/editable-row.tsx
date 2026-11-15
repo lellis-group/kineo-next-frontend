@@ -77,12 +77,13 @@ export function EditableRow({
     setEditing(true);
   }
 
+  // One element, so a `divide-y` parent separates the rows.
   return (
-    <>
+    <div>
       {editing ? (
         <form
           action={handleAction}
-          className="flex flex-col gap-2 rounded-control bg-surface-2 p-3"
+          className="flex flex-col gap-2 bg-surface-2 px-5 py-4 sm:px-6"
         >
           {fields.map((field) => (
             <label key={field.name} className="flex flex-col gap-1.5">
@@ -119,10 +120,10 @@ export function EditableRow({
           </div>
         </form>
       ) : (
-        <div className="flex items-center justify-between gap-3 rounded-control bg-surface-2 px-3 py-2.5">
+        <div className="flex items-center justify-between gap-4 px-5 py-4 sm:px-6">
           <div className="min-w-0 flex-1">
-            <p className="text-xs text-muted">{label}</p>
-            <div className="truncate text-sm font-medium break-all">
+            <p className="text-sm text-muted">{label}</p>
+            <div className="mt-0.5 truncate text-sm font-medium break-all">
               {display}
             </div>
           </div>
@@ -130,7 +131,7 @@ export function EditableRow({
             type="button"
             variant="outline"
             size="md"
-            className="shrink-0"
+            className="shrink-0 px-4 py-2"
             onClick={startEditing}
           >
             {editIcon}
@@ -140,10 +141,12 @@ export function EditableRow({
       )}
 
       {success && (
-        <InlineAlert as="p" tone="success" className="text-sm">
-          {success}
-        </InlineAlert>
+        <div className="px-5 pb-4 sm:px-6">
+          <InlineAlert as="p" tone="success" className="text-sm">
+            {success}
+          </InlineAlert>
+        </div>
       )}
-    </>
+    </div>
   );
 }

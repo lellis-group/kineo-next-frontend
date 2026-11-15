@@ -1,5 +1,6 @@
 "use client";
 
+import { Card } from "@/components/atoms/card";
 import { MailIcon, PencilIcon } from "@/components/atoms/icons";
 import { EditableRow } from "@/components/molecules/editable-row";
 import {
@@ -30,7 +31,7 @@ export function UserInfoFields({
   onChangeEmail: (email: string) => Promise<string>;
 }) {
   return (
-    <div className="space-y-3">
+    <Card className="divide-y divide-border overflow-hidden">
       <EditableRow
         label="Nom"
         display={
@@ -113,6 +114,6 @@ export function UserInfoFields({
           return onChangeEmail(email);
         }}
       />
-    </div>
+    </Card>
   );
 }

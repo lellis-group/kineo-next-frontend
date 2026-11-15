@@ -55,6 +55,8 @@ export const PROFILE_TYPE_DESCRIPTIONS: Record<ProfileType, string> = {
 export interface CompletenessItem {
   id: string;
   label: string;
+  /** How the item reads in « Il manque … ». */
+  missing: string;
   done: boolean;
 }
 
@@ -68,16 +70,62 @@ export function profileCompleteness(
   profile: Pick<ApiProfile, "rppsNumber" | "city" | "verified">,
 ): { percent: number; done: number; items: CompletenessItem[] } {
   const items: CompletenessItem[] = [
-    { id: "name", label: "Nom complet", done: Boolean(user.name?.trim()) },
-    { id: "email", label: "Adresse e-mail vérifiée", done: user.emailVerified },
-    { id: "city", label: "Ville principale", done: Boolean(profile.city) },
-    { id: "rpps", label: "Numéro RPPS", done: Boolean(profile.rppsNumber) },
-    { id: "image", label: "Photo de profil", done: Boolean(user.image) },
-    { id: "verified", label: "Identité vérifiée", done: profile.verified },
+    {
+      id: "name",
+      label: "Nom complet",
+      missing: "votre nom",
+      done: Boolean(user.name?.trim()),
+    },
+    {
+      id: "email",
+      label: "Adresse e-mail vérifiée",
+      missing: "la vérification de votre e-mail",
+      done: user.emailVerified,
+    },
+    {
+      id: "city",
+      label: "Ville principale",
+      missing: "votre ville",
+      done: Boolean(profile.city),
+    },
+    {
+      id: "rpps",
+      label: "Numéro RPPS",
+      missing: "votre numéro RPPS",
+      done: Boolean(profile.rppsNumber),
+    },
+    {
+      id: "image",
+      label: "Photo de profil",
+      missing: "votre photo",
+      done: Boolean(user.image),
+    },
+    {
+      id: "verified",
+      label: "Identité vérifiée",
+      missing: "la vérification de votre identité",
+      done: profile.verified,
+    },
   ];
 
   const done = items.filter((item) => item.done).length;
   return { percent: percentOf(done, items.length), done, items };
+}
+
+/**
+ * The completeness as one sentence — « Il manque votre photo et votre ville. »
+ * — or null once nothing is missing.
+ */
+export function completenessSentence(
+  items: readonly CompletenessItem[],
+): string | null {
+  const missing = items
+    .filter((item) => !item.done)
+    .map((item) => item.missing);
+  if (missing.length === 0) return null;
+  const last = missing.pop();
+  const list = missing.length > 0 ? `${missing.join(", ")} et ${last}` : last;
+  return `Il manque ${list}.`;
 }
 
 /** "Membre depuis {month year}" — fr-FR locale. */
