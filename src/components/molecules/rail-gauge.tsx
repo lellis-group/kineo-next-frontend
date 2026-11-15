@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { ProgressCurve } from "@/components/atoms/progress-curve";
+import { ProgressCurve } from "@/components/molecules/progress-curve";
 
 /**
  * A rail panel's opening block: a grid of figures (the caller's), then the arc

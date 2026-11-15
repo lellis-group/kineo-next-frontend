@@ -1,61 +1,30 @@
-import { Fragment, useEffect, useId, useRef, useState } from "react";
+"use client";
+
+import { Fragment, useId } from "react";
 import { cn } from "@/lib/cn";
+import { useAnimatedPercent } from "@/lib/hooks/use-animated-percent";
+import {
+  ARC_PATH,
+  arcYAt,
+  BADGE,
+  BADGE_HALF,
+  BOX,
+  DOT,
+  LABEL_CLEARANCE,
+  SCALE,
+  STROKE,
+  SVG_HEIGHT,
+  SVG_TOP,
+  scaleX,
+  splitCaption,
+  TAIL,
+} from "@/lib/progress-curve";
 
 /**
  * A 0→100 scale drawn as a gradient arc with a marker on it, and a required
  * caption saying what the percentage is of.
  */
-
-/**
- * The arc, in viewBox units: the SVG is `preserveAspectRatio="none"` over a
- * 100-wide viewBox, so x is a percentage of the width and y is a pixel.
- */
-const ARC = {
-  x0: 0,
-  x1: 100,
-  /** Where the ends sit; the arc bows above them. */
-  chordY: 30,
-  /** How far the middle lifts above the ends. */
-  lift: 12,
-} as const;
-
-const HALF_CHORD = (ARC.x1 - ARC.x0) / 2;
-const ARC_RADIUS = (HALF_CHORD ** 2 + ARC.lift ** 2) / (2 * ARC.lift);
-const ARC_CX = (ARC.x0 + ARC.x1) / 2;
-const ARC_CY = ARC.chordY - ARC.lift + ARC_RADIUS;
-
-/** Where 0 % and 100 % sit: inboard of the arc's ends, which fade out. */
-const SCALE = { from: 8, to: 92 } as const;
-
-function scaleX(percent: number): number {
-  return SCALE.from + (SCALE.to - SCALE.from) * (percent / 100);
-}
-
-/** Where the curve is at a given x, in viewBox units, so the marker rides it. */
-function arcYAt(x: number): number {
-  const dx = x - ARC_CX;
-  return ARC_CY - Math.sqrt(Math.max(0, ARC_RADIUS ** 2 - dx ** 2));
-}
-
-const ARC_PATH = `M ${ARC.x0} ${ARC.chordY} A ${ARC_RADIUS} ${ARC_RADIUS} 0 0 1 ${ARC.x1} ${ARC.chordY}`;
-
-/** The box the gauge is drawn in; the SVG is pinned to its bottom. */
-const BOX = 76;
-const SVG_HEIGHT = 36;
-const SVG_TOP = BOX - SVG_HEIGHT;
-
-const DOT = 12;
-const TAIL = 5;
-const BADGE = 26;
-const STROKE = 3;
-
-/** Half a callout, the most it ever overhangs its marker's position. */
-const BADGE_HALF = 24;
-
-/** How close the marker may come to an end label before the label hides. */
-const LABEL_CLEARANCE = 14;
-
-interface ProgressCurveProps {
+export interface ProgressCurveProps {
   /** 0–100; clamped. */
   percent: number;
   /** Sentence under the curve, naming both numbers the marker comes from. */
@@ -67,64 +36,22 @@ interface ProgressCurveProps {
   className?: string;
 }
 
-/**
- * Tweens a 0-100 value towards its target, eased out. Starts at the target so
- * the server render shows the right number; honors `prefers-reduced-motion`.
- */
-function useAnimatedPercent(target: number): number {
-  const [displayed, setDisplayed] = useState(target);
-  const fromRef = useRef(target);
-  const rafRef = useRef(0);
-
-  useEffect(() => {
-    if (
-      typeof window !== "undefined" &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    ) {
-      fromRef.current = target;
-      setDisplayed(target);
-      return;
-    }
-    const from = fromRef.current;
-    if (from === target) return;
-    const start = performance.now();
-    const durationMs = 650;
-    const tick = (now: number) => {
-      // Clamped: a frame's `now` can predate `start`, and a negative value
-      // would reach the clip rect's width, which SVG rejects.
-      const t = Math.max(0, Math.min(1, (now - start) / durationMs));
-      const eased = 1 - (1 - t) ** 3;
-      const next = t >= 1 ? target : from + (target - from) * eased;
-      fromRef.current = next;
-      setDisplayed(next);
-      if (t < 1) {
-        rafRef.current = requestAnimationFrame(tick);
-      }
-    };
-    rafRef.current = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(rafRef.current);
-  }, [target]);
-
-  return displayed;
-}
-
 /** The caption, with its figures drawn in the foreground and words muted. */
 function TwoToneCaption({ text }: { text: string }) {
-  const parts = text.split(/(\d[\d\s\u202f.,]*\s?%?)/);
   return (
     <>
-      {parts.map((part, index) =>
-        index % 2 === 1 ? (
+      {splitCaption(text).map((part, index) =>
+        part.figure ? (
           <span
             // biome-ignore lint/suspicious/noArrayIndexKey: a fixed split of one string
             key={index}
             className="text-foreground"
           >
-            {part}
+            {part.text}
           </span>
         ) : (
           // biome-ignore lint/suspicious/noArrayIndexKey: a fixed split of one string
-          <Fragment key={index}>{part}</Fragment>
+          <Fragment key={index}>{part.text}</Fragment>
         ),
       )}
     </>
