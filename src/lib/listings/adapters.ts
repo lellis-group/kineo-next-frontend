@@ -14,6 +14,7 @@ import type {
 } from "../types/api";
 import type {
   ApplicationApplicant,
+  ListingApplicationsData,
   ListingStatusCounts,
   ListingsFilter,
   MyListing,
@@ -380,5 +381,74 @@ export function adaptMyListingsRail(
         short: SPECIALTY_SHORT_LABELS[specialty],
         count,
       })),
+  };
+}
+
+/** One application status in a listing's distribution of candidates. */
+export interface ReceivedStatusRow {
+  status: ApplicationStatus;
+  label: string;
+  count: number;
+  percent: number;
+}
+
+export interface ListingDetailRail {
+  /** The arc: the cap's fill when there is a cap, else the share decided. */
+  gauge: { percent: number; caption: string };
+  received: number;
+  pending: number;
+  shortlisted: number;
+  accepted: number;
+  /** Statuses that hold any candidate, in the order a candidate moves. */
+  rows: ReceivedStatusRow[];
+}
+
+const RECEIVED_ORDER: readonly ApplicationStatus[] = [
+  "PENDING",
+  "SHORTLISTED",
+  "ACCEPTED",
+  "REJECTED",
+  "WITHDRAWN",
+];
+
+/**
+ * The summary down the left of a listing's page, from the server's totals
+ * (never the page of candidates on screen).
+ */
+export function adaptListingDetailRail(
+  listing: Pick<MyListing, "applicationsCount" | "maxApplications">,
+  counts: ListingApplicationsData["counts"],
+): ListingDetailRail {
+  const decided = counts.ACCEPTED + counts.REJECTED;
+  const answerable = counts.total - counts.WITHDRAWN;
+
+  const gauge = listing.maxApplications
+    ? {
+        percent: percentOf(
+          listing.applicationsCount,
+          listing.maxApplications,
+          true,
+        ),
+        caption: `${listing.applicationsCount} candidat${plural(listing.applicationsCount)} actif${plural(listing.applicationsCount)} sur ${listing.maxApplications} places`,
+      }
+    : {
+        percent: percentOf(decided, answerable),
+        caption: `${decided} candidature${plural(decided)} traitée${plural(decided)} sur ${answerable}`,
+      };
+
+  return {
+    gauge,
+    received: counts.total,
+    pending: counts.PENDING,
+    shortlisted: counts.SHORTLISTED,
+    accepted: counts.ACCEPTED,
+    rows: RECEIVED_ORDER.filter((status) => counts[status] > 0).map(
+      (status) => ({
+        status,
+        label: RECEIVED_STATUS_LABELS[status],
+        count: counts[status],
+        percent: percentOf(counts[status], counts.total),
+      }),
+    ),
   };
 }

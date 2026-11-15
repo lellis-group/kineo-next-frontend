@@ -1,18 +1,25 @@
-import { UsersIcon } from "@/components/atoms/icons";
+"use client";
+
+import { useState } from "react";
+import { Badge } from "@/components/atoms/badge";
 import { BackLink } from "@/components/molecules/back-link";
+import { EmptyState } from "@/components/molecules/empty-state";
 import { FilterChips } from "@/components/molecules/filter-chips";
 import { InlineAlert } from "@/components/molecules/inline-alert";
 import { Pagination } from "@/components/molecules/pagination";
+import { Panel } from "@/components/molecules/panel";
 import { ReceivedApplicationCard } from "@/components/molecules/received-application-card";
-import { SoftPanel } from "@/components/molecules/soft-panel";
-import { ListingDetail } from "@/components/organisms/listing-detail";
-import { plural } from "@/lib/format";
-import { WIDE_PAGE } from "@/lib/layout";
+import { ListingDetailRail } from "@/components/organisms/listing-detail-rail";
+import { ReceivedApplicationsTable } from "@/components/organisms/received-applications-table";
+import { isAwaitingDecision } from "@/lib/applications";
+import { BOARD_SHELL } from "@/lib/layout";
 import {
   countForReceivedFilter,
+  LISTING_STATUS_META,
   type ListingApplicationsData,
   type MyListing,
   RECEIVED_FILTERS,
+  type ReceivedApplication,
   type ReceivedApplicationsFilter,
 } from "@/lib/listings";
 
@@ -38,7 +45,21 @@ export interface ListingDetailViewProps {
   ) => Promise<void>;
 }
 
-/** Listing detail: the posting, then the candidates it received with their filter row. */
+/** Who to show first: the first candidate still waiting on a decision. */
+function firstToDecide(
+  applications: readonly ReceivedApplication[],
+): ReceivedApplication | undefined {
+  return (
+    applications.find((entry) => isAwaitingDecision(entry.status)) ??
+    applications[0]
+  );
+}
+
+/**
+ * The owner's page for one listing, as a console board: the posting and its
+ * recruiting down the rail, the candidates as a table, and the one picked in
+ * a panel beside it with the decisions. Phones get the candidates as cards.
+ */
 export function ListingDetailView({
   listing,
   received,
@@ -56,121 +77,165 @@ export function ListingDetailView({
   onApplicationAccept,
   onApplicationReject,
 }: ListingDetailViewProps) {
+  const [selectedId, setSelectedId] = useState<string>();
+  const status = LISTING_STATUS_META[listing.status];
+
+  // A filter or a page change can take the pick off screen: fall back.
+  const selected =
+    received.applications.find((entry) => entry.id === selectedId) ??
+    firstToDecide(received.applications);
+
+  const actionsFor = (application: ReceivedApplication) => ({
+    onMarkViewed: () => onApplicationViewed(application.id),
+    onShortlist: () => onApplicationShortlist(application.id),
+    onAccept: () => onApplicationAccept(application.id),
+    onReject: (reason: string | undefined) =>
+      onApplicationReject(application.id, reason),
+  });
+
   return (
-    <div className={WIDE_PAGE}>
-      <BackLink href="/listings/mine">Retour à mes offres</BackLink>
+    <div className={BOARD_SHELL}>
+      <header className="flex flex-col gap-3 pt-2">
+        <BackLink href="/listings/mine">Mes offres</BackLink>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <h1 className="min-w-0 text-2xl leading-tight font-medium tracking-tight break-words sm:text-3xl">
+            {listing.title}
+          </h1>
+          <div className="flex items-center gap-2">
+            {listing.urgent && (
+              <Badge tone="danger" size="md">
+                Urgent
+              </Badge>
+            )}
+            <Badge tone={status.tone} size="md">
+              {status.label}
+            </Badge>
+          </div>
+        </div>
+      </header>
 
-      <div className="mt-8">
-        <ListingDetail
-          listing={listing}
-          acting={acting}
-          onClose={onClose}
-          onCancel={onCancel}
-        />
-      </div>
+      {(feedback || error) && (
+        <div className="flex flex-col gap-2">
+          {feedback && <InlineAlert tone="success">{feedback}</InlineAlert>}
+          {error && (
+            <InlineAlert as="p" tone="danger">
+              {error}
+            </InlineAlert>
+          )}
+        </div>
+      )}
 
-      <section className="mt-10">
-        <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h2 className="flex items-center gap-2 text-lg font-medium tracking-tight text-foreground">
-            <UsersIcon className="h-4 w-4 text-muted" />
-            Candidatures reçues
-          </h2>
-          <p className="text-sm text-muted">
-            {countLabel(received, receivedFilter)}
-          </p>
+      <div className="grid items-start gap-3 lg:grid-cols-[22.5rem_minmax(0,1fr)]">
+        {/* The candidates are the page's job: first on a phone, beside from `lg`. */}
+        <div className="order-2 lg:order-1">
+          <ListingDetailRail
+            listing={listing}
+            counts={received.counts}
+            acting={acting}
+            onClose={onClose}
+            onCancel={onCancel}
+          />
         </div>
 
-        {feedback && (
-          <InlineAlert tone="success" className="mt-4">
-            {feedback}
-          </InlineAlert>
-        )}
+        <div className="order-1 flex min-w-0 flex-col gap-3 lg:order-2">
+          <Panel
+            title={
+              <>
+                Candidatures reçues{" "}
+                <span className="text-muted tabular-nums">
+                  {received.counts.total}
+                </span>
+              </>
+            }
+            action={
+              // Rendered in every state: counters reading (0) explain an empty bucket.
+              <FilterChips
+                ariaLabel="Filtrer les candidats par statut"
+                options={RECEIVED_FILTERS.map((option) => ({
+                  ...option,
+                  count: countForReceivedFilter(option, received.counts),
+                }))}
+                value={receivedFilter}
+                onChange={onReceivedFilterChange}
+              />
+            }
+          >
+            {loading ? (
+              <p className="py-10 text-center text-sm text-muted">
+                Chargement des candidatures…
+              </p>
+            ) : received.total === 0 ? (
+              <EmptyState
+                fill
+                title={
+                  listing.status === "DRAFT"
+                    ? "Annonce en brouillon"
+                    : "Aucune candidature"
+                }
+                description={
+                  listing.status === "DRAFT"
+                    ? "Elle n'a pas été diffusée : aucune candidature ne peut encore arriver."
+                    : receivedFilter === "ALL"
+                      ? "Aucune candidature n'a été reçue pour cette annonce."
+                      : "Aucun candidat dans cette catégorie."
+                }
+                actionLabel={
+                  receivedFilter === "ALL"
+                    ? undefined
+                    : "Voir tous les candidats"
+                }
+                onAction={
+                  receivedFilter === "ALL"
+                    ? undefined
+                    : () => onReceivedFilterChange("ALL")
+                }
+              />
+            ) : (
+              <>
+                <div className="hidden sm:block">
+                  <ReceivedApplicationsTable
+                    applications={received.applications}
+                    selectedId={selected?.id}
+                    onSelect={setSelectedId}
+                  />
+                </div>
 
-        {error && (
-          <InlineAlert as="p" tone="danger" className="mt-4">
-            {error}
-          </InlineAlert>
-        )}
+                {/* Phones: every candidate as a card, decisions included. */}
+                <ul className="flex flex-col gap-3 sm:hidden">
+                  {received.applications.map((application) => (
+                    <li key={application.id}>
+                      <ReceivedApplicationCard
+                        application={application}
+                        actions={actionsFor(application)}
+                        className="px-5 py-5"
+                      />
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
 
-        {/* Rendered in every state: counters reading (0) explain an empty bucket. */}
-        <FilterChips
-          ariaLabel="Filtrer les candidats par statut"
-          className="mt-4"
-          options={RECEIVED_FILTERS.map((option) => ({
-            ...option,
-            count: countForReceivedFilter(option, received.counts),
-          }))}
-          value={receivedFilter}
-          onChange={onReceivedFilterChange}
-        />
+            <Pagination
+              currentPage={received.page}
+              totalPages={received.totalPages}
+              onPageChange={onPageChange}
+              className="mt-3 lg:mt-4"
+            />
+          </Panel>
 
-        {loading ? (
-          <p className="mt-6 text-center text-sm text-muted">
-            Chargement des candidatures…
-          </p>
-        ) : received.total === 0 ? (
-          <SoftPanel as="p" className="mt-6">
-            {listing.status === "DRAFT"
-              ? "Cette annonce est encore en brouillon : elle n'a pas été diffusée, donc aucune candidature ne peut encore arriver."
-              : receivedFilter === "ALL"
-                ? "Aucune candidature n'a été reçue pour cette annonce."
-                : `Aucun candidat ${bucketLabel(receivedFilter).toLowerCase()}.`}
-          </SoftPanel>
-        ) : received.applications.length === 0 ? (
-          <SoftPanel className="mt-6">
-            <p className="text-sm text-muted">
-              Aucun candidat dans cette catégorie.
-            </p>
-            <button
-              type="button"
-              onClick={() => onReceivedFilterChange("ALL")}
-              className="mt-3 text-sm font-medium text-primary underline underline-offset-2"
-            >
-              Revenir à tous les candidats
-            </button>
-          </SoftPanel>
-        ) : (
-          <ul className="mt-6 space-y-5">
-            {received.applications.map((application) => (
-              <li key={application.id}>
-                <ReceivedApplicationCard
-                  application={application}
-                  actions={{
-                    onMarkViewed: () => onApplicationViewed(application.id),
-                    onShortlist: () => onApplicationShortlist(application.id),
-                    onAccept: () => onApplicationAccept(application.id),
-                    onReject: (reason) =>
-                      onApplicationReject(application.id, reason),
-                  }}
-                />
-              </li>
-            ))}
-          </ul>
-        )}
-
-        <Pagination
-          currentPage={received.page}
-          totalPages={received.totalPages}
-          onPageChange={onPageChange}
-        />
-      </section>
+          {selected && !loading && (
+            <Panel title="Candidature" className="hidden sm:block">
+              <ReceivedApplicationCard
+                // Remount per candidate: the decision form keeps local state.
+                key={selected.id}
+                application={selected}
+                actions={actionsFor(selected)}
+                className="rounded-none border-0 bg-transparent p-0 sm:p-0"
+              />
+            </Panel>
+          )}
+        </div>
+      </div>
     </div>
   );
-}
-
-function bucketLabel(filter: ReceivedApplicationsFilter): string {
-  return (
-    RECEIVED_FILTERS.find((option) => option.id === filter)?.label ?? "Tous"
-  );
-}
-
-/** The heading's count, scoped to the active filter. */
-function countLabel(
-  received: ListingApplicationsData,
-  filter: ReceivedApplicationsFilter,
-): string {
-  if (filter === "ALL") {
-    return `${received.total} candidature${plural(received.total)} au total`;
-  }
-  return `${received.total} candidat${plural(received.total)} ${bucketLabel(filter).toLowerCase()}`;
 }

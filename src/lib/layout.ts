@@ -66,9 +66,6 @@ export const MAP_PILL =
 export const NARROW_PAGE =
   "mx-auto w-full max-w-3xl px-4 py-8 sm:px-6 sm:py-10";
 
-/** The same, wider, for a detail that carries a side panel. */
-export const WIDE_PAGE = "mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 sm:py-10";
-
 /**
  * A recessed box for a message that belongs to the flow rather than to the
  * chrome: an empty state, a note under a form, a hint inside a card.

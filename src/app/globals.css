@@ -644,9 +644,11 @@
   /*
    * Header labels start where icon-bearing cells' text starts. `--cell-icon` is
    * also the line-height of icon-bearing lines, which centres the icon on its
-   * text by construction.
+   * text by construction. `.cell-scope` lends the same metrics to the table's
+   * cells drawn outside a table (a listing's rail).
    */
-  .listings-table {
+  .listings-table,
+  .cell-scope {
     --cell-icon: 1.25rem;
     --cell-gap: 0.5rem;
     --cell-gutter: calc(var(--cell-icon) + var(--cell-gap));

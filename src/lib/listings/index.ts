@@ -5,12 +5,14 @@
 
 export type {
   FacetsRail,
+  ListingDetailRail,
   ListingStatusRow,
   MyListingsRailData,
   SpecialtyRailRow,
 } from "./adapters";
 export {
   adaptFacetsRail,
+  adaptListingDetailRail,
   adaptMyListingsRail,
   countForFilter,
   countForReceivedFilter,

@@ -4,6 +4,7 @@ import { SPECIALTY_LABELS } from "../profile";
 import { REPLACEMENT_LISTING_STATUSES } from "../types/api";
 import {
   adaptFacetsRail,
+  adaptListingDetailRail,
   adaptMyListingsRail,
   listingStatusRows,
   SPECIALTY_RAIL_ROWS,
@@ -191,6 +192,50 @@ describe("listingStatusRows", () => {
     expect(rows.map((row) => [row.status, row.count, row.percent])).toEqual([
       ["OPEN", 3, 75],
       ["FILLED", 1, 25],
+    ]);
+  });
+});
+
+describe("adaptListingDetailRail", () => {
+  const counts = {
+    ...zeroCounts(0, COUNT_KEYS.applicationStatus),
+    PENDING: 2,
+    SHORTLISTED: 1,
+    ACCEPTED: 1,
+    REJECTED: 2,
+    WITHDRAWN: 2,
+    total: 8,
+  };
+
+  test("fills the arc with the cap when there is one", () => {
+    const rail = adaptListingDetailRail(
+      { applicationsCount: 3, maxApplications: 4 },
+      counts,
+    );
+    expect(rail.gauge).toEqual({
+      percent: 75,
+      caption: "3 candidats actifs sur 4 places",
+    });
+  });
+
+  test("falls back to the share decided, withdrawals left out", () => {
+    const rail = adaptListingDetailRail({ applicationsCount: 3 }, counts);
+    expect(rail.gauge).toEqual({
+      percent: 50,
+      caption: "3 candidatures traitées sur 6",
+    });
+  });
+
+  test("lists only the statuses that hold candidates, in order", () => {
+    const rail = adaptListingDetailRail(
+      { applicationsCount: 0 },
+      { ...counts, SHORTLISTED: 0, total: 7 },
+    );
+    expect(rail.rows.map((row) => row.status)).toEqual([
+      "PENDING",
+      "ACCEPTED",
+      "REJECTED",
+      "WITHDRAWN",
     ]);
   });
 });
