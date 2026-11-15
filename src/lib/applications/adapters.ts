@@ -222,6 +222,9 @@ function adaptListingInfo(
     dateRange: isSingleDay
       ? undefined
       : formatDateRange(embedded.startDate, embedded.endDate),
+    startDate: isSingleDay ? undefined : embedded.startDate,
+    endDate: isSingleDay ? undefined : embedded.endDate,
+    specialty: embedded.specialty,
     // On the single read only: a list row's listing carries no paragraph.
     description:
       "description" in embedded && typeof embedded.description === "string"

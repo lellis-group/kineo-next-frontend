@@ -38,6 +38,7 @@ export {
 } from "./contracts";
 export {
   applicationProgress,
+  applicationStatus,
   type ProgressStep,
   type ProgressStepState,
   type ProgressTone,

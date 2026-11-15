@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { applicationProgress } from "./progress";
+import { applicationProgress, applicationStatus } from "./progress";
 
 const base = {
   status: "PENDING" as const,
@@ -79,5 +79,27 @@ describe("applicationProgress", () => {
 
     expect(states(steps)).toEqual(["done", "skipped", "done"]);
     expect(steps[2]).toMatchObject({ label: "Retirée", tone: "neutral" });
+  });
+});
+
+describe("applicationStatus", () => {
+  test("says whether the practice has read an open application", () => {
+    expect(applicationStatus(base).label).toBe("Pas encore lue");
+    expect(applicationStatus({ ...base, viewed: true }).label).toBe(
+      "Lue, en attente",
+    );
+  });
+
+  test("agrees with the track on a settled one", () => {
+    const entry = {
+      ...base,
+      status: "REJECTED" as const,
+      rejectionBucket: "POSTING_ENDED" as const,
+    };
+    expect(applicationStatus(entry)).toEqual({
+      label: "Annonce close",
+      tone: "danger",
+    });
+    expect(applicationProgress(entry)[2]?.label).toBe("Annonce close");
   });
 });

@@ -108,3 +108,31 @@ function decisionStep(
 
   return { id: "decision", label, state: "done", tone: decided.tone, date };
 }
+
+/**
+ * The row's status chip, one notch finer than `STATUS_META`: an open
+ * application says whether the practice has read it, a rejection names its
+ * situation. The same words as the track, so the two never disagree.
+ */
+export function applicationStatus(entry: ProgressInput): {
+  label: string;
+  tone: Tone;
+} {
+  switch (entry.status) {
+    case "PENDING":
+      return entry.viewed
+        ? { label: "Lue, en attente", tone: "warning" }
+        : { label: "Pas encore lue", tone: "warning" };
+    case "SHORTLISTED":
+      return { label: "Présélectionnée", tone: "info" };
+    case "REJECTED":
+      return {
+        label: entry.rejectionBucket
+          ? REJECTION_LABELS[entry.rejectionBucket]
+          : DECIDED.REJECTED.label,
+        tone: "danger",
+      };
+    default:
+      return DECIDED[entry.status];
+  }
+}

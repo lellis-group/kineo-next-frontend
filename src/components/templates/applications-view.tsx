@@ -1,9 +1,13 @@
-import { Button } from "@/components/atoms/button";
-import { ArrowRightIcon } from "@/components/atoms/icons";
+import Link from "next/link";
+import { SearchIcon } from "@/components/atoms/icons";
 import { EmptyState } from "@/components/molecules/empty-state";
 import { FilterChips } from "@/components/molecules/filter-chips";
 import { Pagination } from "@/components/molecules/pagination";
-import { ApplicationsList } from "@/components/organisms/applications-list";
+import { Panel } from "@/components/molecules/panel";
+import {
+  ApplicationsMobileList,
+  ApplicationsTable,
+} from "@/components/organisms/applications-table";
 import {
   APPLICATION_FILTERS,
   type ApplicationsData,
@@ -14,7 +18,7 @@ import {
   REJECTION_SITUATIONS,
   type RejectionSituationFilter,
 } from "@/lib/applications";
-import { WIDE_PAGE } from "@/lib/layout";
+import { SITE_SHELL } from "@/lib/layout";
 import {
   APPLICATIONS_PAGE_SIZE_CHOICES,
   type ApplicationsPageSize,
@@ -32,6 +36,11 @@ interface ApplicationsViewProps {
   loading: boolean;
 }
 
+/**
+ * /applications: one console panel holding the table — the status filters
+ * in its header, the journey of each application in its rows, the pager at
+ * its foot.
+ */
 export function ApplicationsView({
   data,
   onPageChange,
@@ -43,100 +52,111 @@ export function ApplicationsView({
   onPageSizeChange,
   loading,
 }: ApplicationsViewProps) {
-  if (data.counts.total === 0) {
-    return (
-      <div className={WIDE_PAGE}>
-        <ApplicationsHeader data={data} />
-        <EmptyState
-          title="Aucune candidature pour l'instant"
-          description="Parcourez les annonces ouvertes et candidatez en un clic avec un message personnalisé."
-          actionLabel="Parcourir les annonces"
-          actionHref="/listings"
-        />
-      </div>
-    );
-  }
-
-  return (
-    <div className={WIDE_PAGE}>
-      <ApplicationsHeader data={data} />
-
-      <FilterChips
-        ariaLabel="Filtrer les candidatures par statut"
-        className="mt-8"
-        options={APPLICATION_FILTERS.map((option) => ({
-          ...option,
-          count: countForBucket(option, data),
-        }))}
-        value={currentFilter}
-        onChange={onFilterChange}
-      />
-
-      {/* Only under « Refusées », and only when some situation is non-empty. */}
-      {currentFilter === "REFUSED" && hasSituation(data) && (
-        <FilterChips
-          ariaLabel="Filtrer les candidatures refusées par situation"
-          className="mt-3"
-          options={REJECTION_SITUATIONS.map((option) => ({
-            ...option,
-            count: countForSituation(option.id, data),
-          }))}
-          value={currentSituation}
-          onChange={onSituationChange}
-        />
-      )}
-
-      <div className="mt-6">
-        <ApplicationsList
-          applications={data.applications}
-          grouped={currentFilter === "ALL"}
-        />
-      </div>
-
-      <Pagination
-        currentPage={data.pagination.page}
-        totalPages={data.pagination.totalPages}
-        onPageChange={onPageChange}
-        pageSize={pageSize}
-        onPageSizeChange={onPageSizeChange}
-        choices={APPLICATIONS_PAGE_SIZE_CHOICES}
-        loading={loading}
-        className="mt-6"
-      />
-    </div>
-  );
-}
-
-/** The title, and the one figure that matters here: how many still wait on a practice. */
-function ApplicationsHeader({ data }: { data: ApplicationsData }) {
+  const hasAny = data.counts.total > 0;
   const awaiting = awaitingDecisionCount(data.counts);
-  const sent = data.counts.total;
 
   return (
-    <header className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-      <div className="min-w-0">
-        <h1 className="text-3xl font-medium tracking-tight sm:text-4xl">
-          Mes candidatures
-        </h1>
-        <p className="mt-2 text-sm text-muted sm:text-base">
-          {sent === 0 ? (
-            "Suivez ici l'avancement de chaque candidature envoyée."
-          ) : awaiting > 0 ? (
-            <>
-              <span className="text-foreground tabular-nums">{awaiting}</span>{" "}
-              sur {sent} attend{awaiting > 1 ? "ent" : ""} encore une réponse
-              d&apos;un cabinet.
-            </>
-          ) : (
-            "Aucune candidature n'attend de réponse."
-          )}
-        </p>
-      </div>
-      <Button href="/listings" variant="outline" className="shrink-0">
-        Parcourir les annonces
-        <ArrowRightIcon className="size-4" />
-      </Button>
-    </header>
+    <div className={`${SITE_SHELL} py-4 lg:py-6`}>
+      <Panel
+        title={
+          <>
+            Mes candidatures{" "}
+            <span className="text-muted tabular-nums">{data.counts.total}</span>
+          </>
+        }
+        action={
+          <div className="flex min-w-0 flex-wrap items-center justify-end gap-2">
+            {hasAny && (
+              <FilterChips
+                ariaLabel="Filtrer les candidatures par statut"
+                options={APPLICATION_FILTERS.map((option) => ({
+                  ...option,
+                  count: countForBucket(option, data),
+                }))}
+                value={currentFilter}
+                onChange={onFilterChange}
+              />
+            )}
+            <Link
+              href="/listings"
+              aria-label="Parcourir les annonces"
+              title="Parcourir les annonces"
+              className="grid size-10 shrink-0 place-items-center rounded-full border border-border-strong text-muted transition-colors hover:bg-surface-2 hover:text-foreground"
+            >
+              <SearchIcon className="size-4" />
+            </Link>
+          </div>
+        }
+      >
+        {!hasAny ? (
+          <EmptyState
+            fill
+            title="Aucune candidature pour l'instant"
+            description="Parcourez les annonces ouvertes et candidatez en un clic avec un message personnalisé."
+            actionLabel="Parcourir les annonces"
+            actionHref="/listings"
+          />
+        ) : (
+          <>
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <p className="text-sm text-muted">
+                {awaiting > 0 ? (
+                  <>
+                    <span className="text-foreground tabular-nums">
+                      {awaiting}
+                    </span>{" "}
+                    attend{awaiting > 1 ? "ent" : ""} encore une réponse
+                    d&apos;un cabinet.
+                  </>
+                ) : (
+                  "Aucune candidature n'attend de réponse."
+                )}
+              </p>
+
+              {/* Only under « Refusées », and only when some situation is non-empty. */}
+              {currentFilter === "REFUSED" && hasSituation(data) && (
+                <FilterChips
+                  ariaLabel="Filtrer les candidatures refusées par situation"
+                  options={REJECTION_SITUATIONS.map((option) => ({
+                    ...option,
+                    count: countForSituation(option.id, data),
+                  }))}
+                  value={currentSituation}
+                  onChange={onSituationChange}
+                />
+              )}
+            </div>
+
+            {data.applications.length === 0 ? (
+              <EmptyState
+                fill
+                title="Aucune candidature dans ce statut"
+                description="Changez de filtre pour voir vos autres candidatures."
+              />
+            ) : (
+              <>
+                <ApplicationsTable
+                  applications={data.applications}
+                  grouped={currentFilter === "ALL"}
+                />
+                <ApplicationsMobileList applications={data.applications} />
+              </>
+            )}
+
+            <Pagination
+              currentPage={data.pagination.page}
+              totalPages={data.pagination.totalPages}
+              onPageChange={onPageChange}
+              pageSize={pageSize}
+              onPageSizeChange={onPageSizeChange}
+              choices={APPLICATIONS_PAGE_SIZE_CHOICES}
+              loading={loading}
+              className="mt-3 lg:mt-4"
+            />
+          </>
+        )}
+      </Panel>
+    </div>
   );
 }
 

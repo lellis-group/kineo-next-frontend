@@ -77,12 +77,17 @@ function Dot({ step }: { step: ProgressStep }) {
 /**
  * A journey drawn as dots on a line, one column per step, with its label and
  * date under it. The line into a step is solid once that step is reached.
+ * `compact` keeps the dots and the line (a table cell, where the status
+ * column already names the step); the labels stay for screen readers and in
+ * each dot's tooltip.
  */
 export function ProgressTrack({
   steps,
+  compact = false,
   className,
 }: {
   steps: readonly ProgressStep[];
+  compact?: boolean;
   className?: string;
 }) {
   return (
@@ -96,7 +101,15 @@ export function ProgressTrack({
         const next = steps[index + 1];
         const nextReached = next?.state === "done" || next?.state === "current";
         return (
-          <li key={step.id} className="flex min-w-0 flex-col items-center">
+          <li
+            key={step.id}
+            title={
+              compact
+                ? [step.label, step.date].filter(Boolean).join(" · ")
+                : undefined
+            }
+            className="flex min-w-0 flex-col items-center"
+          >
             <span aria-hidden="true" className="flex h-4 w-full items-center">
               {index === 0 ? (
                 <span className="flex-1" />
@@ -114,7 +127,9 @@ export function ProgressTrack({
             </span>
             <span
               className={cn(
-                "mt-2 max-w-full truncate px-1 text-2xs leading-tight",
+                compact
+                  ? "sr-only"
+                  : "mt-2 max-w-full truncate px-1 text-2xs leading-tight",
                 step.state === "done"
                   ? DONE_LABEL[step.tone]
                   : step.state === "current"
@@ -125,9 +140,11 @@ export function ProgressTrack({
               {step.label}
               <span className="sr-only"> ({STATE_WORDS[step.state]})</span>
             </span>
-            <span className="mt-0.5 h-3 text-[0.625rem] leading-none text-faint tabular-nums">
-              {step.date}
-            </span>
+            {!compact && (
+              <span className="mt-0.5 h-3 text-[0.625rem] leading-none text-faint tabular-nums">
+                {step.date}
+              </span>
+            )}
           </li>
         );
       })}

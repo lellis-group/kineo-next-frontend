@@ -9,6 +9,7 @@ import type {
   ApplicationDecisionSource,
   ApplicationRejectionBucket,
   ApplicationStatus,
+  Specialty,
 } from "@/lib/types/api";
 
 /** Filter buckets above the list, each one backend status. */
@@ -70,6 +71,10 @@ export interface ApplicationListingInfo {
   title: string;
   /** Formatted period — e.g. « Du 15 oct. au 30 oct. 2025 ». */
   dateRange?: string;
+  /** The period's bounds (ISO), present exactly when `dateRange` is. */
+  startDate?: string;
+  endDate?: string;
+  specialty?: Specialty;
   remuneration?: string;
   description?: string;
   practiceName?: string;
