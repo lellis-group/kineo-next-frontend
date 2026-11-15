@@ -17,11 +17,21 @@ import type {
   BrowseListing,
   BrowseListingDetail,
   BrowsePlacesData,
+  ListingLocation,
   MapPlace,
   MapPlaceListing,
   SpecialtyFacet,
 } from "./browse-contracts";
 import { adaptListingBase } from "./shared";
+
+/** The page's geocoded listings, for the map to frame. Ungeocoded ones are skipped. */
+export function pagePoints(
+  listings: readonly Pick<BrowseListing, "location">[],
+): ListingLocation[] {
+  return listings.flatMap((listing) =>
+    listing.location ? [listing.location] : [],
+  );
+}
 
 /** Zeroed facets, for a response that carried none. */
 export function emptyFacets(): BrowseFacets {

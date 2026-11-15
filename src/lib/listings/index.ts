@@ -80,6 +80,7 @@ export {
   adaptFacets,
   emptyBrowsePlaces,
   emptyFacets,
+  pagePoints,
 } from "./browse-adapters";
 export { listingBadge } from "./browse-badges";
 export type {

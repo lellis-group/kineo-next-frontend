@@ -16,6 +16,7 @@ import {
   type BrowsePlacesData,
   type BrowseSort,
   horizonBounds,
+  pagePoints,
 } from "@/lib/listings";
 
 /** The map, browser-only: MapLibre needs WebGL and `window` on import. */
@@ -160,9 +161,7 @@ export function ListingsContainer({
           <ListingsMapSlot
             ref={resource.mapRef}
             places={initialPlaces}
-            pagePoints={resource.data.listings.flatMap((listing) =>
-              listing.location ? [listing.location] : [],
-            )}
+            pagePoints={pagePoints(resource.data.listings)}
             hoveredListingId={picking.hoveredListingId}
             onHoveredChange={picking.setHoveredListingId}
             selectedListing={picking.selectedListing}

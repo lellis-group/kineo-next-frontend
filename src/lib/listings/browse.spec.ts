@@ -2,7 +2,7 @@ import { describe, expect, it } from "bun:test";
 import type { ApiListingPlace } from "@/lib/types/api";
 import type { ApiTransport } from "../api-client";
 import { toIsoDayBound } from "../format";
-import { adaptFacets } from "./browse-adapters";
+import { adaptFacets, pagePoints } from "./browse-adapters";
 import { listingBadge } from "./browse-badges";
 import { EMPTY_BROWSE_FILTERS } from "./browse-contracts";
 import { horizonBounds, horizonForBounds } from "./browse-horizon";
@@ -738,5 +738,15 @@ describe("browse view round-trips through the URL", () => {
     const { filters, page, sort } = browseViewFromParams(new URLSearchParams());
 
     expect(isDefaultBrowseView(toBrowseView(filters, page, sort))).toBe(true);
+  });
+});
+
+describe("pagePoints", () => {
+  it("keeps the geocoded listings' locations, in order", () => {
+    const a = { latitude: 48.85, longitude: 2.35 };
+    const b = { latitude: 45.76, longitude: 4.83 };
+    expect(
+      pagePoints([{ location: a }, { location: null }, { location: b }]),
+    ).toEqual([a, b]);
   });
 });
