@@ -122,18 +122,24 @@ export function ListingDetailView({
             </div>
           </div>
 
-          {/* Only while the listing can still take someone. */}
-          {recruiting && (
+          {/* Always drawn; disabled, with the reason, once out of circulation. */}
+          <div className="flex shrink-0 flex-col gap-1.5 lg:items-end">
             <ListingActionButtons
               activeCount={listing.applicationsCount}
               acting={acting}
+              available={recruiting}
               asking={asking}
               onAsk={setAsking}
               onClose={onClose}
               onCancel={onCancel}
-              className="shrink-0"
             />
-          )}
+            {!recruiting && (
+              <p className="text-xs text-muted">
+                Cette annonce n&apos;est pas en diffusion : rien à clôturer ni à
+                annuler.
+              </p>
+            )}
+          </div>
         </div>
       </header>
 

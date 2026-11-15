@@ -31,11 +31,13 @@ const ACTION_COPY: Record<
  * The two terminal actions on a listing, as a row of buttons. Both reject
  * every active application server-side (no notification is sent), so with
  * active candidates a click only asks (`onAsk`) and `ListingActionConfirm`
- * takes over; with none, it acts at once.
+ * takes over; with none, it acts at once. Out of circulation they stay on
+ * screen, disabled, so the page always says where they are.
  */
 export function ListingActionButtons({
   activeCount,
   acting,
+  available = true,
   asking,
   onAsk,
   onClose,
@@ -44,6 +46,8 @@ export function ListingActionButtons({
 }: {
   activeCount: number;
   acting?: boolean;
+  /** False once the listing is out of circulation: drawn, but disabled. */
+  available?: boolean;
   /** The action awaiting its confirmation, whose button reads as pressed. */
   asking: ListingAction | null;
   onAsk: (action: ListingAction) => void;
@@ -58,7 +62,7 @@ export function ListingActionButtons({
       <PendingButton
         variant="outline"
         pending={acting === true && asking === null}
-        disabled={asking !== null}
+        disabled={!available || asking !== null}
         aria-expanded={needsConfirm ? asking === "close" : undefined}
         onClick={() => (needsConfirm ? onAsk("close") : onClose())}
         idleLabel="Clôturer l'annonce"
@@ -66,7 +70,7 @@ export function ListingActionButtons({
       />
       <Button
         variant="outline"
-        disabled={acting || asking !== null}
+        disabled={!available || acting || asking !== null}
         aria-expanded={needsConfirm ? asking === "cancel" : undefined}
         onClick={() => (needsConfirm ? onAsk("cancel") : onCancel())}
         className={cn(

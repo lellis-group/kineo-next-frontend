@@ -1,6 +1,7 @@
-import type { ComponentType, SVGProps } from "react";
+import type { ComponentType, ReactNode, SVGProps } from "react";
 import {
   AlertTriangleIcon,
+  CalendarIcon,
   CheckIcon,
   ClockIcon,
   FileTextIcon,
@@ -9,14 +10,17 @@ import {
   UsersIcon,
 } from "@/components/atoms/icons";
 import { CapacityBar } from "@/components/molecules/capacity-bar";
-import { ListingPeriodCell } from "@/components/molecules/listing-table-cells";
 import { Panel } from "@/components/molecules/panel";
 import { StatChip } from "@/components/molecules/panel-chrome";
 import { RailDistribution } from "@/components/molecules/rail-distribution";
 import { RailEmpty } from "@/components/molecules/rail-empty";
 import { RailGauge } from "@/components/molecules/rail-gauge";
 import { SpecialtyIcon } from "@/components/molecules/specialty-icon";
-import { formatDateTime } from "@/lib/format";
+import {
+  formatDateTime,
+  formatDayMonth,
+  formatDurationDays,
+} from "@/lib/format";
 import {
   adaptListingDetailRail,
   formatListingAge,
@@ -98,57 +102,75 @@ export function ListingDetailRail({
       </Panel>
 
       <Panel title="Annonce">
-        <dl className="cell-scope flex flex-col gap-4 text-sm">
-          <div className="flex items-start justify-between gap-4">
-            <dt className="text-muted">Période</dt>
-            <dd>
-              <ListingPeriodCell
-                dateRange={listing.dateRange}
-                startDate={listing.startDate}
-                endDate={listing.endDate}
-              />
-            </dd>
-          </div>
-          <div className="flex items-center justify-between gap-4">
-            <dt className="text-muted">Spécialité</dt>
-            <dd className="flex items-center gap-2 text-foreground">
-              <SpecialtyIcon
-                specialty={listing.specialty}
-                className="size-4 text-muted"
-              />
-              {specialtyLabel(listing.specialty)}
-            </dd>
-          </div>
-          <div className="flex items-center justify-between gap-4">
-            <dt className="flex items-center gap-2 text-muted">
-              <UsersIcon className="size-4" />
-              Candidats actifs
-            </dt>
-            <dd>
-              <CapacityBar
-                count={listing.applicationsCount}
-                max={listing.maxApplications}
-              />
-            </dd>
-          </div>
-          <div className="flex items-center justify-between gap-4">
-            <dt className="text-muted">Diffusion</dt>
-            <dd className="text-foreground">{formatListingAge(listing)}</dd>
-          </div>
+        <dl className="cell-scope divide-y divide-border">
+          <ListingFact mark={<CalendarIcon />} label="Période">
+            <span className="block whitespace-nowrap">
+              {formatDayMonth(listing.startDate)} →{" "}
+              {formatDayMonth(listing.endDate)}
+            </span>
+            <span className="block text-xs font-normal text-muted">
+              {formatDurationDays(listing.startDate, listing.endDate)}
+            </span>
+          </ListingFact>
+          <ListingFact
+            mark={<SpecialtyIcon specialty={listing.specialty} />}
+            label="Spécialité"
+          >
+            {specialtyLabel(listing.specialty)}
+          </ListingFact>
+          <ListingFact mark={<UsersIcon />} label="Candidats actifs">
+            <CapacityBar
+              count={listing.applicationsCount}
+              max={listing.maxApplications}
+            />
+          </ListingFact>
+          <ListingFact mark={<ClockIcon />} label="Diffusion">
+            {formatListingAge(listing)}
+          </ListingFact>
         </dl>
 
         {listing.description && (
-          <p className="mt-5 border-t border-border pt-4 text-sm leading-relaxed whitespace-pre-line text-muted">
-            {listing.description}
-          </p>
+          <div className="mt-4 rounded-control bg-white/[0.04] px-4 py-3">
+            <p className="text-2xs text-muted">Description</p>
+            <p className="mt-1 text-sm leading-relaxed whitespace-pre-line text-foreground/85">
+              {listing.description}
+            </p>
+          </div>
         )}
 
         {listing.updatedAt && listing.updatedAt !== listing.createdAt && (
-          <p className="mt-4 text-2xs text-faint">
+          <p className="mt-3 text-2xs text-faint">
             Modifiée le {formatDateTime(listing.updatedAt)}
           </p>
         )}
       </Panel>
+    </div>
+  );
+}
+
+/** One fact of the posting: a muted mark and label, the value on the right. */
+function ListingFact({
+  mark,
+  label,
+  children,
+}: {
+  /** An icon; sized and toned here. */
+  mark: ReactNode;
+  label: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
+      <span
+        aria-hidden="true"
+        className="grid size-4 shrink-0 place-items-center text-muted [&>svg]:size-4"
+      >
+        {mark}
+      </span>
+      <dt className="min-w-0 flex-1 text-sm text-muted">{label}</dt>
+      <dd className="shrink-0 text-right text-sm font-medium text-foreground tabular-nums">
+        {children}
+      </dd>
     </div>
   );
 }

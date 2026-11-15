@@ -48,6 +48,21 @@ export function formatRelativeTime(dateStr: string): string {
   return `il y a ${weeks} semaine${plural(weeks)}`;
 }
 
+/**
+ * A period's length in days, both ends included — « 8 jours » for the 15th to
+ * the 22nd. Calendar days: the bounds are read as dates, not instants.
+ */
+export function formatDurationDays(start: string, end: string): string {
+  const day = (iso: string) => Date.UTC(...ymd(iso));
+  const days = Math.round((day(end) - day(start)) / 86_400_000) + 1;
+  return `${days} jour${plural(days)}`;
+}
+
+function ymd(iso: string): [number, number, number] {
+  const date = new Date(iso);
+  return [date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()];
+}
+
 /** A single day without the year — « 15 sept. » — for periods drawn on two lines. */
 export function formatDayMonth(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString("fr-FR", {
