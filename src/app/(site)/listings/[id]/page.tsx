@@ -6,6 +6,7 @@ import { Panel } from "@/components/molecules/panel";
 import { ApplyToListing } from "@/components/organisms/apply-to-listing";
 import { BrowseListingDetailView } from "@/components/templates/browse-listing-detail-view";
 import { serverTransport } from "@/lib/api-transport.server";
+import { fetchListingImages } from "@/lib/files";
 import { fetchBrowseListing } from "@/lib/listings";
 import { requireExisting } from "@/lib/require-member";
 import { fetchServerAuth } from "@/lib/server-auth";
@@ -86,13 +87,15 @@ async function BrowseListingDetailPageInner({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const listing = await requireExisting(
-    fetchBrowseListing(id, serverTransport),
-  );
+  const [listing, photos] = await Promise.all([
+    requireExisting(fetchBrowseListing(id, serverTransport)),
+    fetchListingImages(id, serverTransport),
+  ]);
 
   return (
     <BrowseListingDetailView
       listing={listing}
+      photos={photos}
       apply={<ApplyEntry listingId={listing.id} />}
     />
   );

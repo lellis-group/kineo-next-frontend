@@ -16,6 +16,15 @@ import {
   withdrawApplication,
 } from "./applications/service";
 import {
+  attachCvToApplication,
+  fetchListingImages,
+  fetchMyFiles,
+  removeFile,
+  uploadAvatar,
+  uploadListingImages,
+  uploadProfileCv,
+} from "./files";
+import {
   fetchBrowseListing,
   fetchBrowseListings,
   fetchBrowsePlaces,
@@ -113,6 +122,17 @@ const DOCUMENTED_ROUTES = [
   "PATCH /applications/{id}/accept",
   "PATCH /applications/{id}/reject",
   "PATCH /applications/{id}/withdraw",
+  "POST /applications/{id}/cv",
+  "GET /applications/{id}/cv",
+
+  // Files
+  "POST /files/avatar",
+  "POST /files/cv",
+  "POST /files/listings/{listingId}/images",
+  "GET /files/mine",
+  "GET /files/listings/{listingId}/images",
+  "GET /files/{id}",
+  "DELETE /files/{id}",
 ] as const satisfies readonly DocumentedRoute[];
 
 /** Proven in the suite below — completeness is a test, not a comment. */
@@ -221,6 +241,33 @@ const AUDITED: readonly AuditCase[] = [
     call: (t) => rejectReceivedApplication("a0", undefined, t),
   },
 
+  // Files and CV snapshots
+  {
+    operation: "POST /applications/{id}/cv",
+    call: (t) => attachCvToApplication("a0", t),
+  },
+  { operation: "GET /files/mine", call: (t) => fetchMyFiles(t) },
+  {
+    operation: "POST /files/avatar",
+    call: (t) => uploadAvatar(new File(["x"], "avatar.png"), t),
+  },
+  {
+    operation: "POST /files/cv",
+    call: (t) => uploadProfileCv(new File(["x"], "cv.pdf"), t),
+  },
+  {
+    operation: "POST /files/listings/{listingId}/images",
+    call: (t) => uploadListingImages("l0", [new File(["x"], "a.png")], t),
+  },
+  {
+    operation: "GET /files/listings/{listingId}/images",
+    call: (t) => fetchListingImages("l0", t),
+  },
+  {
+    operation: "DELETE /files/{id}",
+    call: (t) => removeFile("f0", t),
+  },
+
   // Profile
   {
     operation: "POST /profile",
@@ -251,6 +298,8 @@ const AUDITED: readonly AuditCase[] = [
  *   its detail, until the directory screen exists.
  * - `/practices…` — practices are managed through the listings screens today; a
  *   dedicated screen will adopt these.
+ * - `GET /files/{id}` and `GET /applications/{id}/cv` — streamed by `<img>` and
+ *   CV links through the same-origin proxy, so no `apiFetch` call to audit.
  */
 const NOT_CONSUMED = [
   "GET /",
@@ -269,6 +318,8 @@ const NOT_CONSUMED = [
   "GET /practices/{id}",
   "PATCH /practices/{id}",
   "DELETE /practices/{id}",
+  "GET /files/{id}",
+  "GET /applications/{id}/cv",
 ] as const satisfies readonly DocumentedRoute[];
 
 /** A payload past the shape gates — the audit never gets an answer back. */

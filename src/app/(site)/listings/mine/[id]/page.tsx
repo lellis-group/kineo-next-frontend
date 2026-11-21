@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { LoadingState } from "@/components/molecules/loading-state";
 import { ListingDetailContainer } from "@/components/templates/listing-detail-container";
 import { serverTransport } from "@/lib/api-transport.server";
+import { fetchListingImages } from "@/lib/files";
 import {
   fetchListingApplications,
   fetchMyListing,
@@ -40,7 +41,7 @@ async function ListingDetailPageInner({
 }) {
   const { id } = await params;
 
-  const [listing, received] = await Promise.all([
+  const [listing, received, photos] = await Promise.all([
     requireExisting(fetchMyListing(id, serverTransport)),
     requireExisting(
       fetchListingApplications(
@@ -49,6 +50,7 @@ async function ListingDetailPageInner({
         serverTransport,
       ),
     ),
+    fetchListingImages(id, serverTransport).catch(() => []),
   ]);
 
   return (
@@ -56,6 +58,7 @@ async function ListingDetailPageInner({
       listingId={id}
       initialListing={listing}
       initialReceived={received}
+      initialPhotos={photos}
     />
   );
 }

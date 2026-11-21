@@ -21,7 +21,7 @@ import {
   rejectReceivedApplication,
   shortlistReceivedApplication,
 } from "@/lib/listings";
-import type { ApplicationStatus } from "@/lib/types/api";
+import type { ApiStoredFile, ApplicationStatus } from "@/lib/types/api";
 
 interface View {
   page: number;
@@ -50,10 +50,12 @@ export function ListingDetailContainer({
   listingId,
   initialListing,
   initialReceived,
+  initialPhotos,
 }: {
   listingId: string;
   initialListing: MyListing;
   initialReceived: ListingApplicationsData;
+  initialPhotos: ApiStoredFile[];
 }) {
   const [listing, setListing] = useState<MyListing>(initialListing);
   const [page, setPage] = useState(1);
@@ -149,6 +151,7 @@ export function ListingDetailContainer({
   return (
     <ListingDetailView
       listing={listing}
+      photos={initialPhotos}
       received={received}
       receivedFilter={filter}
       onReceivedFilterChange={(next) => {

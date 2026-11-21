@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useCallback } from "react";
-import type { ApiProfile, ApiUser } from "@/lib/types/api";
+import type { ApiProfile, ApiStoredFile, ApiUser } from "@/lib/types/api";
 import {
   changeEmail,
   deleteAccount,
@@ -18,10 +18,12 @@ import { type ProfileFeedback, ProfileView } from "./profile-view";
 export function ProfileContainer({
   profile,
   user,
+  files,
   feedback,
 }: {
   profile: ApiProfile;
   user: ApiUser;
+  files: ApiStoredFile[];
   feedback: ProfileFeedback;
 }) {
   const router = useRouter();
@@ -65,6 +67,7 @@ export function ProfileContainer({
     <ProfileView
       profile={profile}
       user={user}
+      files={files}
       feedback={feedback}
       onEditProfile={onEditProfile}
       onUpdateInfo={onUpdateInfo}

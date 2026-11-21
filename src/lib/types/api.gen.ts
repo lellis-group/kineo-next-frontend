@@ -55,6 +55,93 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/files/avatar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Upload or replace the caller's profile photo */
+        post: operations["FilesController_uploadAvatar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/files/cv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Upload or replace the caller's reusable CV */
+        post: operations["FilesController_uploadProfileCv"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/files/listings/{listingId}/images": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List the photos of a visible listing */
+        get: operations["FilesController_listListingImages"];
+        put?: never;
+        /** Add photos to a listing you own */
+        post: operations["FilesController_uploadListingImages"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/files/mine": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List the files uploaded by the caller */
+        get: operations["FilesController_listMine"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/files/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Stream a file the caller may read */
+        get: operations["FilesController_download"];
+        put?: never;
+        post?: never;
+        /** Delete a file the caller uploaded */
+        delete: operations["FilesController_remove"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/profile": {
         parameters: {
             query?: never;
@@ -336,6 +423,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/applications/{id}/cv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Stream the CV attached to an application
+         * @description Only the applicant and the owner of the listing's practice may read it.
+         */
+        get: operations["ApplicationsController_readCv"];
+        put?: never;
+        /**
+         * Attach a snapshot of your profile CV to your application
+         * @description No file to upload: the CV is copied from the one on your profile (POST /files/cv). Upload one there first.
+         */
+        post: operations["ApplicationsController_attachCv"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/applications/mine": {
         parameters: {
             query?: never;
@@ -534,6 +645,19 @@ export interface components {
              * @description When the answer was sent
              */
             timestamp: string;
+        };
+        StoredFileDto: {
+            id: string;
+            /** @enum {string} */
+            kind: "AVATAR" | "LISTING_IMAGE" | "CV";
+            originalName: string;
+            mimeType: string;
+            size: number;
+            position: number;
+            /** @description Authenticated URL that streams this file */
+            url: string;
+            /** Format: date-time */
+            createdAt: string;
         };
         CreateProfileDto: {
             /**
@@ -803,6 +927,7 @@ export interface components {
                     startDate: string;
                     endDate: string;
                 } | null;
+                nextCursor: string | null;
             };
         };
         ListingFacets: {
@@ -1154,6 +1279,187 @@ export interface operations {
             };
             /** @description DELETION_PEPPER is not configured */
             503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    FilesController_uploadAvatar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StoredFileDto"];
+                };
+            };
+        };
+    };
+    FilesController_uploadProfileCv: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StoredFileDto"];
+                };
+            };
+        };
+    };
+    FilesController_listListingImages: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                listingId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StoredFileDto"][];
+                };
+            };
+            /** @description Listing not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    FilesController_uploadListingImages: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                listingId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    images: string[];
+                };
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StoredFileDto"][];
+                };
+            };
+            /** @description Not the owner */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    FilesController_listMine: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StoredFileDto"][];
+                };
+            };
+        };
+    };
+    FilesController_download: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description File not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    FilesController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description File not found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1570,6 +1876,8 @@ export interface operations {
                 page?: number;
                 /** @description Number of results per page, max 500 */
                 limit?: number;
+                /** @description Id of the last row of the previous page (its `meta.nextCursor`), to resume after it under the same filters and `sort`. Takes the place of `page`, which is then ignored. */
+                cursor?: string;
             };
             header?: never;
             path?: never;
@@ -1644,6 +1952,8 @@ export interface operations {
                 page?: number;
                 /** @description Number of results per page, max 500 */
                 limit?: number;
+                /** @description Id of the last row of the previous page (its `meta.nextCursor`), to resume after it under the same filters and `sort`. Takes the place of `page`, which is then ignored. */
+                cursor?: string;
             };
             header?: never;
             path?: never;
@@ -1763,6 +2073,8 @@ export interface operations {
                 page?: number;
                 /** @description Number of results per page, max 500 */
                 limit?: number;
+                /** @description Id of the last row of the previous page (its `meta.nextCursor`), to resume after it under the same filters and `sort`. Takes the place of `page`, which is then ignored. */
+                cursor?: string;
             };
             header?: never;
             path?: never;
@@ -2022,6 +2334,67 @@ export interface operations {
             };
             /** @description Already applied to this listing */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    ApplicationsController_readCv: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No CV attached */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    ApplicationsController_attachCv: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StoredFileDto"];
+                };
+            };
+            /** @description Not the applicant */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Application or profile CV not found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

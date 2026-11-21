@@ -9,6 +9,7 @@
 import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
 import { Button } from "@/components/atoms/button";
+import { CheckIcon } from "@/components/atoms/icons";
 import { CountedTextarea } from "@/components/molecules/counted-textarea";
 import { FormActions } from "@/components/molecules/form-actions";
 import { InlineAlert } from "@/components/molecules/inline-alert";
@@ -19,6 +20,7 @@ import {
   MESSAGE_MAX_LENGTH,
   MESSAGE_PLACEHOLDER,
 } from "@/lib/applications";
+import { attachCvToApplication, cvAttachErrorMessage } from "@/lib/files";
 import { useAsyncSubmit } from "@/lib/hooks/use-async-submit";
 import { signInOnExpiredSession } from "@/lib/session-redirect";
 
@@ -29,6 +31,7 @@ export function ApplyToListing({ listingId }: { listingId: string }) {
   const router = useRouter();
   const [state, setState] = useState<ApplyState>("closed");
   const [draft, setDraft] = useState("");
+  const [cvWarning, setCvWarning] = useState("");
   const {
     pending: sending,
     error,
@@ -40,16 +43,34 @@ export function ApplyToListing({ listingId }: { listingId: string }) {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const trimmed = draft.trim();
-    const sent = await run(() =>
-      applyToListing(listingId, trimmed || undefined),
-    );
-    if (sent) setState("sent");
+    let created = false;
+    await run(async () => {
+      const application = await applyToListing(listingId, trimmed || undefined);
+      created = true;
+      try {
+        await attachCvToApplication(application.id);
+      } catch (error) {
+        // The application is saved; a missing CV is a warning, not a refusal.
+        setCvWarning(cvAttachErrorMessage(error));
+      }
+    });
+    if (created) setState("sent");
   }
 
   if (state === "sent") {
     return (
       <section aria-label="Candidature envoyée">
         <p className="text-sm font-medium">{APPLY_SUCCESS}</p>
+        {cvWarning ? (
+          <InlineAlert as="p" tone="warning" className="mt-2">
+            {cvWarning}
+          </InlineAlert>
+        ) : (
+          <p className="mt-2 flex items-center gap-2 text-sm text-muted">
+            <CheckIcon className="size-4" />
+            Votre CV a été joint à la candidature.
+          </p>
+        )}
         <p className="mt-2 text-sm text-muted">
           Vous pouvez suivre son état depuis vos candidatures.
         </p>
@@ -67,7 +88,8 @@ export function ApplyToListing({ listingId }: { listingId: string }) {
       <section aria-label="Postuler">
         <p className="mb-4 text-sm leading-relaxed text-muted">
           Présentez-vous au cabinet en quelques lignes : expérience,
-          disponibilités. Le message est facultatif.
+          disponibilités. Le message est facultatif. Votre CV de profil sera
+          joint automatiquement.
         </p>
         <Button onClick={() => setState("open")}>Postuler</Button>
       </section>

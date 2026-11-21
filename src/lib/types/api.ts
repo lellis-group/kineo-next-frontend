@@ -20,6 +20,9 @@ export interface ApiUser {
   updatedAt: string;
 }
 
+/** A private object on the backend's storage disk. `url` is the authenticated stream route. */
+export type ApiStoredFile = Wire["StoredFileDto"];
+
 /**
  * Lifecycle, in the order a posting moves through it. A const array so the
  * zeroed counters can enumerate the same statuses at runtime.

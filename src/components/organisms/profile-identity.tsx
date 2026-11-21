@@ -18,10 +18,13 @@ import type { ApiProfile, ApiUser } from "@/lib/types/api";
 export function ProfileIdentity({
   user,
   profile,
+  avatarUrl,
   onEditProfile,
 }: {
   user: ApiUser;
   profile: ApiProfile;
+  /** The uploaded photo wins over the legacy better-auth image URL. */
+  avatarUrl?: string | null;
   onEditProfile: () => void;
 }) {
   const missing = completenessSentence(
@@ -33,7 +36,7 @@ export function ProfileIdentity({
       <div className="flex min-w-0 items-center gap-4 sm:gap-5">
         <Avatar
           name={user.name ?? user.email}
-          image={user.image}
+          image={avatarUrl ?? user.image}
           className="size-16 text-xl sm:size-20 sm:text-2xl"
         />
         <div className="min-w-0">
