@@ -8,27 +8,31 @@ import {
   SettingsRow,
   SettingsSection,
 } from "@/components/molecules/settings-section";
+import { AvatarUpload } from "@/components/organisms/avatar-upload";
+import { CvUpload } from "@/components/organisms/cv-upload";
 import { DeleteAccountSection } from "@/components/organisms/delete-account-section";
 import { ProfileIdentity } from "@/components/organisms/profile-identity";
 import { UserInfoFields } from "@/components/organisms/user-info-fields";
+import { fileUrl } from "@/lib/files";
 import {
   PROFILE_TYPE_DESCRIPTIONS,
   PROFILE_TYPE_LABELS,
   SPECIALTY_LABELS,
 } from "@/lib/profile";
-import type { ApiProfile, ApiUser } from "@/lib/types/api";
+import type { ApiProfile, ApiStoredFile, ApiUser } from "@/lib/types/api";
 
 /** Which success banner the redirect from the edit form left behind. */
 export type ProfileFeedback = "created" | "saved" | null;
 
 const SECTIONS = [
   { id: "compte", label: "Compte" },
+  { id: "documents", label: "Photos et CV" },
   { id: "profil-pro", label: "Profil professionnel" },
   { id: "visibilite", label: "Visibilité" },
   { id: "suppression", label: "Zone sensible" },
 ] as const;
 
-const [ACCOUNT, PRO, VISIBILITY, DELETION] = SECTIONS;
+const [ACCOUNT, DOCUMENTS, PRO, VISIBILITY, DELETION] = SECTIONS;
 
 /**
  * The /profile screen in view mode, as a settings page: the member on top,
@@ -38,6 +42,7 @@ const [ACCOUNT, PRO, VISIBILITY, DELETION] = SECTIONS;
 export function ProfileView({
   profile,
   user,
+  files,
   feedback,
   onEditProfile,
   onUpdateInfo,
@@ -46,6 +51,7 @@ export function ProfileView({
 }: {
   profile: ApiProfile;
   user: ApiUser;
+  files: ApiStoredFile[];
   feedback: ProfileFeedback;
   onEditProfile: () => void;
   onUpdateInfo: (values: {
@@ -61,11 +67,15 @@ export function ProfileView({
     </Button>
   );
 
+  const avatar = files.find((file) => file.kind === "AVATAR") ?? null;
+  const cv = files.find((file) => file.kind === "CV") ?? null;
+
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6 sm:py-14">
       <ProfileIdentity
         user={user}
         profile={profile}
+        avatarUrl={avatar ? fileUrl(avatar.id) : null}
         onEditProfile={onEditProfile}
       />
 
@@ -102,6 +112,21 @@ export function ProfileView({
               onUpdateInfo={onUpdateInfo}
               onChangeEmail={onChangeEmail}
             />
+          </SettingsSection>
+
+          <SettingsSection
+            id={DOCUMENTS.id}
+            title={DOCUMENTS.label}
+            description="Votre photo et le CV que les cabinets peuvent consulter."
+          >
+            <Card className="divide-y divide-border">
+              <div className="p-4 sm:p-5">
+                <AvatarUpload initial={avatar} name={user.name ?? user.email} />
+              </div>
+              <div className="p-4 sm:p-5">
+                <CvUpload initial={cv} />
+              </div>
+            </Card>
           </SettingsSection>
 
           <SettingsSection

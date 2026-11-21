@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { LoadingState } from "@/components/molecules/loading-state";
 import { ProfileContainer } from "@/components/templates/profile-container";
+import { serverTransport } from "@/lib/api-transport.server";
+import { fetchMyFiles } from "@/lib/files";
 import { passProfileGate } from "@/lib/profile-gate";
 
 export const metadata: Metadata = {
@@ -31,15 +33,18 @@ async function ProfileContent({
 }: {
   searchParams: Promise<{ created?: string; saved?: string }>;
 }) {
-  const [{ created, saved }, { auth, profile }] = await Promise.all([
+  const [{ created, saved }, { auth, profile }, files] = await Promise.all([
     searchParams,
     passProfileGate("view"),
+    // An unreachable store must not hide the profile page itself.
+    fetchMyFiles(serverTransport).catch(() => []),
   ]);
 
   return (
     <ProfileContainer
       profile={profile}
       user={auth.user}
+      files={files}
       feedback={created ? "created" : saved ? "saved" : null}
     />
   );
