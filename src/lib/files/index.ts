@@ -1,3 +1,13 @@
+export { cvAttachErrorMessage, fileErrorMessage } from "./errors";
+export {
+  AVATAR_MAX_BYTES,
+  CV_ACCEPT,
+  CV_MAX_BYTES,
+  formatSize,
+  IMAGE_ACCEPT,
+  IMAGE_MAX_BYTES,
+  LISTING_IMAGES_MAX,
+} from "./limits";
 export {
   applicationCvUrl,
   attachCvToApplication,
@@ -9,13 +19,3 @@ export {
   uploadListingImages,
   uploadProfileCv,
 } from "./service";
-export { fileErrorMessage } from "./errors";
-export {
-  AVATAR_MAX_BYTES,
-  CV_ACCEPT,
-  CV_MAX_BYTES,
-  IMAGE_ACCEPT,
-  IMAGE_MAX_BYTES,
-  LISTING_IMAGES_MAX,
-  formatSize,
-} from "./limits";

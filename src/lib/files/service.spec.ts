@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { type ApiTransport, ApiError } from "../api-client";
+import { ApiError, type ApiTransport } from "../api-client";
 import {
   attachCvToApplication,
   fetchListingImages,
@@ -46,9 +46,7 @@ describe("file service", () => {
 
     const photos = recording();
     await fetchListingImages("listing 1", photos.transport);
-    expect(photos.calls[0]?.path).toBe(
-      "/files/listings/listing%201/images",
-    );
+    expect(photos.calls[0]?.path).toBe("/files/listings/listing%201/images");
   });
 
   it("posts uploads as FormData without a JSON Content-Type", async () => {

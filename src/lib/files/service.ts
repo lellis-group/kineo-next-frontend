@@ -6,10 +6,10 @@
  */
 
 import {
-  apiFetch,
-  uploadFetch,
   type ApiTransport,
+  apiFetch,
   notFoundAs,
+  uploadFetch,
 } from "../api-client";
 import type { ApiStoredFile } from "../types/api";
 
@@ -39,7 +39,9 @@ function filesApiPath(id: string): string {
   return `/files/${encodeURIComponent(id)}`;
 }
 
-export function fetchMyFiles(transport?: ApiTransport): Promise<ApiStoredFile[]> {
+export function fetchMyFiles(
+  transport?: ApiTransport,
+): Promise<ApiStoredFile[]> {
   return apiFetch<ApiStoredFile[]>("/files/mine", undefined, transport);
 }
 
@@ -59,14 +61,22 @@ export function uploadAvatar(
   file: File,
   transport?: ApiTransport,
 ): Promise<ApiStoredFile> {
-  return uploadFetch<ApiStoredFile>("/files/avatar", single("file", file), transport);
+  return uploadFetch<ApiStoredFile>(
+    "/files/avatar",
+    single("file", file),
+    transport,
+  );
 }
 
 export function uploadProfileCv(
   file: File,
   transport?: ApiTransport,
 ): Promise<ApiStoredFile> {
-  return uploadFetch<ApiStoredFile>("/files/cv", single("file", file), transport);
+  return uploadFetch<ApiStoredFile>(
+    "/files/cv",
+    single("file", file),
+    transport,
+  );
 }
 
 export function uploadListingImages(

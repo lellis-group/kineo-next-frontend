@@ -119,7 +119,11 @@ export async function uploadFetch<T>(
 ): Promise<T> {
   const response = await transport(
     path,
-    withTimeout({ method: "POST", body, headers: { Accept: "application/json" } }),
+    withTimeout({
+      method: "POST",
+      body,
+      headers: { Accept: "application/json" },
+    }),
   );
 
   if (!response.ok) await failure(response, path);
