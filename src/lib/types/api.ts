@@ -20,6 +20,11 @@ export interface ApiUser {
   updatedAt: string;
 }
 
+/** A private object in RustFS. `url` is the authenticated stream route. */
+export type ApiStoredFile = Wire["StoredFileDto"];
+
+export type StoredFileKind = ApiStoredFile["kind"];
+
 /**
  * Lifecycle, in the order a posting moves through it. A const array so the
  * zeroed counters can enumerate the same statuses at runtime.
