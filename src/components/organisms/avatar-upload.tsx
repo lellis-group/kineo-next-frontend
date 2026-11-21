@@ -9,11 +9,11 @@ import { PencilIcon, TrashIcon } from "@/components/atoms/icons";
 import { Spinner } from "@/components/atoms/spinner";
 import { InlineAlert } from "@/components/molecules/inline-alert";
 import {
+  AVATAR_MAX_BYTES,
   fileErrorMessage,
   fileUrl,
   formatSize,
   IMAGE_ACCEPT,
-  IMAGE_MAX_BYTES,
   removeFile,
   uploadAvatar,
 } from "@/lib/files";
@@ -40,9 +40,9 @@ export function AvatarUpload({
       setPickError("Seuls les fichiers JPEG, PNG et WebP sont acceptés.");
       return;
     }
-    if (chosen.size > IMAGE_MAX_BYTES) {
+    if (chosen.size > AVATAR_MAX_BYTES) {
       setPickError(
-        `La photo doit faire moins de ${formatSize(IMAGE_MAX_BYTES)}.`,
+        `La photo doit faire moins de ${formatSize(AVATAR_MAX_BYTES)}.`,
       );
       return;
     }
@@ -105,7 +105,7 @@ export function AvatarUpload({
         </div>
         <p className="text-xs text-faint">
           {file ? file.originalName : "Aucune photo enregistrée."} · JPEG, PNG
-          ou WebP · {formatSize(IMAGE_MAX_BYTES)} maximum.
+          ou WebP · {formatSize(AVATAR_MAX_BYTES)} maximum.
         </p>
         {(pickError || error) && (
           <InlineAlert as="p" tone="danger">
