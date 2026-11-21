@@ -59,6 +59,33 @@ function withTimeout(init: RequestInit | undefined): RequestInit {
   return { ...init, signal };
 }
 
+/** One place that turns a non-OK response into a typed error. */
+async function failure(response: Response, path: string): Promise<never> {
+  let apiMessage: string | undefined;
+  let fieldErrors: FieldError[] | undefined;
+  let code: string | undefined;
+  try {
+    const body = (await response.json()) as {
+      message?: unknown;
+      errors?: unknown;
+      code?: unknown;
+    };
+    if (typeof body.message === "string") apiMessage = body.message;
+    if (Array.isArray(body.errors)) fieldErrors = body.errors as FieldError[];
+    if (typeof body.code === "string") code = body.code;
+  } catch {
+    // Non-JSON body (proxy, network cut) — nothing to extract.
+  }
+  throw new ApiError(response.status, path, apiMessage, fieldErrors, code);
+}
+
+/** Decode a successful JSON body; 204 / empty answers answer `null`. */
+async function jsonBody<T>(response: Response): Promise<T> {
+  const text = await response.text();
+  if (!text) return null as T;
+  return JSON.parse(text) as T;
+}
+
 /** Fetch through `transport`; throws `ApiError` on a non-OK response. */
 export async function apiFetch<T>(
   path: string,
@@ -72,39 +99,31 @@ export async function apiFetch<T>(
   new Headers(callerHeaders).forEach((value, name) => {
     headers.set(name, value);
   });
-  const res = await transport(path, withTimeout({ ...rest, headers }));
+  const response = await transport(path, withTimeout({ ...rest, headers }));
 
-  if (!res.ok) {
-    let apiMessage: string | undefined;
-    let fieldErrors: FieldError[] | undefined;
-    let code: string | undefined;
-    try {
-      const body = (await res.json()) as {
-        message?: unknown;
-        errors?: unknown;
-        code?: unknown;
-      };
-      if (typeof body.message === "string") {
-        apiMessage = body.message;
-      }
-      if (Array.isArray(body.errors)) {
-        fieldErrors = body.errors as FieldError[];
-      }
-      if (typeof body.code === "string") {
-        code = body.code;
-      }
-    } catch {
-      // Non-JSON body (proxy, network cut) — nothing to extract.
-    }
-    throw new ApiError(res.status, path, apiMessage, fieldErrors, code);
-  }
+  if (!response.ok) await failure(response, path);
+  return jsonBody<T>(response);
+}
 
-  // 204 / empty body.
-  const text = await res.text();
-  if (!text) {
-    return null as T;
-  }
-  return JSON.parse(text) as T;
+/**
+ * POST a `FormData` through the same transport.
+ *
+ * Deliberately does not go through `apiFetch`: that helper sets
+ * `Content-Type: application/json` whenever a body is present, which would
+ * erase the multipart boundary the browser has to generate.
+ */
+export async function uploadFetch<T>(
+  path: string,
+  body: FormData,
+  transport: ApiTransport = browserTransport,
+): Promise<T> {
+  const response = await transport(
+    path,
+    withTimeout({ method: "POST", body, headers: { Accept: "application/json" } }),
+  );
+
+  if (!response.ok) await failure(response, path);
+  return jsonBody<T>(response);
 }
 
 /**
