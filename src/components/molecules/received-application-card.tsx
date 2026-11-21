@@ -1,12 +1,13 @@
 import { Avatar } from "@/components/atoms/avatar";
 import { Badge } from "@/components/atoms/badge";
-import { MapPinIcon } from "@/components/atoms/icons";
+import { FileTextIcon, MapPinIcon } from "@/components/atoms/icons";
 import { InlineAlert } from "@/components/molecules/inline-alert";
 import { MetaRow, MetaRowItem } from "@/components/molecules/meta-row";
 import { ReceivedApplicationActions } from "@/components/molecules/received-application-actions";
 import { VerifiedBadge } from "@/components/molecules/verified-badge";
 import { isAwaitingDecision, STATUS_META } from "@/lib/applications";
 import { cn } from "@/lib/cn";
+import { applicationCvUrl } from "@/lib/files";
 import { formatRelativeTime } from "@/lib/format";
 import {
   RECEIVED_STATUS_LABELS,
@@ -85,6 +86,15 @@ export function ReceivedApplicationCard({
           <Badge tone={STATUS_META[application.status].badgeTone} size="md">
             {RECEIVED_STATUS_LABELS[application.status]}
           </Badge>
+          <a
+            href={applicationCvUrl(application.id)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-xs text-muted transition-colors hover:text-primary"
+          >
+            <FileTextIcon className="size-3.5" />
+            Voir le CV
+          </a>
           {decision && (
             <span className="text-right text-control leading-snug text-muted">
               {decision}

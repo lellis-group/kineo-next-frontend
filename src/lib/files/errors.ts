@@ -3,6 +3,14 @@
 import { ApiError } from "../api-client";
 import { errorMessage } from "../api-errors";
 
+/** A missing profile CV is the one expected refusal of a CV attachment. */
+export function cvAttachErrorMessage(error: unknown): string {
+  if (error instanceof ApiError && error.status === 404) {
+    return "Ajoutez d'abord un CV à votre profil, puis envoyez votre candidature.";
+  }
+  return fileErrorMessage(error);
+}
+
 /**
  * `413` is not a status the shared classifier knows yet, so it is handled here
  * rather than silently falling through to "une erreur inattendue".
