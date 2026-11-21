@@ -12,7 +12,9 @@ import { CapacityBar } from "@/components/molecules/capacity-bar";
 import { FactRow } from "@/components/molecules/fact-row";
 import { MapPaper, type MapPaperPin } from "@/components/molecules/map-paper";
 import { Panel } from "@/components/molecules/panel";
+import { PhotoStrip } from "@/components/molecules/photo-strip";
 import { SpecialtyIcon } from "@/components/molecules/specialty-icon";
+import { fileUrl } from "@/lib/files";
 import { formatDayMonth, formatDurationDays } from "@/lib/format";
 import { BOARD_SHELL } from "@/lib/layout";
 import {
@@ -21,6 +23,7 @@ import {
   LISTING_STATUS_META,
   specialtyLabel,
 } from "@/lib/listings";
+import type { ApiStoredFile } from "@/lib/types/api";
 
 /** The posting's pin: the paper is a still, so the spot is symbolic. */
 const PIN: readonly MapPaperPin[] = [{ x: 46, y: 50, active: true }];
@@ -32,9 +35,11 @@ const PIN: readonly MapPaperPin[] = [{ x: 46, y: 50, active: true }];
  */
 export function BrowseListingDetailView({
   listing,
+  photos,
   apply,
 }: {
   listing: BrowseListingDetail;
+  photos: ApiStoredFile[];
   /** The apply panel matched to the reader; it renders nothing for a practice. */
   apply: ReactNode;
 }) {
@@ -122,6 +127,17 @@ export function BrowseListingDetailView({
 
         <div className="order-1 flex min-w-0 flex-col gap-3 lg:order-2">
           {apply}
+
+          <Panel title="Photos">
+            <PhotoStrip
+              photos={photos.map((photo) => ({
+                id: photo.id,
+                url: fileUrl(photo.id),
+                originalName: photo.originalName,
+              }))}
+              emptyLabel="Le cabinet n'a pas encore ajouté de photo."
+            />
+          </Panel>
 
           <Panel title="Description">
             {listing.description ? (

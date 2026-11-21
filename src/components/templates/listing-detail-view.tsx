@@ -15,6 +15,7 @@ import {
   ListingActionConfirm,
 } from "@/components/organisms/listing-actions";
 import { ListingDetailRail } from "@/components/organisms/listing-detail-rail";
+import { PhotoUpload } from "@/components/organisms/photo-upload";
 import { ReceivedApplicationsTable } from "@/components/organisms/received-applications-table";
 import { isAwaitingDecision } from "@/lib/applications";
 import { BOARD_SHELL } from "@/lib/layout";
@@ -28,9 +29,11 @@ import {
   type ReceivedApplication,
   type ReceivedApplicationsFilter,
 } from "@/lib/listings";
+import type { ApiStoredFile } from "@/lib/types/api";
 
 export interface ListingDetailViewProps {
   listing: MyListing;
+  photos: ApiStoredFile[];
   received: ListingApplicationsData;
   receivedFilter: ReceivedApplicationsFilter;
   onReceivedFilterChange: (filter: ReceivedApplicationsFilter) => void;
@@ -68,6 +71,7 @@ function firstToDecide(
  */
 export function ListingDetailView({
   listing,
+  photos,
   received,
   receivedFilter,
   onReceivedFilterChange,
@@ -166,8 +170,11 @@ export function ListingDetailView({
 
       <div className="grid items-start gap-3 lg:grid-cols-[22.5rem_minmax(0,1fr)]">
         {/* The candidates are the page's job: first on a phone, beside from `lg`. */}
-        <div className="order-2 lg:order-1">
+        <div className="order-2 flex flex-col gap-3 lg:order-1">
           <ListingDetailRail listing={listing} counts={received.counts} />
+          <Panel title="Photos de l'annonce">
+            <PhotoUpload listingId={listing.id} initialPhotos={photos} />
+          </Panel>
         </div>
 
         <div className="order-1 flex min-w-0 flex-col gap-3 lg:order-2">
