@@ -1,7 +1,7 @@
 /**
  * Client-side mirrors of the backend ceilings, for a fast refusal before an
  * upload. The backend remains authoritative: these values only save a round
- * trip, and a mismatch is always resolved in favour of its 413/422 answer.
+ * trip, and a mismatch is always resolved in favour of its 413/415 answer.
  */
 export const AVATAR_MAX_BYTES = 2 * 1024 * 1024;
 export const IMAGE_MAX_BYTES = 5 * 1024 * 1024;

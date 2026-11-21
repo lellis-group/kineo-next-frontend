@@ -31,9 +31,9 @@ the locum assignment — on both sides of the table.
 - Personal dashboard: quick actions, key stats, application feed and reactivity panel.
 - Full profile management: create & edit your professional profile, account
   information, email change, avatar, and account deletion.
-- Profile photo and reusable CV uploaded to RustFS through the backend; the CV
-  is snapshotted onto each application, and listing photos are shown on both
-  the browse and owner detail pages.
+- Profile photo and reusable CV uploaded through the backend's storage disk
+  (local or S3-compatible); the CV is snapshotted onto each application, and
+  listing photos are shown on both the browse and owner detail pages.
 
 ---
 
@@ -57,8 +57,9 @@ Prerequisites: [bun](https://bun.sh), a Node-compatible runtime, and a running i
 the Kineo backend (`kineo-nest-backend`).
 
 Copy `.env.example` to `.env` and configure the backend / base-URL variables.
-The backend also needs its RustFS container running (`docker compose up -d
-rustfs`) for uploads. When its OpenAPI document changes, run `bun run api:types`
+Uploads use the backend's configured storage driver: `local` needs no extra
+service, while `s3` needs its RustFS container (`docker compose --profile s3 up -d
+rustfs` in the backend repo). When its OpenAPI document changes, run `bun run api:types`
 before typechecking: `src/lib/types/api.gen.ts` is the contract the route audit
 compares against.
 

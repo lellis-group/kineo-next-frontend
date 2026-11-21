@@ -20,7 +20,7 @@ export interface ApiUser {
   updatedAt: string;
 }
 
-/** A private object in RustFS. `url` is the authenticated stream route. */
+/** A private object on the backend's storage disk. `url` is the authenticated stream route. */
 export type ApiStoredFile = Wire["StoredFileDto"];
 
 export type StoredFileKind = ApiStoredFile["kind"];
